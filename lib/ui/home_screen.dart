@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'camera_screen.dart';
 import 'debug_target_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -7,14 +8,25 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void open(Widget screen) =>
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+
     return Scaffold(
       appBar: AppBar(title: const Text('Thrower App')),
       body: Center(
-        child: FilledButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const DebugTargetScreen()),
-          ),
-          child: const Text('Scoring test target'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton(
+              onPressed: () => open(const CameraScreen()),
+              child: const Text('Camera'),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => open(const DebugTargetScreen()),
+              child: const Text('Scoring test target'),
+            ),
+          ],
         ),
       ),
     );
