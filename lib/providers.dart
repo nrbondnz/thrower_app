@@ -8,6 +8,13 @@ import 'scoring/target_model.dart';
 
 final targetModelProvider = Provider<TargetModel>((ref) => TargetModel.ikthof());
 
+/// Normalised radii of the ring boundaries inside the target (every ring's
+/// outer edge except the outermost), which the ring finder looks for.
+final ringBoundaryRadiiProvider = Provider<List<double>>((ref) {
+  final rings = ref.watch(targetModelProvider).rings;
+  return [for (final r in rings.take(rings.length - 1)) r.outerRadius];
+});
+
 /// The open back camera. Released as soon as nothing is watching it (e.g. the
 /// camera screen closes or the app goes to the background).
 ///
