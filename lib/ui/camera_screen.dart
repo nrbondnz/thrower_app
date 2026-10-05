@@ -12,14 +12,32 @@ import '../providers.dart';
 
 /// Full-screen preview from the back camera. In debug builds it also shows the
 /// frame rate, which proves frames are reaching the app for the vision layer.
-class CameraScreen extends ConsumerStatefulWidget {
+class CameraScreen extends StatelessWidget {
   const CameraScreen({super.key});
 
   @override
-  ConsumerState<CameraScreen> createState() => _CameraScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(title: const Text('Camera')),
+      body: const CameraView(),
+    );
+  }
 }
 
-class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBindingObserver {
+/// The back camera's preview, with permission errors, release on background
+/// and re-open on return handled. [overlayBuilder] draws on top of the preview,
+/// sized and positioned exactly over the camera image.
+class CameraView extends ConsumerStatefulWidget {
+  const CameraView({super.key, this.overlayBuilder});
+
+  final Widget Function(BuildContext context, LiveCamera camera)? overlayBuilder;
+
+  @override
+  ConsumerState<CameraView> createState() => _CameraViewState();
+}
+
+class _CameraViewState extends ConsumerState<CameraView> with WidgetsBindingObserver {
   // Only `paused` releases the camera: the permission prompt makes the app
   // `inactive`, and releasing then would cancel the request it's waiting on.
   bool _backgrounded = false;
@@ -49,14 +67,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Camera')),
-      body: _backgrounded ? const SizedBox.expand() : _body(),
-    );
-  }
-
-  Widget _body() {
+    if (_backgrounded) return const SizedBox.expand();
     return ref.watch(liveCameraProvider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) {
@@ -70,7 +81,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           data: (camera) => Stack(
             fit: StackFit.expand,
             children: [
-              Center(child: CameraPreview(camera.controller)),
+              Center(
+                child: CameraPreview(camera.controller, child: widget.overlayBuilder?.call(context, camera)),
+              ),
               if (kDebugMode) Positioned(top: 8, left: 8, child: FrameRateLabel(source: camera)),
             ],
           ),

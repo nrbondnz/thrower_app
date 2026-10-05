@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/services.dart';
 
 import 'camera_frame.dart';
 import 'camera_source.dart';
@@ -72,6 +73,18 @@ class LiveCamera implements CameraSource {
     }
     return LiveCamera._(controller);
   }
+
+  /// Clockwise rotation that makes this camera's frames upright for the
+  /// phone's current orientation (see [frameRotation]).
+  int get uprightRotation => frameRotation(
+        sensorOrientation: controller.description.sensorOrientation,
+        deviceOrientation: switch (controller.value.deviceOrientation) {
+          DeviceOrientation.portraitUp => 0,
+          DeviceOrientation.landscapeLeft => 90,
+          DeviceOrientation.portraitDown => 180,
+          DeviceOrientation.landscapeRight => 270,
+        },
+      );
 
   /// Maps the camera plugin's error codes (see its README) to [CameraFailure].
   static CameraFailure failureFor(String code) => switch (code) {

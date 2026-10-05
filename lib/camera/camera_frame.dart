@@ -11,6 +11,14 @@ class FramePlane {
   final int? bytesPerPixel;
 }
 
+/// Clockwise rotation (0, 90, 180 or 270) that turns a back-camera frame
+/// upright on screen. [sensorOrientation] is the camera's mounting angle
+/// (usually 90 on phones); [deviceOrientation] is how far the phone is turned
+/// from portrait-up (portrait-up 0, landscape-left 90, portrait-down 180,
+/// landscape-right 270).
+int frameRotation({required int sensorOrientation, required int deviceOrientation}) =>
+    (sensorOrientation - deviceOrientation + 360) % 360;
+
 /// One camera frame, independent of the camera plugin, so the vision layer can
 /// be fed recorded frames in tests.
 class CameraFrame {

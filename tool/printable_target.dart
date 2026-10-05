@@ -1,14 +1,16 @@
-// Generates printable test targets as PDFs, with ring sizes taken from
-// TargetModel.ikthof() so the print always matches the scoring.
+// Generates printable test targets as PDFs (and the A4 one as a JPEG), with
+// ring sizes taken from TargetModel.ikthof() so the print always matches the
+// scoring.
 //
 //   dart run tool/printable_target.dart
 //
-// Writes docs/thrower/reference/printable/target-<paper>.pdf.
+// Writes docs/thrower/reference/printable/target-<paper>.pdf and target-A4.jpg.
 
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
 import 'package:thrower_app/scoring/target_model.dart';
 
 /// Full-size IKTHOF target diameter.
@@ -122,8 +124,70 @@ void main() {
   final model = TargetModel.ikthof();
   final dir = Directory('docs/thrower/reference/printable')..createSync(recursive: true);
   for (final paper in papers) {
-    final file = File('${dir.path}/target-${paper.name}.pdf');
-    file.writeAsBytesSync(pdf(paper, pageContent(paper, model)));
-    stdout.writeln('Wrote ${file.path}');
+    _write(File('${dir.path}/target-${paper.name}.pdf'), pdf(paper, pageContent(paper, model)));
   }
+
+  final a4 = papers.first;
+  _write(File('${dir.path}/target-${a4.name}.jpg'), img.encodeJpg(raster(a4, model), quality: 92));
+}
+
+/// Writes [bytes] unless the file already holds them, so a file left open in
+/// a viewer (locked on Windows) doesn't stop the run when nothing changed.
+void _write(File file, List<int> bytes) {
+  if (file.existsSync()) {
+    final existing = file.readAsBytesSync();
+    if (existing.length == bytes.length && _same(existing, bytes)) {
+      stdout.writeln('Unchanged ${file.path}');
+      return;
+    }
+  }
+  file.writeAsBytesSync(bytes);
+  stdout.writeln('Wrote ${file.path}');
+}
+
+bool _same(List<int> a, List<int> b) {
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
+}
+
+/// Same layout as the PDF page, as a 300 dpi image (A4 = 2480 × 3508 px).
+/// JPEGs carry no physical size, so print it "fit to page" and check the
+/// 100 mm bar.
+img.Image raster(Paper paper, TargetModel model) {
+  const dpi = 300;
+  int px(double mm) => (mm / 25.4 * dpi).round();
+  final w = px(paper.widthMm), h = px(paper.heightMm);
+  final image = img.Image(width: w, height: h)..clear(img.ColorRgb8(255, 255, 255));
+  final black = img.ColorRgb8(0, 0, 0);
+
+  // Same centre as the PDF (8 mm above the page's middle).
+  final cx = w ~/ 2, cy = h ~/ 2 - px(8);
+  final outerRadius = paper.diameterMm / 2;
+  for (var i = model.rings.length - 1; i >= 0; i--) {
+    final colour = i.isEven ? img.ColorRgb8(198, 40, 40) : img.ColorRgb8(227, 201, 160);
+    img.fillCircle(image, x: cx, y: cy, radius: px(model.rings[i].outerRadius * outerRadius), color: colour, antialias: true);
+  }
+
+  // 100 mm scale bar, 14 mm from the bottom.
+  final margin = px(12), barY = h - px(14), tick = px(1.5);
+  img.drawLine(image, x1: margin, y1: barY, x2: margin + px(100), y2: barY, color: black, thickness: 4);
+  for (final t in [0.0, 50.0, 100.0]) {
+    final x = margin + px(t);
+    img.drawLine(image, x1: x, y1: barY - tick, x2: x, y2: barY + tick, color: black, thickness: 4);
+  }
+  img.drawString(image, '100 mm: measure this to check print scale',
+      font: img.arial48, x: margin + px(103), y: barY - 24, color: black);
+
+  final rings = [for (final r in model.rings) '${r.score}'].join(' / ');
+  final percent = (paper.diameterMm / fullDiameterMm * 100).round();
+  for (final (i, line) in [
+    'Thrower App test target, ${paper.name}: ${paper.diameterMm.round()} mm across',
+    '($percent% of the 50 cm IKTHOF target). Print "fit to page".',
+    'Rings score $rings from the centre outwards.',
+  ].indexed) {
+    img.drawString(image, line, font: img.arial48, x: margin, y: px(10) + i * 60, color: black);
+  }
+  return image;
 }

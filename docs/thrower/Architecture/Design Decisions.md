@@ -71,6 +71,85 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Confirmed:** 2026-10-04 (plan approved).
 
+## State Management: Riverpod
+
+**Decision:** Use `flutter_riverpod` (3.x). Layers are wired up in `lib/providers.dart`.
+
+**Rationale:**
+- Each layer (camera, vision, scoring, auth) is reached through a provider, so tests and debug screens can swap in a fake: recorded frames instead of the live camera, a fake `AuthService`.
+- Handles streams (camera frames, throw events) well.
+- Errors are caught at compile time, not looked up at runtime.
+
+**Trade-off:** More concepts to learn than `Provider`/`ChangeNotifier`. Code generation isn't used yet, to keep the build simple.
+
+**Confirmed:** 2026-10-05 (Nigel chose it over Bloc and Provider).
+
+## Code Layout: One Folder per Layer
+
+**Decision:**
+
+| Folder | Layer | Rule |
+|---|---|---|
+| `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
+| `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. No provider until the backend is chosen; `authServiceProvider` throws until overridden. |
+| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `LiveCamera` (the `camera` plugin's back camera), `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
+| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`. |
+| `lib/ui/` | Screens and painters | Depends on the layers through providers. |
+| `lib/providers.dart` | Wiring | One place to see and override every layer. |
+
+Folders are created when their first code arrives, never empty "just in case". Navigation is plain `Navigator` until there are enough screens to justify a router.
+
+**Confirmed:** 2026-10-05.
+
+## Camera: `camera` Plugin, Back Camera, No Audio
+
+**Decision:** Use the official `camera` plugin (0.12) with the back camera at `ResolutionPreset.high`. Frames come as BGRA on iOS and YUV420 on Android. Audio is off.
+
+**Permissions:**
+- **iOS:** `NSCameraUsageDescription` ("Thrower App watches your target to score each throw."). No microphone string, because the app records no audio.
+- **Android:** `CAMERA` only. The plugin also declares `RECORD_AUDIO` and `WRITE_EXTERNAL_STORAGE` (which implies `READ_EXTERNAL_STORAGE`); our manifest removes all three with `tools:node="remove"`. `ACCESS_NETWORK_STATE` (from `androidx.media3`, a no-prompt background permission) remains. `INTERNET` is debug-only.
+
+**Lifecycle:**
+- `liveCameraProvider` is `autoDispose`: the camera is released when the screen closes or the app goes to the **background** (`paused`). It isn't released on `inactive`, because the permission prompt itself makes the app inactive.
+- Coming back to the foreground re-opens the camera, which also picks up access granted in Settings.
+- **No automatic retry** (Riverpod 3 retries failed providers by default; on Android that would re-show the permission prompt after "Don't allow"). The user retries from the error view.
+
+**Denied access:** each `CameraFailure` gets a plain message. "Try again" is offered only where asking again can work (`denied`, `unknown`). Permanent denial points to Settings. No `permission_handler` package yet; add it if a direct "Open Settings" button is wanted.
+
+**Confirmed:** 2026-10-05 (Task 4).
+
+## Target Locating: Pure-Dart Colour Rings
+
+**Decision (Nigel, 2026-10-05):** Process images in **pure Dart** (no OpenCV, no ML model yet), behind the `TargetLocator` interface so either can replace it later.
+
+**How `ColourRingLocator` works:**
+1. Downscale to 600 px on the long side.
+2. Classify pixels as **red paint**, **bare wood** or **other**. The thresholds were measured on the reference photo:
+   - Paint: saturation about 0.85 at hue about 2°.
+   - Wood tinted by overspray: saturation about 0.45 at hue about 16°.
+   - So red needs saturation ≥ 0.6 and a hue of −20° to 12°.
+3. Estimate the centre from the largest red region (the outer red ring).
+4. Cast 180 rays from the centre. Along each ray:
+   - **"Other" samples (handles, shadows, slots, bark, grass) are gaps and are skipped.**
+   - A majority filter puts sprayed, fuzzy edges at their midpoint.
+   - The red/wood runs give the boundaries in order (0.2, 0.4, 0.6, 0.8).
+   - A boundary hidden inside a wide gap (under a handle) is dropped for that ray.
+5. Fit an ellipse per boundary with **RANSAC** (Halíř–Flusser direct fit), so bad rays are outvoted. Re-centre and repeat (3 passes).
+6. Sanity-check the result (shared centre, growing outwards, roughly in proportion within 35%) and report a **confidence** (the share of ray samples on the fitted ellipses).
+
+**Measured boundaries, not ideal ones:** hand-painted boards aren't exact. On the reference photo the bull's edge is about 0.28 of the 0.8 edge rather than 0.25. The proportion check is therefore loose, and **scoring (Task 4) should use the measured boundaries**, not the ideal IKTHOF radii.
+
+**The outer ring's outer edge isn't fitted.** On a log board the outer red often runs on to the bark, so `TargetFound.outer` is *extrapolated* (the 0.8 boundary × 1.25). **Open question for Nigel:** on his board, does ring 1 end at a painted line or at the board's edge? This decides how the outermost ring is scored.
+
+**From camera frame to rings (Task 2):** `locateInFrame` (top-level, run with `compute`) does `frameToRgb` → `ColourRingLocator`.
+- `frameToRgb` converts BGRA (iOS) or YUV420 (Android, U/V pixel stride 1 or 2) to RGB, downscales to 600 px on the long side (fractional step, sampled) and rotates upright in one pass.
+- **Upright rotation** = `(sensorOrientation − deviceOrientation + 360) % 360` (`frameRotation`, `LiveCamera.uprightRotation`). This assumes stream frames arrive in sensor orientation on **both** platforms. Android is the usual case; **iOS is unverified until Nigel's device check**.
+- **Overlay alignment:** the outline is drawn as `CameraPreview`'s `child`, which the plugin sizes and places exactly over the preview, scaled by preview width ÷ upright image width. This assumes the image stream and the preview share a field of view (same `ResolutionPreset`); checked by eye on the device.
+
+**Performance:** about 130 ms on a PC for a 600 × 800 photo. It runs in a background isolate on the phone; the device timing is still to be measured. That's fine for a one-off calibration; throw detection may need a smaller region of interest.
+
+**Confirmed:** 2026-10-05 (plain-Dart image processing chosen by Nigel; algorithm from Task 1).
+
 ## Throwing Sport: Knives and Axes into a Wooden Board
 
 **Decision (Nigel, 2026-10-04):** Users throw **knives or axes** (not darts) at a **wooden board with 5 painted circles**. The **camera is static** (fixed in place, not handheld).
@@ -91,7 +170,7 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 Nigel's 5-to-1 five-ring target matches the **IKTHOF** layout. Scoring is decided by **where the blade meets the target surface**, not by where the handle is. A throw only scores if it **sticks**.
 
-**Backlog (Nigel, 2026-10-04):** refine scoring by hit point, meaning which line-touch rule applies and any per-sport variants. For now: IKTHOF ring values, a touching blade scores the higher ring, and a throw that doesn't stick scores 0. The line-touch rule should be a setting on `TargetModel`, not hard-coded.
+**Backlog (Nigel, 2026-10-04):** refine scoring by hit point, meaning which line-touch rule applies and any per-sport variants. For now: IKTHOF ring values, a touching blade scores the higher ring, and a throw that doesn't stick scores 0. The line-touch rule is a setting on `TargetModel` (`LineTouchRule.higher` / `.lower`), not hard-coded. **Implemented in Task 3:** `TargetModel.scoreAt(point, bladeHalfWidth:)` treats a blade as touching a line when it comes within `bladeHalfWidth` of it; a point exactly on a line counts as touching. IATF's majority-of-blade rule needs the blade's extent and stays on the backlog.
 
 Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL rules](https://worldaxethrowingleague.com/axe-throwing-rules/), [IATF standard scoring](https://internationalaxethrowingfederation.com/standard-scoring/), [knife-throwing rules archive](https://thrower-archive.knifethrowing.info/rules.html).
 

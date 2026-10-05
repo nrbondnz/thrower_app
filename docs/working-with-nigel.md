@@ -31,8 +31,8 @@ Full agent definitions, triggers and output formats are in `docs/agents/`.
 - **Platforms:** iOS and Android only.
 - **Accounts:** needed. **Backend and payments:** deferred.
 - **Source control:** GitHub (not yet set up).
-- **Flutter app** (`thrower_app`): currently the default `flutter create` scaffold, SDK `^3.13.5`.
-- Details and rationale: [[Design Decisions]]. Current story: [[story-checkpoint-setting-up-throwing-app]].
+- **Flutter app** (`thrower_app`): SDK `^3.13.5`, Riverpod; layers `lib/scoring/` (pure Dart), `lib/camera/`, `lib/auth/` (interface), `lib/ui/`; wiring in `lib/providers.dart`. Repo: private `github.com/nrbondnz/thrower_app`, `main` only.
+- Details and rationale: [[Design Decisions]]. Current story: [[story-checkpoint-target-calibration]]; upcoming work in [[backlog]]. How-tos: [[Common Tasks]]; gotchas: [[Known Issues]].
 
 ## Commit / Deploy Rules
 
@@ -77,7 +77,8 @@ Carried over from WhereWillWeVisit. Revisit once there's a backend and a pipelin
 
 | Path | Purpose |
 |------|---------|
-| `lib/` | Flutter source (currently just `main.dart`) |
+| `lib/` | Flutter source, one folder per layer (see [[Design Decisions]] → Code Layout) |
+| `tool/` | Dev utilities (`printable_target.dart`) |
 | `test/` | Flutter tests |
 | `docs/agents/` | Agent definitions |
 | `docs/thrower/` | Obsidian architecture vault |

@@ -7,10 +7,15 @@ Obsidian knowledge base for **Thrower App**. Open `docs/thrower/` as a vault. Or
 | Folder | What's Inside |
 |--------|---------------|
 | [[Architecture Index\|Architecture]] | Design decisions, system diagram, data flow |
-| `stories/` | Story checkpoint files (active); `stories/archive/` for completed ones |
+| `stories/` | Story checkpoint files (active), [[backlog]]; `stories/archive/` for completed ones |
+| `Operations/` | [[Common Tasks]] |
+| `Troubleshooting/` | [[Known Issues]] |
 
 ## Quick Links
 
 - [[Design Decisions]]: why things are built the way they are
-- [[story-checkpoint-setting-up-throwing-app]]: the current story
+- `reference/`: the example target photo and printable test targets (`reference/printable/`, regenerate with `dart run tool/printable_target.dart`)
+- [[story-checkpoint-target-calibration]]: the current story (planning)
+- [[backlog]]: what's next
+- [[story-checkpoint-setting-up-throwing-app]]: project setup (archived)
 - `../working-with-nigel.md`: how to work on this project
