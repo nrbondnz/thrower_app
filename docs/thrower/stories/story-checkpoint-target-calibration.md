@@ -17,7 +17,7 @@ This is the foundation for [[backlog|throw detection]]: that story only has to f
 
 ## Status
 
-**IN PROGRESS (2026-10-05)**: plan approved; D1 = **pure Dart**. Task 1 complete (`f71cedc`). **Task 2 done, waiting at the checkpoint**: Nigel to point the phone at a target.
+**IN PROGRESS (2026-10-05)**: plan approved; D1 = **pure Dart**. Task 1 complete (`f71cedc`), then **reworked for any two ring colours** (see Task 1b). **Task 2 done, waiting at the checkpoint**: Nigel to point the phone at a target.
 
 ---
 
@@ -43,7 +43,8 @@ This is the foundation for [[backlog|throw detection]]: that story only has to f
 
 | ID | Requirement | Design ref | Implementation | Test | Status |
 |---|---|---|---|---|---|
-| C1 | Find the 5 painted rings in a still image, ignoring the bark edge and old cuts | Design Decisions → Target Locating | `ColourRingLocator` | `colour_ring_locator_test.dart`: reference photo + 6 synthetic scenes; `isRed`/`isWood` cases; Nigel on device | ✅ Task 1 |
+| C1 | Find the 5 painted rings in a still image, ignoring the bark edge and old cuts | Design Decisions → Target Locating | `ColourRingLocator` | `colour_ring_locator_test.dart`: reference photo + 6 synthetic scenes; Nigel on device | ✅ Task 1 |
+| C1b | Rings can be **any two alternating colours**, learned from the image | Design Decisions → Target Locating | `ColourRingLocator` (`_candidateCentres`, `_learnColours`) | `colour_ring_locator_test.dart`: black/white, blue/yellow, green-on-white with handles, wood bull with red rings, reference photo with red and blue swapped | ✅ Task 1b (Nigel to check a non-red board) |
 | C2 | Works off-centre (the phone is beside the throwing line) | Design Decisions → Throw Detection | `ColourRingLocator` (ellipses, not circles) | synthetic 40° and 55° (tilted, knives) | ✅ Task 1 (synthetic; real angled photos still needed) |
 | C3 | Show the detected outline over the live preview | Design Decisions → Target Locating (camera frame to rings) | `CalibrationScreen`, `RingOverlayPainter`, `locateInFrame`, `frameToRgb`, `LiveCamera.uprightRotation`, `CameraView` | `frame_to_rgb_test.dart` (16), `locate_in_frame_test.dart` (3), `calibration_screen_test.dart` (4) | ✅ Task 2 (Nigel to check on device, both platforms) |
 | C4 | The user can adjust the outline and lock it; it stays locked for the session; re-calibrate on request | Design Decisions → Throw Detection §1 | | | ⏳ Task 3 |
@@ -117,6 +118,22 @@ This is the foundation for [[backlog|throw detection]]: that story only has to f
 - **Nigel: "works" (2026-10-05).** Committed `f71cedc`.
 - **Checkpoint saved:** 2026-10-05
 
+### Task 1b: Rings in any two colours — COMPLETE (awaiting Nigel's check)
+- **Why:** Nigel: "the camera expects red rings but rings can be any color so it needs to look for a set of rings with 2 alternating colors". Approach chosen by Nigel: **learn the colours from the image** (over asking the user to pick them, or a tap-the-bull fallback).
+- **What changed** (unstaged):
+  - `lib/vision/colour_ring_locator.dart`: `isRed`/`isWood` and the largest-red-region centre replaced by palette candidates (k-means + region centres), per-candidate colour learning (A = bull, B = next ring) and nearest-colour classification. The ray, run and RANSAC fitting is unchanged. The best plausible candidate wins.
+  - `lib/vision/synthetic_target.dart`: `colourA`, `colourB`, `background` (defaults unchanged: red, wood, grass).
+  - `lib/ui/debug_locator_screen.dart`: two new chips, "blue/yellow, 45°" and "black/white, knives".
+- **Test Report:**
+  - Removed: the `isRed` (9) and `isWood` (8) tables (those methods are gone).
+  - New: 4 synthetic scenes (black/white on grey, blue/yellow 45°, green-on-white with knives on a green background, wood bull with red rings) and the reference photo with red and blue swapped (real texture, non-red).
+  - Changed: `expectNear` now checks how far a turned ellipse's **edge moves** ((a − b)·sin Δangle, within the same 3% tolerance) instead of a fixed 0.05 rad angle limit. The green-bull scene's nearly round 0.6 ellipse was 3.1° off, which moves its edge by only about 1 px.
+  - Result: `flutter test` **80 passed**; `flutter analyze` clean.
+- **Results:** reference photo confidence 0.86 (was 0.85), edges on the paint, both knives ignored; about 270 ms on a PC (was 130 ms).
+- **Safety (Review Agent, light):** no platform, permission or plugin change. ✅
+- **Verify (Nigel):** Home → **Ring finder test**: the new **blue/yellow** and **black/white** chips should show "Found" with the outline on the edges, and the reference photo should still work. On the device, Calibrate target → Find target on a **non-red board** (or a print of the target in other colours).
+- **Checkpoint saved:** 2026-10-05
+
 ### Task 2: Live outline over the camera preview — COMPLETE (awaiting Nigel's check)
 - **What changed** (unstaged):
   - `lib/camera/camera_frame.dart`: `frameRotation`. `lib/camera/live_camera.dart`: `uprightRotation`.
@@ -143,6 +160,7 @@ This is the foundation for [[backlog|throw detection]]: that story only has to f
 - **2026-10-05:** Story created (draft plan).
 - **2026-10-05:** Plan approved; D1 = pure Dart. Task 1 executed.
 - **2026-10-05:** Task 1 verified and committed (`f71cedc`). Task 2 executed.
+- **2026-10-05:** Approach change: rings can be any two colours, not just red/wood. Nigel chose "learn the colours from the image". Added as Task 1b; Task 2 doesn't change (`locateInFrame` uses the same locator).
 
 ## Notes
 - **Best inputs:** the printed target (`docs/thrower/reference/printable/`) for Tasks 1–2; Nigel's real board and photos from the mount position as soon as possible, because that's what matters.

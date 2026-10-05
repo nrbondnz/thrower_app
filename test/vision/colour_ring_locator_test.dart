@@ -26,51 +26,15 @@ void expectNear(Ellipse actual, Ellipse expected, {double tolerance = 0.03}) {
   expect(actual.cy, closeTo(expected.cy, tol), reason: 'centre y: $actual vs $expected');
   expect(actual.semiMajor, closeTo(expected.semiMajor, tol), reason: 'semi-major: $actual vs $expected');
   expect(actual.semiMinor, closeTo(expected.semiMinor, tol), reason: 'semi-minor: $actual vs $expected');
-  if (expected.semiMinor / expected.semiMajor < 0.95) {
-    expect(angleGap(actual.angle, expected.angle), lessThan(0.05), reason: 'angle: $actual vs $expected');
-  }
+  // A turned ellipse's edge moves by up to (a − b)·sin(Δangle), so a nearly
+  // round ellipse's angle hardly matters: check that movement, not the angle.
+  final edgeShift = (expected.semiMajor - expected.semiMinor) * math.sin(angleGap(actual.angle, expected.angle));
+  expect(edgeShift, lessThan(tol), reason: 'angle: $actual vs $expected');
 }
 
 RgbImage loadFixture(String name) => decodeToRgb(File('test/fixtures/targets/$name').readAsBytesSync())!;
 
 void main() {
-  group('isRed', () {
-    const cases = <(String, int, int, int, bool)>[
-      ('target red paint', 198, 40, 40, true),
-      ('dark red paint in shade', 120, 25, 30, true),
-      ('bare wood', 227, 201, 160, false),
-      ('pink overspray on wood', 220, 150, 140, false),
-      ('heavily oversprayed wood (reference photo)', 226, 152, 125, false),
-      ('bull paint (reference photo)', 164, 25, 22, true),
-      ('grass', 70, 130, 60, false),
-      ('black handle', 35, 30, 30, false),
-      ('orange dirt', 200, 120, 60, false),
-    ];
-    for (final (name, r, g, b, expected) in cases) {
-      test('$name ($r, $g, $b) is ${expected ? '' : 'not '}red', () {
-        expect(ColourRingLocator.isRed(r, g, b), expected);
-      });
-    }
-  });
-
-  group('isWood', () {
-    const cases = <(String, int, int, int, bool)>[
-      ('bare wood', 227, 201, 160, true),
-      ('heavily oversprayed wood (reference photo)', 226, 152, 125, true),
-      ('pale wood (reference photo)', 240, 192, 146, true),
-      ('red paint', 198, 40, 40, false),
-      ('black handle', 35, 30, 30, false),
-      ('grass', 70, 130, 60, false),
-      ('grey road', 150, 150, 150, false),
-      ('dark bark', 80, 50, 35, false),
-    ];
-    for (final (name, r, g, b, expected) in cases) {
-      test('$name ($r, $g, $b) is ${expected ? '' : 'not '}wood', () {
-        expect(ColourRingLocator.isWood(r, g, b), expected);
-      });
-    }
-  });
-
   group('finds the rings on a synthetic target', () {
     final scenes = <(String, SyntheticTarget)>[
       ('straight on', SyntheticTarget()),
@@ -84,6 +48,29 @@ void main() {
       (
         '55° from the side, tilted, with knife handles',
         SyntheticTarget(viewAngleDegrees: 55, rotationDegrees: 20, knives: [(0.1, 0.05), (-0.5, -0.3), (0.45, 0.5)]),
+      ),
+      // Rings can be any two colours, not just red paint on wood.
+      (
+        'black and white rings on a grey wall',
+        SyntheticTarget(colourA: (30, 30, 35), colourB: (235, 235, 230), background: (150, 150, 150)),
+      ),
+      (
+        'blue and yellow rings, 45° from the side',
+        SyntheticTarget(viewAngleDegrees: 45, colourA: (30, 60, 170), colourB: (240, 210, 50)),
+      ),
+      (
+        'green bull on white, green background, with knife handles',
+        SyntheticTarget(
+          viewAngleDegrees: 30,
+          colourA: (40, 140, 60),
+          colourB: (240, 240, 235),
+          background: (70, 130, 60),
+          knives: [(0.1, 0.05), (-0.5, -0.3)],
+        ),
+      ),
+      (
+        'wood bull with red rings (colours swapped)',
+        SyntheticTarget(viewAngleDegrees: 35, colourA: (227, 201, 160), colourB: (198, 40, 40)),
       ),
     ];
     for (final (name, scene) in scenes) {
@@ -121,6 +108,22 @@ void main() {
     expect(edge.cy, closeTo(_photoCentre.y, 12));
     expect(edge.semiMajor, closeTo(_photoEdgeSemiMajor, 15));
     expect(found.confidence, greaterThan(0.6));
+  });
+
+  test('finds the rings on the reference photo recoloured blue/pale blue (red and blue swapped)', () {
+    final photo = loadFixture('target-example.jpg');
+    final swapped = RgbImage.blank(photo.width, photo.height);
+    for (var y = 0; y < photo.height; y++) {
+      for (var x = 0; x < photo.width; x++) {
+        swapped.setPixel(x, y, photo.blue(x, y), photo.green(x, y), photo.red(x, y));
+      }
+    }
+    final result = locator().locate(swapped);
+    expect(result, isA<TargetFound>(), reason: result is TargetNotFound ? result.reason : '');
+    final edge = (result as TargetFound).boundaries[0.8]!;
+    expect(edge.cx, closeTo(_photoCentre.x, 12));
+    expect(edge.cy, closeTo(_photoCentre.y, 12));
+    expect(edge.semiMajor, closeTo(_photoEdgeSemiMajor, 15));
   });
 }
 

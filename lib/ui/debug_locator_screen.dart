@@ -35,6 +35,20 @@ final locatorSamples = [
       knives: [(0.1, 0.05), (-0.5, -0.3), (0.45, 0.5)],
     ).render(),
   ),
+  LocatorSample(
+    'Synthetic: blue/yellow, 45°',
+    () async => SyntheticTarget(viewAngleDegrees: 45, colourA: (30, 60, 170), colourB: (240, 210, 50)).render(),
+  ),
+  LocatorSample(
+    'Synthetic: black/white, knives',
+    () async => SyntheticTarget(
+      viewAngleDegrees: 30,
+      colourA: (30, 30, 35),
+      colourB: (235, 235, 230),
+      background: (150, 150, 150),
+      knives: [(0.1, 0.05), (-0.5, -0.3)],
+    ).render(),
+  ),
 ];
 
 // Top-level so the background isolate is sent only the data, never a closure

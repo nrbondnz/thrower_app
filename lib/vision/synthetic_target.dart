@@ -4,8 +4,8 @@ import 'ellipse.dart';
 import 'rgb_image.dart';
 
 /// Draws a fake target photo with a known answer, for tests and the debug
-/// screen: a log-like board with an irregular edge, red/wood rings, grass
-/// behind, optional knife handles. Viewed from the side, the board is squashed
+/// screen: a log-like board with an irregular edge, rings in two alternating
+/// colours (red/wood by default), a plain background, optional knife handles. Viewed from the side, the board is squashed
 /// horizontally by cos([viewAngleDegrees]) (an affine view, no perspective).
 class SyntheticTarget {
   SyntheticTarget({
@@ -16,6 +16,9 @@ class SyntheticTarget {
     this.rotationDegrees = 0,
     this.ringRadii = const [0.2, 0.4, 0.6, 0.8, 1.0],
     this.knives = const [],
+    this.colourA = (198, 40, 40),
+    this.colourB = (227, 201, 160),
+    this.background = (70, 130, 60),
     this.seed = 7,
   });
 
@@ -33,6 +36,15 @@ class SyntheticTarget {
   /// Knife handles as (x, y) in normalised target coordinates of where the
   /// handle's end sits; each is drawn as a dark bar.
   final List<(double, double)> knives;
+
+  /// The bull's colour, repeated on every other ring (red paint by default).
+  final (int, int, int) colourA;
+
+  /// The colour of the rings between (bare wood by default).
+  final (int, int, int) colourB;
+
+  /// Behind the board (grass by default).
+  final (int, int, int) background;
   final int seed;
 
   double get _squash => math.cos(viewAngleDegrees * math.pi / 180);
@@ -68,28 +80,18 @@ class SyntheticTarget {
         final (u, v) = _toTarget(x.toDouble(), y.toDouble());
         final r = math.sqrt(u * u + v * v);
         final noise = random.nextInt(20) - 10;
-        int cr, cg, cb;
+        final (int, int, int) colour;
         if (r > boardEdge(math.atan2(v, u))) {
-          // Grass.
-          cr = 70 + noise;
-          cg = 130 + noise;
-          cb = 60 + noise;
+          colour = background;
         } else {
           final ring = ringRadii.indexWhere((edge) => r <= edge);
-          // The bull (ring 0) and every other ring are red; the outer red ring
+          // The bull (ring 0) and every other ring are colour A; the outer ring
           // runs on to the board's edge, as on a painted log.
-          final isRed = ring == -1 ? (ringRadii.length - 1).isEven : ring.isEven;
-          if (isRed) {
-            cr = 198 + noise;
-            cg = 40 + noise ~/ 2;
-            cb = 40 + noise ~/ 2;
-          } else {
-            cr = 227 + noise;
-            cg = 201 + noise;
-            cb = 160 + noise;
-          }
+          final isA = ring == -1 ? (ringRadii.length - 1).isEven : ring.isEven;
+          colour = isA ? colourA : colourB;
         }
-        img.setPixel(x, y, cr.clamp(0, 255), cg.clamp(0, 255), cb.clamp(0, 255));
+        final (cr, cg, cb) = colour;
+        img.setPixel(x, y, (cr + noise).clamp(0, 255), (cg + noise).clamp(0, 255), (cb + noise).clamp(0, 255));
       }
     }
 

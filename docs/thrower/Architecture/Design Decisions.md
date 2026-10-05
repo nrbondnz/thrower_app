@@ -118,24 +118,25 @@ Folders are created when their first code arrives, never empty "just in case". N
 
 **Confirmed:** 2026-10-05 (Task 4).
 
-## Target Locating: Pure-Dart Colour Rings
+## Target Locating: Pure-Dart Two-Colour Rings
 
 **Decision (Nigel, 2026-10-05):** Process images in **pure Dart** (no OpenCV, no ML model yet), behind the `TargetLocator` interface so either can replace it later.
 
+**Rings can be any two colours (Nigel, 2026-10-05).** Boards are painted in any pair of alternating colours (red/wood, black/white, blue/yellow, …), so the locator **learns the two colours from the image** instead of using fixed thresholds. Nigel chose this over asking the user to pick the colours. The first version (Task 1) was hard-coded to red paint on bare wood.
+
 **How `ColourRingLocator` works:**
 1. Downscale to 600 px on the long side.
-2. Classify pixels as **red paint**, **bare wood** or **other**. The thresholds were measured on the reference photo:
-   - Paint: saturation about 0.85 at hue about 2°.
-   - Wood tinted by overspray: saturation about 0.45 at hue about 16°.
-   - So red needs saturation ≥ 0.6 and a hue of −20° to 12°.
-3. Estimate the centre from the largest red region (the outer red ring).
+2. **Find candidate centres.** Reduce the image to an 8-colour palette (seeded k-means, so the result is repeatable). Merge palette colours closer than 45 RGB units, so one flat colour with sensor noise isn't split into speckles. The centres of the 12 largest single-colour regions (each at least 0.1% of the image) are the candidates. On a target, the bull's region and each ring's region are all centred on the target.
+3. **Learn the colours per candidate.** Cast 72 probe rays. Colour **A** (the bull) is the median colour inside the first edge, where the colour changes by more than `edgeContrast` = 60 RGB units. Colour **B** is the median colour of the band where the next ring should be. Ratios along a ray through the centre survive an affine view, so that band sits at a fixed multiple of the bull's edge. The candidate is rejected if A and B differ by less than 60. The probes also give a rough target size.
 4. Cast 180 rays from the centre. Along each ray:
-   - **"Other" samples (handles, shadows, slots, bark, grass) are gaps and are skipped.**
+   - Each sample is A, B or **neither** (more than 0.55 × the A–B distance from both). Blends along a sprayed edge always count as A or B. **"Neither" samples (handles, shadows, slots, bark, background) are gaps and are skipped.**
    - A majority filter puts sprayed, fuzzy edges at their midpoint.
-   - The red/wood runs give the boundaries in order (0.2, 0.4, 0.6, 0.8).
+   - The A/B runs (bull = A, then B, A, B, A) give the boundaries in order (0.2, 0.4, 0.6, 0.8).
    - A boundary hidden inside a wide gap (under a handle) is dropped for that ray.
 5. Fit an ellipse per boundary with **RANSAC** (Halíř–Flusser direct fit), so bad rays are outvoted. Re-centre and repeat (3 passes).
-6. Sanity-check the result (shared centre, growing outwards, roughly in proportion within 35%) and report a **confidence** (the share of ray samples on the fitted ellipses).
+6. Sanity-check each candidate's result (shared centre, growing outwards, roughly in proportion within 35%) and score it with a **confidence** (the share of ray samples on the fitted ellipses). The best plausible candidate wins; the search stops early once one passes 0.85.
+
+**Known weakness:** a handle whose colour is close to one ring colour (dark handles on a black or dark-green board) counts as that colour rather than as a gap. RANSAC outvotes most of these rays. On the synthetic green-bull scene with handles, the fit stays within 3%.
 
 **Measured boundaries, not ideal ones:** hand-painted boards aren't exact. On the reference photo the bull's edge is about 0.28 of the 0.8 edge rather than 0.25. The proportion check is therefore loose, and **scoring (Task 4) should use the measured boundaries**, not the ideal IKTHOF radii.
 
@@ -146,7 +147,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 - **Upright rotation** = `(sensorOrientation − deviceOrientation + 360) % 360` (`frameRotation`, `LiveCamera.uprightRotation`). This assumes stream frames arrive in sensor orientation on **both** platforms. Android is the usual case; **iOS is unverified until Nigel's device check**.
 - **Overlay alignment:** the outline is drawn as `CameraPreview`'s `child`, which the plugin sizes and places exactly over the preview, scaled by preview width ÷ upright image width. This assumes the image stream and the preview share a field of view (same `ResolutionPreset`); checked by eye on the device.
 
-**Performance:** about 130 ms on a PC for a 600 × 800 photo. It runs in a background isolate on the phone; the device timing is still to be measured. That's fine for a one-off calibration; throw detection may need a smaller region of interest.
+**Performance:** about 270 ms on a PC for a 600 × 800 photo (130 ms when it was red-only; trying several candidate centres costs the extra). It runs in a background isolate on the phone; the device timing is still to be measured. That's fine for a one-off calibration; throw detection may need a smaller region of interest.
 
 **Confirmed:** 2026-10-05 (plain-Dart image processing chosen by Nigel; algorithm from Task 1).
 
@@ -156,7 +157,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 
 **What the reference photo shows** (`docs/thrower/reference/target-example.png`, a stand-in until Nigel's own photos arrive):
 - A round slice of log on a three-legged stand. Its outer edge is **irregular, with bark**, so the board's outline is **not** the target. Detection must use the **painted rings**.
-- 5 scoring zones, alternating **red paint and bare wood**: red bull, wood, red, wood, red outer ring. The paint is sprayed on, so the ring edges are soft, not crisp lines.
+- 5 scoring zones, alternating **red paint and bare wood**: red bull, wood, red, wood, red outer ring. (Other boards use other colour pairs; the locator handles any two. See Target Locating.) The paint is sprayed on, so the ring edges are soft, not crisp lines.
 - The surface is **full of old cuts and slots** from earlier throws, so "the board looks different" doesn't on its own mean a new throw.
 - The knife handles **stick out towards the camera** and cover part of the rings. Viewed from an angle, the handle appears well away from where the blade went in.
 
