@@ -8,6 +8,7 @@ import 'package:thrower_app/ui/calibration_editor.dart';
 import 'package:thrower_app/ui/calibration_screen.dart';
 import 'package:thrower_app/ui/watch_status.dart';
 import 'package:thrower_app/vision/motion_detector.dart';
+import 'package:thrower_app/vision/throw_classifier.dart';
 import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/locate_in_frame.dart';
 import 'package:thrower_app/vision/target_calibration.dart';
@@ -207,6 +208,20 @@ void main() {
       );
       expect(watchStatusText(WatchState.watching, e),
           'Board still: watching\nLast: 1.2 s of motion, peak 0.6%, 0.7% changed from before');
+    });
+    test('says what the last episode was', () {
+      const e = MotionEpisode(
+        startFrame: 1,
+        settledFrame: 20,
+        start: Duration.zero,
+        settled: Duration(seconds: 1),
+        peakChange: 0.015,
+        changeFromBefore: 0,
+      );
+      expect(watchStatusText(WatchState.watching, e, outcome: const ThrowOutcome(ThrowOutcomeKind.bounceOut)),
+          contains('Bounced off (0). Last:'));
+      expect(watchStatusText(WatchState.watching, e, outcome: const ThrowOutcome(ThrowOutcomeKind.stuck)),
+          contains('Stuck in the board. Last:'));
     });
   });
 

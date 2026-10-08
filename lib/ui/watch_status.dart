@@ -7,6 +7,7 @@ import '../camera/live_camera.dart';
 import '../vision/luma_image.dart';
 import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
+import '../vision/throw_classifier.dart';
 
 /// While the target is locked: watches the board in the live stream and shows
 /// the motion detector's state and its last episode. (Task 2's check; the
@@ -30,6 +31,7 @@ class _WatchStatusState extends State<WatchStatus> {
   Duration? _lastProcessed;
   WatchState _state = WatchState.watching;
   MotionEpisode? _last;
+  ThrowOutcome? _outcome;
 
   @override
   void initState() {
@@ -59,10 +61,14 @@ class _WatchStatusState extends State<WatchStatus> {
     if (luma == null) return;
     final update = _detector.add(luma, frame.timestamp);
     if (!mounted) return;
-    if (update.state != _state || update.finished != null) {
+    final finished = update.finished;
+    if (update.state != _state || finished != null) {
       setState(() {
         _state = update.state;
-        if (update.finished != null) _last = update.finished;
+        if (finished != null) {
+          _last = finished;
+          _outcome = classifyThrow(finished, widget.calibration);
+        }
       });
     }
   }
@@ -76,7 +82,7 @@ class _WatchStatusState extends State<WatchStatus> {
   @override
   Widget build(BuildContext context) {
     return Text(
-      watchStatusText(_state, _last),
+      watchStatusText(_state, _last, outcome: _outcome),
       key: const Key('watchStatus'),
       textAlign: TextAlign.center,
       style: const TextStyle(color: Colors.white70),
@@ -84,8 +90,8 @@ class _WatchStatusState extends State<WatchStatus> {
   }
 }
 
-/// The detector's state and last episode, in words.
-String watchStatusText(WatchState state, MotionEpisode? last) {
+/// The detector's state, what the last episode was, and its numbers.
+String watchStatusText(WatchState state, MotionEpisode? last, {ThrowOutcome? outcome}) {
   final now = switch (state) {
     WatchState.watching => 'Board still: watching',
     WatchState.motion => 'Motion',
@@ -93,8 +99,16 @@ String watchStatusText(WatchState state, MotionEpisode? last) {
     WatchState.blocked => 'Something is in front of the board',
   };
   if (last == null) return now;
+  final what = switch (outcome?.kind) {
+    ThrowOutcomeKind.stuck => 'Stuck in the board',
+    ThrowOutcomeKind.bounceOut => 'Bounced off (0)',
+    ThrowOutcomeKind.boardVisit => 'Someone was at the board',
+    ThrowOutcomeKind.sceneChanged => 'The view changed: re-calibrate?',
+    null => null,
+  };
   final seconds = (last.settled - last.start).inMilliseconds / 1000;
-  return '$now\nLast: ${seconds.toStringAsFixed(1)} s of motion, peak ${(last.peakChange * 100).toStringAsFixed(1)}%, '
+  return '$now\n${what == null ? '' : '$what. '}Last: ${seconds.toStringAsFixed(1)} s of motion, '
+      'peak ${(last.peakChange * 100).toStringAsFixed(1)}%, '
       '${(last.changeFromBefore * 100).toStringAsFixed(1)}% changed from before'
       '${last.acceptedNewScene ? ' (accepted as the new view)' : ''}';
 }

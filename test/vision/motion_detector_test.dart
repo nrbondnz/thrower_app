@@ -26,18 +26,20 @@ class Fixture {
     ];
     final before = decodeToRgb(File('$dir/before.jpg').readAsBytesSync())!;
     final found = buildTargetLocator(boundaries).locate(before) as TargetFound;
-    region = WatchRegion.fromCalibration(TargetCalibration(
+    calibration = TargetCalibration(
       imageWidth: before.width,
       imageHeight: before.height,
       boundaries: found.boundaries,
       outer: found.outer,
-    ));
+    );
+    region = WatchRegion.fromCalibration(calibration);
   }
 
   final String name;
   late final Map<String, dynamic> truth;
   late final List<String> phases;
   late final List<LumaImage> frames;
+  late final TargetCalibration calibration;
   late final WatchRegion region;
 
   int get fps => truth['fps'] as int;

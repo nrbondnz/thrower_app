@@ -54,7 +54,22 @@ class MotionEpisode {
     required this.peakChange,
     required this.changeFromBefore,
     this.acceptedNewScene = false,
+    this.wasBlocked = false,
+    this.before,
+    this.after,
+    this.threshold = 12,
   });
+
+  /// True if, while settling, something stood in front of the board for a
+  /// while (someone at the board).
+  final bool wasBlocked;
+
+  /// The settled board just before the episode and just after it.
+  final LumaImage? before;
+  final LumaImage? after;
+
+  /// The changed-pixel threshold in use (brightness levels).
+  final int threshold;
 
   final int startFrame;
   final int settledFrame;
@@ -142,6 +157,7 @@ class MotionDetector {
   Duration? _start;
   Duration? _stillSince;
   var _peak = 0.0;
+  var _wasBlocked = false;
 
   WatchState get state => _state;
 
@@ -190,6 +206,7 @@ class MotionDetector {
           final stillFor = time - _stillSince!;
           if (fromBefore > blockedFraction && stillFor < maxBlocked) {
             _state = WatchState.blocked;
+            _wasBlocked = true;
             return MotionUpdate(_state, changed);
           }
           final episode = MotionEpisode(
@@ -200,7 +217,12 @@ class MotionDetector {
             peakChange: _peak,
             changeFromBefore: fromBefore,
             acceptedNewScene: fromBefore > blockedFraction,
+            wasBlocked: _wasBlocked,
+            before: _reference,
+            after: image,
+            threshold: threshold,
           );
+          _wasBlocked = false;
           _state = WatchState.watching;
           _reference = image;
           return MotionUpdate(_state, changed, finished: episode);
