@@ -1,3 +1,5 @@
+import 'package:image/image.dart' as img;
+
 import '../camera/camera_frame.dart';
 import 'coarse_to_fine_locator.dart';
 import 'frame_to_rgb.dart';
@@ -11,6 +13,25 @@ class FrameLocateResult {
   final TargetLocateResult result;
   final int imageWidth;
   final int imageHeight;
+}
+
+/// Debug aid: the frame's layout as one line, for logs.
+String describeFrame(CameraFrame frame) => '${frame.width}×${frame.height} ${frame.format.name}, planes: '
+    '${[for (final p in frame.planes) '${p.bytes.length} B, row ${p.bytesPerRow}, px ${p.bytesPerPixel}'].join(' | ')}';
+
+/// Debug aid: converts the frame exactly as [locateInFrame] does and returns
+/// it as a PNG, to see what the ring finder was given. Top-level for `compute`.
+List<int>? debugFramePng((CameraFrame, int) input) {
+  final (frame, rotation) = input;
+  final rgb = frameToRgb(frame, rotation: rotation, maxSide: 1920);
+  if (rgb == null) return null;
+  final out = img.Image(width: rgb.width, height: rgb.height);
+  for (var y = 0; y < rgb.height; y++) {
+    for (var x = 0; x < rgb.width; x++) {
+      out.setPixelRgb(x, y, rgb.red(x, y), rgb.green(x, y), rgb.blue(x, y));
+    }
+  }
+  return img.encodePng(out);
 }
 
 /// Finds the target in a camera frame. Top-level and taking plain data so it

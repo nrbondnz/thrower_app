@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth/auth_service.dart';
 import 'camera/live_camera.dart';
 import 'scoring/target_model.dart';
+import 'vision/target_calibration.dart';
 
 /// Wiring for the app's layers. Tests override any of these with fakes.
 
@@ -28,6 +29,39 @@ final liveCameraProvider = FutureProvider.autoDispose<LiveCamera>(
   },
   retry: (retryCount, error) => null,
 );
+
+/// The target calibration for this session: found, adjusted, then locked.
+/// Not auto-disposed, so it survives leaving and returning to the screen.
+class CalibrationState {
+  const CalibrationState(this.calibration, {this.locked = false});
+
+  final TargetCalibration calibration;
+  final bool locked;
+}
+
+class CalibrationNotifier extends Notifier<CalibrationState?> {
+  @override
+  CalibrationState? build() => null;
+
+  /// A new (unlocked) calibration, e.g. from "Find target".
+  void start(TargetCalibration calibration) => state = CalibrationState(calibration);
+
+  /// A hand adjustment. Ignored once locked.
+  void adjust(TargetCalibration calibration) {
+    if (state case CalibrationState(locked: false)) state = CalibrationState(calibration);
+  }
+
+  void lock() {
+    if (state case final s?) state = CalibrationState(s.calibration, locked: true);
+  }
+
+  /// "Re-calibrate": keep the outline but allow changes again.
+  void unlock() {
+    if (state case final s?) state = CalibrationState(s.calibration);
+  }
+}
+
+final calibrationProvider = NotifierProvider<CalibrationNotifier, CalibrationState?>(CalibrationNotifier.new);
 
 /// No auth provider is chosen yet, so this must be overridden before use.
 final authServiceProvider = Provider<AuthService>(

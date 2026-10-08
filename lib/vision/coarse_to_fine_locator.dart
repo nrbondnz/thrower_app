@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'colour_ring_locator.dart';
+import 'contrast_normalising_locator.dart';
 import 'ellipse.dart';
 import 'rgb_image.dart';
 import 'target_locator.dart';
@@ -8,8 +9,8 @@ import 'target_locator.dart';
 /// The ring finder to use everywhere: [ColourRingLocator] wrapped in
 /// [CoarseToFineLocator].
 TargetLocator buildTargetLocator(List<double> boundaryRadii) => CoarseToFineLocator(
-      ColourRingLocator(boundaryRadii: boundaryRadii),
-      retry: ColourRingLocator(boundaryRadii: boundaryRadii, workingSize: 1200),
+      ContrastNormalisingLocator(ColourRingLocator(boundaryRadii: boundaryRadii)),
+      retry: ContrastNormalisingLocator(ColourRingLocator(boundaryRadii: boundaryRadii, workingSize: 1200)),
     );
 
 /// Find roughly, then look closely. From the side of the throwing line the
