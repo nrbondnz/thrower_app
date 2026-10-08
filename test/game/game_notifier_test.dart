@@ -37,7 +37,7 @@ ThrowEvent stuckAt(double x, double y, int id) => ThrowEvent(
       const ThrowOutcome(ThrowOutcomeKind.stuck),
       episode,
       knifeId: id,
-      entry: EntryEstimate(point: Point2(x, y), axis: const Point2(1, 0), knifePixels: 100, handleEnd: Point2(x + 50, y)),
+      entry: EntryEstimate(point: Point2(x, y), axis: const Point2(1, 0), knifePixels: 100),
     );
 
 const tp = TargetPoint(0.1, 0);

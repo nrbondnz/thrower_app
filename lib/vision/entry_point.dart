@@ -6,7 +6,7 @@ import 'target_calibration.dart';
 
 /// Where a newly stuck knife's blade entered the board, in image pixels.
 class EntryEstimate {
-  const EntryEstimate({required this.point, required this.axis, required this.knifePixels, required this.handleEnd});
+  const EntryEstimate({required this.point, required this.axis, required this.knifePixels});
 
   /// The entry point (image pixels of the before/after pictures).
   final Point2 point;
@@ -17,9 +17,6 @@ class EntryEstimate {
 
   /// How many pixels were taken to be the knife (steel, not shadow).
   final int knifePixels;
-
-  /// The far (handle) end, for drawing.
-  final Point2 handleEnd;
 }
 
 /// Finds where a new knife's blade went into the board. Implementations can be
@@ -36,15 +33,15 @@ abstract interface class EntryPointEstimator {
 ///    A knife's shadow is also "new", starts at the entry point and would
 ///    drag the estimate along it, but it keeps the board's own hue (red or
 ///    wood), just darker.
-/// 3. The steel pixels' principal axis is the knife's line; its two ends
-///    (2nd / 98th percentile along the axis) are the blade's entry and the
-///    handle's end.
+/// 3. The steel pixels' principal axis is the knife's line; one end is the
+///    blade's entry, the other the handle's end.
 /// 4. The knife sticks out of the board towards the thrower (roughly along
 ///    the board's normal, ± its pitch and yaw). In the image the normal points
 ///    towards the board's **far** side, which the calibration shows: a tilted
 ///    circle's centre appears offset from its ellipse's centre towards the
 ///    far side, so (bull centre − outer centre) points "out of the board".
-///    The handle end is that way; the entry is the other end.
+///    The handle end is that way; the entry is the other end (the 2nd
+///    percentile along the axis, ignoring stray pixels).
 class GeometricEntryEstimator implements EntryPointEstimator {
   GeometricEntryEstimator({this.threshold = 20, this.steelSaturation = 0.3, this.searchMargin = 1.5});
 
@@ -93,7 +90,6 @@ class GeometricEntryEstimator implements EntryPointEstimator {
     }
     final along = [for (final i in knife) (i % after.width - mx) * vx + (i ~/ after.width - my) * vy]..sort();
     final low = along[(along.length * 0.02).floor()];
-    final high = along[math.min(along.length - 1, (along.length * 0.98).floor())];
 
     // The entry: centre of the knife's pixels at the low end, so it sits on
     // the blade's centre line rather than an edge.
@@ -112,7 +108,6 @@ class GeometricEntryEstimator implements EntryPointEstimator {
       point: entry,
       axis: Point2(vx, vy),
       knifePixels: knife.length,
-      handleEnd: Point2(mx + vx * high, my + vy * high),
     );
   }
 
