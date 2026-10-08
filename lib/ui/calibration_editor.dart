@@ -15,11 +15,19 @@ class CalibrationEditor extends StatefulWidget {
     required this.calibration,
     required this.locked,
     required this.onChanged,
+    this.onTapLocked,
+    this.marker,
   });
 
   final TargetCalibration calibration;
   final bool locked;
   final ValueChanged<TargetCalibration> onChanged;
+
+  /// Once locked, a tap on the picture reports its image pixel (to score it).
+  final ValueChanged<Point2>? onTapLocked;
+
+  /// An image pixel to mark (e.g. the last tap).
+  final Point2? marker;
 
   /// How close (screen pixels) a touch must be to grab a handle.
   static const handleReach = 32.0;
@@ -68,9 +76,18 @@ class _CalibrationEditorState extends State<CalibrationEditor> {
         _scale = constraints.maxWidth / widget.calibration.imageWidth;
         final paint = CustomPaint(
           size: Size.infinite,
-          painter: CalibrationPainter(widget.calibration, scale: _scale, locked: widget.locked),
+          painter: CalibrationPainter(widget.calibration, scale: _scale, locked: widget.locked, marker: widget.marker),
         );
-        if (widget.locked) return paint;
+        if (widget.locked) {
+          final onTap = widget.onTapLocked;
+          if (onTap == null) return paint;
+          return GestureDetector(
+            key: const Key('scoreTapArea'),
+            behavior: HitTestBehavior.opaque,
+            onTapUp: (d) => onTap(_toImage(d.localPosition)),
+            child: paint,
+          );
+        }
         return GestureDetector(
           key: const Key('calibrationEditor'),
           behavior: HitTestBehavior.opaque,
@@ -86,11 +103,12 @@ class _CalibrationEditorState extends State<CalibrationEditor> {
 
 /// Ring edges in blue with two handles while adjusting; green once locked.
 class CalibrationPainter extends CustomPainter {
-  CalibrationPainter(this.calibration, {required this.scale, required this.locked});
+  CalibrationPainter(this.calibration, {required this.scale, required this.locked, this.marker});
 
   final TargetCalibration calibration;
   final double scale;
   final bool locked;
+  final Point2? marker;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -100,6 +118,12 @@ class CalibrationPainter extends CustomPainter {
       ..strokeWidth = 3;
     for (final e in [...calibration.boundaries.values, calibration.outer]) {
       canvas.drawPath(_path(e.rescaled(scale)), stroke);
+    }
+    final m = marker;
+    if (m != null) {
+      final at = Offset(m.x * scale, m.y * scale);
+      canvas.drawCircle(at, 9, Paint()..color = Colors.black);
+      canvas.drawCircle(at, 6, Paint()..color = Colors.yellowAccent);
     }
     if (locked) return;
     for (final h in [calibration.majorHandle, calibration.minorHandle]) {
@@ -120,5 +144,5 @@ class CalibrationPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CalibrationPainter old) =>
-      old.calibration != calibration || old.scale != scale || old.locked != locked;
+      old.calibration != calibration || old.scale != scale || old.locked != locked || old.marker != marker;
 }

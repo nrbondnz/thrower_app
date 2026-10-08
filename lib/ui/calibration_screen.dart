@@ -8,9 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../camera/camera_frame.dart';
 import '../camera/live_camera.dart';
 import '../providers.dart';
+import '../vision/ellipse.dart';
 import '../vision/locate_in_frame.dart';
 import '../vision/target_calibration.dart';
 import '../vision/target_locator.dart';
+import '../vision/target_mapping.dart';
 import 'calibration_editor.dart';
 import 'camera_screen.dart';
 
@@ -29,6 +31,20 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   FrameLocateResult? _found;
   bool _searching = false;
   int? _millis;
+
+  /// Last tap on the locked target (image pixel) and its score.
+  Point2? _tap;
+  int? _tapScore;
+
+  void _scoreTap(TargetCalibration calibration, Point2 at) {
+    final point = TargetMapping(calibration).toTarget(at);
+    setState(() {
+      _tap = at;
+      _tapScore = ref.read(targetModelProvider).scoreAt(point);
+    });
+  }
+
+  void _clearTap() => setState(() => _tap = _tapScore = null);
 
   Future<void> _find(LiveCamera camera) async {
     setState(() => _searching = true);
@@ -79,18 +95,27 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             child: CameraView(
               overlayBuilder: (context, _) => state == null
                   ? const SizedBox.expand()
-                  : CalibrationEditor(calibration: state.calibration, locked: locked, onChanged: notifier.adjust),
+                  : CalibrationEditor(
+                      calibration: state.calibration,
+                      locked: locked,
+                      onChanged: notifier.adjust,
+                      onTapLocked: (at) => _scoreTap(state.calibration, at),
+                      marker: locked ? _tap : null,
+                    ),
             ),
           ),
           CalibrationControls(
             status: locked
-                ? 'Target locked. It stays locked while the app is open.'
+                ? lockedStatus(_tapScore)
                 : calibrationStatus(_found, searching: _searching, millis: _millis),
             canAdjust: state != null && !locked,
             locked: locked,
             onFind: camera == null || _searching || locked ? null : () => _find(camera),
             onLock: notifier.lock,
-            onUnlock: notifier.unlock,
+            onUnlock: () {
+              _clearTap();
+              notifier.unlock();
+            },
             findLabel: state == null ? 'Find target' : 'Find again',
           ),
         ],
@@ -196,6 +221,12 @@ TargetCalibration? calibrationFrom(FrameLocateResult found) {
       );
   }
 }
+
+/// What to tell the user once the target is locked: how to test scoring, or
+/// the score of the last tap.
+String lockedStatus(int? tapScore) => tapScore == null
+    ? 'Target locked. Tap the picture to test scoring.'
+    : 'Score here: $tapScore${tapScore == 0 ? ' (outside the target)' : ''}. Tap again to test another spot.';
 
 /// What to tell the user about the latest search.
 String calibrationStatus(FrameLocateResult? found, {required bool searching, int? millis}) {

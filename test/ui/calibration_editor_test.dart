@@ -64,6 +64,37 @@ void main() {
       expect(changes, isEmpty);
     });
 
+    testWidgets('once locked, a tap reports its image pixel (for scoring)', (tester) async {
+      final taps = <Point2>[];
+      await tester.pumpWidget(MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 320,
+            height: 240,
+            child: CalibrationEditor(calibration: calibration, locked: true, onChanged: (_) {}, onTapLocked: taps.add),
+          ),
+        ),
+      ));
+      await tester.tapAt(screen(tester, 400, 300));
+      expect(taps.single.x, closeTo(400, 0.5));
+      expect(taps.single.y, closeTo(300, 0.5));
+    });
+
+    testWidgets('while adjusting, taps are not reported for scoring', (tester) async {
+      final taps = <Point2>[];
+      await tester.pumpWidget(MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 320,
+            height: 240,
+            child: CalibrationEditor(calibration: calibration, locked: false, onChanged: (_) {}, onTapLocked: taps.add),
+          ),
+        ),
+      ));
+      await tester.tapAt(screen(tester, 400, 300));
+      expect(taps, isEmpty);
+    });
+
     testWidgets('a locked calibration cannot be dragged', (tester) async {
       final changes = await pump(tester, locked: true);
       await tester.dragFrom(screen(tester, 320, 240), const Offset(20, 10));
@@ -154,6 +185,18 @@ void main() {
 
     test('gives nothing when there was no attempt', () {
       expect(calibrationFrom(const FrameLocateResult(TargetNotFound('nothing'), 640, 480)), isNull);
+    });
+  });
+
+  group('lockedStatus', () {
+    test('invites a tap before any', () {
+      expect(lockedStatus(null), 'Target locked. Tap the picture to test scoring.');
+    });
+    test('shows the score of the last tap', () {
+      expect(lockedStatus(4), startsWith('Score here: 4.'));
+    });
+    test('explains a zero', () {
+      expect(lockedStatus(0), startsWith('Score here: 0 (outside the target).'));
     });
   });
 
