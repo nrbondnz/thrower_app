@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/ui/calibration_editor.dart';
 import 'package:thrower_app/ui/calibration_screen.dart';
+import 'package:thrower_app/ui/watch_status.dart';
+import 'package:thrower_app/vision/motion_detector.dart';
 import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/locate_in_frame.dart';
 import 'package:thrower_app/vision/target_calibration.dart';
@@ -185,6 +187,26 @@ void main() {
 
     test('gives nothing when there was no attempt', () {
       expect(calibrationFrom(const FrameLocateResult(TargetNotFound('nothing'), 640, 480)), isNull);
+    });
+  });
+
+  group('watchStatusText', () {
+    test('describes each state', () {
+      expect(watchStatusText(WatchState.watching, null), 'Board still: watching');
+      expect(watchStatusText(WatchState.motion, null), 'Motion');
+      expect(watchStatusText(WatchState.blocked, null), 'Something is in front of the board');
+    });
+    test('summarises the last episode', () {
+      const e = MotionEpisode(
+        startFrame: 1,
+        settledFrame: 20,
+        start: Duration(milliseconds: 1000),
+        settled: Duration(milliseconds: 2200),
+        peakChange: 0.006,
+        changeFromBefore: 0.007,
+      );
+      expect(watchStatusText(WatchState.watching, e),
+          'Board still: watching\nLast: 1.2 s of motion, peak 0.6%, 0.7% changed from before');
     });
   });
 

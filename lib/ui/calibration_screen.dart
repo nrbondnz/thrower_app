@@ -15,6 +15,7 @@ import '../vision/target_locator.dart';
 import '../vision/target_mapping.dart';
 import 'calibration_editor.dart';
 import 'camera_screen.dart';
+import 'watch_status.dart';
 
 /// Point the mounted phone at the board and tap "Find target": the fitted ring
 /// edges are drawn over the live preview. Drag them into place if needed, then
@@ -104,6 +105,13 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                     ),
             ),
           ),
+          if (locked && camera != null && state != null)
+            Container(
+              color: Colors.black,
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 12),
+              child: WatchStatus(camera: camera, calibration: state.calibration),
+            ),
           CalibrationControls(
             status: locked
                 ? lockedStatus(_tapScore)
