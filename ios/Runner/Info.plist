@@ -10,6 +10,10 @@
 	<string>Thrower App</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Thrower App watches your target to score each throw.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Thrower App does not record sound. iOS asks for this description because the camera library it uses can also record video with sound.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
