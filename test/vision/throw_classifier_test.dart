@@ -38,6 +38,41 @@ void main() {
     }
   });
 
+  group('knives already in the board', () {
+    final f = Fixture('throw-stick-ring4');
+    final stuck = classifyThrow(f.run().single, f.calibration);
+    final knife = stuck.object!;
+    final empty = f.frames.first, withKnife = f.frames.last;
+
+    MotionEpisode between(LumaImage before, LumaImage after) => MotionEpisode(
+          startFrame: 0,
+          settledFrame: 10,
+          start: Duration.zero,
+          settled: const Duration(seconds: 1),
+          peakChange: 0.01,
+          changeFromBefore: 0.007,
+          before: before,
+          after: after,
+          threshold: 12,
+        );
+
+    test('a known knife disappearing on its own is "fell out", not a new stick', () {
+      final outcome = classifyThrow(between(withKnife, empty), f.calibration, knownKnives: [knife]);
+      expect(outcome.kind, ThrowOutcomeKind.fellOut);
+      expect(outcome.knownKnifeIndex, 0);
+    });
+
+    test('without knowing the knives, the same change looks like a stick (why tracking is needed)', () {
+      expect(classifyThrow(between(withKnife, empty), f.calibration).kind, ThrowOutcomeKind.stuck);
+    });
+
+    test('a new knife elsewhere is still a stick when another knife is known', () {
+      final f3 = Fixture('throw-stick-ring3');
+      final outcome = classifyThrow(f3.run().single, f3.calibration, knownKnives: [knife]);
+      expect(outcome.kind, ThrowOutcomeKind.stuck);
+    });
+  });
+
   group('without a before/after difference', () {
     final f = Fixture('throw-stick-ring4');
     final still = f.frames.first;

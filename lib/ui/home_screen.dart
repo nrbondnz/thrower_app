@@ -4,6 +4,7 @@ import 'calibration_screen.dart';
 import 'camera_screen.dart';
 import 'debug_locator_screen.dart';
 import 'debug_target_screen.dart';
+import 'play_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -19,6 +20,11 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            FilledButton(
+              onPressed: () => open(const PlayScreen()),
+              child: const Text('Play'),
+            ),
+            const SizedBox(height: 16),
             FilledButton(
               onPressed: () => open(const CalibrationScreen()),
               child: const Text('Calibrate target'),

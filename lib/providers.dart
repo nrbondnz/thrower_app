@@ -2,8 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth/auth_service.dart';
 import 'camera/live_camera.dart';
+import 'game/throw_watcher.dart';
+import 'scoring/game_session.dart';
 import 'scoring/target_model.dart';
 import 'vision/target_calibration.dart';
+import 'vision/target_mapping.dart';
+import 'vision/throw_classifier.dart';
 
 /// Wiring for the app's layers. Tests override any of these with fakes.
 
@@ -62,6 +66,47 @@ class CalibrationNotifier extends Notifier<CalibrationState?> {
 }
 
 final calibrationProvider = NotifierProvider<CalibrationNotifier, CalibrationState?>(CalibrationNotifier.new);
+
+/// The single-player game for this session, fed by [ThrowEvent]s.
+class GameNotifier extends Notifier<GameSession> {
+  /// Knife id (from the watcher) → (round, throw) it was recorded as, for
+  /// knives still in the board.
+  final _knives = <int, (int, int)>{};
+
+  @override
+  GameSession build() => const GameSession();
+
+  void newGame() {
+    _knives.clear();
+    state = const GameSession();
+  }
+
+  /// Applies what the watcher saw. [calibration] maps a stuck knife's entry
+  /// to the target, scored by [targetModelProvider].
+  void onEvent(ThrowEvent event, TargetCalibration calibration) {
+    switch (event.outcome.kind) {
+      case ThrowOutcomeKind.stuck:
+        final entry = event.entry;
+        final point = entry == null ? null : TargetMapping(calibration).toTarget(entry.point);
+        final score = point == null ? 0 : ref.read(targetModelProvider).scoreAt(point);
+        state = state.stuck(score, point);
+        if (event.knifeId case final id?) {
+          _knives[id] = (state.rounds.length - 1, state.rounds.last.throws.length - 1);
+        }
+      case ThrowOutcomeKind.bounceOut:
+        state = state.bounceOut();
+      case ThrowOutcomeKind.fellOut:
+        if (_knives.remove(event.knifeId) case (final round, final index)?) state = state.fellOut(round, index);
+      case ThrowOutcomeKind.boardVisit:
+        _knives.clear();
+        state = state.boardVisited();
+      case ThrowOutcomeKind.sceneChanged:
+        _knives.clear();
+    }
+  }
+}
+
+final gameProvider = NotifierProvider<GameNotifier, GameSession>(GameNotifier.new);
 
 /// No auth provider is chosen yet, so this must be overridden before use.
 final authServiceProvider = Provider<AuthService>(

@@ -20,6 +20,10 @@ enum ThrowOutcomeKind {
   /// The whole view changed and was accepted as the new normal (lights
   /// switched on, camera knocked). Not a throw; the calibration may be stale.
   sceneChanged,
+
+  /// A knife already in the board disappeared on its own (fell out). The
+  /// change sits where that knife was.
+  fellOut,
 }
 
 /// A new object found on the board: the pixels (in the brightness frame) that
@@ -45,12 +49,16 @@ class NewObject {
 }
 
 class ThrowOutcome {
-  const ThrowOutcome(this.kind, {this.object});
+  const ThrowOutcome(this.kind, {this.object, this.knownKnifeIndex});
 
   final ThrowOutcomeKind kind;
 
-  /// For [ThrowOutcomeKind.stuck]: the new knife's shape.
+  /// For [ThrowOutcomeKind.stuck]: the new knife's shape. For
+  /// [ThrowOutcomeKind.fellOut]: where the change was.
   final NewObject? object;
+
+  /// For [ThrowOutcomeKind.fellOut]: which of the known knives fell out.
+  final int? knownKnifeIndex;
 
   @override
   String toString() => 'ThrowOutcome(${kind.name}${object == null ? '' : ', ${object!.area} px'})';
@@ -69,12 +77,20 @@ class ThrowOutcome {
 ///   is a **stuck** knife (a stuck knife shows ~0.5–1% of the target's area);
 ///   otherwise a **bounce-out**. Single noisy pixels and JPEG speckle never
 ///   form a shape that big.
+///
+/// [knownKnives] are the shapes of knives already in the board (recorded when
+/// each stuck, cleared when someone collects them). A new shape that covers
+/// most of one of them is that knife **disappearing** (fell out), not a new
+/// knife: the before/after difference can't tell appearing from disappearing
+/// on its own.
 ThrowOutcome classifyThrow(
   MotionEpisode episode,
   TargetCalibration calibration, {
+  List<NewObject> knownKnives = const [],
   double visitPeak = 0.10,
   double minKnifeShare = 0.0025,
   double searchMargin = 1.5,
+  double fellOutOverlap = 0.5,
 }) {
   if (episode.acceptedNewScene) return const ThrowOutcome(ThrowOutcomeKind.sceneChanged);
   if (episode.wasBlocked || episode.peakChange >= visitPeak) return const ThrowOutcome(ThrowOutcomeKind.boardVisit);
@@ -86,6 +102,15 @@ ThrowOutcome classifyThrow(
   final outer = calibration.outer.rescaled(scale);
   final targetArea = math.pi * outer.semiMajor * outer.semiMinor;
   if (object != null && object.area >= math.max(4, minKnifeShare * targetArea)) {
+    final pixels = object.pixels.toSet();
+    for (var k = 0; k < knownKnives.length; k++) {
+      final known = knownKnives[k];
+      if (known.imageWidth != object.imageWidth) continue;
+      final shared = known.pixels.where(pixels.contains).length;
+      if (shared >= fellOutOverlap * math.min(known.area, object.area)) {
+        return ThrowOutcome(ThrowOutcomeKind.fellOut, object: object, knownKnifeIndex: k);
+      }
+    }
     return ThrowOutcome(ThrowOutcomeKind.stuck, object: object);
   }
   return const ThrowOutcome(ThrowOutcomeKind.bounceOut);
