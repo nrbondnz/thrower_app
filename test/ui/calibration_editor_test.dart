@@ -235,6 +235,10 @@ void main() {
     test('explains a zero', () {
       expect(lockedStatus(0), startsWith('Score here: 0 (outside the target).'));
     });
+    test('reports a detected knife and its score', () {
+      expect(lockedStatus(3, knife: true), 'Knife went in at the yellow dot: scores 3.');
+      expect(lockedStatus(null, knife: true), "Knife stuck, but couldn't find where it went in.");
+    });
   });
 
   test('status suggests adjusting by hand after a near miss', () {

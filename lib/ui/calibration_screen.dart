@@ -9,6 +9,7 @@ import '../camera/camera_frame.dart';
 import '../camera/live_camera.dart';
 import '../providers.dart';
 import '../vision/ellipse.dart';
+import '../vision/entry_point.dart';
 import '../vision/locate_in_frame.dart';
 import '../vision/target_calibration.dart';
 import '../vision/target_locator.dart';
@@ -42,10 +43,29 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     setState(() {
       _tap = at;
       _tapScore = ref.read(targetModelProvider).scoreAt(point);
+      _knife = false;
     });
   }
 
-  void _clearTap() => setState(() => _tap = _tapScore = null);
+  void _clearTap() => setState(() {
+        _tap = _tapScore = null;
+        _knife = false;
+      });
+
+  /// Whether the marker is a detected knife's entry (rather than a tap).
+  var _knife = false;
+
+  void _scoreKnife(TargetCalibration calibration, EntryEstimate? entry) {
+    if (entry == null) {
+      setState(() {
+        _tap = _tapScore = null;
+        _knife = true;
+      });
+      return;
+    }
+    _scoreTap(calibration, entry.point);
+    setState(() => _knife = true);
+  }
 
   Future<void> _find(LiveCamera camera) async {
     setState(() => _searching = true);
@@ -110,11 +130,15 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
               color: Colors.black,
               width: double.infinity,
               padding: const EdgeInsets.only(top: 12),
-              child: WatchStatus(camera: camera, calibration: state.calibration),
+              child: WatchStatus(
+                camera: camera,
+                calibration: state.calibration,
+                onKnifeEntry: (entry) => _scoreKnife(state.calibration, entry),
+              ),
             ),
           CalibrationControls(
             status: locked
-                ? lockedStatus(_tapScore)
+                ? lockedStatus(_tapScore, knife: _knife)
                 : calibrationStatus(_found, searching: _searching, millis: _millis),
             canAdjust: state != null && !locked,
             locked: locked,
@@ -232,9 +256,16 @@ TargetCalibration? calibrationFrom(FrameLocateResult found) {
 
 /// What to tell the user once the target is locked: how to test scoring, or
 /// the score of the last tap.
-String lockedStatus(int? tapScore) => tapScore == null
-    ? 'Target locked. Tap the picture to test scoring.'
-    : 'Score here: $tapScore${tapScore == 0 ? ' (outside the target)' : ''}. Tap again to test another spot.';
+String lockedStatus(int? tapScore, {bool knife = false}) {
+  if (knife) {
+    return tapScore == null
+        ? "Knife stuck, but couldn't find where it went in."
+        : 'Knife went in at the yellow dot: scores $tapScore${tapScore == 0 ? ' (outside the target)' : ''}.';
+  }
+  return tapScore == null
+      ? 'Target locked. Tap the picture to test scoring.'
+      : 'Score here: $tapScore${tapScore == 0 ? ' (outside the target)' : ''}. Tap again to test another spot.';
+}
 
 /// What to tell the user about the latest search.
 String calibrationStatus(FrameLocateResult? found, {required bool searching, int? millis}) {

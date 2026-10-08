@@ -1,0 +1,56 @@
+{
+ "throw-stick-ring4": {
+  "before": "throw-stick-ring4-before.jpg",
+  "after": "throw-stick-ring4-after.jpg",
+  "entryPixel": [
+   664,
+   310
+  ],
+  "score": 4
+ },
+ "throw-stick-ring3": {
+  "before": "throw-stick-ring3-before.jpg",
+  "after": "throw-stick-ring3-after.jpg",
+  "entryPixel": [
+   585,
+   425
+  ],
+  "score": 3
+ },
+ "view-1x-1-knife": {
+  "before": "../camera-views/view-1x-0-knives.jpg",
+  "after": "../camera-views/view-1x-1-knife.jpg",
+  "entryPixel": [
+   830,
+   537
+  ],
+  "score": 4
+ },
+ "view-1x-2-knives": {
+  "before": "../camera-views/view-1x-1-knife.jpg",
+  "after": "../camera-views/view-1x-2-knives.jpg",
+  "entryPixel": [
+   731,
+   682
+  ],
+  "score": 3
+ },
+ "view-2x-1-knife": {
+  "before": "../camera-views/view-2x-0-knives.jpg",
+  "after": "../camera-views/view-2x-1-knife.jpg",
+  "entryPixel": [
+   859,
+   474
+  ],
+  "score": 4
+ },
+ "view-2x-2-knives": {
+  "before": "../camera-views/view-2x-1-knife.jpg",
+  "after": "../camera-views/view-2x-2-knives.jpg",
+  "entryPixel": [
+   663,
+   763
+  ],
+  "score": 3
+ }
+}
