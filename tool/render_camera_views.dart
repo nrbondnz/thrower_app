@@ -15,8 +15,9 @@ import 'dart:math' as math;
 
 import 'package:image/image.dart' as img;
 import 'package:thrower_app/scoring/target_model.dart';
-import 'package:thrower_app/vision/colour_ring_locator.dart';
+import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/decode_image.dart';
+import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/photo_board_texture.dart';
 import 'package:thrower_app/vision/rgb_image.dart';
 import 'package:thrower_app/vision/synthetic_scene.dart';
@@ -27,6 +28,10 @@ const outDir = 'docs/thrower/reference/camera-views';
 /// Camera 2 m to the thrower's right and 2 m out from the board, at the
 /// board's height, aimed at its centre: about 45° off straight-on.
 const camera = Vec3(2.0, 0.0, 2.0);
+
+/// Nigel's boards: about 75–85 cm across (2026-10-08). The rings are sized
+/// from the photo's proportions (they reach ~0.89 of the way to the bark).
+const boardDiameterMetres = 0.80;
 
 const scenes = <(String, List<StuckKnife>)>[
   ('0-knives', []),
@@ -53,7 +58,7 @@ void main(List<String> args) {
 
   stdout.writeln('Building the board texture from the reference photo…');
   final photo = decodeToRgb(File('docs/thrower/reference/target-example.png').readAsBytesSync())!;
-  final fit = ColourRingLocator(boundaryRadii: boundaries).locate(photo);
+  final fit = buildTargetLocator(boundaries).locate(photo);
   if (fit is! TargetFound) {
     stderr.writeln('Ring finder failed on the reference photo: ${(fit as TargetNotFound).reason}');
     exit(1);
@@ -74,9 +79,24 @@ void main(List<String> args) {
   _save(texture.cleaned, '$outDir/board-face-knives-removed.jpg');
   if (args.contains('--texture-only')) return;
 
+  // The board's painted rings, as measured on the photo relative to the 0.8
+  // edge (hand-painted: the bull is ~0.23, not 0.2). Answers and scores use
+  // these, not the ideal IKTHOF sizes.
+  double meanAxis(Ellipse e) => (e.semiMajor + e.semiMinor) / 2;
+  final painted = [
+    for (final r in boundaries) r == 0.8 ? 0.8 : 0.8 * meanAxis(fit.boundaries[r]!) / meanAxis(edge),
+    1.0,
+  ];
+  stdout.writeln('Painted ring edges (normalised): ${[for (final r in painted) r.toStringAsFixed(3)].join(', ')}');
+
+  final targetRadius = boardDiameterMetres / 2 / texture.meanEdge;
+  stdout.writeln('Board ${boardDiameterMetres * 100} cm across → outer ring ${(targetRadius * 200).toStringAsFixed(1)} cm across');
+
   final truth = <String, Object>{
     'camera': {'x': camera.x, 'y': camera.y, 'z': camera.z, 'note': 'metres; board face at z=0, x = thrower\'s right'},
-    'targetRadiusMetres': 0.25,
+    'boardDiameterMetres': boardDiameterMetres,
+    'targetRadiusMetres': targetRadius,
+    'paintedRingRadii': painted,
     'images': <String, Object>{},
   };
 
@@ -84,11 +104,18 @@ void main(List<String> args) {
     for (final (name, knives) in scenes) {
       final file = 'view-$zoomName-$name.jpg';
       final stopwatch = Stopwatch()..start();
-      final scene = SyntheticScene(cameraPosition: camera, horizontalFovDegrees: fov, knives: knives, texture: texture);
+      final scene = SyntheticScene(
+        cameraPosition: camera,
+        horizontalFovDegrees: fov,
+        knives: knives,
+        texture: texture,
+        ringRadii: painted,
+        targetRadius: targetRadius,
+      );
       final rendered = scene.render();
       _save(rendered.image, '$outDir/$file');
 
-      final located = ColourRingLocator(boundaryRadii: boundaries).locate(rendered.image);
+      final located = buildTargetLocator(boundaries).locate(rendered.image);
       final finder = switch (located) {
         TargetFound(:final confidence) => 'found, confidence ${(confidence * 100).round()}%',
         TargetNotFound(:final reason) => 'NOT found: $reason',
@@ -108,9 +135,11 @@ void main(List<String> args) {
               'yawDegrees': k.knife.yawDegrees,
             },
         ],
+        // Keyed by the ideal boundary (0.2 … 0.8) the ring finder reports,
+        // with points on the painted edge.
         'ringEdgePixels': {
-          for (final e in rendered.ringEdges.entries)
-            '${e.key}': [for (final p in e.value) [p.x.round(), p.y.round()]],
+          for (var i = 0; i < boundaries.length; i++)
+            '${boundaries[i]}': [for (final p in rendered.ringEdges[painted[i]]!) [p.x.round(), p.y.round()]],
         },
         'ringFinder': finder,
       };

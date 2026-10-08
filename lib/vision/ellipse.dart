@@ -53,6 +53,10 @@ class Ellipse {
         angle: angle,
       );
 
+  /// This ellipse moved by ([dx], [dy]).
+  Ellipse translated(double dx, double dy) =>
+      Ellipse(cx: cx + dx, cy: cy + dy, semiMajor: semiMajor, semiMinor: semiMinor, angle: angle);
+
   /// This ellipse with every coordinate multiplied by [factor] (for mapping
   /// between a downscaled working image and the original).
   Ellipse rescaled(double factor) => Ellipse(

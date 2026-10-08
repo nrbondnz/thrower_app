@@ -26,6 +26,16 @@ class RgbImage {
     pixels[o + 2] = b;
   }
 
+  /// The [w] × [h] region whose top-left corner is ([x], [y]); must lie inside.
+  RgbImage crop(int x, int y, int w, int h) {
+    final out = RgbImage.blank(w, h);
+    for (var row = 0; row < h; row++) {
+      final from = _offset(x, y + row);
+      out.pixels.setRange(row * w * 3, (row + 1) * w * 3, pixels, from);
+    }
+    return out;
+  }
+
   /// Nearest-neighbour downscale so the longer side is at most [maxSide].
   /// Returns this image unchanged if it is already small enough.
   RgbImage downscaled(int maxSide) {

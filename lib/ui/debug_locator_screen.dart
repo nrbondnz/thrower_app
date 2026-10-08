@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
-import '../vision/colour_ring_locator.dart';
+import '../vision/coarse_to_fine_locator.dart';
 import '../vision/decode_image.dart';
 import '../vision/ellipse.dart';
 import '../vision/rgb_image.dart';
@@ -61,7 +61,7 @@ Future<RgbImage> _loadAsset(String path) async {
 RgbImage _decode(Uint8List bytes) => decodeToRgb(bytes)!;
 
 TargetLocateResult _locate((List<double>, RgbImage) input) =>
-    ColourRingLocator(boundaryRadii: input.$1).locate(input.$2);
+    buildTargetLocator(input.$1).locate(input.$2);
 
 /// Ring finder check: pick a test image, see the fitted ring edges drawn on it.
 class DebugLocatorScreen extends ConsumerStatefulWidget {

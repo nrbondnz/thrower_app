@@ -7,7 +7,7 @@ import 'dart:io';
 
 import 'package:image/image.dart' as img;
 import 'package:thrower_app/scoring/target_model.dart';
-import 'package:thrower_app/vision/colour_ring_locator.dart';
+import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/rgb_image.dart';
 import 'package:thrower_app/vision/target_locator.dart';
@@ -31,7 +31,7 @@ void main(List<String> args) {
   }
 
   final model = TargetModel.ikthof();
-  final locator = ColourRingLocator(boundaryRadii: [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius]);
+  final locator = buildTargetLocator([for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius]);
   final stopwatch = Stopwatch()..start();
   final result = locator.locate(rgb);
   stdout.writeln('Located in ${stopwatch.elapsedMilliseconds} ms');

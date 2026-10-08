@@ -1,5 +1,5 @@
 import '../camera/camera_frame.dart';
-import 'colour_ring_locator.dart';
+import 'coarse_to_fine_locator.dart';
 import 'frame_to_rgb.dart';
 import 'target_locator.dart';
 
@@ -18,9 +18,12 @@ class FrameLocateResult {
 /// (frame, clockwise rotation to upright, ring boundary radii).
 FrameLocateResult locateInFrame((CameraFrame, int, List<double>) input) {
   final (frame, rotation, boundaries) = input;
-  final rgb = frameToRgb(frame, rotation: rotation);
+  // Keep full camera resolution (1280 × 720 at ResolutionPreset.high): the
+  // locator downscales for its rough pass and needs the detail for the
+  // close-up pass. The cap only guards against unusually large frames.
+  final rgb = frameToRgb(frame, rotation: rotation, maxSide: 1920);
   if (rgb == null) {
     return FrameLocateResult(TargetNotFound('Unsupported camera format ${frame.format.name}'), 0, 0);
   }
-  return FrameLocateResult(ColourRingLocator(boundaryRadii: boundaries).locate(rgb), rgb.width, rgb.height);
+  return FrameLocateResult(buildTargetLocator(boundaries).locate(rgb), rgb.width, rgb.height);
 }

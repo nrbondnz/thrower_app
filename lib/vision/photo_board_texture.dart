@@ -46,6 +46,9 @@ class PhotoBoardTexture {
   /// The largest board radius in any direction.
   double get maxEdge => _edge.reduce(math.max);
 
+  /// The board's average radius (normalised units).
+  double get meanEdge => _edge.reduce((a, b) => a + b) / _edge.length;
+
   /// Board colour at normalised (u, v), bilinearly sampled.
   (double, double, double) colourAt(double u, double v) {
     final x = centreX + u * pixelsPerUnitX, y = centreY - v * pixelsPerUnitY;
