@@ -25,9 +25,9 @@ import 'package:thrower_app/vision/target_locator.dart';
 
 const outDir = 'docs/thrower/reference/camera-views';
 
-/// Camera 2 m to the thrower's right and 2 m out from the board, at the
-/// board's height, aimed at its centre: about 45° off straight-on.
-const camera = Vec3(2.0, 0.0, 2.0);
+/// Camera 2 m from the board (Nigel, 2026-10-08), off to the thrower's right
+/// at 45°, at the board's height, aimed at its centre.
+const camera = Vec3(1.414, 0.0, 1.414);
 
 /// Nigel's boards: about 75–85 cm across (2026-10-08). The rings are sized
 /// from the photo's proportions (they reach ~0.89 of the way to the bark).
