@@ -43,6 +43,25 @@ class StuckKnife {
   final double yawDegrees;
 }
 
+/// A whole knife not stuck in the board: in flight, bouncing off, or lying on
+/// the ground. [tip] is the blade's point; [direction] runs from the tip
+/// towards the handle. [spinAxis] is the axis it spins about in flight (the
+/// blade's width is perpendicular to it and to [direction]).
+class FlyingKnife {
+  const FlyingKnife({required this.tip, required this.direction, this.spinAxis = const Vec3(1, 0, 0)});
+
+  final Vec3 tip;
+  final Vec3 direction;
+  final Vec3 spinAxis;
+}
+
+/// A person standing (feet on the ground) at [position]'s x and z.
+class Person {
+  const Person(this.position);
+
+  final Vec3 position;
+}
+
 /// The answer for one knife: where its blade entered, in the image.
 class KnifeTruth {
   const KnifeTruth(this.knife, this.entryPixel, this.score);
@@ -70,7 +89,8 @@ class RenderedScene {
 /// (irregular bark edge, 8 cm thick) on a three-legged stand, 1.5 m above
 /// grass. Rings are sprayed in [colourA] (bull, and every other ring) and
 /// [colourB] (bare wood by default), with soft edges, overspray and old knife
-/// slits. Knives have an exposed steel blade and a dark handle. The sun casts
+/// slits. Knives are all-steel throwing knives (spear-point blade, flat handle
+/// with see-through holes), as in Nigel's photo. The sun casts
 /// shadows. The camera is a phone: [cameraPosition] looking at the board's
 /// centre, landscape, [horizontalFovDegrees] wide.
 class SyntheticScene {
@@ -87,7 +107,26 @@ class SyntheticScene {
     this.supersample = 2,
     this.seed = 11,
     this.texture,
+    this.flyingKnives = const [],
+    this.people = const [],
   });
+
+  /// Knives in the air or on the ground (not stuck).
+  final List<FlyingKnife> flyingKnives;
+
+  /// People in the scene (e.g. walking up to pull knives out).
+  final List<Person> people;
+
+  /// How much of a stuck knife's blade is buried in the wood (visible when
+  /// the knife isn't stuck).
+  static const embeddedLength = _embeddedLength;
+
+  /// A stuck knife's exposed blade and its handle (for scripting flights).
+  static const bladeLength = _bladeLength;
+  static const handleLength = _handleLength;
+
+  /// Where the ground is (y), relative to the board's centre.
+  static const groundY = _groundY;
 
   /// A real board's face (from a photo). When given, it replaces the generated
   /// paint, wood and bark, and sets the board's outline.
@@ -112,8 +151,11 @@ class SyntheticScene {
   static const _boardRadius = 0.31;
   static const _boardThickness = 0.08;
   static const _groundY = -1.5;
-  static const _bladeLength = 0.09;
-  static const _handleLength = 0.13;
+  // Nigel's knives (2026-10-08): ~10 cm blade, ~10 cm handle. A stuck knife
+  // has ~2.5 cm of blade in the wood, so 7.5 cm shows.
+  static const _bladeLength = 0.075;
+  static const _embeddedLength = 0.025;
+  static const _handleLength = 0.10;
   static final _sun = const Vec3(-0.35, 0.65, 0.68).normalised;
 
   late final Vec3 _forward = (const Vec3(0, 0, 0) - cameraPosition).normalised;
@@ -122,7 +164,11 @@ class SyntheticScene {
   late final double _tanH = math.tan(horizontalFovDegrees * math.pi / 360);
   late final double _tanV = _tanH * height / width;
   late final double _edgePhase = math.Random(seed).nextDouble() * 6;
-  late final List<_Box> _boxes = [for (final k in knives) ..._knifeBoxes(k)];
+  late final List<_Box> _boxes = [
+    for (final k in knives) ..._knifeBoxes(k),
+    for (final k in flyingKnives) ..._flyingKnifeBoxes(k),
+    for (final p in people) ..._personBoxes(p),
+  ];
   late final List<_Rod> _legs = const [
     _Rod(Vec3(-0.17, -0.22, -0.09), Vec3(-0.62, _groundY, 0.32), 0.022),
     _Rod(Vec3(0.17, -0.22, -0.09), Vec3(0.62, _groundY, 0.32), 0.022),
@@ -213,13 +259,16 @@ class SyntheticScene {
     final base = switch (hit.kind) {
       _Kind.face => _faceColour(p),
       _Kind.bark => _bark(p),
-      _Kind.blade => const (178.0, 182.0, 188.0),
-      _Kind.handle => _handle(p, hit),
+      _Kind.blade || _Kind.handle => _steel(hit.normal),
       _Kind.leg => const (214.0, 190.0, 150.0),
+      _Kind.shirt => const (45.0, 55.0, 95.0),
+      _Kind.trousers => const (50.0, 50.0, 55.0),
+      _Kind.skin => const (205.0, 160.0, 130.0),
       _Kind.ground => _grass(p),
     };
     // A little shine on the steel.
-    final shine = hit.kind == _Kind.blade ? 60 * math.pow(math.max(0.0, hit.normal.dot(_sun)), 8) : 0.0;
+    final steel = hit.kind == _Kind.blade || hit.kind == _Kind.handle;
+    final shine = steel ? 70 * math.pow(math.max(0.0, hit.normal.dot(_sun)), 8) : 0.0;
     return (base.$1 * light + shine, base.$2 * light + shine, base.$3 * light + shine);
   }
 
@@ -381,11 +430,13 @@ class SyntheticScene {
     return _mix((190.0, 210.0, 225.0), (120.0, 160.0, 210.0), t);
   }
 
-  (double, double, double) _handle(Vec3 p, _Hit hit) {
-    // Dark handle with two light metal bands.
-    final along = hit.along ?? 0;
-    final band = (along > 0.30 && along < 0.36) || (along > 0.80 && along < 0.86);
-    return band ? const (150.0, 150.0, 150.0) : const (42.0, 34.0, 30.0);
+  /// Brushed stainless steel: grey, picking up a little sky when facing up
+  /// and a little grass when facing down.
+  (double, double, double) _steel(Vec3 normal) {
+    const grey = (172.0, 175.0, 180.0);
+    final up = normal.y;
+    if (up > 0) return _mix(grey, (165.0, 185.0, 210.0), 0.35 * up);
+    return _mix(grey, (110.0, 135.0, 95.0), -0.3 * up);
   }
 
   // --- Knife geometry ------------------------------------------------------
@@ -396,13 +447,52 @@ class SyntheticScene {
     // The blade spins in a vertical plane, so its width runs up/down.
     final up = const Vec3(0, 1, 0);
     final widthAxis = (up - out * up.dot(out)).normalised;
+    return _bladeAndHandle(_onBoard(k.u, k.v), out, widthAxis, _bladeLength, buried: _embeddedLength);
+  }
+
+  /// A whole knife in the air (or lying on the ground): the blade's tip at
+  /// [FlyingKnife.tip], pointing away from the handle.
+  List<_Box> _flyingKnifeBoxes(FlyingKnife k) {
+    final out = k.direction.normalised;
+    var widthAxis = k.spinAxis.cross(out);
+    if (widthAxis.length < 1e-6) widthAxis = const Vec3(0, 1, 0).cross(out);
+    return _bladeAndHandle(k.tip, out, widthAxis.normalised, _bladeLength + _embeddedLength);
+  }
+
+  /// An all-steel throwing knife (Nigel's photo, 2026-10-08): a spear-point
+  /// blade from [base] along [out] for [bladeLength], then a flat handle with
+  /// see-through holes. [buried] is how much of the blade's tip end is hidden
+  /// in the wood (0 for a whole knife), which sets where the visible part of
+  /// the blade's profile starts.
+  List<_Box> _bladeAndHandle(Vec3 base, Vec3 out, Vec3 widthAxis, double bladeLength, {double buried = 0}) {
     final thicknessAxis = out.cross(widthAxis);
-    final entry = _onBoard(k.u, k.v);
+    const fullBlade = _bladeLength + _embeddedLength;
+    final start = buried / fullBlade; // Fraction of the blade (from the tip) that's hidden.
+    // Spear point: widens from the tip to its widest at 70% of the blade's
+    // length, then narrows to the handle's width.
+    double blade(double along) {
+      final x = start + along * (1 - start);
+      return x < 0.7 ? 0.08 + 0.92 * math.pow(x / 0.7, 0.8) : 1 - 0.25 * (x - 0.7) / 0.3;
+    }
+
     return [
-      _Box(entry + out * (_bladeLength / 2), [out, widthAxis, thicknessAxis], [_bladeLength / 2, 0.013, 0.0016],
-          _Kind.blade),
-      _Box(entry + out * (_bladeLength + _handleLength / 2), [out, widthAxis, thicknessAxis],
-          [_handleLength / 2, 0.014, 0.009], _Kind.handle),
+      _Box(base + out * (bladeLength / 2), [out, widthAxis, thicknessAxis], [bladeLength / 2, 0.016, 0.002],
+          _Kind.blade,
+          widthProfile: blade),
+      _Box(base + out * (bladeLength + _handleLength / 2), [out, widthAxis, thicknessAxis],
+          [_handleLength / 2, 0.012, 0.0022], _Kind.handle,
+          holes: const [(0.22, 0.0035), (0.44, 0.0035), (0.64, 0.0035), (0.86, 0.005)]),
+    ];
+  }
+
+  /// A person standing at [Person.position] (feet), as legs, torso and head.
+  List<_Box> _personBoxes(Person p) {
+    const x = Vec3(1, 0, 0), y = Vec3(0, 1, 0), z = Vec3(0, 0, 1);
+    final feet = Vec3(p.position.x, _groundY, p.position.z);
+    return [
+      _Box(feet + const Vec3(0, 0.43, 0), [x, y, z], [0.17, 0.43, 0.11], _Kind.trousers),
+      _Box(feet + const Vec3(0, 1.16, 0), [x, y, z], [0.23, 0.30, 0.13], _Kind.shirt),
+      _Box(feet + const Vec3(0, 1.58, 0), [x, y, z], [0.09, 0.12, 0.10], _Kind.skin),
     ];
   }
 
@@ -428,7 +518,7 @@ class SyntheticScene {
   }
 }
 
-enum _Kind { face, bark, blade, handle, leg, ground }
+enum _Kind { face, bark, blade, handle, leg, ground, shirt, trousers, skin }
 
 class _Hit {
   _Hit(this.t, this.normal, this.kind, {this.along});
@@ -442,13 +532,20 @@ class _Hit {
 }
 
 /// An oriented box: centre, three unit axes and half-sizes along them.
+///
+/// For flat steel parts, [widthProfile] narrows the box along its length (the
+/// half-width at `along` is `half[1] × widthProfile(along)`), and [holes] are
+/// round see-through holes on the centre line, as (along, radius in metres).
+/// Rays outside the profile or through a hole miss the box.
 class _Box {
-  _Box(this.centre, this.axes, this.half, this.kind);
+  _Box(this.centre, this.axes, this.half, this.kind, {this.widthProfile, this.holes = const []});
 
   final Vec3 centre;
   final List<Vec3> axes;
   final List<double> half;
   final _Kind kind;
+  final double Function(double along)? widthProfile;
+  final List<(double, double)> holes;
 
   _Hit? intersect(Vec3 o, Vec3 d) {
     final rel = o - centre;
@@ -481,6 +578,13 @@ class _Box {
     final t = tMin > 0 ? tMin : tMax;
     final p = rel + d * t;
     final along = (axes[0].dot(p) + half[0]) / (2 * half[0]);
+    final w = axes[1].dot(p);
+    final profile = widthProfile;
+    if (profile != null && w.abs() > half[1] * profile(along.clamp(0.0, 1.0))) return null;
+    for (final (holeAlong, radius) in holes) {
+      final da = (along - holeAlong) * 2 * half[0];
+      if (da * da + w * w < radius * radius) return null;
+    }
     return _Hit(t, axes[normalAxis] * normalSign, kind, along: along);
   }
 }

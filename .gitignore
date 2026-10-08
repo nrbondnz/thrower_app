@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Rendered throw sequences (~21 MB): regenerate with dart run tool/render_throw_sequences.dart
+/docs/thrower/reference/sequences/
+
