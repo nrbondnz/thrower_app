@@ -17,8 +17,8 @@ import 'camera_screen.dart';
 
 /// Single-player play: the locked target in the live picture; each throw is
 /// detected and scored, with a numbered dot where each knife went in this
-/// round. Rounds of 3; collecting the knives (someone at the board) closes
-/// the round.
+/// round. Games of 9 rounds of 3; collecting the knives (someone at the
+/// board) closes the round.
 class PlayScreen extends ConsumerStatefulWidget {
   const PlayScreen({super.key});
 
@@ -68,6 +68,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           _message = 'The view changed (lights? camera moved?). Re-calibrate if the rings no longer line up.';
       }
     });
+  }
+
+  void _newGame() {
+    ref.read(gameProvider.notifier).newGame();
+    setState(() {
+      _dots.clear();
+      _message = null;
+    });
+  }
+
+  /// Mid-game, a stray tap shouldn't wipe the scores: ask first.
+  Future<void> _confirmReset() async {
+    final reset = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset this game?'),
+        content: const Text('Scores will be lost.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Reset')),
+        ],
+      ),
+    );
+    if (reset == true && mounted) _newGame();
   }
 
   void _stopWatcher() {
@@ -120,14 +144,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         title: const Text('Play'),
         actions: [
           TextButton(
-            onPressed: () {
-              ref.read(gameProvider.notifier).newGame();
-              setState(() {
-                _dots.clear();
-                _message = null;
-              });
-            },
-            child: const Text('New game'),
+            onPressed: game.rounds.isEmpty ? null : _confirmReset,
+            child: const Text('Reset game'),
           ),
         ],
       ),
@@ -180,6 +198,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white70),
                   ),
+                  if (game.isOver) ...[
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: _newGame, child: const Text('New game')),
+                  ],
                 ],
               ),
             ),
@@ -196,7 +218,7 @@ String playStateText(WatchState state) => switch (state) {
       WatchState.blocked => 'Someone is at the board.',
     };
 
-/// "Round 2: 4 · 3 · –  (7)".
+/// "Round 2 of 9: 4 · 3 · –  (7)".
 String roundText(GameSession game) {
   final round = game.currentRound;
   final throws = round?.throws ?? const <ThrowRecord>[];
@@ -205,11 +227,19 @@ String roundText(GameSession game) {
     for (final t in throws) t.unscored ? '?' : '${t.score}',
     for (var i = throws.length; i < game.throwsPerRound; i++) '–',
   ];
-  return 'Round $number: ${marks.join(' · ')}  (${round?.total ?? 0})';
+  return 'Round $number of ${game.maxRounds}: ${marks.join(' · ')}  (${round?.total ?? 0})';
 }
 
-/// The game total, the previous rounds, and what to do next.
+/// The game total, the previous rounds, and what to do next (or the final
+/// result once the game is over).
 String gameText(GameSession game, {String? message}) {
+  if (game.isOver) {
+    return [
+      'Game over! Final total: ${game.total}',
+      'Rounds: ${[for (final r in game.rounds) r.total].join(', ')}',
+      'Collect your knives when no one is throwing.',
+    ].join('\n');
+  }
   final lines = <String>[
     ?message,
     if (game.roundComplete)

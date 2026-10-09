@@ -84,7 +84,11 @@ class GameNotifier extends Notifier<GameSession> {
   /// Applies what the watcher saw. [calibration] maps a stuck knife's entry
   /// to the target, scored by [targetModelProvider].
   void onEvent(ThrowEvent event, TargetCalibration calibration) {
-    switch (event.outcome.kind) {
+    // After the last round, new throws aren't recorded (or remembered as
+    // knives, so one falling out can't zero a real throw).
+    final kind = event.outcome.kind;
+    if (state.isOver && (kind == ThrowOutcomeKind.stuck || kind == ThrowOutcomeKind.bounceOut)) return;
+    switch (kind) {
       case ThrowOutcomeKind.stuck:
         final entry = event.entry;
         final point = entry == null ? null : TargetMapping(calibration).toTarget(entry.point);

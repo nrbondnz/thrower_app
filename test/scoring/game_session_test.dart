@@ -59,4 +59,58 @@ void main() {
     final g = const GameSession(throwsPerRound: 2).stuck(1, p).stuck(1, p).stuck(1, p);
     expect(g.rounds, hasLength(2));
   });
+
+  group('9-round games', () {
+    /// [n] full rounds of three 2s.
+    GameSession fullRounds(int n) {
+      var g = const GameSession();
+      for (var i = 0; i < n * 3; i++) {
+        g = g.stuck(2, p);
+      }
+      return g;
+    }
+
+    test('a new game is 9 rounds of 3', () {
+      expect(const GameSession().maxRounds, 9);
+      expect(const GameSession().throwsPerRound, 3);
+    });
+
+    test('the game is not over after 8 full rounds', () {
+      expect(fullRounds(8).isOver, isFalse);
+    });
+
+    test('the game is over when round 9 has its 3 throws', () {
+      final g = fullRounds(9);
+      expect(g.isOver, isTrue);
+      expect(g.total, 54);
+    });
+
+    test('the game is not over part-way through round 9', () {
+      expect(fullRounds(8).stuck(2, p).isOver, isFalse);
+    });
+
+    test('collecting the knives early in round 9 ends the game', () {
+      final g = fullRounds(8).stuck(5, p).boardVisited();
+      expect(g.isOver, isTrue);
+      expect(g.rounds.last.total, 5);
+    });
+
+    test('throws after the game is over are ignored', () {
+      final g = fullRounds(9);
+      expect(identical(g.stuck(5, p), g), isTrue);
+      expect(identical(g.bounceOut(), g), isTrue);
+    });
+
+    test('a knife from round 9 that falls out after game over still scores 0', () {
+      final g = fullRounds(9).fellOut(8, 2);
+      expect(g.rounds.last.total, 4);
+      expect(g.isOver, isTrue);
+    });
+
+    test('a shorter game keeps its length through every change', () {
+      final g = const GameSession(maxRounds: 1).stuck(1, p).fellOut(0, 0).stuck(1, p).boardVisited();
+      expect(g.maxRounds, 1);
+      expect(g.isOver, isTrue);
+    });
+  });
 }

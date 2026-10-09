@@ -95,15 +95,28 @@ void main() {
     expect(session().rounds, isEmpty);
   });
 
+  test('after game over a stuck knife is ignored, so its falling out changes nothing', () {
+    for (var i = 0; i < 27; i++) {
+      game.onEvent(stuckAt(500, 400, i), c);
+      if (i % 3 == 2) game.onEvent(event(ThrowOutcomeKind.boardVisit), c);
+    }
+    expect(session().isOver, isTrue);
+    final over = session();
+    game.onEvent(stuckAt(500, 400, 99), c);
+    game.onEvent(event(ThrowOutcomeKind.fellOut, id: 99), c);
+    expect(session(), same(over));
+    expect(session().total, 135);
+  });
+
   group('play screen text', () {
     test('an empty game', () {
-      expect(roundText(const GameSession()), 'Round 1: – · – · –  (0)');
+      expect(roundText(const GameSession()), 'Round 1 of 9: – · – · –  (0)');
       expect(gameText(const GameSession()), 'Game total: 0');
     });
 
     test('a round in progress, with an unscored knife', () {
       final g = const GameSession().stuck(4, null).stuck(3, tp);
-      expect(roundText(g), 'Round 1: ? · 3 · –  (3)');
+      expect(roundText(g), 'Round 1 of 9: ? · 3 · –  (3)');
     });
 
     test('a complete round asks to collect knives only when no one is throwing', () {
@@ -113,9 +126,26 @@ void main() {
 
     test('previous rounds are listed', () {
       final g = const GameSession().stuck(4, tp).stuck(3, tp).bounceOut().stuck(5, tp);
-      expect(roundText(g), 'Round 2: 5 · – · –  (5)');
+      expect(roundText(g), 'Round 2 of 9: 5 · – · –  (5)');
       expect(gameText(g), contains('Rounds: 7'));
       expect(gameText(g), contains('Game total: 12'));
+    });
+
+    test('round 9 of 9', () {
+      var g = const GameSession();
+      for (var i = 0; i < 25; i++) {
+        g = g.stuck(1, tp);
+      }
+      expect(roundText(g), 'Round 9 of 9: 1 · – · –  (1)');
+    });
+
+    test('game over shows the final total and every round', () {
+      var g = const GameSession();
+      for (var i = 0; i < 27; i++) {
+        g = g.stuck(i < 3 ? 5 : 1, tp);
+      }
+      expect(gameText(g, message: 'Bounced off: 0.'),
+          'Game over! Final total: 39\nRounds: 15, 3, 3, 3, 3, 3, 3, 3, 3\nCollect your knives when no one is throwing.');
     });
 
     test('state lines', () {

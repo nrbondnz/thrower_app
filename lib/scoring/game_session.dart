@@ -37,18 +37,21 @@ class RoundRecord {
   int get total => throws.fold(0, (sum, t) => sum + t.score);
 }
 
-/// A single-player game: rounds of [throwsPerRound] throws (Nigel: 3). Immutable;
-/// every change returns a new session.
+/// A single-player game: [maxRounds] rounds (Nigel: 9) of [throwsPerRound]
+/// throws (Nigel: 3). Immutable; every change returns a new session.
 ///
 /// - A throw goes into the current round; if that round is full or closed, a
 ///   new round starts first (so throwing on without collecting still counts).
 /// - A board visit (someone at the board: collecting knives) closes the
 ///   current round if it has any throws.
 /// - A knife that falls out turns its throw into [ThrowResult.fellOut], 0.
+/// - The game is over once round [maxRounds] is complete; later throws are
+///   ignored until a new game.
 class GameSession {
-  const GameSession({this.throwsPerRound = 3, this.rounds = const []});
+  const GameSession({this.throwsPerRound = 3, this.maxRounds = 9, this.rounds = const []});
 
   final int throwsPerRound;
+  final int maxRounds;
   final List<RoundRecord> rounds;
 
   int get total => rounds.fold(0, (sum, r) => sum + r.total);
@@ -61,16 +64,20 @@ class GameSession {
     return r != null && (r.closed || r.throws.length >= throwsPerRound);
   }
 
+  /// The last round is complete: the game is over.
+  bool get isOver => rounds.length >= maxRounds && roundComplete;
+
+  GameSession _withRounds(List<RoundRecord> rounds) =>
+      GameSession(throwsPerRound: throwsPerRound, maxRounds: maxRounds, rounds: rounds);
+
   GameSession _withThrow(ThrowRecord t) {
+    if (isOver) return this;
     final open = rounds.isNotEmpty && !roundComplete;
     final current = open ? rounds.last.throws : const <ThrowRecord>[];
-    return GameSession(
-      throwsPerRound: throwsPerRound,
-      rounds: [
-        ...(open ? rounds.sublist(0, rounds.length - 1) : rounds),
-        RoundRecord([...current, t]),
-      ],
-    );
+    return _withRounds([
+      ...(open ? rounds.sublist(0, rounds.length - 1) : rounds),
+      RoundRecord([...current, t]),
+    ]);
   }
 
   GameSession stuck(int score, TargetPoint? point) =>
@@ -85,15 +92,12 @@ class GameSession {
     throws[throwIndex] = ThrowRecord(ThrowResult.fellOut, 0, point: throws[throwIndex].point);
     final updated = [...rounds];
     updated[roundIndex] = RoundRecord(throws, closed: round.closed);
-    return GameSession(throwsPerRound: throwsPerRound, rounds: updated);
+    return _withRounds(updated);
   }
 
   GameSession boardVisited() {
     final r = currentRound;
     if (r == null || r.closed || r.throws.isEmpty) return this;
-    return GameSession(
-      throwsPerRound: throwsPerRound,
-      rounds: [...rounds.sublist(0, rounds.length - 1), RoundRecord(r.throws, closed: true)],
-    );
+    return _withRounds([...rounds.sublist(0, rounds.length - 1), RoundRecord(r.throws, closed: true)]);
   }
 }
