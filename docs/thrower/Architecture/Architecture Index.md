@@ -1,5 +1,6 @@
 # Architecture Index
 
 - [[Design Decisions]]: decision records (decision, rationale, trade-off)
-
-*System Diagram, Data Flow and Canonical Model pages are added once the architecture is decided in [[story-checkpoint-setting-up-throwing-app]].*
+- [[System Diagram]]: layers, components and the rules between them
+- [[Data Flow]]: one camera frame's path to a calibration and a score, plus the coordinate spaces
+- [[Glossary]]: component → function tree and concept definitions

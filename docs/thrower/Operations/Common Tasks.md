@@ -1,5 +1,33 @@
 # Common Tasks
 
+## Ship a Build to TestFlight (Remote iPhone Testers)
+
+On the Mac, with the repo pulled. The first time takes about an hour, later builds about 15 minutes.
+
+**One-time setup**
+1. **Signing:** open `ios/Runner.xcworkspace` in Xcode → Runner target → *Signing & Capabilities* → tick *Automatically manage signing* and pick your **Team**. Bundle ID `nz.nrbond.thrower`; Xcode registers it. Commit the resulting `project.pbxproj` change (the team ID isn't a secret).
+2. **App record:** [App Store Connect](https://appstoreconnect.apple.com) → *Apps* → **+** → *New App*: iOS, a name (it must be unique on the App Store; "Thrower App" may be taken, and it can be changed later), language, bundle ID `nz.nrbond.thrower`, any SKU (e.g. `thrower-app`).
+3. **Testers.** **Decided (Nigel, 2026-10-08): internal testers**, for immediate access without Beta App Review.
+   1. *Users and Access* → **+** → the tester's name and email → the most limited role (e.g. **Customer Support**) → under *Apps*, give access to **this app only** (not "all apps") → *Invite*.
+   2. The tester accepts the App Store Connect invitation email (with an Apple ID on that address, or one created then).
+   3. *TestFlight* → *Internal Testing* → **+** → a group (e.g. "Field testers"), with *automatic distribution* on → add the tester.
+   4. Each processed build then reaches them straight away; they get a TestFlight email and install it in Apple's TestFlight app.
+   - The alternative, **external** testers, needs no account access but a Beta App Review of each version's first build (usually within a day).
+
+**Each build**
+1. Bump the build number in `pubspec.yaml` (`version: 1.0.0+N`, N one higher than the last upload).
+2. `flutter build ipa --release` → `build/ios/ipa/*.ipa`.
+3. Upload with Apple's **Transporter** app (drag the `.ipa` in) or Xcode → *Window → Organizer → Distribute App*.
+4. Wait for *Processing* in App Store Connect (10–30 min). Export compliance is pre-answered (`ITSAppUsesNonExemptEncryption = NO`).
+5. With automatic distribution on, the internal group gets the build as soon as it's processed; otherwise *TestFlight* → the build → add it to the group. Testers get an email and a TestFlight notification.
+
+**Feedback** arrives in App Store Connect → *TestFlight* → *Feedback* (screenshots with comments, crash reports).
+
+**Gotchas**
+- A TestFlight build is a **release** build: no frames/s label, no error detail, no calibration frame dump (all `kDebugMode`). Diagnose from screenshots, or reproduce on a debug build at the Mac.
+- `NSMicrophoneUsageDescription` is present only because the camera plugin links audio APIs, which App Store Connect flags; the app never asks for the microphone (`enableAudio: false`).
+- TestFlight builds expire after 90 days.
+
 ## Run the App on a Phone
 
 - Use the JetBrains `main.dart` run configuration (see `working-with-nigel.md` → IDE).
@@ -29,6 +57,34 @@ dart run tool/locate_target.dart path/to/photo.jpg [out.png]
 ```
 
 Prints each fitted ring edge and the confidence, and writes the photo with the edge points (yellow) and ellipses drawn on it (blue if found, magenta for a rejected attempt). For a new real-board photo that matters, also copy it into `test/fixtures/targets/` and add a test case.
+
+## Render Camera Views (Test Pictures with Known Answers)
+
+```bash
+dart run tool/render_camera_views.dart [--texture-only]
+```
+
+Renders the reference board (`target-example.png`) as the phone sees it from 2 m to the side and 2 m out, at 1× and 2× zoom, with 0/1/2 knives, into `docs/thrower/reference/camera-views/` with `truth.json` (entry points, scores, ring edges). About 70 s per image. `--texture-only` writes just the cleaned board face. Camera position, knives and zooms are constants at the top of the tool. To use new renders in tests, copy them into `test/fixtures/camera-views/` and regenerate its `truth.json`.
+
+## See What the Ring Finder Was Given (Android, Debug)
+
+In debug builds, every "Find target" logs the frame's layout and result, and saves the exact image the ring finder received:
+
+```bash
+ADB="$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe"
+"$ADB" logcat -d | grep "Calibration frame"
+MSYS_NO_PATHCONV=1 "$ADB" exec-out run-as nz.nrbond.thrower cat code_cache/calibration-frame.png > frame.png
+```
+
+(`Directory.systemTemp` is `code_cache` on Android, not `cache`.) Run the ring finder on it with `dart run tool/locate_target.dart frame.png`.
+
+## Render Throw Sequences (Test Data for Throw Detection)
+
+```bash
+dart run tool/render_throw_sequences.dart [throw-stick-ring4 throw-stick-ring3 throw-bounce-out retrieve-knives]
+```
+
+15 fps, 640 × 360 frames with motion blur and noise, plus full-resolution `before.jpg` / `after.jpg`, `preview.gif` and `truth.json`, in `docs/thrower/reference/sequences/<name>/`. About 3.5 min per throw sequence and 13 min for the retrieval. Knife positions, timings and the release point are constants at the top of the tool.
 
 ## Read Logs from the Android Phone (Wireless Debugging)
 

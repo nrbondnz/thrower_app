@@ -151,6 +151,115 @@ Folders are created when their first code arrives, never empty "just in case". N
 
 **Confirmed:** 2026-10-05 (plain-Dart image processing chosen by Nigel; algorithm from Task 1).
 
+## Find Roughly, Then Look Closely (Coarse-to-Fine)
+
+**Decision (Nigel, 2026-10-08, option 1 of 2):** All ring finding goes through `buildTargetLocator` = `CoarseToFineLocator(ColourRingLocator)`:
+1. A rough pass on the whole (downscaled to 600 px) image. Its rejected attempt is enough to say where the board is. **If it returns nothing at all, it's retried once at 1200 px** (on the uncompressed 1× render with no knives, the 600 px pass found nothing, while the 1200 px pass gave a position that the close-up then found at 92%).
+2. A crop of 1.8 × the target radius each side, from the **full-resolution** image.
+3. A second pass on the crop, moved back into whole-image coordinates. If the close-up fails, the rough result stands.
+
+The camera path keeps frames at full camera resolution for this (`frameToRgb(maxSide: 1920)`; 1280 × 720 at `ResolutionPreset.high`).
+
+**Why:** from beside the throwing line (2 m to the side, 2 m out) the board fills only about 1/6 of the main camera's width. Once shrunk to the finder's 600 px, the bull was about 10 px across and knife handles swamped the rings. With knives in the board, the finder **failed on both 1× views** (rendered tests). Coarse-to-fine finds all six rendered views (78–93% confidence). The rejected alternative, telling users to use 2× zoom, depends on the phone and on the user.
+
+**Dim or flat light (2026-10-08):** each pass is wrapped in `ContrastNormalisingLocator`. The image is tried as it is; **only if that fails**, it's retried with brightness stretched (1st/99th percentile → 0/255, the same map on all channels, so hues are kept). Found from Nigel's first real Android frame (A4 printout, indoors): the frame itself worked (97%), but at half brightness or half contrast it wasn't found, because the ring colours fell under `edgeContrast`. Stretched: 93% / 97% (30% brightness: 94%). It's a fallback, not the default: stretching also boosts white paper against a grey wall, which made the finder pick the paper when the target was cut off by the frame edge.
+
+**Cost:** two passes, about 0.4–0.6 s on a PC for a 1600 × 1200 image (a third, larger pass only when the first finds nothing).
+
+**Confirmed:** 2026-10-08.
+
+## Adjust and Lock the Calibration
+
+**Decision (Task 3):** after "Find target", the rings become a `TargetCalibration` (the ring ellipses + the upright image size) that the user can correct and then **lock for the session** (`calibrationProvider`, not auto-disposed; "Re-calibrate" unlocks). It's in memory only: a new app session calibrates again, since the phone may have been moved.
+- **Adjustments act on all rings together**, driven by the outer ring: drag inside to move; drag the long-axis handle to turn and stretch; drag the short-axis handle to stretch the short axis. The rings stay in proportion and keep their perspective offsets.
+- **A rejected attempt can be adjusted and locked too**, so a near miss can be fixed by hand rather than retried forever.
+- **Safety (Review Agent §7):** whenever the outline can be adjusted, the screen shows *"Only adjust when no one is throwing."* The phone sits beside the board, so adjusting means standing near the throwing lane.
+
+## Motion and Settle (Throw Detection, Task 2)
+
+**Decision:** `MotionDetector` (pure Dart) works on **brightness only**, downscaled to ~320 px (`frameToLuma`: the Y plane on Android, converted BGRA on iOS), inside a `WatchRegion` = the locked outer ring's bounding box × 1.5 (room for handles). It runs about 15 times a second (`WatchStatus` processes a frame at most every 60 ms).
+- A pixel has **changed** if it differs from the previous frame by more than 6 × the estimated sensor noise (at least 12 levels). The noise is learned while the board is still.
+- States: **watching → motion** (≥ 0.2% of the region changed) **→ settling** (< 0.08%) **→ settled** after 0.3 s still, reporting a `MotionEpisode`.
+- **"Still" isn't "clear":** the rendered retrieval showed a person standing still at the board reads as settled. So the detector keeps a **reference** frame of the last settled board, and only settles when **< 8%** of the region differs from it; otherwise it's **blocked** (something in the way). After 5 s still but different, the view is accepted as the new normal (flagged), e.g. lights switched on.
+- Each episode reports its **peak change** (a person: ~25%; a throw: ~0.6–1.5%) and its **change from before** (a stuck knife: ~0.6–0.7%; a bounce-out: 0.0%; knives removed: ~1.2%), the basis for telling stick from bounce-out (Task 3) and retrieval (Task 5).
+- The knife's flight is effectively invisible (one faint blurred frame): **episodes start at the impact.**
+
+## Stuck or Bounced Off (Throw Detection, Task 3)
+
+**Decision:** `classifyThrow(episode, calibration)` decides what a settled episode was:
+1. Accepted as a new view → **scene changed** (not a throw; maybe re-calibrate).
+2. Someone stood at the board (`wasBlocked`) or ≥ 10% of the region changed at once → **board visit** (not a throw).
+   - **Except a knife placed by hand** (decided 2026-10-09, so Nigel can test with a pen on the A4 printout): if the visit left a knife-sized new shape that **appeared** (`appeared`: the shape stands out from the board around it in the *after* picture, not the *before*), isn't one of the known knives and no known knife was taken out, it's a **stuck** knife and scores like a throw. A visit that removes knives the app never saw stays a board visit, because that shape disappeared.
+3. Otherwise, pixels differing from the before frame by more than the episode's threshold are grouped into connected shapes (8-connected) within 1.5 × the outer ring. The largest one that touches the target (outer × 1.05) and covers ≥ **0.25% of the target's area** (min 4 px) → **stuck**, with the shape kept for the entry point (Task 4). Otherwise → **bounce-out** (0).
+
+**Margins on the renders (320 × 180 frames, target ~46 × 33 px):** stuck knives make shapes of **84 / 68 px** against a 12 px minimum; the bounce-out **0 px**. Noise (σ 4) and a shape away from the target don't count.
+
+**Falling out (Task 5):** a knife falling out on its own leaves a "new shape" where it was. `classifyThrow(knownKnives:)` compares the shape with the knives already in the board (kept by `ThrowTracker` until someone collects them). Overlapping one by ≥ 50% means **fell out**, not stuck.
+
+## Rounds and Scoring (Throw Detection, Task 5)
+
+**Decision:**
+- **Single player, rounds of 3 throws** (Nigel). `GameSession` (pure Dart, immutable):
+  - a throw is stuck (scored at its entry), a bounce-out (0) or fell out (0);
+  - a stuck knife whose entry wasn't found counts as a throw, **unscored ("?")**;
+  - a **board visit** (someone collecting the knives) closes the round;
+  - throwing on after a full round starts the next round without waiting.
+- **Assumed rule, to confirm with Nigel: a knife that sticks and then falls out (before being collected) scores 0.**
+- Pieces:
+  - `ThrowTracker` (pure): classification + the knives in the board.
+  - `ThrowWatcher`: camera → detector → tracker → full-resolution entry, off the UI thread; emits `ThrowEvent`s.
+  - `GameNotifier` (`gameProvider`): events → `GameSession`, scoring entries with `TargetMapping` + `TargetModel`.
+  - **Play screen:** live picture, locked rings, numbered dots, round and game totals.
+- **Safety:** at the end of a round the screen says *"Collect your knives when no one is throwing"*. It never says the lane is clear.
+
+## Blade Entry Point (Throw Detection, Task 4)
+
+**Decision (D1 option A, geometry):** `GeometricEntryEstimator` (behind `EntryPointEstimator`, so a trained model can replace it) works on **full-resolution** upright before/after pictures (the calibration's own size):
+1. **Colour** change (largest channel difference > 20) near the target → the largest new shape touching it. **Not brightness:** shaded steel on red paint has almost the paint's brightness (the rendered ring-3 knife's blade vanished that way: 6.4 px off and the wrong score), but a very different colour.
+2. Keep the **steel** pixels (saturation < 0.3). A knife's shadow is new too and starts at the entry point, but keeps the board's hue. If too little is grey, fall back to the whole shape.
+3. The steel pixels' **principal axis** is the knife's line; its ends are the 2nd / 98th percentile along it.
+4. **Which end is the entry:** the knife sticks out towards the thrower. In the image "out of the board" points from the outer ring's ellipse centre towards the bull's centre (a tilted circle's centre appears shifted towards the far side). The handle is that way; the entry is the other end, taken as the centre of the knife pixels within 2 px of it.
+
+**On the phone (`WatchStatus`):** while still, a full-resolution "before" is kept (refreshed every second, off the UI thread). When an episode is classed **stuck**, the next frame is the "after"; the entry is found in the background, scored through `TargetMapping` and shown as a yellow dot. The after then becomes the next before.
+
+**Accuracy on 6 rendered throws** (2 sequences at 1280 × 720, 4 camera views at 1600 × 1200, 1× and 2×): **0.7–1.7% of the target radius (about 3–6 mm on an 80 cm board); every score correct**, including the ring-3 knife next to the 3/2 line.
+
+**Assumes** something sticking out of the board that's mostly grey steel. A flat or coloured object (a pen taped to paper) won't give the right end.
+
+## The Knives
+
+**Nigel's knives (2026-10-08, photo):** all-steel throwing knives: one flat piece of brushed stainless steel; spear-point blade **~10 cm**; flat handle **~10 cm** with a row of **see-through holes** (three small, one larger at the end). No separate dark handle.
+
+**What it means for detection:**
+- A stuck knife shows as **bright grey steel**, not a dark bar. It takes on the light: dark grey when its face is turned from the sun, bright with highlights when facing it, tinted by sky or grass. It can't be found by "dark object on the board".
+- The board **shows through the handle's holes**, so a stuck knife isn't one solid region in a before/after difference.
+- About **2.5 cm** of blade is in the wood when stuck, so ~7.5 cm of blade plus the 10 cm handle stick out.
+- The renderer models all of this (`SyntheticScene._bladeAndHandle`: tapered blade profile, holes).
+
+## Board Size
+
+**Nigel's boards are about 75–85 cm across** (2026-10-08; answers open question Q2). The rendered test views use **80 cm**, with the rings in the reference photo's proportions: the outer scoring ring is about 74 cm across, larger than IKTHOF's 50 cm. **Camera about 2 m from the board, off to the side at about 45°** (Nigel, 2026-10-08); the renders use this. **Throwing distance 4 m; 3 throws per round; knives first, axes later** (Nigel, 2026-10-08).
+
+## Score Against the Painted Rings, Not Ideal Ones
+
+Measured on the reference board, the painted edges are at **0.219, 0.395, 0.620** (relative to the 0.8 edge), not 0.2 / 0.4 / 0.6. A knife near a line can score differently depending on which you use. So scoring must use the **fitted** ring ellipses. The rendered test views' answers (`truth.json`) already do.
+
+**How (Task 4, `TargetMapping`):** along the line from the bull's centre through an image point, find the painted edges either side of it (each its own fitted ellipse, so perspective is handled) and interpolate between their **ideal** radii. A point on a painted edge maps to exactly that edge's ideal radius, so `TargetModel` (ideal radii, line-touch rule) scores the board as painted. Inside the bull: proportional. Beyond the outer edge: continues at the outer ring's rate. The approach was chosen over a single affine or homography fit because those assume the paint is at the ideal radii.
+
+**Accuracy on the rendered views:** every knife scores correctly; entry radii are within 0.01 of the target radius (about 4 mm on an 80 cm board).
+
+## Rendered Camera Views (Test Data)
+
+`lib/vision/synthetic_scene.dart` ray-traces the setup:
+- A log board on a three-legged stand, on grass.
+- A phone camera with perspective, at any position and field of view.
+- Knives (steel blade + dark handle) at any entry point, pitch and yaw.
+- Sun shadows.
+
+`PhotoBoardTexture` paints the **real reference photo** onto the board (Nigel: "target-example is the core for all the pictures"). It traces the photo's bark outline, removes the photo's own knives (refilling from the same ring further round) and uses the photo's measured ring sizes.
+
+Each render comes with its answers: each blade's entry point (board and pixel), its score, and the ring edges in the image. That makes these test data for ring finding now and for throw detection later. They're not a substitute for real photos: lighting, lens and blur are simplified.
+
 ## Throwing Sport: Knives and Axes into a Wooden Board
 
 **Decision (Nigel, 2026-10-04):** Users throw **knives or axes** (not darts) at a **wooden board with 5 painted circles**. The **camera is static** (fixed in place, not handheld).
