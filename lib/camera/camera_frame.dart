@@ -15,9 +15,11 @@ class FramePlane {
 /// upright on screen. [sensorOrientation] is the camera's mounting angle
 /// (usually 90 on phones); [deviceOrientation] is how far the phone is turned
 /// from portrait-up (portrait-up 0, landscape-left 90, portrait-down 180,
-/// landscape-right 270).
-int frameRotation({required int sensorOrientation, required int deviceOrientation}) =>
-    (sensorOrientation - deviceOrientation + 360) % 360;
+/// landscape-right 270). [alreadyUpright] is for frames the camera plugin has
+/// turned upright itself (iOS sets the stream's video orientation to match the
+/// device), so they need no rotation.
+int frameRotation({required int sensorOrientation, required int deviceOrientation, bool alreadyUpright = false}) =>
+    alreadyUpright ? 0 : (sensorOrientation - deviceOrientation + 360) % 360;
 
 /// One camera frame, independent of the camera plugin, so the vision layer can
 /// be fed recorded frames in tests.

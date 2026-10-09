@@ -93,6 +93,13 @@ void main() {
         expect(frameRotation(sensorOrientation: sensor, deviceOrientation: device), expected);
       });
     }
+    // iOS: the plugin rotates the stream itself; rotating again turned the
+    // iPhone's 720×1280 portrait frame sideways and misplaced the target.
+    for (final device in [0, 90, 180, 270]) {
+      test('frames already upright (iOS), device $device° → 0°', () {
+        expect(frameRotation(sensorOrientation: 90, deviceOrientation: device, alreadyUpright: true), 0);
+      });
+    }
   });
 
   test('BGRA frame keeps its colours, ignoring row padding', () {

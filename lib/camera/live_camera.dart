@@ -75,8 +75,10 @@ class LiveCamera implements CameraSource {
   }
 
   /// Clockwise rotation that makes this camera's frames upright for the
-  /// phone's current orientation (see [frameRotation]).
+  /// phone's current orientation (see [frameRotation]). On iOS the plugin's
+  /// image stream is already upright; on Android it is in sensor orientation.
   int get uprightRotation => frameRotation(
+        alreadyUpright: Platform.isIOS,
         sensorOrientation: controller.description.sensorOrientation,
         deviceOrientation: switch (controller.value.deviceOrientation) {
           DeviceOrientation.portraitUp => 0,
