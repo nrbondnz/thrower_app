@@ -20,7 +20,8 @@ class CameraScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(title: const Text('Camera')),
-      body: const CameraView(),
+      // Above the system navigation bar / home indicator (see calibration_screen.dart).
+      body: const SafeArea(top: false, child: CameraView()),
     );
   }
 }

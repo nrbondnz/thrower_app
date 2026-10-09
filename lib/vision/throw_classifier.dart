@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'ellipse.dart';
+import 'image_difference.dart';
 import 'luma_image.dart';
 import 'motion_detector.dart';
 import 'target_calibration.dart';
@@ -38,6 +39,22 @@ class NewObject {
 
   int get area => pixels.length;
 
+  /// The shape's smaller bounding-box side, in pixels. A knife has width; a
+  /// 1-pixel sliver along a ring edge (left by a camera that moved slightly
+  /// closer or further, which re-aligning can't undo) doesn't.
+  int get thickness {
+    var minX = imageWidth, maxX = -1, minY = imageHeight, maxY = -1;
+    for (final i in pixels) {
+      final x = i % imageWidth, y = i ~/ imageWidth;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+    final w = maxX - minX + 1, h = maxY - minY + 1;
+    return w < h ? w : h;
+  }
+
   Point2 get centroid {
     var sx = 0.0, sy = 0.0;
     for (final i in pixels) {
@@ -67,14 +84,19 @@ class ThrowOutcome {
 /// Decides what a settled [MotionEpisode] was, by comparing the board before
 /// and after it.
 ///
+/// - The view was accepted as a new normal: **scene changed**.
 /// - Someone stood at the board ([MotionEpisode.wasBlocked]) or the episode
 ///   changed a large share of the region at once ([visitPeak]): a **board
-///   visit**.
-/// - The view was accepted as a new normal: **scene changed**.
+///   visit** (collecting knives), unless the visit left a knife-sized shape
+///   that **appeared** ([appeared]), took none of the [knownKnives] and isn't
+///   one of them: then someone placed a knife (or a pen, to test) by hand,
+///   which is a **stuck** knife.
 /// - Otherwise, pixels that differ from before by more than the episode's
 ///   threshold are grouped into connected shapes near the target. A shape
 ///   larger than [minKnifeShare] of the target's area that touches the target
-///   is a **stuck** knife (a stuck knife shows ~0.5–1% of the target's area);
+///   is a **stuck** knife, if it is also at least 2 px thick (the rendered
+///   knives show ~0.3–1.4% of the target's area, 4–16 px thick; the sliver a
+///   slight camera move left along a ring edge on Nigel's A4 test was 1 px);
 ///   otherwise a **bounce-out**. Single noisy pixels and JPEG speckle never
 ///   form a shape that big.
 ///
@@ -93,27 +115,77 @@ ThrowOutcome classifyThrow(
   double fellOutOverlap = 0.5,
 }) {
   if (episode.acceptedNewScene) return const ThrowOutcome(ThrowOutcomeKind.sceneChanged);
-  if (episode.wasBlocked || episode.peakChange >= visitPeak) return const ThrowOutcome(ThrowOutcomeKind.boardVisit);
+  final visit = episode.wasBlocked || episode.peakChange >= visitPeak;
+  const visited = ThrowOutcome(ThrowOutcomeKind.boardVisit);
   final before = episode.before, after = episode.after;
-  if (before == null || after == null) return const ThrowOutcome(ThrowOutcomeKind.bounceOut);
+  if (before == null || after == null) return visit ? visited : const ThrowOutcome(ThrowOutcomeKind.bounceOut);
 
   final object = findNewObject(before, after, calibration, threshold: episode.threshold, searchMargin: searchMargin);
-  final scale = after.width / calibration.imageWidth;
-  final outer = calibration.outer.rescaled(scale);
-  final targetArea = math.pi * outer.semiMajor * outer.semiMinor;
-  if (object != null && object.area >= math.max(4, minKnifeShare * targetArea)) {
-    final pixels = object.pixels.toSet();
-    for (var k = 0; k < knownKnives.length; k++) {
-      final known = knownKnives[k];
-      if (known.imageWidth != object.imageWidth) continue;
-      final shared = known.pixels.where(pixels.contains).length;
-      if (shared >= fellOutOverlap * math.min(known.area, object.area)) {
-        return ThrowOutcome(ThrowOutcomeKind.fellOut, object: object, knownKnifeIndex: k);
+  if (object == null ||
+      object.thickness < 2 ||
+      object.area < minKnifeArea(calibration, after.width, minKnifeShare: minKnifeShare)) {
+    return visit ? visited : const ThrowOutcome(ThrowOutcomeKind.bounceOut);
+  }
+
+  final pixels = object.pixels.toSet();
+  for (var k = 0; k < knownKnives.length; k++) {
+    final known = knownKnives[k];
+    if (known.imageWidth != object.imageWidth) continue;
+    final shared = known.pixels.where(pixels.contains).length;
+    if (shared >= fellOutOverlap * math.min(known.area, object.area)) {
+      return visit ? visited : ThrowOutcome(ThrowOutcomeKind.fellOut, object: object, knownKnifeIndex: k);
+    }
+  }
+  if (visit) {
+    final tookKnife = knownKnives.any((k) => k.imageWidth == after.width && _gone(k, before, after, episode.threshold));
+    if (tookKnife || !appeared(object, before, after)) return visited;
+  }
+  return ThrowOutcome(ThrowOutcomeKind.stuck, object: object);
+}
+
+/// Whether [object] (pixels that differ between [before] and [after]) is
+/// something that **appeared** rather than something taken away: the picture
+/// it stands out in is the one that has it. Each of its pixels is compared
+/// with the board around the shape (unchanged pixels within 3 px), in both
+/// pictures; a placed knife stands out in [after], a pulled-out one in
+/// [before].
+bool appeared(NewObject object, LumaImage before, LumaImage after) {
+  final w = after.width, h = after.height;
+  final inShape = object.pixels.toSet();
+  var contrastBefore = 0.0, contrastAfter = 0.0;
+  for (final i in object.pixels) {
+    final x = i % w, y = i ~/ w;
+    var sumB = 0, sumA = 0, n = 0;
+    for (var dy = -3; dy <= 3; dy++) {
+      for (var dx = -3; dx <= 3; dx++) {
+        final nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        final j = ny * w + nx;
+        if (inShape.contains(j)) continue;
+        sumB += before.pixels[j];
+        sumA += after.pixels[j];
+        n++;
       }
     }
-    return ThrowOutcome(ThrowOutcomeKind.stuck, object: object);
+    if (n == 0) continue;
+    contrastBefore += (before.pixels[i] - sumB / n).abs();
+    contrastAfter += (after.pixels[i] - sumA / n).abs();
   }
-  return const ThrowOutcome(ThrowOutcomeKind.bounceOut);
+  return contrastAfter > contrastBefore;
+}
+
+/// Whether most of a known knife's pixels changed: it was taken out.
+bool _gone(NewObject knife, LumaImage before, LumaImage after, int threshold) {
+  final w = after.width;
+  final changed = knife.pixels.where((i) => lumaChanged(after, before, i % w, i ~/ w, threshold)).length;
+  return changed >= knife.area / 2;
+}
+
+/// The smallest new shape (pixels, in a frame [frameWidth] wide) that counts
+/// as a stuck knife: [minKnifeShare] of the target's area, at least 4 pixels.
+double minKnifeArea(TargetCalibration calibration, int frameWidth, {double minKnifeShare = 0.0025}) {
+  final outer = calibration.outer.rescaled(frameWidth / calibration.imageWidth);
+  return math.max(4, minKnifeShare * math.pi * outer.semiMajor * outer.semiMinor);
 }
 
 /// The largest connected shape (8-connected) of pixels that differ between
@@ -136,10 +208,13 @@ NewObject? findNewObject(
   final x1 = math.min(w, (outer.cx + outer.semiMajor * searchMargin).ceil());
   final y0 = math.max(0, (outer.cy - outer.semiMajor * searchMargin).floor());
   final y1 = math.min(h, (outer.cy + outer.semiMajor * searchMargin).ceil());
+  // Re-align a small camera shift and count only really new content (see
+  // image_difference.dart), so a nudged camera doesn't look like new objects.
+  final (dx, dy) = bestShift(after, before, PixelRect(x0, y0, x1, y1));
   for (var y = y0; y < y1; y++) {
     for (var x = x0; x < x1; x++) {
       final i = y * w + x;
-      if ((after.pixels[i] - before.pixels[i]).abs() > threshold && inSearch(x, y)) changed[i] = true;
+      if (inSearch(x, y) && lumaChanged(after, before, x, y, threshold, dx: dx, dy: dy)) changed[i] = true;
     }
   }
 

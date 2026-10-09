@@ -31,49 +31,54 @@ class _DebugTargetScreenState extends ConsumerState<DebugTargetScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Scoring test target')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SegmentedButton<LineTouchRule>(
-              segments: const [
-                ButtonSegment(value: LineTouchRule.higher, label: Text('Line = higher')),
-                ButtonSegment(value: LineTouchRule.lower, label: Text('Line = lower')),
-              ],
-              selected: {rule},
-              onSelectionChanged: (s) => setState(() => _rule = s.single),
+      // Keep content above the system navigation bar (Android 15 draws apps
+      // edge to edge) and the iPhone home indicator; the AppBar handles the top.
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SegmentedButton<LineTouchRule>(
+                segments: const [
+                  ButtonSegment(value: LineTouchRule.higher, label: Text('Line = higher')),
+                  ButtonSegment(value: LineTouchRule.lower, label: Text('Line = lower')),
+                ],
+                selected: {rule},
+                onSelectionChanged: (s) => setState(() => _rule = s.single),
+              ),
             ),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final size = constraints.biggest;
-                return GestureDetector(
-                  key: const Key('debugTarget'),
-                  onTapDown: (d) {
-                    final scale = TargetPainter.scaleFor(size);
-                    final offset = (d.localPosition - size.center(Offset.zero)) / scale;
-                    setState(() => _hit = TargetPoint(offset.dx, offset.dy));
-                  },
-                  child: CustomPaint(
-                    size: size,
-                    painter: TargetPainter(model: model, hit: hit, markerRadius: debugBladeHalfWidth),
-                  ),
-                );
-              },
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = constraints.biggest;
+                  return GestureDetector(
+                    key: const Key('debugTarget'),
+                    onTapDown: (d) {
+                      final scale = TargetPainter.scaleFor(size);
+                      final offset = (d.localPosition - size.center(Offset.zero)) / scale;
+                      setState(() => _hit = TargetPoint(offset.dx, offset.dy));
+                    },
+                    child: CustomPaint(
+                      size: size,
+                      painter: TargetPainter(model: model, hit: hit, markerRadius: debugBladeHalfWidth),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              hit == null
-                  ? 'Tap the target'
-                  : 'Score: ${model.scoreAt(hit, bladeHalfWidth: debugBladeHalfWidth)}',
-              key: const Key('scoreText'),
-              style: Theme.of(context).textTheme.headlineMedium,
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                hit == null
+                    ? 'Tap the target'
+                    : 'Score: ${model.scoreAt(hit, bladeHalfWidth: debugBladeHalfWidth)}',
+                key: const Key('scoreText'),
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -110,47 +110,52 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(title: const Text('Calibrate target')),
-      body: Column(
-        children: [
-          Expanded(
-            child: CameraView(
-              overlayBuilder: (context, _) => state == null
-                  ? const SizedBox.expand()
-                  : CalibrationEditor(
-                      calibration: state.calibration,
-                      locked: locked,
-                      onChanged: notifier.adjust,
-                      onTapLocked: (at) => _scoreTap(state.calibration, at),
-                      marker: locked ? _tap : null,
-                    ),
-            ),
-          ),
-          if (locked && camera != null && state != null)
-            Container(
-              color: Colors.black,
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 12),
-              child: WatchStatus(
-                camera: camera,
-                calibration: state.calibration,
-                onKnifeEntry: (entry) => _scoreKnife(state.calibration, entry),
+      // Keep content above the system navigation bar (Android 15 draws apps
+      // edge to edge) and the iPhone home indicator; the AppBar handles the top.
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: CameraView(
+                overlayBuilder: (context, _) => state == null
+                    ? const SizedBox.expand()
+                    : CalibrationEditor(
+                        calibration: state.calibration,
+                        locked: locked,
+                        onChanged: notifier.adjust,
+                        onTapLocked: (at) => _scoreTap(state.calibration, at),
+                        marker: locked ? _tap : null,
+                      ),
               ),
             ),
-          CalibrationControls(
-            status: locked
-                ? lockedStatus(_tapScore, knife: _knife)
-                : calibrationStatus(_found, searching: _searching, millis: _millis),
-            canAdjust: state != null && !locked,
-            locked: locked,
-            onFind: camera == null || _searching || locked ? null : () => _find(camera),
-            onLock: notifier.lock,
-            onUnlock: () {
-              _clearTap();
-              notifier.unlock();
-            },
-            findLabel: state == null ? 'Find target' : 'Find again',
-          ),
-        ],
+            if (locked && camera != null && state != null)
+              Container(
+                color: Colors.black,
+                width: double.infinity,
+                padding: const EdgeInsets.only(top: 12),
+                child: WatchStatus(
+                  camera: camera,
+                  calibration: state.calibration,
+                  onKnifeEntry: (entry) => _scoreKnife(state.calibration, entry),
+                ),
+              ),
+            CalibrationControls(
+              status: locked
+                  ? lockedStatus(_tapScore, knife: _knife)
+                  : calibrationStatus(_found, searching: _searching, millis: _millis),
+              canAdjust: state != null && !locked,
+              locked: locked,
+              onFind: camera == null || _searching || locked ? null : () => _find(camera),
+              onLock: notifier.lock,
+              onUnlock: () {
+                _clearTap();
+                notifier.unlock();
+              },
+              findLabel: state == null ? 'Find target' : 'Find again',
+            ),
+          ],
+        ),
       ),
     );
   }

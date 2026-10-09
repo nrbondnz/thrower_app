@@ -109,53 +109,58 @@ class _DebugLocatorScreenState extends ConsumerState<DebugLocatorScreen> {
     final result = _result;
     return Scaffold(
       appBar: AppBar(title: const Text('Ring finder test')),
-      body: Column(
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                for (var i = 0; i < locatorSamples.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(locatorSamples[i].label),
-                      selected: i == _selected,
-                      onSelected: (_) {
-                        setState(() => _selected = i);
-                        _run();
-                      },
+      // Keep content above the system navigation bar (Android 15 draws apps
+      // edge to edge) and the iPhone home indicator; the AppBar handles the top.
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  for (var i = 0; i < locatorSamples.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(locatorSamples[i].label),
+                        selected: i == _selected,
+                        onSelected: (_) {
+                          setState(() => _selected = i);
+                          _run();
+                        },
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: image == null || result == null
-                ? const Center(child: CircularProgressIndicator())
-                : FittedBox(
-                    child: SizedBox(
-                      width: image.width.toDouble(),
-                      height: image.height.toDouble(),
-                      child: CustomPaint(painter: LocatorOverlayPainter(image: image, result: result)),
+            Expanded(
+              child: image == null || result == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : FittedBox(
+                      child: SizedBox(
+                        width: image.width.toDouble(),
+                        height: image.height.toDouble(),
+                        child: CustomPaint(painter: LocatorOverlayPainter(image: image, result: result)),
+                      ),
                     ),
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              switch (result) {
-                null => 'Finding rings…',
-                TargetFound(:final confidence) =>
-                  'Found: confidence ${(confidence * 100).round()}%, $_millis ms',
-                TargetNotFound(:final reason) => 'Not found: $reason',
-              },
-              key: const Key('locatorResult'),
-              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                switch (result) {
+                  null => 'Finding rings…',
+                  TargetFound(:final confidence) =>
+                    'Found: confidence ${(confidence * 100).round()}%, $_millis ms',
+                  TargetNotFound(:final reason) => 'Not found: $reason',
+                },
+                key: const Key('locatorResult'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

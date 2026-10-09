@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'image_difference.dart';
 import 'luma_image.dart';
 import 'target_calibration.dart';
 
@@ -91,7 +92,7 @@ class MotionEpisode {
 }
 
 class MotionUpdate {
-  const MotionUpdate(this.state, this.changed, {this.finished});
+  const MotionUpdate(this.state, this.changed, {this.finished, this.fromBefore});
 
   final WatchState state;
 
@@ -100,6 +101,10 @@ class MotionUpdate {
 
   /// Set on the frame an episode settles.
   final MotionEpisode? finished;
+
+  /// When the region was still long enough to check: the share that differs
+  /// from the reference (above blockedFraction means blocked). For debugging.
+  final double? fromBefore;
 }
 
 /// Watches a region of a stream of brightness frames for motion, and reports
@@ -207,7 +212,7 @@ class MotionDetector {
           if (fromBefore > blockedFraction && stillFor < maxBlocked) {
             _state = WatchState.blocked;
             _wasBlocked = true;
-            return MotionUpdate(_state, changed);
+            return MotionUpdate(_state, changed, fromBefore: fromBefore);
           }
           final episode = MotionEpisode(
             startFrame: _startFrame!,
@@ -225,28 +230,34 @@ class MotionDetector {
           _wasBlocked = false;
           _state = WatchState.watching;
           _reference = image;
-          return MotionUpdate(_state, changed, finished: episode);
+          return MotionUpdate(_state, changed, finished: episode, fromBefore: fromBefore);
         }
     }
     return MotionUpdate(_state, changed);
   }
 
-  /// Share of the region where [a] and [b] differ by more than [threshold],
-  /// and the mean |difference| of the pixels that don't (null if none).
+  /// Share of the region whose content really changed between [a] and [b]
+  /// ([lumaChanged] at [threshold], after re-aligning a small camera shift of
+  /// up to ±3 px: see `image_difference.dart`). Frame to frame too: a nudge of
+  /// 2 px between two frames would otherwise start an episode that settles as
+  /// a false bounce-out. Returns also the plain mean |difference| of the
+  /// plain mean |difference| of the pixels that don't (for the noise estimate;
+  /// null if none).
   (double, double?) _difference(LumaImage a, LumaImage b) {
     final x0 = (region.left * a.width).floor(), x1 = (region.right * a.width).ceil();
     final y0 = (region.top * a.height).floor(), y1 = (region.bottom * a.height).ceil();
+    final (dx, dy) = bestShift(a, b, PixelRect(x0, y0, x1, y1), step: 2);
     final limit = threshold;
     var changedCount = 0, total = 0, quietSum = 0, quietCount = 0;
     for (var y = y0; y < y1; y++) {
-      final row = y * a.width;
+      final row = y * a.width, sy = y + dy;
       for (var x = x0; x < x1; x++) {
-        final d = (a.pixels[row + x] - b.pixels[row + x]).abs();
         total++;
-        if (d > limit) {
+        final sx = x + dx;
+        if (lumaChanged(a, b, x, y, limit, dx: dx, dy: dy)) {
           changedCount++;
-        } else {
-          quietSum += d;
+        } else if (sx >= 0 && sy >= 0 && sx < b.width && sy < b.height) {
+          quietSum += (a.pixels[row + x] - b.pixels[sy * b.width + sx]).abs();
           quietCount++;
         }
       }

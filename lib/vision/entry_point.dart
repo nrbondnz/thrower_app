@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'ellipse.dart';
+import 'image_difference.dart';
+import 'luma_image.dart';
 import 'rgb_image.dart';
 import 'target_calibration.dart';
 
@@ -121,24 +123,26 @@ class GeometricEntryEstimator implements EntryPointEstimator {
   /// Changed pixels are found by **colour**, not brightness: shaded steel on
   /// red paint has almost the same brightness as the paint (the rendered
   /// ring-3 knife's blade went missing that way), but a very different colour.
+  ///
+  /// A small camera shift between the two pictures is re-aligned first, and
+  /// each pixel may match within 2 px (see `image_difference.dart`).
   List<int>? _largestNewShape(RgbImage before, RgbImage after, Ellipse outer) {
     final w = after.width, h = after.height;
-    int colourChange(int i) {
-      final a = after.pixels, b = before.pixels;
-      return math.max(
-        (a[i * 3] - b[i * 3]).abs(),
-        math.max((a[i * 3 + 1] - b[i * 3 + 1]).abs(), (a[i * 3 + 2] - b[i * 3 + 2]).abs()),
-      );
-    }
-
     final reach = outer.semiMajor * searchMargin;
     final x0 = math.max(0, (outer.cx - reach).floor()), x1 = math.min(w, (outer.cx + reach).ceil());
     final y0 = math.max(0, (outer.cy - reach).floor()), y1 = math.min(h, (outer.cy + reach).ceil());
+    final (dx, dy) = bestShift(
+      LumaImage.fromRgb(after),
+      LumaImage.fromRgb(before),
+      PixelRect(x0, y0, x1, y1),
+      maxShift: 8,
+      step: 4,
+    );
     final changed = <int>{};
     for (var y = y0; y < y1; y++) {
       for (var x = x0; x < x1; x++) {
         final i = y * w + x;
-        if (colourChange(i) > threshold &&
+        if (colourChanged(after, before, x, y, threshold, dx: dx, dy: dy, tolerance: 2) &&
             outer.normalisedRadius(Point2(x.toDouble(), y.toDouble())) <= searchMargin) {
           changed.add(i);
         }

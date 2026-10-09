@@ -44,13 +44,14 @@ void main() {
     final knife = stuck.object!;
     final empty = f.frames.first, withKnife = f.frames.last;
 
-    MotionEpisode between(LumaImage before, LumaImage after) => MotionEpisode(
+    MotionEpisode between(LumaImage before, LumaImage after, {bool blocked = false}) => MotionEpisode(
           startFrame: 0,
           settledFrame: 10,
           start: Duration.zero,
           settled: const Duration(seconds: 1),
           peakChange: 0.01,
           changeFromBefore: 0.007,
+          wasBlocked: blocked,
           before: before,
           after: after,
           threshold: 12,
@@ -64,6 +65,40 @@ void main() {
 
     test('without knowing the knives, the same change looks like a stick (why tracking is needed)', () {
       expect(classifyThrow(between(withKnife, empty), f.calibration).kind, ThrowOutcomeKind.stuck);
+    });
+
+    group('someone at the board', () {
+      test('placing a knife (or a pen) by hand is a stick', () {
+        final outcome = classifyThrow(between(empty, withKnife, blocked: true), f.calibration);
+        expect(outcome.kind, ThrowOutcomeKind.stuck, reason: '$outcome');
+      });
+
+      test('pulling out a knife the app knows is a board visit', () {
+        final outcome = classifyThrow(between(withKnife, empty, blocked: true), f.calibration, knownKnives: [knife]);
+        expect(outcome.kind, ThrowOutcomeKind.boardVisit);
+      });
+
+      test('pulling out a knife the app never saw is still a board visit (it disappeared, not appeared)', () {
+        expect(classifyThrow(between(withKnife, empty, blocked: true), f.calibration).kind, ThrowOutcomeKind.boardVisit);
+      });
+
+      test('putting a knife in while taking the known one out is a board visit (collecting)', () {
+        // The ring-3 sequence ends with the ring-4 and ring-3 knives; wipe the
+        // ring-4 one (and 2 px around it) back to the empty board.
+        final both = Fixture('throw-stick-ring3').frames.last;
+        final onlyRing3 = LumaImage(both.width, both.height, Uint8List.fromList(both.pixels));
+        for (final i in knife.pixels) {
+          final x = i % both.width, y = i ~/ both.width;
+          for (var dy = -2; dy <= 2; dy++) {
+            for (var dx = -2; dx <= 2; dx++) {
+              final j = (y + dy) * both.width + x + dx;
+              onlyRing3.pixels[j] = empty.pixels[j];
+            }
+          }
+        }
+        final outcome = classifyThrow(between(withKnife, onlyRing3, blocked: true), f.calibration, knownKnives: [knife]);
+        expect(outcome.kind, ThrowOutcomeKind.boardVisit, reason: '$outcome');
+      });
     });
 
     test('a new knife elsewhere is still a stick when another knife is known', () {

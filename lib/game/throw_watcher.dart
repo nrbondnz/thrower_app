@@ -12,6 +12,7 @@ import '../vision/rgb_image.dart';
 import '../vision/target_calibration.dart';
 import '../vision/throw_classifier.dart';
 import 'throw_tracker.dart';
+import 'watch_debug_log.dart';
 
 /// Something the watcher decided about a settled episode.
 class ThrowEvent {
@@ -40,12 +41,14 @@ class ThrowEvent {
 class ThrowWatcher {
   ThrowWatcher(this.camera, this.calibration)
       : _detector = MotionDetector(WatchRegion.fromCalibration(calibration)),
-        _tracker = ThrowTracker(calibration);
+        _tracker = ThrowTracker(calibration),
+        _debug = WatchDebugLog(calibration);
 
   final LiveCamera camera;
   final TargetCalibration calibration;
   final MotionDetector _detector;
   final ThrowTracker _tracker;
+  final WatchDebugLog _debug;
 
   static const interval = Duration(milliseconds: 60);
   static const beforeRefresh = Duration(seconds: 1);
@@ -89,6 +92,7 @@ class ThrowWatcher {
     final luma = frameToLuma(frame, rotation: rotation);
     if (luma == null) return;
     final update = _detector.add(luma, frame.timestamp);
+    _debug.onUpdate(update, _detector.threshold);
     state.value = update.state;
 
     final keptAt = _fullBeforeAt;
@@ -109,6 +113,7 @@ class ThrowWatcher {
 
   void _onEpisode(MotionEpisode episode) {
     final (outcome, knifeId) = _tracker.onEpisode(episode);
+    _debug.onEpisode(episode, outcome);
     lastEpisode = episode;
     lastOutcome = outcome;
     if (outcome.kind == ThrowOutcomeKind.stuck) {
@@ -129,6 +134,7 @@ class ThrowWatcher {
       _fullBeforeAt = frame.timestamp;
       if (before != null) entry = await compute(findKnifeEntry, (before, after, calibration));
     }
+    _debug.onEntry(entry);
     if (!_events.isClosed) _events.add(ThrowEvent(outcome, episode, entry: entry, knifeId: id));
   }
 }

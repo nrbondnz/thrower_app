@@ -131,55 +131,60 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: CameraView(
-              overlayBuilder: (context, _) => LayoutBuilder(
-                builder: (context, constraints) => CustomPaint(
-                  size: Size.infinite,
-                  painter: PlayOverlayPainter(
-                    calibration.calibration,
-                    scale: constraints.maxWidth / calibration.calibration.imageWidth,
-                    dots: _dots.values.toList(),
+      // Keep content above the system navigation bar (Android 15 draws apps
+      // edge to edge) and the iPhone home indicator; the AppBar handles the top.
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: CameraView(
+                overlayBuilder: (context, _) => LayoutBuilder(
+                  builder: (context, constraints) => CustomPaint(
+                    size: Size.infinite,
+                    painter: PlayOverlayPainter(
+                      calibration.calibration,
+                      scale: constraints.maxWidth / calibration.calibration.imageWidth,
+                      dots: _dots.values.toList(),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Container(
-            color: Colors.black,
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                if (watcher != null)
-                  ValueListenableBuilder(
-                    valueListenable: watcher.state,
-                    builder: (context, state, _) => Text(
-                      playStateText(state),
-                      key: const Key('playState'),
-                      style: const TextStyle(color: Colors.white70),
+            Container(
+              color: Colors.black,
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  if (watcher != null)
+                    ValueListenableBuilder(
+                      valueListenable: watcher.state,
+                      builder: (context, state, _) => Text(
+                        playStateText(state),
+                        key: const Key('playState'),
+                        style: const TextStyle(color: Colors.white70),
+                      ),
                     ),
+                  const SizedBox(height: 8),
+                  Text(
+                    roundText(game),
+                    key: const Key('roundText'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  roundText(game),
-                  key: const Key('roundText'),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  gameText(game, message: _message),
-                  key: const Key('gameText'),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    gameText(game, message: _message),
+                    key: const Key('gameText'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
