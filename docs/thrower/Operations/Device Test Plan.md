@@ -12,22 +12,24 @@ The page is private until Nigel shares it. **Share it with the tester as a Contr
 - **Release build:** no frames/s label, error detail or frame dump (all debug-only). C1 asks whether the picture is smooth instead.
 - **Evidence:** **screenshots sent with TestFlight's *Share Beta Feedback*** at F1, K1, P1 and on any failure; they arrive in App Store Connect → TestFlight → Feedback, with any crash reports.
 - **Biggest iPhone risk:** frame orientation (rings rotated or mirrored relative to the preview); F1 asks this explicitly.
-- Auto-Lock off while the phone is propped.
+- Auto-Lock off while testing.
+- **Names:** the store/TestFlight name is **Knife and Axe Thrower**; the home-screen name is still **Thrower App** (`CFBundleDisplayName`).
+- **Build:** 1.0.0 (2) or later (Instructions, 9-round games, Reset). Updated 2026-10-09, [[story-checkpoint-instructions-and-game-length]].
 
 ## Setup
 
-A4 printout at 100% (`reference/printable/target-A4.pdf`), taped flat at chest height. Phone **about 50 cm away at ~45°**, propped still: that's how the app sees an 80 cm board from 2 m. **A grey pen pushed into Blu Tack** (sticking out ~10 cm) stands in for a knife. Nothing is thrown at the printout.
+A4 printout at 100% (`reference/printable/target-A4.pdf`), taped flat at chest height. Phone **about 50 cm away at ~45°**, **on a tripod** (or otherwise held completely still; re-calibrate if it moves): that's how the app sees an 80 cm board from 2 m. **A grey pen pushed into Blu Tack** (sticking out ~10 cm) stands in for a knife. Nothing is thrown at the printout.
 
 ## Steps and What They Verify
 
 | Part | Steps | Checks | Requirements |
 |---|---|---|---|
-| S: Set up | S0–S3 | print scale (100 mm bar), placement recorded | — |
+| S: Set up | S0–S4 | print scale (100 mm bar), placement and mount recorded; S4 reads the in-app Instructions, *Paper target* version first, then skims *Real board* (clear / mostly / confusing) | story instructions R3, R4 |
 | C: Camera | C1 camera prompt, picture smooth?; C2 swipe up and return | camera permission, preview, lifecycle | setup R4 |
 | F: Find the target | F1 find (confidence, ms, rings line up or turned/mirrored, screenshot); F2 ×3 repeat; F3 dim light; F4 at 1 m; F5 adjust and lock; F6 tap-to-score 5…0 | ring finder, coarse-to-fine, dim-light fallback, adjust/lock, mapping | calibration C1–C6, C8 |
 | W: Watching | W1 still 20 s (false motion count); W2 wave → bounced off; W3 hand held → blocked → board visit | motion detector, blocked state, classifier | throw T-R1, T-R2 |
 | K: Pen knives | K1–K3: ring by eye vs app score, dot distance from the pen tip (one near a line) | entry point, scoring | T-R3, calibration C5 |
-| P: Play | P1 round of 2 sticks + bounce; P2 collect → round 2; P3 fall-out (optional); P4 speed | game session, tracker, play screen | T-R4, T-R5, T-R6 |
+| P: Play | P1 round of 2 sticks + bounce ("Round 1 of 9"); P2 collect → round 2; P3 fall-out (optional); P5 Reset game (cancel / confirm); P6 a whole 9-round game by hand-waves → Game over, extra throw ignored, New game (optional); P4 speed | game session, tracker, play screen, game over, reset | T-R4, T-R5, T-R6; story instructions R1, R2 |
 | R: Real board (later) | R1 calibrate at 2 m / 45°; R2 two rounds, by eye vs app | the real thing | all |
 
 Safety: with a real board, the phone and stand sit outside the throwing lane; the phone and the board are only approached when no one is throwing.

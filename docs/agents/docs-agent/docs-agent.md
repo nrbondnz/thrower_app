@@ -16,6 +16,7 @@ This is not a "when I remember" activity. It is a mandatory step after every cod
 - Data model changes (session, throw, player, account)
 - New plugins, permissions or platform configuration
 - Backend or auth provider changes (once that decision is made)
+- Anything testers are told to do: setup advice, button names, how rounds and scoring work, safety wording. Check **`lib/ui/instructions.dart`** (the in-app Instructions) still matches; see Common Tasks → Update the In-App Instructions
 
 **Also trigger with no code change at all:** when an operational issue, tooling quirk or third-party bug is found during troubleshooting (e.g. a camera plugin misbehaving on one phone model, an Xcode signing gotcha). These belong in Known Issues and/or Common Tasks the moment they're understood, so the next person to hit the same symptom finds it documented.
 

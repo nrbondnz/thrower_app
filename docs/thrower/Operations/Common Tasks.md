@@ -28,6 +28,15 @@ On the Mac, with the repo pulled. The first time takes about an hour, later buil
 - `NSMicrophoneUsageDescription` is present only because the camera plugin links audio APIs, which App Store Connect flags; the app never asks for the microphone (`enableAudio: false`).
 - TestFlight builds expire after 90 days.
 
+## Update the In-App Instructions
+
+The *Instructions* screen (Home → Instructions) is what players and testers read. Its text is in **`lib/ui/instructions.dart`** → `instructionSections`, with two versions picked by `InstructionTarget`: **Real board** (default) and **Paper target** (A4 printout, pens in Blu Tack). Shared points are written once; version-specific ones sit under `if (paper)`. Keep both versions in mind when editing.
+- **When:** any change to setup advice, button names, how rounds work, scoring or safety wording. The Docs Agent checks this on every change to `lib/ui/`, `lib/scoring/` or `lib/game/`.
+- **Numbers aren't typed in:** rounds, throws per round, ring scores and the line-touch rule come from `GameSession` and `TargetModel`, so they follow rule changes automatically.
+- **Button names are typed in** (*Find target*, *Lock target*, *Re-calibrate*, *Reset game*, *New game*): if a label changes, update the text.
+- **Safety wording:** never imply the app knows the lane is clear (Review Agent checklist §7).
+- Run `flutter test test/ui/instructions_test.dart` and update its expected phrases if the wording changed on purpose.
+
 ## Run the App on a Phone
 
 - Use the JetBrains `main.dart` run configuration (see `working-with-nigel.md` → IDE).

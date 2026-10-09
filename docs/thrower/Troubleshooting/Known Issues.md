@@ -7,6 +7,13 @@
 - **Likely cause:** the app was still running from a session started before the native plugin was built in (a hot reload/restart doesn't add native code). Not confirmed: a fresh `flutter run` worked, including the first-time permission prompt.
 - **Fix:** stop the app fully and re-run it. In debug builds the error view now shows the underlying exception, so if this recurs the cause is on screen. See [[Common Tasks#Run the App on a Phone]].
 
+## iPhone: Target Outline in the Wrong Place (Frames Rotated Twice)
+
+- **Symptom (Nigel, 2026-10-09, first iPhone test):** *Find target* finds the rings (95%+), but the outline lands on the wrong side of the preview, or higher and smaller than the target.
+- **Cause:** `camera_avfoundation` sets the image stream's `videoOrientation` to match the device, so **iOS frames arrive already upright** (720×1280 in portrait). Android frames arrive in sensor orientation (landscape). `LiveCamera.uprightRotation` applied `sensorOrientation` (90°) on both platforms, so the iPhone frame was analysed sideways (1280×720) and the result was drawn in the wrong coordinates.
+- **How it was found:** the debug log line `Calibration frame: 720×1280 bgra8888 …; rotation 90°; analysed 1280×720` and the dumped frame (poster lettering sideways). On iOS, pull the frame with `xcrun devicectl device copy from --device <id> --domain-type appDataContainer --domain-identifier nz.nrbond.thrower --source tmp/calibration-frame.png --destination calibration-frame.png`.
+- **Fix in place (2026-10-09):** `frameRotation(alreadyUpright: Platform.isIOS, …)` returns 0 on iOS. It's covered by the `frameRotation` cases in `test/vision/frame_to_rgb_test.dart`. Calibration and throw watching both use `uprightRotation`, so the one change covers both.
+
 ## Calibration Can't Find the Target Indoors (Dim, Washed-Out Stream)
 
 - **Symptom:** "Target not found" on the A4 printout indoors, although a photo of the same scene works.

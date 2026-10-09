@@ -8,7 +8,7 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
 | ~~2~~ | ~~Throw detection and scoring~~ | **Done 2026-10-08** ([[story-checkpoint-throw-detection]], archived). Was: Throw motion → settle → compare with the reference frame → stick or bounce-out → blade entry point under the handle → `TargetMapping` → score. Also retrieval (end of round) and knives that fall out later. See [[Design Decisions]] → Throw Detection. | 1 |
 | 3 | **Refine scoring by hit point** | Line-touch rules and per-sport variants (IKTHOF / WATL / IATF). Nigel put this on the backlog on 2026-10-04. `LineTouchRule` already supports higher/lower. | 2 |
 | 4 | **Accounts** | Choose the backend and auth provider; implement `AuthService`. Revisit CI/CD (A8) at the same time. | — |
-| 5 | **Game modes** | Single-player rounds of **3 throws**, then players, history. | 2 |
+| 5 | **Game modes** | Single-player games of **9 rounds of 3 throws** with reset (done 2026-10-09, [[story-checkpoint-instructions-and-game-length]]); next: players, history, other game lengths. | 2 |
 | 6 | **Store-release hygiene** | Remove or gate the 170 KB debug asset (`assets/debug/target-example.jpg`); review debug screens; check the iOS `NSMicrophoneUsageDescription` question (Review Agent note, setup story). | before any store build |
 | 7 | **Axes** | Axe throws: wide head, long handle; entry point and scoring differ from knives (Nigel: knives first, 2026-10-08). | 2 |
 | 8 | **Full-screen Play (optional)** | Hide the system bars while playing (immersive sticky mode) for a cleaner view on a stand. Content already stays clear of them (`SafeArea`), so this is cosmetic. | — |

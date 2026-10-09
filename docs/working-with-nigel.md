@@ -32,7 +32,7 @@ Full agent definitions, triggers and output formats are in `docs/agents/`.
 - **Accounts:** needed. **Backend and payments:** deferred.
 - **Source control:** GitHub (not yet set up).
 - **Flutter app** (`thrower_app`): SDK `^3.13.5`, Riverpod; layers `lib/scoring/` (pure Dart), `lib/camera/`, `lib/auth/` (interface), `lib/ui/`; wiring in `lib/providers.dart`. Repo: private `github.com/nrbondnz/thrower_app`, `main` only.
-- Details and rationale: [[Design Decisions]]. Current story: none active (choose from the [[backlog]]); last: [[story-checkpoint-throw-detection]]; upcoming work in [[backlog]]. How-tos: [[Common Tasks]]; gotchas: [[Known Issues]].
+- Details and rationale: [[Design Decisions]]. Current story: none active (choose from the [[backlog]]); last: [[story-checkpoint-instructions-and-game-length]]; upcoming work in [[backlog]]. How-tos: [[Common Tasks]]; gotchas: [[Known Issues]].
 
 ## Commit / Deploy Rules
 

@@ -212,6 +212,12 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
   - **Play screen:** live picture, locked rings, numbered dots, round and game totals.
 - **Safety:** at the end of a round the screen says *"Collect your knives when no one is throwing"*. It never says the lane is clear.
 
+**Update (2026-10-09, [[story-checkpoint-instructions-and-game-length]]):**
+- **A game is a fixed 9 rounds** (`GameSession.maxRounds`, default 9). `isOver` = round 9 complete (3 throws, or closed early by collecting). Later throws are ignored: `GameSession` returns itself, and `GameNotifier` doesn't remember a post-game knife, so it falling out can't zero a real throw. A round-9 knife falling out after game over still scores 0. Play shows "Round N of 9"; at game over "Game over! Final total" with every round, plus a **New game** button.
+- **Reset asks first:** the Play app-bar button is **Reset game** (disabled before the first throw) with "Reset this game? Scores will be lost." Chosen over an instant reset so a stray tap mid-game can't wipe the scores. *New game* at game over doesn't ask.
+- **In-app Instructions** (`lib/ui/instructions.dart`, *Instructions* on Home): Dart content, no Markdown package. Game length, throws per round, ring scores and the line-touch rule are read from `GameSession` / `TargetModel`, so the text follows the rules. Chosen over a Markdown asset (easier prose editing, but a new dependency and hand-typed numbers that drift). Keeping it current: [[Common Tasks#Update the In-App Instructions]].
+- **Two versions** (Nigel, 2026-10-09): **Real board** (default; the main one: 75–85 cm board, phone 2 m away out of the line of throw, lane safety) and **Paper target** (A4 printout at 100%, phone 50 cm away, pens in Blu Tack placed by hand, hand-wave = bounce-out, never throw at the paper). One page with a switch at the top (`InstructionTarget`), not two screens: calibrating, scoring, resetting and reporting are shared, so they can't diverge.
+
 ## Blade Entry Point (Throw Detection, Task 4)
 
 **Decision (D1 option A, geometry):** `GeometricEntryEstimator` (behind `EntryPointEstimator`, so a trained model can replace it) works on **full-resolution** upright before/after pictures (the calibration's own size):
