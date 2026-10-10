@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/live_camera.dart';
 import 'package:thrower_app/providers.dart';
-import 'package:thrower_app/ui/camera_screen.dart';
+import 'package:thrower_app/ui/camera_view.dart';
 
 void main() {
   Future<void> pumpWithCamera(WidgetTester tester, Future<LiveCamera> Function() open) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [liveCameraProvider.overrideWith((ref) => open())],
-      child: const MaterialApp(home: CameraScreen()),
+      child: const MaterialApp(home: Scaffold(body: CameraView())),
     ));
     await tester.pump();
   }

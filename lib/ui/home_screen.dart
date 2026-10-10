@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'calibration_screen.dart';
-import 'camera_screen.dart';
-import 'debug_locator_screen.dart';
 import 'debug_target_screen.dart';
 import 'instructions.dart';
 import 'play_screen.dart';
@@ -37,18 +35,8 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => open(const CameraScreen()),
-              child: const Text('Camera'),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
               onPressed: () => open(const DebugTargetScreen()),
               child: const Text('Scoring test target'),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => open(const DebugLocatorScreen()),
-              child: const Text('Ring finder test'),
             ),
           ],
         ),

@@ -15,7 +15,7 @@ import '../vision/target_calibration.dart';
 import '../vision/target_locator.dart';
 import '../vision/target_mapping.dart';
 import 'calibration_editor.dart';
-import 'camera_screen.dart';
+import 'camera_view.dart';
 import 'watch_status.dart';
 
 /// Point the mounted phone at the board and tap "Find target": the fitted ring

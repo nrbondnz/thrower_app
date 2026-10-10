@@ -13,7 +13,7 @@ import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
 import '../vision/throw_classifier.dart';
 import 'calibration_screen.dart';
-import 'camera_screen.dart';
+import 'camera_view.dart';
 
 /// Single-player play: the locked target in the live picture; each throw is
 /// detected and scored, with a numbered dot where each knife went in this

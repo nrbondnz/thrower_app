@@ -10,22 +10,6 @@ import '../camera/frame_rate_meter.dart';
 import '../camera/live_camera.dart';
 import '../providers.dart';
 
-/// Full-screen preview from the back camera. In debug builds it also shows the
-/// frame rate, which proves frames are reaching the app for the vision layer.
-class CameraScreen extends StatelessWidget {
-  const CameraScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Camera')),
-      // Above the system navigation bar / home indicator (see calibration_screen.dart).
-      body: const SafeArea(top: false, child: CameraView()),
-    );
-  }
-}
-
 /// The back camera's preview, with permission errors, release on background
 /// and re-open on return handled. [overlayBuilder] draws on top of the preview,
 /// sized and positioned exactly over the camera image.
