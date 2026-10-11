@@ -8,15 +8,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../camera/camera_source.dart';
 import '../camera/frame_rate_meter.dart';
 import '../camera/live_camera.dart';
+import '../camera/recorded_camera.dart';
+import '../camera/target_camera.dart';
 import '../providers.dart';
+import 'recorded_preview.dart';
 
-/// The back camera's preview, with permission errors, release on background
-/// and re-open on return handled. [overlayBuilder] draws on top of the preview,
-/// sized and positioned exactly over the camera image.
+/// The back camera's preview (or the Live test recording playing in its
+/// place), with permission errors, release on background and re-open on
+/// return handled. [overlayBuilder] draws on top of the preview, sized and
+/// positioned exactly over the camera image.
 class CameraView extends ConsumerStatefulWidget {
   const CameraView({super.key, this.overlayBuilder});
 
-  final Widget Function(BuildContext context, LiveCamera camera)? overlayBuilder;
+  final Widget Function(BuildContext context, TargetCamera camera)? overlayBuilder;
 
   @override
   ConsumerState<CameraView> createState() => _CameraViewState();
@@ -53,21 +57,25 @@ class _CameraViewState extends ConsumerState<CameraView> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     if (_backgrounded) return const SizedBox.expand();
-    return ref.watch(liveCameraProvider).when(
+    return ref.watch(cameraProvider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) {
             debugPrint('Camera failed to start: $error\n$stack');
             return CameraErrorView(
               failure: error is CameraStartException ? error.failure : CameraFailure.unknown,
               detail: kDebugMode ? error.toString() : null,
-              onRetry: () => ref.invalidate(liveCameraProvider),
+              onRetry: () => ref.invalidate(cameraProvider),
             );
           },
           data: (camera) => Stack(
             fit: StackFit.expand,
             children: [
               Center(
-                child: CameraPreview(camera.controller, child: widget.overlayBuilder?.call(context, camera)),
+                child: switch (camera) {
+                  LiveCamera() => CameraPreview(camera.controller, child: widget.overlayBuilder?.call(context, camera)),
+                  RecordedCamera() => RecordedPreview(camera: camera, child: widget.overlayBuilder?.call(context, camera)),
+                  _ => const SizedBox.shrink(),
+                },
               ),
               if (kDebugMode) Positioned(top: 8, left: 8, child: FrameRateLabel(source: camera)),
             ],

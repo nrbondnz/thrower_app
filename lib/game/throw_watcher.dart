@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../camera/camera_frame.dart';
-import '../camera/live_camera.dart';
+import '../camera/target_camera.dart';
 import '../vision/entry_point.dart';
 import '../vision/frame_to_rgb.dart';
 import '../vision/luma_image.dart';
@@ -44,7 +44,7 @@ class ThrowWatcher {
         _tracker = ThrowTracker(calibration),
         _debug = WatchDebugLog(calibration);
 
-  final LiveCamera camera;
+  final TargetCamera camera;
   final TargetCalibration calibration;
   final MotionDetector _detector;
   final ThrowTracker _tracker;

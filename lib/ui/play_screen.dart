@@ -4,7 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../camera/live_camera.dart';
+import '../camera/recorded_camera.dart';
+import '../camera/target_camera.dart';
 import '../game/throw_watcher.dart';
 import '../providers.dart';
 import '../scoring/game_session.dart';
@@ -29,20 +30,28 @@ class PlayScreen extends ConsumerStatefulWidget {
 class _PlayScreenState extends ConsumerState<PlayScreen> {
   ThrowWatcher? _watcher;
   StreamSubscription<ThrowEvent>? _events;
-  LiveCamera? _camera;
+  TargetCamera? _camera;
   TargetCalibration? _calibration;
 
   /// Entry points (image pixels) of this round's stuck knives, by knife id.
   final _dots = <int, Point2>{};
   String? _message;
 
-  void _ensureWatcher(LiveCamera camera, TargetCalibration calibration) {
+  void _ensureWatcher(TargetCamera camera, TargetCalibration calibration) {
     if (identical(camera, _camera) && identical(calibration, _calibration)) return;
     _stopWatcher();
     _camera = camera;
     _calibration = calibration;
     _watcher = ThrowWatcher(camera, calibration)..start();
     _events = _watcher!.events.listen((event) => _onEvent(event, calibration));
+    // A Live test recording waits on its first frame until play starts.
+    if (camera is RecordedCamera) WidgetsBinding.instance.addPostFrameCallback((_) => camera.restart());
+  }
+
+  /// Live test: play the recording again from the start, with a new game.
+  void _replay(RecordedCamera camera) {
+    _newGame();
+    camera.restart();
   }
 
   void _onEvent(ThrowEvent event, TargetCalibration calibration) {
@@ -110,7 +119,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   Widget build(BuildContext context) {
     final calibration = ref.watch(calibrationProvider);
     final game = ref.watch(gameProvider);
-    final camera = ref.watch(liveCameraProvider).value;
+    final camera = ref.watch(cameraProvider).value;
 
     if (calibration == null || !calibration.locked) {
       _stopWatcher();
@@ -198,6 +207,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white70),
                   ),
+                  if (camera is RecordedCamera) ...[
+                    const SizedBox(height: 12),
+                    ValueListenableBuilder(
+                      valueListenable: camera.playing,
+                      builder: (context, playing, _) => OutlinedButton(
+                        key: const Key('replayRecording'),
+                        onPressed: () => _replay(camera),
+                        child: Text(playing ? 'Restart the recording' : 'Recording finished: play again'),
+                      ),
+                    ),
+                  ],
                   if (game.isOver) ...[
                     const SizedBox(height: 12),
                     FilledButton(onPressed: _newGame, child: const Text('New game')),

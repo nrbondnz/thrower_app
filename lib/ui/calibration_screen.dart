@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../camera/camera_frame.dart';
-import '../camera/live_camera.dart';
+import '../camera/target_camera.dart';
 import '../providers.dart';
 import '../vision/ellipse.dart';
 import '../vision/entry_point.dart';
@@ -67,7 +67,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     setState(() => _knife = true);
   }
 
-  Future<void> _find(LiveCamera camera) async {
+  Future<void> _find(TargetCamera camera) async {
     setState(() => _searching = true);
     final stopwatch = Stopwatch()..start();
     final frame = await camera.frames().first;
@@ -103,7 +103,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final camera = ref.watch(liveCameraProvider).value;
+    final camera = ref.watch(cameraProvider).value;
     final state = ref.watch(calibrationProvider);
     final notifier = ref.read(calibrationProvider.notifier);
     final locked = state?.locked ?? false;

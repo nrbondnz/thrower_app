@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth/auth_service.dart';
 import 'camera/live_camera.dart';
+import 'camera/recorded_camera.dart';
+import 'camera/target_camera.dart';
 import 'game/throw_watcher.dart';
 import 'scoring/game_session.dart';
 import 'scoring/target_model.dart';
@@ -20,14 +22,28 @@ final ringBoundaryRadiiProvider = Provider<List<double>>((ref) {
   return [for (final r in rings.take(rings.length - 1)) r.outerRadius];
 });
 
-/// The open back camera. Released as soon as nothing is watching it (e.g. the
-/// camera screen closes or the app goes to the background).
+/// Which recording the Live test is playing in place of the camera, or null
+/// for the phone's own camera.
+class RecordingChoiceNotifier extends Notifier<Recording?> {
+  @override
+  Recording? build() => null;
+
+  void use(Recording? recording) => state = recording;
+}
+
+final recordingChoiceProvider = NotifierProvider<RecordingChoiceNotifier, Recording?>(RecordingChoiceNotifier.new);
+
+/// The camera the screens watch the target through: the open back camera, or
+/// the chosen Live test recording ([recordingChoiceProvider]). Released as
+/// soon as nothing is watching it (e.g. the camera screen closes or the app
+/// goes to the background).
 ///
 /// Never retried automatically: on Android a retry after "Don't allow" would
 /// show the permission prompt again. The user retries from the error view.
-final liveCameraProvider = FutureProvider.autoDispose<LiveCamera>(
+final cameraProvider = FutureProvider.autoDispose<TargetCamera>(
   (ref) async {
-    final camera = await LiveCamera.open();
+    final recording = ref.watch(recordingChoiceProvider);
+    final TargetCamera camera = recording == null ? await LiveCamera.open() : await RecordedCamera.load(recording);
     ref.onDispose(camera.dispose);
     return camera;
   },
@@ -36,6 +52,8 @@ final liveCameraProvider = FutureProvider.autoDispose<LiveCamera>(
 
 /// The target calibration for this session: found, adjusted, then locked.
 /// Not auto-disposed, so it survives leaving and returning to the screen.
+/// It belongs to the camera it was made with, so switching between the live
+/// camera and a recording starts over.
 class CalibrationState {
   const CalibrationState(this.calibration, {this.locked = false});
 
@@ -45,7 +63,10 @@ class CalibrationState {
 
 class CalibrationNotifier extends Notifier<CalibrationState?> {
   @override
-  CalibrationState? build() => null;
+  CalibrationState? build() {
+    ref.watch(recordingChoiceProvider);
+    return null;
+  }
 
   /// A new (unlocked) calibration, e.g. from "Find target".
   void start(TargetCalibration calibration) => state = CalibrationState(calibration);
@@ -73,8 +94,13 @@ class GameNotifier extends Notifier<GameSession> {
   /// knives still in the board.
   final _knives = <int, (int, int)>{};
 
+  /// A new game whenever the camera changes (live camera ↔ a recording).
   @override
-  GameSession build() => const GameSession();
+  GameSession build() {
+    ref.watch(recordingChoiceProvider);
+    _knives.clear();
+    return const GameSession();
+  }
 
   void newGame() {
     _knives.clear();

@@ -5,7 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 
 import 'camera_frame.dart';
-import 'camera_source.dart';
+import 'target_camera.dart';
 
 /// Why the camera couldn't start, in terms the UI can explain to the user.
 enum CameraFailure {
@@ -32,7 +32,7 @@ class CameraStartException implements Exception {
 }
 
 /// The phone's back camera. Audio is never recorded.
-class LiveCamera implements CameraSource {
+class LiveCamera implements TargetCamera {
   LiveCamera._(this.controller);
 
   /// Exposed for [CameraPreview] only; other code should use [frames].
@@ -77,6 +77,7 @@ class LiveCamera implements CameraSource {
   /// Clockwise rotation that makes this camera's frames upright for the
   /// phone's current orientation (see [frameRotation]). On iOS the plugin's
   /// image stream is already upright; on Android it is in sensor orientation.
+  @override
   int get uprightRotation => frameRotation(
         alreadyUpright: Platform.isIOS,
         sensorOrientation: controller.description.sensorOrientation,
@@ -123,6 +124,7 @@ class LiveCamera implements CameraSource {
         timestamp: _clock.elapsed,
       );
 
+  @override
   Future<void> dispose() async {
     await _frames?.close();
     _frames = null;

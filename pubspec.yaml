@@ -60,6 +60,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Live test recordings of two real boards (~21 MB; in TestFlight builds too,
+  # Nigel 2026-10-11). Made with tool/pack_recording.dart.
+  assets:
+    - assets/live/
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

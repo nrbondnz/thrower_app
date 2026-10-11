@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../camera/live_camera.dart';
+import '../camera/target_camera.dart';
 import '../game/throw_watcher.dart';
 import '../vision/entry_point.dart';
 import '../vision/motion_detector.dart';
@@ -14,7 +14,7 @@ import '../vision/throw_classifier.dart';
 class WatchStatus extends StatefulWidget {
   const WatchStatus({super.key, required this.camera, required this.calibration, this.onKnifeEntry});
 
-  final LiveCamera camera;
+  final TargetCamera camera;
   final TargetCalibration calibration;
 
   /// Called when a stuck knife's blade entry has been found (image pixel in

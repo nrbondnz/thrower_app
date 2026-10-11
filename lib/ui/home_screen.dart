@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'calibration_screen.dart';
 import 'debug_target_screen.dart';
 import 'instructions.dart';
+import 'live_test_screen.dart';
 import 'play_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -27,6 +28,11 @@ class HomeScreen extends StatelessWidget {
             FilledButton(
               onPressed: () => open(const PlayScreen()),
               child: const Text('Play'),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => open(const LiveTestScreen()),
+              child: const Text('Live test'),
             ),
             const SizedBox(height: 16),
             FilledButton(

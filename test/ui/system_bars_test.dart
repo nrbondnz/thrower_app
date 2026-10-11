@@ -41,7 +41,7 @@ Future<void> pumpWithNavBar(WidgetTester tester, Widget screen, {List overrides 
   await tester.pumpWidget(ProviderScope(
     overrides: [
       // The camera never starts in a test; the screens show their controls anyway.
-      liveCameraProvider.overrideWith((ref) => Completer<LiveCamera>().future),
+      cameraProvider.overrideWith((ref) => Completer<LiveCamera>().future),
       ...overrides.cast(),
     ],
     child: MaterialApp(home: screen),
