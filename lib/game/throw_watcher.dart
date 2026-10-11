@@ -35,7 +35,9 @@ class ThrowEvent {
 /// - each settled episode → [classifyThrow], knowing the knives already in the
 ///   board (so a knife falling out isn't taken for a new one);
 /// - for a stuck knife: a full-resolution after picture against the kept
-///   before picture → [GeometricEntryEstimator], off the UI thread.
+///   before picture → [GeometricEntryEstimator], off the UI thread; or, on a
+///   board seen face on ([isFaceOn]), straight from the knife's shape
+///   ([faceOnEntry]).
 ///
 /// Knives are remembered until a board visit (someone collecting them).
 class ThrowWatcher {
@@ -116,7 +118,11 @@ class ThrowWatcher {
     _debug.onEpisode(episode, outcome);
     lastEpisode = episode;
     lastOutcome = outcome;
-    if (outcome.kind == ThrowOutcomeKind.stuck) {
+    if (outcome.kind == ThrowOutcomeKind.stuck && isFaceOn(calibration)) {
+      final entry = faceOnEntry(outcome.object!, calibration);
+      _debug.onEntry(entry);
+      _events.add(ThrowEvent(outcome, episode, entry: entry, knifeId: knifeId));
+    } else if (outcome.kind == ThrowOutcomeKind.stuck) {
       _awaitingAfter = (episode, outcome, knifeId!); // Entry found from the next frame.
     } else {
       _events.add(ThrowEvent(outcome, episode, knifeId: knifeId));

@@ -9,16 +9,17 @@ import '../camera/target_camera.dart';
 import '../game/throw_watcher.dart';
 import '../providers.dart';
 import '../scoring/game_session.dart';
-import '../vision/ellipse.dart';
 import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
 import '../vision/throw_classifier.dart';
 import 'calibration_screen.dart';
 import 'camera_view.dart';
+import 'round_marks.dart';
 
 /// Single-player play: the locked target in the live picture; each throw is
-/// detected and scored, with a numbered dot where each knife went in this
-/// round. Games of 9 rounds of 3; collecting the knives (someone at the
+/// detected and scored, with a yellow circle showing its score where each
+/// knife went in this round and a "0" beside the board for each bounce-out
+/// ([RoundMarks]). Games of 9 rounds of 3; collecting the knives (someone at the
 /// board) closes the round.
 class PlayScreen extends ConsumerStatefulWidget {
   const PlayScreen({super.key});
@@ -33,8 +34,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   TargetCamera? _camera;
   TargetCalibration? _calibration;
 
-  /// Entry points (image pixels) of this round's stuck knives, by knife id.
-  final _dots = <int, Point2>{};
+  /// This round's marks on the board.
+  final _marks = RoundMarks();
   String? _message;
 
   void _ensureWatcher(TargetCamera camera, TargetCalibration calibration) {
@@ -58,20 +59,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     final notifier = ref.read(gameProvider.notifier);
     final wasComplete = ref.read(gameProvider).roundComplete;
     notifier.onEvent(event, calibration);
+    final score = ref.read(gameProvider).currentRound?.throws.lastOrNull?.score ?? 0;
     setState(() {
+      _marks.apply(event, score: score, newRound: wasComplete);
       switch (event.outcome.kind) {
         case ThrowOutcomeKind.stuck:
-          if (wasComplete) _dots.clear(); // A new round has started.
-          if (event.entry case final entry?) _dots[event.knifeId!] = entry.point;
           _message = event.entry == null ? "Stuck, but couldn't see where it went in." : null;
         case ThrowOutcomeKind.bounceOut:
-          if (wasComplete) _dots.clear();
           _message = 'Bounced off: 0.';
         case ThrowOutcomeKind.fellOut:
-          _dots.remove(event.knifeId);
           _message = 'A knife fell out: it scores 0.';
         case ThrowOutcomeKind.boardVisit:
-          _dots.clear();
           _message = null;
         case ThrowOutcomeKind.sceneChanged:
           _message = 'The view changed (lights? camera moved?). Re-calibrate if the rings no longer line up.';
@@ -84,7 +82,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   void _newGame() {
     ref.read(gameProvider.notifier).newGame();
     setState(() {
-      _dots.clear();
+      _marks.clear();
       _message = null;
     });
   }
@@ -174,7 +172,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                     painter: PlayOverlayPainter(
                       calibration.calibration,
                       scale: constraints.maxWidth / calibration.calibration.imageWidth,
-                      dots: _dots.values.toList(),
+                      marks: _marks,
                     ),
                   ),
                 ),
@@ -273,13 +271,17 @@ String gameText(GameSession game, {String? message}) {
   return lines.join('\n');
 }
 
-/// The locked rings (green) and a numbered dot at each knife's entry.
+/// The locked rings (green), a yellow circle with its score at each knife's
+/// entry, and the "0" marks beside the board.
 class PlayOverlayPainter extends CustomPainter {
-  PlayOverlayPainter(this.calibration, {required this.scale, required this.dots});
+  PlayOverlayPainter(this.calibration, {required this.scale, required this.marks});
 
   final TargetCalibration calibration;
   final double scale;
-  final List<Point2> dots;
+  final RoundMarks marks;
+
+  /// Mark radius in screen pixels.
+  static const radius = 11.0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -295,16 +297,23 @@ class PlayOverlayPainter extends CustomPainter {
       }
       canvas.drawPath(path, ring);
     }
-    for (var i = 0; i < dots.length; i++) {
-      final at = Offset(dots[i].x * scale, dots[i].y * scale);
-      canvas.drawCircle(at, 11, Paint()..color = Colors.black);
-      canvas.drawCircle(at, 9, Paint()..color = Colors.yellowAccent);
-      final label = TextPainter(
-        text: TextSpan(text: '${i + 1}', style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold)),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      label.paint(canvas, at - Offset(label.width / 2, label.height / 2));
+    for (final (point, score) in marks.knives.values) {
+      _mark(canvas, Offset(point.x * scale, point.y * scale), '$score', Colors.yellowAccent);
     }
+    for (var i = 0; i < marks.beside.length; i++) {
+      final p = besidePosition(calibration.outer, i, imageWidth: calibration.imageWidth, radius: radius / scale);
+      _mark(canvas, Offset(p.x * scale, p.y * scale), marks.beside[i], Colors.orangeAccent);
+    }
+  }
+
+  void _mark(Canvas canvas, Offset at, String text, Color colour) {
+    canvas.drawCircle(at, radius, Paint()..color = Colors.black);
+    canvas.drawCircle(at, radius - 2, Paint()..color = colour);
+    final label = TextPainter(
+      text: TextSpan(text: text, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.bold)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    label.paint(canvas, at - Offset(label.width / 2, label.height / 2));
   }
 
   @override

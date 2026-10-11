@@ -125,12 +125,13 @@ void main() {
       double? shape,
       bool blocked = false,
       bool newScene = false,
+      int seconds = 1,
     }) =>
         MotionEpisode(
           startFrame: 0,
           settledFrame: 10,
           start: Duration.zero,
-          settled: const Duration(seconds: 1),
+          settled: Duration(seconds: seconds),
           peakChange: peak,
           peakShape: shape,
           changeFromBefore: 0,
@@ -162,7 +163,11 @@ void main() {
       });
 
       test('a person-sized one is a board visit, even if no one stood still', () {
-        expect(classifyThrow(episode(still, shape: 0.04), f.calibration).kind, ThrowOutcomeKind.boardVisit);
+        expect(classifyThrow(episode(still, shape: 0.04, seconds: 5), f.calibration).kind, ThrowOutcomeKind.boardVisit);
+      });
+
+      test('a person-sized one for under 3 s, taking nothing, is someone passing the camera: nothing', () {
+        expect(classifyThrow(episode(still, shape: 0.04, seconds: 2), f.calibration).kind, ThrowOutcomeKind.nothing);
       });
     });
 
@@ -184,7 +189,7 @@ void main() {
     });
 
     test('a big change at once is a board visit', () {
-      expect(classifyThrow(episode(still, peak: 0.2), f.calibration).kind, ThrowOutcomeKind.boardVisit);
+      expect(classifyThrow(episode(still, peak: 0.2, seconds: 5), f.calibration).kind, ThrowOutcomeKind.boardVisit);
     });
 
     test('an accepted new scene is reported as such', () {

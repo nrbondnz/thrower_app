@@ -64,12 +64,12 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Tap Play. A game is ${rules.maxRounds} rounds of $n throws.',
       if (paper) ...[
         'A "throw" that sticks: press a pen in its Blu Tack onto the paper so it sticks out about 10 cm, then step '
-            'out of the picture. The app waits for the target to settle, then scores it and marks where the pen tip '
-            'meets the paper.',
+            'out of the picture. The app waits for the target to settle, then shows the score in a yellow circle '
+            'where the pen tip meets the paper.',
         'A bounce-out: wave a hand past the target without leaving anything, then step out of the picture.',
       ] else
-        'Throw when the screen says Ready. The app waits for the board to settle, then scores the throw and marks '
-            'where the blade went in.',
+        'Throw when the screen says Ready. The app waits for the board to settle, then shows the score in a '
+            'yellow circle where the blade went in. A bounce-out shows a 0 beside the target.',
       'After $n throws the round is complete. Collect your $knives${paper ? '' : ' only when no one is throwing'}: '
           'the app sees someone at the target and starts the next round.',
       'Collecting early ends the round with fewer throws.',

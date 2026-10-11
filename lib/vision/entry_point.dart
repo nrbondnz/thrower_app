@@ -5,6 +5,7 @@ import 'image_difference.dart';
 import 'luma_image.dart';
 import 'rgb_image.dart';
 import 'target_calibration.dart';
+import 'throw_classifier.dart';
 
 /// Where a newly stuck knife's blade entered the board, in image pixels.
 class EntryEstimate {
@@ -187,11 +188,58 @@ class GeometricEntryEstimator implements EntryPointEstimator {
   }
 }
 
-/// Unit direction in the image of "out of the board, towards the thrower":
-/// from the outer ring's ellipse centre towards the bull's centre (a tilted
-/// circle's centre appears shifted towards the board's far side, and a stick
-/// standing out of the board leans that way in the picture). Falls back to
-/// the outer ellipse's short axis when the view is nearly straight on.
+/// Whether the board is seen (nearly) face on: the outer ring's short axis
+/// is at least [ratio] × its long axis. The Live test recordings, filmed
+/// from the throwing line, are 0.95–0.97; the app's intended mount, 45° to
+/// the side, about 0.7. Face on, entry points come from [faceOnEntry].
+bool isFaceOn(TargetCalibration c, {double ratio = 0.9}) => c.outer.semiMinor >= ratio * c.outer.semiMajor;
+
+/// Where [knife] (the classifier's new shape, in its own frame's pixels)
+/// went in, for a board seen face on ([isFaceOn]), in the calibration's
+/// image pixels: the centre of the knife's pixels nearest the bull (within
+/// 1 px of the 2nd percentile distance, ignoring stray pixels).
+///
+/// Why: face on, [outwardDirection]'s tilt cue is too small to trust, and a
+/// knife is short in the picture. But a camera in front of the board sees
+/// anything sticking out of it lean away from the point it looks along,
+/// roughly the bull, so the knife's pixels nearest the bull are where it went
+/// in. That's also the line rule (a blade touching a line scores the higher
+/// ring). On the Live test recordings it was the best of the simple choices:
+/// 11 of 19 knives exactly as Nigel scored them, off by 12 rings in all (the
+/// middle of the shape: 11, off by 13; [GeometricEntryEstimator]'s colour
+/// shape: 9), with the rings only ~8 px apart.
+EntryEstimate faceOnEntry(NewObject knife, TargetCalibration calibration) {
+  final scale = calibration.imageWidth / knife.imageWidth;
+  final bull = calibration.boundaries[calibration.boundaries.keys.reduce(math.min)]!;
+  final bx = bull.cx / scale, by = bull.cy / scale, w = knife.imageWidth;
+  double distance(int i) => math.sqrt(math.pow(i % w - bx, 2) + math.pow(i ~/ w - by, 2));
+  final distances = [for (final i in knife.pixels) distance(i)]..sort();
+  final near = distances[(distances.length * 0.02).floor()] + 1;
+  var ex = 0.0, ey = 0.0, n = 0;
+  for (final i in knife.pixels) {
+    if (distance(i) <= near) {
+      ex += i % w;
+      ey += i ~/ w;
+      n++;
+    }
+  }
+  final entry = Point2(ex / n * scale, ey / n * scale);
+  final centre = knife.centroid;
+  final dx = centre.x * scale - entry.x, dy = centre.y * scale - entry.y;
+  final len = math.sqrt(dx * dx + dy * dy);
+  return EntryEstimate(
+    point: entry,
+    axis: len == 0 ? const Point2(0, 0) : Point2(dx / len, dy / len),
+    knifePixels: knife.area,
+  );
+}
+
+/// Unit direction in the image of "out of the board, towards the thrower",
+/// for a board seen from the side: from the outer ring's ellipse centre
+/// towards the bull's centre (a tilted circle's centre appears shifted
+/// towards the board's far side, and a stick standing out of the board leans
+/// that way in the picture). Falls back to the outer ellipse's short axis
+/// when the view is nearly straight on (see [isFaceOn]).
 Point2 outwardDirection(TargetCalibration c) {
   final bull = c.boundaries[c.boundaries.keys.reduce(math.min)]!;
   final dx = bull.cx - c.outer.cx, dy = bull.cy - c.outer.cy;

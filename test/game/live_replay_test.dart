@@ -7,13 +7,16 @@ import 'package:thrower_app/camera/camera_frame.dart';
 import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/game/throw_tracker.dart';
+import 'package:thrower_app/scoring/game_session.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
+import 'package:thrower_app/vision/entry_point.dart';
 import 'package:thrower_app/vision/frame_to_rgb.dart';
 import 'package:thrower_app/vision/luma_image.dart';
 import 'package:thrower_app/vision/motion_detector.dart';
 import 'package:thrower_app/vision/target_calibration.dart';
 import 'package:thrower_app/vision/target_locator.dart';
+import 'package:thrower_app/vision/target_mapping.dart';
 import 'package:thrower_app/vision/throw_classifier.dart';
 
 /// Replays each Live test recording through throw detection, as Play does
@@ -22,11 +25,13 @@ import 'package:thrower_app/vision/throw_classifier.dart';
 /// truth.json`): every throw is found as stuck or bounce-out at the right
 /// time, nothing else is taken for a throw, and every collection is seen.
 ///
-/// Scores (where each knife went in) are checked separately, once head-on
-/// entry points are found (Task 6 of the Live test story).
+/// Each stuck knife is scored as Play scores it on a face-on board
+/// ([faceOnEntry]); the footage is too coarse for every score to match (rings
+/// ~8 px apart, and Nigel's own reading "is not always clear"), so there's a
+/// floor on exact matches.
 
-/// One detected episode outcome.
-typedef Detected = ({ThrowOutcomeKind kind, double start, double settled});
+/// One detected episode outcome, with the score for a stuck knife.
+typedef Detected = ({ThrowOutcomeKind kind, double start, double settled, int? score});
 
 CameraFrame frameOf(FramePack pack, int i) {
   final image = img.decodeJpg(pack.jpeg(i))!;
@@ -50,6 +55,8 @@ List<Detected> replay(Recording recording) {
       TargetCalibration(imageWidth: pack.width, imageHeight: pack.height, boundaries: found.boundaries, outer: found.outer);
   final detector = MotionDetector(WatchRegion.fromCalibration(calibration), minThreshold: camera.minChange);
   final tracker = ThrowTracker(calibration);
+  final mapping = TargetMapping(calibration);
+  expect(isFaceOn(calibration), isTrue, reason: 'the recordings are filmed face on');
   final detected = <Detected>[];
   for (var i = 0; i < pack.frameCount; i++) {
     final frame = frameOf(pack, i);
@@ -60,12 +67,21 @@ List<Detected> replay(Recording recording) {
       kind: outcome.kind,
       start: episode.start.inMilliseconds / 1000,
       settled: episode.settled.inMilliseconds / 1000,
+      score: outcome.kind == ThrowOutcomeKind.stuck
+          ? model.scoreAt(mapping.toTarget(faceOnEntry(outcome.object!, calibration).point))
+          : null,
     ));
   }
   return detected;
 }
 
-String describe(Detected d) => '${d.kind.name} ${d.start.toStringAsFixed(1)}–${d.settled.toStringAsFixed(1)} s';
+String describe(Detected d) =>
+    '${d.kind.name} ${d.start.toStringAsFixed(1)}–${d.settled.toStringAsFixed(1)} s${d.score == null ? '' : ' scores ${d.score}'}';
+
+/// Stuck knives scored exactly as Nigel did, at least (results 2026-10-11:
+/// 5 of 10 and 6 of 9; all but board 1's 40.5 s and 43.2 s within a ring,
+/// where the changed shape isn't where Nigel places the knife).
+const exactScores = {'Target 1': 5, 'Target 2': 6};
 
 void main() {
   final truth = jsonDecode(File('docs/thrower/reference/live-camera/truth.json').readAsStringSync()) as Map<String, dynamic>;
@@ -100,6 +116,37 @@ void main() {
             if (isThrow(d) && !throws.any((e) => near(d, (e['time'] as num).toDouble()))) describe(d),
         ];
         expect(extra, isEmpty);
+      }, timeout: const Timeout(Duration(minutes: 5)));
+
+      test('knives are scored as Nigel scored them, mostly', () {
+        final lines = <String>[];
+        var exact = 0;
+        for (final e in throws.where((e) => e['kind'] == 'stuck')) {
+          final d = detected.where((d) => d.kind == ThrowOutcomeKind.stuck && near(d, (e['time'] as num).toDouble())).firstOrNull;
+          if (d?.score == e['score']) exact++;
+          lines.add('${e['id']} at ${e['time']} s: Nigel ${e['score']}, app ${d?.score}');
+        }
+        expect(exact, greaterThanOrEqualTo(exactScores[recording.name]!), reason: lines.join('\n'));
+      }, timeout: const Timeout(Duration(minutes: 5)));
+
+      test("the game's rounds hold the answer key's throws (stuck or bounce-out, round by round)", () {
+        var game = const GameSession();
+        for (final d in detected) {
+          game = switch (d.kind) {
+            ThrowOutcomeKind.stuck => game.stuck(0, null),
+            ThrowOutcomeKind.bounceOut => game.bounceOut(),
+            ThrowOutcomeKind.boardVisit => game.boardVisited(),
+            _ => game,
+          };
+        }
+        String kinds(Iterable<String> k) => k.join(' ');
+        final app = [for (final r in game.rounds) kinds(r.throws.map((t) => t.result.name))];
+        final rounds = <int, List<String>>{};
+        for (final e in throws) {
+          (rounds[e['round'] as int] ??= []).add(e['kind'] as String);
+        }
+        final key = [for (final r in rounds.keys.toList()..sort()) kinds(rounds[r]!)];
+        expect(app, key);
       }, timeout: const Timeout(Duration(minutes: 5)));
 
       // Extra visits are harmless: a visit only ends a round that has throws,

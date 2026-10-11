@@ -93,7 +93,11 @@ class ThrowOutcome {
 /// - Someone stood at the board ([MotionEpisode.wasBlocked]), the episode
 ///   changed a large share of the region at once ([visitPeak]), or one
 ///   person-sized shape moved ([visitShape] of the region): a **board visit**
-///   (collecting knives), unless the visit left a knife-sized shape
+///   (collecting knives). But a visit shorter than [minVisit] in which no one
+///   stood still and no known knife was taken is someone passing close to
+///   the camera: **nothing** (Live test, board 2 at 97 s: a body filled the
+///   picture for 2.6 s, its knife still in the board after; the shortest real
+///   collection took 3.9 s). A visit is a visit unless it left a knife-sized shape
 ///   that **appeared** ([appeared]), took none of the [knownKnives] and isn't
 ///   one of them: then someone placed a knife (or a pen, to test) by hand,
 ///   which is a **stuck** knife.
@@ -125,6 +129,7 @@ ThrowOutcome classifyThrow(
   List<NewObject> knownKnives = const [],
   double visitPeak = 0.10,
   double visitShape = 0.02,
+  Duration minVisit = const Duration(seconds: 3),
   double bounceShape = 0.0022,
   double minKnifeShare = 0.0025,
   double maxKnifeShare = 0.06,
@@ -140,6 +145,15 @@ ThrowOutcome classifyThrow(
       : ThrowOutcome(shape == null || shape >= bounceShape ? ThrowOutcomeKind.bounceOut : ThrowOutcomeKind.nothing);
   final before = episode.before, after = episode.after;
   if (before == null || after == null) return nothingNew;
+
+  // Someone passing close to the camera, not going to the board: brief, not
+  // standing still, and every known knife is still there.
+  if (visit &&
+      !episode.wasBlocked &&
+      episode.settled - episode.start < minVisit &&
+      !knownKnives.any((k) => k.imageWidth == after.width && _gone(k, before, after, episode.threshold))) {
+    return const ThrowOutcome(ThrowOutcomeKind.nothing);
+  }
 
   final threshold = visit ? episode.visitThreshold : episode.threshold;
   final object = findNewObject(before, after, calibration, threshold: threshold, searchMargin: searchMargin);
