@@ -55,4 +55,30 @@ class RgbImage {
     }
     return out;
   }
+
+  /// A copy enlarged (bilinear) so its longest side is at least [minSide];
+  /// this image if it already is.
+  RgbImage upscaled(int minSide) {
+    final longest = width > height ? width : height;
+    if (longest >= minSide) return this;
+    final scale = minSide / longest;
+    final w = (width * scale).round(), h = (height * scale).round();
+    final out = RgbImage.blank(w, h);
+    for (var y = 0; y < h; y++) {
+      final fy = ((y + 0.5) / scale - 0.5).clamp(0.0, height - 1.0);
+      final y0 = fy.floor(), y1 = y0 + 1 < height ? y0 + 1 : y0, ty = fy - y0;
+      for (var x = 0; x < w; x++) {
+        final fx = ((x + 0.5) / scale - 0.5).clamp(0.0, width - 1.0);
+        final x0 = fx.floor(), x1 = x0 + 1 < width ? x0 + 1 : x0, tx = fx - x0;
+        int at(int c) {
+          final top = pixels[_offset(x0, y0) + c] * (1 - tx) + pixels[_offset(x1, y0) + c] * tx;
+          final bottom = pixels[_offset(x0, y1) + c] * (1 - tx) + pixels[_offset(x1, y1) + c] * tx;
+          return (top * (1 - ty) + bottom * ty).round();
+        }
+
+        out.setPixel(x, y, at(0), at(1), at(2));
+      }
+    }
+    return out;
+  }
 }

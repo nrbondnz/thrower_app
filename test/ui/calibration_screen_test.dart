@@ -24,6 +24,26 @@ void main() {
     expect(calibrationStatus(found, searching: false, millis: 420), 'Target found: confidence 85% (420 ms)');
   });
 
+  test('says how far the camera zoomed in', () {
+    final found = FrameLocateResult(
+      TargetFound(boundaries: {0.8: ring}, outer: ring, confidence: 0.853, boundaryPoints: {}),
+      600,
+      800,
+    );
+    expect(calibrationStatus(found, searching: false, millis: 900, zoom: 2.44),
+        'Target found: confidence 85%, zoomed in 2.4× (900 ms)');
+  });
+
+  test('suggests centring the board when its position held the zoom back', () {
+    final found = FrameLocateResult(
+      TargetFound(boundaries: {0.8: ring}, outer: ring, confidence: 0.853, boundaryPoints: {}),
+      600,
+      800,
+    );
+    expect(calibrationStatus(found, searching: false, zoom: 1.5, offCentre: true),
+        endsWith('\nCentre the board in the picture for a closer view.'));
+  });
+
   test('reports the reason when not found', () {
     const found = FrameLocateResult(TargetNotFound('No large red area found'), 600, 800);
     expect(calibrationStatus(found, searching: false, millis: 300), 'Target not found: No large red area found (300 ms)');

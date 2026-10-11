@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
@@ -71,7 +72,29 @@ class LiveCamera implements TargetCamera {
       await controller.dispose();
       throw CameraStartException(CameraFailure.unknown, e.toString());
     }
-    return LiveCamera._(controller);
+    final camera = LiveCamera._(controller);
+    try {
+      camera._maxZoom = math.max(1, await controller.getMaxZoomLevel());
+    } on CameraException {
+      // No zoom reported: stay at 1×.
+    }
+    return camera;
+  }
+
+  double _maxZoom = 1;
+  double _zoom = 1;
+
+  @override
+  double get maxZoom => _maxZoom;
+
+  @override
+  double get zoom => _zoom;
+
+  @override
+  Future<void> setZoom(double level) async {
+    final z = level.clamp(1.0, _maxZoom);
+    await controller.setZoomLevel(z);
+    _zoom = z;
   }
 
   /// Clockwise rotation that makes this camera's frames upright for the

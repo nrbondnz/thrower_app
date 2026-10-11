@@ -1,13 +1,12 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
+import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/luma_image.dart';
 import 'package:thrower_app/vision/motion_detector.dart';
-import 'package:thrower_app/vision/rgb_image.dart';
 import 'package:thrower_app/vision/target_calibration.dart';
-import 'package:thrower_app/vision/target_locator.dart';
 import 'package:thrower_app/vision/throw_classifier.dart';
 
 import 'motion_detector_test.dart' show Fixture;
@@ -65,17 +64,14 @@ void main() {
     // "the view changed".
     final before = loadPgm('test/fixtures/real/nudge-before.pgm');
     final after = loadPgm('test/fixtures/real/nudge-after.pgm');
-    final grey = RgbImage.blank(before.width, before.height);
-    for (var i = 0; i < before.pixels.length; i++) {
-      final v = before.pixels[i];
-      grey.setPixel(i % before.width, i ~/ before.width, v, v, v);
-    }
-    final found = buildTargetLocator(const [0.2, 0.4, 0.6, 0.8]).locate(grey) as TargetFound;
+    // The target as calibrated on these frames (2026-10-09), pinned so this
+    // test checks motion and classification only, not the ring finder.
+    final outer = Ellipse(cx: 60.6, cy: 54.4, semiMajor: 30.6, semiMinor: 25.1, angle: 71.6 * math.pi / 180);
     final calibration = TargetCalibration(
       imageWidth: before.width,
       imageHeight: before.height,
-      boundaries: found.boundaries,
-      outer: found.outer,
+      boundaries: {for (final r in const [0.2, 0.4, 0.6, 0.8]) r: outer.scaled(r)},
+      outer: outer,
     );
 
     test('is never "someone at the board" or "the view changed"', () {

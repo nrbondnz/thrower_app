@@ -96,6 +96,16 @@ class RecordedCamera implements TargetCamera {
   @override
   int get uprightRotation => 0;
 
+  /// A recording can't zoom: its pixels are all there is.
+  @override
+  double get maxZoom => 1;
+
+  @override
+  double get zoom => 1;
+
+  @override
+  Future<void> setZoom(double level) async {}
+
   /// Plays from the start.
   void restart() {
     _positionAtStart = Duration.zero;

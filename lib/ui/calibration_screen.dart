@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../camera/camera_frame.dart';
 import '../camera/target_camera.dart';
+import '../game/find_target.dart';
 import '../providers.dart';
 import '../vision/ellipse.dart';
 import '../vision/entry_point.dart';
@@ -18,8 +19,9 @@ import 'calibration_editor.dart';
 import 'camera_view.dart';
 import 'watch_status.dart';
 
-/// Point the mounted phone at the board and tap "Find target": the fitted ring
-/// edges are drawn over the live preview. Drag them into place if needed, then
+/// Point the mounted phone at the board and tap "Find target": the camera
+/// zooms in on the board and the fitted ring edges are drawn over the live
+/// preview. Drag them into place if needed, then
 /// "Lock target". The lock lasts for the session (the camera doesn't move);
 /// "Re-calibrate" unlocks it.
 class CalibrationScreen extends ConsumerStatefulWidget {
@@ -67,21 +69,34 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     setState(() => _knife = true);
   }
 
+  /// The zoom the last search ended at, and whether the board's position
+  /// held it back (so the user can be told to centre the board).
+  double _zoom = 1;
+  bool _offCentre = false;
+
+  /// Find target, zooming the camera in on the board ([findTarget]).
   Future<void> _find(TargetCamera camera) async {
     setState(() => _searching = true);
     final stopwatch = Stopwatch()..start();
+    final found = await findTarget(camera, _locate);
+    if (!mounted) return;
+    final calibration = calibrationFrom(found.found);
+    if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration, zoom: found.zoom);
+    setState(() {
+      _found = found.found;
+      _zoom = found.zoom;
+      _offCentre = found.offCentre;
+      _searching = false;
+      _millis = stopwatch.elapsedMilliseconds;
+    });
+  }
+
+  Future<FrameLocateResult> _locate(TargetCamera camera) async {
     final frame = await camera.frames().first;
     final rotation = camera.uprightRotation;
     final result = await compute(locateInFrame, (frame, rotation, ref.read(ringBoundaryRadiiProvider)));
     if (kDebugMode) await _dumpFrame(frame, rotation, result);
-    if (!mounted) return;
-    final calibration = calibrationFrom(result);
-    if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration);
-    setState(() {
-      _found = result;
-      _searching = false;
-      _millis = stopwatch.elapsedMilliseconds;
-    });
+    return result;
   }
 
   /// Debug builds only: log the frame's layout and the result, and save the
@@ -143,7 +158,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             CalibrationControls(
               status: locked
                   ? lockedStatus(_tapScore, knife: _knife)
-                  : calibrationStatus(_found, searching: _searching, millis: _millis),
+                  : calibrationStatus(_found,
+                      searching: _searching, millis: _millis, zoom: _zoom, offCentre: _offCentre),
               canAdjust: state != null && !locked,
               locked: locked,
               onFind: camera == null || _searching || locked ? null : () => _find(camera),
@@ -272,13 +288,22 @@ String lockedStatus(int? tapScore, {bool knife = false}) {
       : 'Score here: $tapScore${tapScore == 0 ? ' (outside the target)' : ''}. Tap again to test another spot.';
 }
 
-/// What to tell the user about the latest search.
-String calibrationStatus(FrameLocateResult? found, {required bool searching, int? millis}) {
+/// What to tell the user about the latest search: found at [zoom], and
+/// whether centring the board ([offCentre]) would let the camera zoom closer.
+String calibrationStatus(
+  FrameLocateResult? found, {
+  required bool searching,
+  int? millis,
+  double zoom = 1,
+  bool offCentre = false,
+}) {
   if (searching) return 'Looking for the target…';
   final time = millis == null ? '' : ' ($millis ms)';
+  final zoomed = zoom > 1 ? ', zoomed in ${zoom.toStringAsFixed(1)}×' : '';
+  final tip = offCentre ? '\nCentre the board in the picture for a closer view.' : '';
   return switch (found?.result) {
     null => 'Point the phone at the board, then tap Find target.',
-    TargetFound(:final confidence) => 'Target found: confidence ${(confidence * 100).round()}%$time',
+    TargetFound(:final confidence) => 'Target found: confidence ${(confidence * 100).round()}%$zoomed$time$tip',
     TargetNotFound(:final reason, :final attempted) => attempted.isEmpty
         ? 'Target not found: $reason$time'
         : 'Not sure about the target ($reason)$time. Adjust the rings by hand, or find again.',

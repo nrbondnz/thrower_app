@@ -164,6 +164,18 @@ void main() {
       expect(container.read(calibrationProvider)!.locked, isFalse);
       expect(container.read(calibrationProvider)!.calibration, moved);
     });
+
+    test('keeps the zoom the rings were found at through adjusting, locking and unlocking', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(calibrationProvider.notifier)..start(calibration, zoom: 3.5);
+      notifier.adjust(calibration.moved(5, 0));
+      expect(container.read(calibrationProvider)!.zoom, 3.5);
+      notifier.lock();
+      expect(container.read(calibrationProvider)!.zoom, 3.5);
+      notifier.unlock();
+      expect(container.read(calibrationProvider)!.zoom, 3.5);
+    });
   });
 
   group('calibrationFrom', () {

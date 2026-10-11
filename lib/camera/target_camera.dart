@@ -8,5 +8,18 @@ abstract interface class TargetCamera implements CameraSource {
   /// upright (see `frameRotation`).
   int get uprightRotation;
 
+  /// The furthest this camera can zoom in (1 = it can't).
+  double get maxZoom;
+
+  /// The current zoom: 1 is the full picture, 2 shows the middle half of it
+  /// (each way) filling the frame.
+  double get zoom;
+
+  /// Zooms the camera itself, about the centre of the picture, clamped to
+  /// 1 … [maxZoom]. On a phone this is the lens or a sensor crop made before
+  /// the frame is scaled down, so a zoomed board gets more real detail, not
+  /// just bigger pixels.
+  Future<void> setZoom(double level);
+
   Future<void> dispose();
 }

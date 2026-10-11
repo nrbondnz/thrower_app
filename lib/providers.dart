@@ -36,7 +36,8 @@ final recordingChoiceProvider = NotifierProvider<RecordingChoiceNotifier, Record
 /// The camera the screens watch the target through: the open back camera, or
 /// the chosen Live test recording ([recordingChoiceProvider]). Released as
 /// soon as nothing is watching it (e.g. the camera screen closes or the app
-/// goes to the background).
+/// goes to the background). It reopens at the calibration's zoom, so a
+/// target found zoomed in still lines up on the Play screen.
 ///
 /// Never retried automatically: on Android a retry after "Don't allow" would
 /// show the permission prompt again. The user retries from the error view.
@@ -45,6 +46,8 @@ final cameraProvider = FutureProvider.autoDispose<TargetCamera>(
     final recording = ref.watch(recordingChoiceProvider);
     final TargetCamera camera = recording == null ? await LiveCamera.open() : await RecordedCamera.load(recording);
     ref.onDispose(camera.dispose);
+    final zoom = ref.read(calibrationProvider)?.zoom ?? 1;
+    if (zoom != 1) await camera.setZoom(zoom);
     return camera;
   },
   retry: (retryCount, error) => null,
@@ -55,10 +58,14 @@ final cameraProvider = FutureProvider.autoDispose<TargetCamera>(
 /// It belongs to the camera it was made with, so switching between the live
 /// camera and a recording starts over.
 class CalibrationState {
-  const CalibrationState(this.calibration, {this.locked = false});
+  const CalibrationState(this.calibration, {this.locked = false, this.zoom = 1});
 
   final TargetCalibration calibration;
   final bool locked;
+
+  /// The camera zoom the rings were found at; the camera must be at this
+  /// zoom for them to line up ([cameraProvider] restores it).
+  final double zoom;
 }
 
 class CalibrationNotifier extends Notifier<CalibrationState?> {
@@ -68,21 +75,22 @@ class CalibrationNotifier extends Notifier<CalibrationState?> {
     return null;
   }
 
-  /// A new (unlocked) calibration, e.g. from "Find target".
-  void start(TargetCalibration calibration) => state = CalibrationState(calibration);
+  /// A new (unlocked) calibration, e.g. from "Find target", found with the
+  /// camera at [zoom].
+  void start(TargetCalibration calibration, {double zoom = 1}) => state = CalibrationState(calibration, zoom: zoom);
 
   /// A hand adjustment. Ignored once locked.
   void adjust(TargetCalibration calibration) {
-    if (state case CalibrationState(locked: false)) state = CalibrationState(calibration);
+    if (state case final s? when !s.locked) state = CalibrationState(calibration, zoom: s.zoom);
   }
 
   void lock() {
-    if (state case final s?) state = CalibrationState(s.calibration, locked: true);
+    if (state case final s?) state = CalibrationState(s.calibration, locked: true, zoom: s.zoom);
   }
 
-  /// "Re-calibrate": keep the outline but allow changes again.
+  /// "Re-calibrate": keep the outline (and zoom) but allow changes again.
   void unlock() {
-    if (state case final s?) state = CalibrationState(s.calibration);
+    if (state case final s?) state = CalibrationState(s.calibration, zoom: s.zoom);
   }
 }
 

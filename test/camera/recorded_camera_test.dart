@@ -55,6 +55,11 @@ void main() {
     expect(camera.uprightRotation, 0);
   });
 
+  test("can't zoom: its pixels are all there is", () async {
+    await camera.setZoom(3);
+    expect((camera.maxZoom, camera.zoom), (1, 1));
+  });
+
   test('restart plays through the frames at the recording\'s rate', () async {
     camera.restart();
     now = const Duration(milliseconds: 600); // 0.6 s at 2 fps: frame 1

@@ -8,6 +8,13 @@ import 'target_locator.dart';
 /// they are (red paint and bare wood on the reference photo, but equally
 /// black/white or blue/yellow). The bull is colour A, then B, A, B, A outwards.
 ///
+/// Real boards also come painted in **several colours**: Nigel's recorded
+/// boards (2026-10-11) are dark bull / wood / red / wood / red and red bull /
+/// wood / red / wood / dark green, small and blurred by video compression. So
+/// every candidate is also read by **colour edges** ([_Reading.edges]): along
+/// each ray the sharpest colour changes near where each boundary is expected,
+/// whatever the colours either side. The better plausible fit wins.
+///
 /// 1. Reduce a downscaled copy of the image to a small palette (k-means) and
 ///    take the centres of the largest single-colour regions as candidate
 ///    target centres: the bull's region, and each ring's, centre on the target.
@@ -27,6 +34,8 @@ class ColourRingLocator implements TargetLocator {
   ColourRingLocator({
     required this.boundaryRadii,
     this.workingSize = 600,
+    this.minWorkingSize = 420,
+    this.minConfidence = 0.4,
     this.rayCount = 180,
     this.maxCandidates = 12,
   });
@@ -38,6 +47,15 @@ class ColourRingLocator implements TargetLocator {
 
   /// Longest side of the downscaled image the work is done on.
   final int workingSize;
+
+  /// Smaller images are first enlarged to this (bilinear), so rays step
+  /// between pixels: a 140 px video crop of a board (bull ~9 px) was found
+  /// far more reliably at 3× (Live test, 2026-10-11).
+  final int minWorkingSize;
+
+  /// Fits agreeing with fewer rays than this are rejected. Wrong fits are
+  /// weak: on the Live test recordings they scored 23–47%, right ones 46–78%.
+  final double minConfidence;
   final int rayCount;
 
   /// How many candidate centres are tried, largest regions first.
@@ -59,7 +77,7 @@ class ColourRingLocator implements TargetLocator {
 
   @override
   TargetLocateResult locate(RgbImage image) {
-    final work = image.downscaled(workingSize);
+    final work = image.downscaled(workingSize).upscaled(minWorkingSize);
     final back = image.width / work.width;
 
     final candidates = _candidateCentres(work);
@@ -68,16 +86,17 @@ class ColourRingLocator implements TargetLocator {
     _Fit? best;
     _Fit? bestRejected;
     String? rejection;
+    search:
     for (final centre in candidates) {
-      final fit = _fitCandidate(centre, work);
-      if (fit == null) continue;
-      final problem = _implausible(fit.ellipses);
-      if (problem == null) {
-        if (best == null || fit.confidence > best.confidence) best = fit;
-        if (fit.confidence > 0.85) break;
-      } else if (bestRejected == null || fit.confidence > bestRejected.confidence) {
-        bestRejected = fit;
-        rejection = problem;
+      for (final fit in _fitCandidate(centre, work)) {
+        final problem = fit.confidence < minConfidence ? 'Rings too unclear' : _implausible(fit.ellipses);
+        if (problem == null) {
+          if (best == null || fit.confidence > best.confidence) best = fit;
+          if (fit.confidence > 0.85) break search;
+        } else if (bestRejected == null || fit.confidence > bestRejected.confidence) {
+          bestRejected = fit;
+          rejection = problem;
+        }
       }
     }
 
@@ -120,20 +139,104 @@ class ColourRingLocator implements TargetLocator {
     return centres;
   }
 
-  _Fit? _fitCandidate(Point2 start, RgbImage img) {
+  /// The fits from [start] under each reading of the rings.
+  List<_Fit> _fitCandidate(Point2 start, RgbImage img) {
     final colours = _learnColours(start, img);
-    if (colours == null) return null;
+    if (colours == null) return const [];
+    return [
+      for (final reading in _Reading.values)
+        ?_fitReading(start, img, colours, reading),
+    ];
+  }
+
+  /// Fits from [start], then re-centres on the fit and fits again, up to
+  /// three times. The expected sizes stay those from the bull's edge: taking
+  /// them from a fit let a wrong one drift further out each pass. Returns the
+  /// best plausible pass (re-centring can make a good fit worse), else the
+  /// last.
+  _Fit? _fitReading(Point2 start, RgbImage img, _Colours colours, _Reading reading) {
     var centre = start;
-    _Fit? fit;
+    _Fit? last, bestPlausible;
     for (var pass = 0; pass < 3; pass++) {
-      final next = _fitFrom(centre, img, colours);
+      final next = reading == _Reading.twoColour
+          ? _fitFrom(centre, img, colours)
+          : _fitPoints(_edgePoints(centre, img, colours.outerRadius), centre);
       if (next == null) break;
-      fit = next;
+      last = next;
+      if (_implausible(next.ellipses) == null && (bestPlausible == null || next.confidence > bestPlausible.confidence)) {
+        bestPlausible = next;
+      }
       final e = next.ellipses[boundaryRadii[boundaryRadii.length ~/ 2]]!;
       centre = Point2(e.cx, e.cy);
     }
-    return fit;
+    return bestPlausible ?? last;
   }
+
+  /// Boundary points from colour edges, whatever the colours:
+  /// 1. Along each ray, the colour change at each step: the colour a little
+  ///    beyond vs a little before (~8–16% of the bull radius each way, so
+  ///    the measure scales with the board and ignores fine grain). Its local
+  ///    peaks of at least half [edgeContrast] are edges.
+  /// 2. The ray's strongest edge between 0.6 and 1.5 × the expected bull
+  ///    radius is the bull's edge (the first could be texture or a knife
+  ///    inside the bull).
+  /// 3. Each further boundary is the strongest edge within ±[_ratioSlack] of
+  ///    its expected distance **in bull radii along the same ray** (IKTHOF:
+  ///    2, 3, 4), beyond the previous one. Measuring from the ray's own bull
+  ///    edge cancels perspective, which scales a whole ray. Nigel's recorded
+  ///    boards measure 1.94, 2.94–3.0 and 3.82.
+  Map<double, List<Point2>> _edgePoints(Point2 centre, RgbImage img, double outerRadius) {
+    final points = {for (final r in boundaryRadii) r: <Point2>[]};
+    final bullRadius = outerRadius * boundaryRadii.first;
+    final maxT = (outerRadius * 1.3).ceil();
+    final reach = math.max(1, (bullRadius * 0.08).round());
+    for (var i = 0; i < rayCount; i++) {
+      final theta = 2 * math.pi * i / rayCount;
+      final dx = math.cos(theta), dy = math.sin(theta);
+      final samples = <_Rgb?>[
+        for (var t = 0; t <= maxT + 2 * reach; t++)
+          () {
+            final x = (centre.x + dx * t).round(), y = (centre.y + dy * t).round();
+            return img.contains(x, y) ? _rgbAt(img, x, y) : null;
+          }(),
+      ];
+      final strength = List<double>.filled(samples.length, 0);
+      for (var t = 2 * reach; t + 2 * reach < samples.length; t++) {
+        final b1 = samples[t - reach], b2 = samples[t - 2 * reach], a1 = samples[t + reach], a2 = samples[t + 2 * reach];
+        if (b1 == null || b2 == null || a1 == null || a2 == null) continue;
+        strength[t] = _Rgb.mean(a1, a2).distanceTo(_Rgb.mean(b1, b2));
+      }
+      final edges = [
+        for (var t = 1; t + 1 < samples.length; t++)
+          if (strength[t] >= edgeContrast / 2 && strength[t] >= strength[t - 1] && strength[t] > strength[t + 1]) t,
+      ];
+      int? strongest(bool Function(int t) within) {
+        int? best;
+        for (final t in edges) {
+          if (within(t) && (best == null || strength[t] > strength[best])) best = t;
+        }
+        return best;
+      }
+
+      final bull = strongest((t) => t >= bullRadius * 0.6 && t <= bullRadius * 1.5);
+      if (bull == null) continue;
+      points[boundaryRadii.first]!.add(Point2(centre.x + dx * bull, centre.y + dy * bull));
+      var after = bull;
+      for (var k = 1; k < boundaryRadii.length; k++) {
+        final expected = bull * boundaryRadii[k] / boundaryRadii.first;
+        final next = strongest(
+            (t) => t > after && t >= expected * (1 - _ratioSlack) && t <= expected * (1 + _ratioSlack));
+        if (next == null) continue;
+        points[boundaryRadii[k]]!.add(Point2(centre.x + dx * next, centre.y + dy * next));
+        after = next;
+      }
+    }
+    return points;
+  }
+
+  /// How far (as a fraction) a boundary may sit from its expected distance in
+  /// bull radii, reading edges.
+  static const _ratioSlack = 0.15;
 
   /// Learns the bull colour (A), the next ring's colour (B) and the target's
   /// rough size from rays around [centre]. Null if there's no clear edge or
@@ -227,6 +330,12 @@ class ColourRingLocator implements TargetLocator {
       }
     }
 
+    return _fitPoints(points, centre);
+  }
+
+  /// One ellipse per boundary from its points (RANSAC); null if any fails.
+  /// Confidence: the share of rays that agree with each fitted boundary.
+  _Fit? _fitPoints(Map<double, List<Point2>> points, Point2 centre) {
     final ellipses = <double, Ellipse>{};
     final inliers = <double, List<Point2>>{};
     var agreed = 0;
@@ -328,6 +437,8 @@ class _Rgb {
     return math.sqrt(dr * dr + dg * dg + db * db);
   }
 
+  static _Rgb mean(_Rgb a, _Rgb b) => _Rgb((a.r + b.r) ~/ 2, (a.g + b.g) ~/ 2, (a.b + b.b) ~/ 2);
+
   /// Per-channel median: robust to a minority of handle or shadow samples.
   static _Rgb median(List<_Rgb> samples) {
     int mid(List<int> v) => (v..sort())[v.length ~/ 2];
@@ -340,6 +451,17 @@ class _Rgb {
 }
 
 _Rgb _rgbAt(RgbImage img, int x, int y) => _Rgb(img.red(x, y), img.green(x, y), img.blue(x, y));
+
+/// How a candidate's ring boundaries are found.
+enum _Reading {
+  /// Samples classed as the bull's colour (A) or the next ring's (B); the
+  /// boundaries are where the A/B runs change.
+  twoColour,
+
+  /// The boundaries are the sharpest colour changes near where each is
+  /// expected, whatever the colours.
+  edges,
+}
 
 class _Colours {
   _Colours(this.a, this.b, this.outerRadius);

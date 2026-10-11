@@ -48,12 +48,13 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       ],
       'The phone must not move during calibration or play: even a small knock shifts the picture and throws off '
           'the scores. If it does move, calibrate again.',
-      'Hold it upright (portrait) with the whole target in the picture.',
+      'Hold it upright (portrait) with the whole target in the picture, as near the middle as you can: '
+          'the app zooms in on the target, and can zoom closer when it is centred.',
       'Turn off auto-lock (screen timeout) while playing, so the screen stays on.',
       if (!paper) 'Even light helps. Avoid shadows moving across the board.',
     ]),
     const InstructionSection('Calibrating the target', [
-      'Tap Calibrate target, then Find target. The rings are outlined.',
+      'Tap Calibrate target, then Find target. The camera zooms in on the target and the rings are outlined.',
       'If the outline is a little off, drag inside the rings to move it, or drag a white handle to reshape it. '
           'Only adjust when no one is throwing.',
       'Tap Lock target when the outline matches the rings.',
