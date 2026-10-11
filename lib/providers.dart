@@ -140,6 +140,8 @@ class GameNotifier extends Notifier<GameSession> {
         state = state.boardVisited();
       case ThrowOutcomeKind.sceneChanged:
         _knives.clear();
+      case ThrowOutcomeKind.nothing:
+        break;
     }
   }
 }

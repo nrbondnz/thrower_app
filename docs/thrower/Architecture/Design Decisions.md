@@ -110,7 +110,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 - **Android:** `CAMERA` only. The plugin also declares `RECORD_AUDIO` and `WRITE_EXTERNAL_STORAGE` (which implies `READ_EXTERNAL_STORAGE`); our manifest removes all three with `tools:node="remove"`. `ACCESS_NETWORK_STATE` (from `androidx.media3`, a no-prompt background permission) remains. `INTERNET` is debug-only.
 
 **Lifecycle:**
-- `liveCameraProvider` is `autoDispose`: the camera is released when the screen closes or the app goes to the **background** (`paused`). It isn't released on `inactive`, because the permission prompt itself makes the app inactive.
+- `cameraProvider` (was `liveCameraProvider`) is `autoDispose`: the camera is released when the screen closes or the app goes to the **background** (`paused`). It isn't released on `inactive`, because the permission prompt itself makes the app inactive.
 - Coming back to the foreground re-opens the camera, which also picks up access granted in Settings.
 - **No automatic retry** (Riverpod 3 retries failed providers by default; on Android that would re-show the permission prompt after "Don't allow"). The user retries from the error view.
 
@@ -160,7 +160,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 
 The camera path keeps frames at full camera resolution for this (`frameToRgb(maxSide: 1920)`; 1280 × 720 at `ResolutionPreset.high`).
 
-**Why:** from beside the throwing line (2 m to the side, 2 m out) the board fills only about 1/6 of the main camera's width. Once shrunk to the finder's 600 px, the bull was about 10 px across and knife handles swamped the rings. With knives in the board, the finder **failed on both 1× views** (rendered tests). Coarse-to-fine finds all six rendered views (78–93% confidence). The rejected alternative, telling users to use 2× zoom, depends on the phone and on the user.
+**Why:** from beside the throwing line (2 m to the side, 2 m out) the board fills only about 1/6 of the main camera's width. Once shrunk to the finder's 600 px, the bull was about 10 px across and knife handles swamped the rings. With knives in the board, the finder **failed on both 1× views** (rendered tests). Coarse-to-fine finds all six rendered views (78–93% confidence). The rejected alternative, telling users to use 2× zoom, depends on the phone and on the user. (Since 2026-10-11, the app zooms the camera in on the board itself after the first find; see Zoom the Camera onto the Target.)
 
 **Dim or flat light (2026-10-08):** each pass is wrapped in `ContrastNormalisingLocator`. The image is tried as it is; **only if that fails**, it's retried with brightness stretched (1st/99th percentile → 0/255, the same map on all channels, so hues are kept). Found from Nigel's first real Android frame (A4 printout, indoors): the frame itself worked (97%), but at half brightness or half contrast it wasn't found, because the ring colours fell under `edgeContrast`. Stretched: 93% / 97% (30% brightness: 94%). It's a fallback, not the default: stretching also boosts white paper against a grey wall, which made the finder pick the paper when the target was cut off by the frame edge.
 
@@ -175,11 +175,38 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 - **A rejected attempt can be adjusted and locked too**, so a near miss can be fixed by hand rather than retried forever.
 - **Safety (Review Agent §7):** whenever the outline can be adjusted, the screen shows *"Only adjust when no one is throwing."* The phone sits beside the board, so adjusting means standing near the throwing lane.
 
+## Zoom the Camera onto the Target (2026-10-11)
+
+**Decision (Nigel, 2026-10-11):** *"on find it zooms to the target using camera zoom"*, using the camera's own zoom, **not** a crop of the picture. Built as Task 4 of [[story-checkpoint-live-test]], before throw detection, so knife detection is tuned on zoomed pictures.
+
+**Why camera zoom:** frames reach the app at 1280 × 720 (`ResolutionPreset.high`) whatever the zoom. The phone zooms by cropping the sensor *before* that scale-down, or by switching to a telephoto lens, so a zoomed board gets several times more **real** pixels. A software crop would only enlarge the 720p pixels the app already has. The knives seen so far are small blobs (Live test footage) and the minimum-knife-size rule is marginal at small scales, so more pixels on the board helps every later step.
+
+**How (`findTarget`, `lib/game/find_target.dart`):**
+1. Zoom back to 1× (so **Find again** always starts from the whole picture) and find the rings.
+2. `zoomToFit` (`lib/vision/zoom_to_fit.dart`) picks the zoom. The camera zooms about the **centre of the picture**, so the zoom is the smallest of:
+   - the zoom at which the board fills **70%** of the picture's shorter side (`fill`), which leaves room for knife handles sticking out and for small nudges, which zoom makes bigger
+   - the zoom at which the board, plus **0.3 × its radius** around it (`margin`), still fits in the picture: a board far from the centre limits the zoom (`offCentre`)
+   - the camera's maximum (`TargetCamera.maxZoom`)
+
+   A gain under **1.2×** (`minGain`) isn't worth searching again, so it gives 1×.
+3. Zoom (`TargetCamera.setZoom`), wait **500 ms** for the frames to catch up, and find the rings again in the closer view.
+4. If they aren't found zoomed in (or the camera refuses to zoom), go back to 1× and keep the first result.
+
+**Off-centre board (Nigel's choice):** zoom as far as keeps the board in shot, and the status adds *"Centre the board in the picture for a closer view."* The status also says how far it zoomed ("zoomed in 2.4×").
+
+**The zoom belongs to the calibration.** `CalibrationState.zoom` is kept through adjusting, locking and Re-calibrate. `cameraProvider` re-applies it whenever the camera reopens (for example, going from Calibrate to Play), because rings found zoomed in only line up at that zoom.
+
+**Recordings can't zoom** (`RecordedCamera.maxZoom` = 1): their pixels are all there is, so the Live test is unchanged.
+
+**Unverified until a device check:** that the camera plugin's `setZoomLevel` zooms the **image stream** as well as the preview, on both iOS and Android, and that 500 ms is long enough for it to show.
+
+**Confirmed:** 2026-10-11 (placement and off-centre behaviour chosen by Nigel).
+
 ## Motion and Settle (Throw Detection, Task 2)
 
 **Decision:** `MotionDetector` (pure Dart) works on **brightness only**, downscaled to ~320 px (`frameToLuma`: the Y plane on Android, converted BGRA on iOS), inside a `WatchRegion` = the locked outer ring's bounding box × 1.5 (room for handles). It runs about 15 times a second (`WatchStatus` processes a frame at most every 60 ms).
-- A pixel has **changed** if it differs from the previous frame by more than 6 × the estimated sensor noise (at least 12 levels). The noise is learned while the board is still.
-- States: **watching → motion** (≥ 0.2% of the region changed) **→ settling** (< 0.08%) **→ settled** after 0.3 s still, reporting a `MotionEpisode`.
+- A pixel has **changed** if it differs from the previous frame by more than 6 × the estimated sensor noise, at least `TargetCamera.minChange` levels (12 for the live camera, 20 for a recording). The noise is learned while the board is still. **Each pair of frames also sets its own floor:** 5 × its robust noise (1.4826 × the median difference), so compressed video's whole-picture jumps don't count (2026-10-11; see Throw Detection on Real Footage).
+- States: **watching → motion** (the **largest connected changed shape** ≥ 0.1% of the region) **→ settling** (< 0.05%) **→ settled** after 0.3 s still, reporting a `MotionEpisode`. Until 2026-10-11 this was the total share that changed (0.2% / 0.08%); one compact shape tells a knife from scattered compression blocks.
 - **"Still" isn't "clear":** the rendered retrieval showed a person standing still at the board reads as settled. So the detector keeps a **reference** frame of the last settled board, and only settles when **< 8%** of the region differs from it; otherwise it's **blocked** (something in the way). After 5 s still but different, the view is accepted as the new normal (flagged), e.g. lights switched on.
 - Each episode reports its **peak change** (a person: ~25%; a throw: ~0.6–1.5%) and its **change from before** (a stuck knife: ~0.6–0.7%; a bounce-out: 0.0%; knives removed: ~1.2%), the basis for telling stick from bounce-out (Task 3) and retrieval (Task 5).
 - The knife's flight is effectively invisible (one faint blurred frame): **episodes start at the impact.**
@@ -188,13 +215,30 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 
 **Decision:** `classifyThrow(episode, calibration)` decides what a settled episode was:
 1. Accepted as a new view → **scene changed** (not a throw; maybe re-calibrate).
-2. Someone stood at the board (`wasBlocked`) or ≥ 10% of the region changed at once → **board visit** (not a throw).
+2. Someone stood at the board (`wasBlocked`), ≥ 10% of the region changed at once, or one person-sized shape moved (`peakShape` ≥ 2% of the region) → **board visit** (not a throw).
    - **Except a knife placed by hand** (decided 2026-10-09, so Nigel can test with a pen on the A4 printout): if the visit left a knife-sized new shape that **appeared** (`appeared`: the shape stands out from the board around it in the *after* picture, not the *before*), isn't one of the known knives and no known knife was taken out, it's a **stuck** knife and scores like a throw. A visit that removes knives the app never saw stays a board visit, because that shape disappeared.
-3. Otherwise, pixels differing from the before frame by more than the episode's threshold are grouped into connected shapes (8-connected) within 1.5 × the outer ring. The largest one that touches the target (outer × 1.05) and covers ≥ **0.25% of the target's area** (min 4 px) → **stuck**, with the shape kept for the entry point (Task 4). Otherwise → **bounce-out** (0).
+3. Otherwise, pixels differing from the before frame by more than the episode's threshold are grouped into connected shapes (8-connected) within 1.5 × the outer ring. The largest one that touches the target (outer × 1.05) and covers ≥ **0.25%** and ≤ **6%** of the target's area (min 4 px) → **stuck**, with the shape kept for the entry point (Task 4). Otherwise → **bounce-out** (0), if a knife-sized shape was seen moving (`peakShape` ≥ 0.22% of the region), or else **nothing** (a flicker; ignored).
 
 **Margins on the renders (320 × 180 frames, target ~46 × 33 px):** stuck knives make shapes of **84 / 68 px** against a 12 px minimum; the bounce-out **0 px**. Noise (σ 4) and a shape away from the target don't count.
 
-**Falling out (Task 5):** a knife falling out on its own leaves a "new shape" where it was. `classifyThrow(knownKnives:)` compares the shape with the knives already in the board (kept by `ThrowTracker` until someone collects them). Overlapping one by ≥ 50% means **fell out**, not stuck.
+**Falling out (Task 5):** a knife falling out on its own leaves a "new shape" where it was. `classifyThrow(knownKnives:)` compares the shape with the knives already in the board (kept by `ThrowTracker` until someone collects them). Overlapping one by ≥ 50% means **fell out**, not stuck, unless the shape **appeared** (head-on knives thrown side by side overlap; 2026-10-11).
+
+## Throw Detection on Real Footage (Live Test, 2026-10-11)
+
+**Goal:** the two Live test recordings give exactly the throws, bounce-outs and collections in Nigel's answer key (`reference/live-camera/truth.json`), checked by `test/game/live_replay_test.dart`, which replays every frame through `MotionDetector` and `ThrowTracker`. Before these changes, nearly every second was a false bounce-out, and board 2 was "blocked" for 49 s. Now both boards match (Task 5 of [[story-checkpoint-live-test]]).
+
+**What the footage needed, and the rule each led to (all measured on the recordings):**
+- **Compression jumps:** about once a second the encoder re-encodes the picture and every pixel shifts by a few levels (median difference 3–9 instead of ~0). → **Per-pair threshold** (`MotionDetector.pairNoise`): 5 × that pair's robust noise.
+- **Re-encoded blocks:** when anything moves elsewhere in the video (board 2 being hit), board 1's picture gets mid-grey blocky changes: up to 12 px shapes at a 20-level floor, while every real throw made 20+ px. → **Motion = largest connected shape**, and a **minimum change of 20** for recordings (`RecordedCamera.minChange`). The live camera keeps 12: at 20, the rendered ring-3 knife (low contrast on paint) was missed.
+- **Refocusing and people at the picture's edge:** soft, spread-out changes with nothing left behind. Real bounce-outs moved a 42+ px shape (0.26% of the region), the false ones 27 px or less. → A bounce-out needs `peakShape` ≥ **0.22%**; smaller is **nothing**. A person walking up moves 686 px (4.3%), and no knife more than 132 px. → `peakShape` ≥ **2%** is a **visit**.
+- **People walking back after collecting:** false events 0.6–1.6 s after a visit; the next real throw comes 6+ s after it. → `ThrowTracker.visitCooldown` **3 s**: anything but a stuck knife within it is part of the visit.
+- **Small head-on knives:** before and after straddle a compression jump, so at 5 × noise (thresholds 30–44) three knives showed as only 9–12 px against the 12.6 px minimum. → The before/after comparison uses **3.5 × noise** (`settledNoiseFactor`); no bounce-out left anything behind even then. After a **visit** it stays at 5 × (`MotionEpisode.visitThreshold`), so marks left by collecting don't look like a placed knife; knives being **taken out** are still checked at the sensitive threshold.
+- **The board re-exposing** made an 860 px "knife". → A knife covers at most **6%** of the target's area (the largest real one: 1.9%).
+- **Knives side by side:** board 1's 140.5 s knife overlapped the 133 s one and was read as it falling out. → Fell out only if the shape **disappeared** (`appeared` is false).
+
+**Not yet:** where a head-on knife went in. Most of these knives get no entry point (the side-view estimator needs a long blade), so their scores are still wrong. That's Task 6.
+
+**Confirmed:** 2026-10-11 (rules derived from the recordings; Nigel's device check pending).
 
 ## Rounds and Scoring (Throw Detection, Task 5)
 
@@ -325,3 +369,57 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
 ---
 
 *Further decisions are recorded here as they're made in [[story-checkpoint-setting-up-throwing-app]].*
+
+## Live Test: A Recording in Place of the Camera (2026-10-11)
+
+**Decision:** the Live test plays a recording of a real board **as a camera**, through the same calibrate → Play screens and the same vision and game code. It's analysed live on every run; the app holds no answers ([[story-checkpoint-live-test]]).
+
+- **`TargetCamera`** (`lib/camera/target_camera.dart`): what the screens and `ThrowWatcher` need from a camera: `frames()`, `uprightRotation` and `dispose()`. There are two implementations:
+  - `LiveCamera`, the phone's back camera
+  - `RecordedCamera`, a recording
+- **`cameraProvider`** opens one of them, depending on `recordingChoiceProvider` (null means the live camera). `calibrationProvider` and `gameProvider` watch that choice: a calibration and a game belong to the camera they were made with, so switching starts both afresh. Leaving the Live test screen switches back to the live camera.
+- **`RecordedCamera`** behaves like a camera:
+  - It delivers a frame every 1/fps seconds to whoever listens: BGRA, already upright, stamped with a monotonic clock.
+  - It **opens paused on the first frame**, so the board can be calibrated before anything happens.
+  - Play calls `restart()`; playback stops on the last frame.
+- **Recording format:** `FramePack` (`.tfrm`, `lib/camera/frame_pack.dart`) is JPEG frames at a fixed rate in one asset, decoded in pure Dart with `package:image`. That means no video plugin, so no native code or permissions.
+  - Made with `tool/pack_recording.dart` (needs ffmpeg).
+  - Target 1 and Target 2: 140 × 140 px, 15 fps, 2,848 frames, about 10.4 MB each.
+  - **In TestFlight builds too** (Nigel, 2026-10-11), so his brother can run them.
+- **Rejected:** a video plugin for decoding (native code, and no frame-pixel access in `video_player`); pre-computed results (not a test of the pipeline).
+
+## Ring Finding on Real Boards: Colour Edges, Any Paint (2026-10-11)
+
+**Problem:** the two Live test boards (see Live Test above) are painted in **several colours on wood**:
+- board 1: dark bull, wood, red, wood, red
+- board 2: red bull, wood, red, wood, dark green
+
+On top of that, they are small (a 140 px crop, bull radius about 8.5 px) and blurred by compression. `ColourRingLocator` assumed two alternating colours, so it found neither.
+
+**Measured truth** (colour averaged all the way round the centre, on the still at the start of each video): the boundaries are at 8.5 / 16.5 / 25–25.5 / 32.5 px, with the outer edge at 41.5–42.5 px. That's almost exactly the IKTHOF proportions: 2, 3 and 4 bull radii. The pale rim beyond, out to about 48 px, is wood (scores 0).
+
+**Decision:** `ColourRingLocator` now reads every candidate centre two ways and keeps the better plausible fit:
+1. **Two colours** (as before): A/B runs along rays.
+2. **Colour edges** (`_Reading.edges`):
+   - Along each ray, the colour change is measured at a scale of about 8–16% of the bull radius, so it ignores grain.
+   - The bull's edge is the **strongest** edge between 0.6× and 1.5× the expected bull radius. (The first edge can be texture, or knives inside the bull.)
+   - Each further boundary is the strongest edge within ±15% of 2, 3 and 4 **times that ray's own bull edge**. Measuring along the same ray cancels perspective.
+   - This is colour-blind: it works whatever the paint.
+
+**Also changed:**
+- **Small images are enlarged** (bilinear) to at least 420 px first (`minWorkingSize`). Board 2 was found far more reliably at 3×.
+- Each candidate keeps its **best plausible pass**, not its last: re-centring sometimes made a good fit worse.
+- **Fits below 40% confidence are rejected** (`minConfidence`, reported as "Rings too unclear"). On the recordings, wrong fits scored 23–47% and right ones 46–78%.
+
+**Result** (every 10 s through each 3-minute video):
+- Target 1: 13 of 19 right, 1 wrong.
+- Target 2: 8 right, 2 wrong.
+- The rest are "not found", mostly when people, knives or a compression jump are in the frame.
+- **Both first frames, where the Live test calibrates, are right.**
+
+`test/vision/live_recording_locate_test.dart` guards this. Every earlier fixture (the reference photo, renders, the A4 printout) still passes.
+
+**Rejected:**
+- **Paint vs wood by colour distance.** Board 1's inner wood ring comes out pinkish: about 47 from the wood and 52 from the red, so no single cut-off separates them.
+- **Picking boundaries from piles of edges across rays.** The speckled wood of board 2 drowned the piles.
+- **Expected sizes from the outer estimate.** Hand-painted ring widths and a wrong bull estimate shifted the windows.

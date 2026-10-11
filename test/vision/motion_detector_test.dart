@@ -125,4 +125,28 @@ void main() {
     ];
     expect(fixtures['throw-stick-ring4']!.run(override: drift), isEmpty);
   });
+
+  group('compressed video (Live test recordings)', () {
+    // A video encoder re-encodes the whole picture about once a second: every
+    // pixel jumps by a few levels at once (here 15, with ±5 of grain).
+    LumaImage jumped(LumaImage image, int seed) {
+      final random = math.Random(seed);
+      return LumaImage(image.width, image.height,
+          Uint8List.fromList([for (final v in image.pixels) (v + 15 + random.nextInt(11) - 5).clamp(0, 255)]));
+    }
+
+    test('a whole-picture jump is not motion', () {
+      final still = fixtures['throw-stick-ring4']!.frames.first;
+      final frames = [for (var i = 0; i < 20; i++) i < 10 ? still : jumped(still, i)];
+      expect(fixtures['throw-stick-ring4']!.run(override: frames), isEmpty);
+    });
+
+    test('a throw is still seen when the picture jumps during it', () {
+      final f = fixtures['throw-stick-ring4']!;
+      final frames = [
+        for (var i = 0; i < f.frames.length; i++) i < f.firstMoving ? f.frames[i] : jumped(f.frames[i], i),
+      ];
+      expect(f.run(override: frames), hasLength(1));
+    });
+  });
 }

@@ -92,6 +92,7 @@ String watchStatusText(WatchState state, MotionEpisode? last, {ThrowOutcome? out
     ThrowOutcomeKind.boardVisit => 'Someone was at the board',
     ThrowOutcomeKind.sceneChanged => 'The view changed: re-calibrate?',
     ThrowOutcomeKind.fellOut => 'A knife fell out (0)',
+    ThrowOutcomeKind.nothing => 'Nothing new',
     null => null,
   };
   final seconds = (last.settled - last.start).inMilliseconds / 1000;

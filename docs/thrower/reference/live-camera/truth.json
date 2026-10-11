@@ -1,0 +1,285 @@
+{
+ "source": "Throws and scores: Nigel, 2026-10-11 (from the footage; he notes it is not always clear). Times and places: Claude, from the footage.",
+ "scoring": "Outer painted ring 1 ... bull 5; pale outer wood edge 0.",
+ "board1": [
+  {
+   "id": "b1-t01",
+   "kind": "stuck",
+   "time": 12.0,
+   "score": 4,
+   "zone": "Lower-right edge of the bull (Nigel: one knife in round 1 is a 4; this is the likeliest)",
+   "round": 1
+  },
+  {
+   "id": "b1-t02",
+   "kind": "stuck",
+   "time": 15.8,
+   "score": 5,
+   "zone": "In the bull, left side",
+   "round": 1
+  },
+  {
+   "id": "b1-t03",
+   "kind": "stuck",
+   "time": 18.2,
+   "score": 5,
+   "zone": "At the bull (unsure: a third knife, or the others settling?)",
+   "round": 1
+  },
+  {
+   "id": "b1-visit1",
+   "kind": "visit",
+   "from": 22,
+   "to": 30,
+   "round": 1
+  },
+  {
+   "id": "b1-t04",
+   "kind": "bounceOut",
+   "time": 36.8,
+   "score": 0,
+   "zone": "Flashes at the lower left of the bull, then gone",
+   "round": 2
+  },
+  {
+   "id": "b1-t05",
+   "kind": "stuck",
+   "time": 40.5,
+   "score": 5,
+   "zone": "Low left, outer red ring",
+   "round": 2
+  },
+  {
+   "id": "b1-t06",
+   "kind": "stuck",
+   "time": 43.2,
+   "score": 5,
+   "zone": "Top of the bull",
+   "round": 2
+  },
+  {
+   "id": "b1-visit2",
+   "kind": "visit",
+   "from": 46,
+   "to": 57,
+   "round": 2
+  },
+  {
+   "id": "b1-t07",
+   "kind": "stuck",
+   "time": 105.5,
+   "score": 4,
+   "zone": "Upper left of the bull, pale ring",
+   "round": 3
+  },
+  {
+   "id": "b1-t08",
+   "kind": "stuck",
+   "time": 107.5,
+   "score": 5,
+   "zone": "Upper right of the bull",
+   "round": 3
+  },
+  {
+   "id": "b1-t09",
+   "kind": "bounceOut",
+   "time": 109.0,
+   "score": 0,
+   "zone": "Flashes at the top of the board, then gone (found after Nigel said bounce-outs were missed)",
+   "round": 3
+  },
+  {
+   "id": "b1-visit3",
+   "kind": "visit",
+   "from": 112,
+   "to": 119,
+   "round": 3
+  },
+  {
+   "id": "b1-t10",
+   "kind": "stuck",
+   "time": 133.0,
+   "score": 3,
+   "zone": "Left of the bull, handle up-left",
+   "round": 4
+  },
+  {
+   "id": "b1-t11",
+   "kind": "stuck",
+   "time": 136.5,
+   "score": 3,
+   "zone": "Right of the bull, red ring",
+   "round": 4
+  },
+  {
+   "id": "b1-t12",
+   "kind": "stuck",
+   "time": 140.5,
+   "score": 4,
+   "zone": "Left edge of the bull",
+   "round": 4
+  },
+  {
+   "id": "b1-visit4",
+   "kind": "visit",
+   "from": 143,
+   "to": 154,
+   "round": 4
+  },
+  {
+   "id": "b1-t13",
+   "kind": "bounceOut",
+   "time": 162.1,
+   "score": 0,
+   "zone": "Hits at the bull and slides off down the board: the only throw this round",
+   "round": 5
+  },
+  {
+   "id": "b1-visit5",
+   "kind": "visit",
+   "from": 165,
+   "to": 168,
+   "round": 5
+  },
+  {
+   "id": "b1-t14",
+   "kind": "bounceOut",
+   "time": 177.0,
+   "score": 0,
+   "zone": "Not visible in the footage; a brief change at 177.0 s (Nigel: bounce-out)",
+   "round": 6
+  },
+  {
+   "id": "b1-visit6",
+   "kind": "visit",
+   "from": 180,
+   "to": 184,
+   "round": 6
+  }
+ ],
+ "board2": [
+  {
+   "id": "b2-t01",
+   "kind": "stuck",
+   "time": 66.8,
+   "score": 5,
+   "zone": "Left of the bull",
+   "round": 1
+  },
+  {
+   "id": "b2-t02",
+   "kind": "stuck",
+   "time": 69.6,
+   "score": 4,
+   "zone": "Right of the bull, handle down-right",
+   "round": 1
+  },
+  {
+   "id": "b2-t03",
+   "kind": "stuck",
+   "time": 72.5,
+   "score": 5,
+   "zone": "Top of the bull",
+   "round": 1
+  },
+  {
+   "id": "b2-visit1",
+   "kind": "visit",
+   "from": 75,
+   "to": 86,
+   "round": 1
+  },
+  {
+   "id": "b2-t04",
+   "kind": "stuck",
+   "time": 94.3,
+   "score": 4,
+   "zone": "Below the bull, pale ring",
+   "round": 2
+  },
+  {
+   "id": "b2-t05",
+   "kind": "stuck",
+   "time": 105.2,
+   "score": 3,
+   "zone": "Upper left of the bull",
+   "round": 2
+  },
+  {
+   "id": "b2-t06",
+   "kind": "bounceOut",
+   "time": 107.7,
+   "score": 0,
+   "zone": "Brief change near the bull, nothing left behind (unsure)",
+   "round": 2
+  },
+  {
+   "id": "b2-visit2",
+   "kind": "visit",
+   "from": 112,
+   "to": 124,
+   "round": 2
+  },
+  {
+   "id": "b2-t07",
+   "kind": "stuck",
+   "time": 133.0,
+   "score": 2,
+   "zone": "Bottom, outer dark ring, handle hanging down",
+   "round": 3
+  },
+  {
+   "id": "b2-t08",
+   "kind": "bounceOut",
+   "time": 136.5,
+   "score": 0,
+   "zone": "Brief change upper right, nothing left behind (unsure)",
+   "round": 3
+  },
+  {
+   "id": "b2-t09",
+   "kind": "stuck",
+   "time": 140.0,
+   "score": 4,
+   "zone": "Below the bull, handle down",
+   "round": 3
+  },
+  {
+   "id": "b2-visit3",
+   "kind": "visit",
+   "from": 144,
+   "to": 153,
+   "round": 3
+  },
+  {
+   "id": "b2-t10",
+   "kind": "stuck",
+   "time": 162.0,
+   "score": 5,
+   "zone": "Top of the bull: the only throw this round",
+   "round": 4
+  },
+  {
+   "id": "b2-visit4",
+   "kind": "visit",
+   "from": 165,
+   "to": 171,
+   "round": 4
+  },
+  {
+   "id": "b2-t11",
+   "kind": "stuck",
+   "time": 177.0,
+   "score": 3,
+   "zone": "Left, red ring: the only throw this round",
+   "round": 5
+  },
+  {
+   "id": "b2-visit5",
+   "kind": "visit",
+   "from": 180,
+   "to": 186,
+   "round": 5
+  }
+ ]
+}

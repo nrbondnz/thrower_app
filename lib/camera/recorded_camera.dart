@@ -96,6 +96,11 @@ class RecordedCamera implements TargetCamera {
   @override
   int get uprightRotation => 0;
 
+  /// The recordings are compressed video: blocks re-encoded about once a
+  /// second differ by up to ~20 levels (measured on both Live test boards).
+  @override
+  int get minChange => 20;
+
   /// A recording can't zoom: its pixels are all there is.
   @override
   double get maxZoom => 1;

@@ -101,6 +101,13 @@ void main() {
       });
     });
 
+    test('a knife landing on a known one (it appeared, not disappeared) is a stick, not that knife falling out', () {
+      // Head-on knives thrown side by side overlap (Live test, board 1 at
+      // 133 s and 140.5 s).
+      final outcome = classifyThrow(between(empty, withKnife), f.calibration, knownKnives: [knife]);
+      expect(outcome.kind, ThrowOutcomeKind.stuck);
+    });
+
     test('a new knife elsewhere is still a stick when another knife is known', () {
       final f3 = Fixture('throw-stick-ring3');
       final outcome = classifyThrow(f3.run().single, f3.calibration, knownKnives: [knife]);
@@ -112,13 +119,20 @@ void main() {
     final f = Fixture('throw-stick-ring4');
     final still = f.frames.first;
 
-    MotionEpisode episode(LumaImage after, {double peak = 0.01, bool blocked = false, bool newScene = false}) =>
+    MotionEpisode episode(
+      LumaImage after, {
+      double peak = 0.01,
+      double? shape,
+      bool blocked = false,
+      bool newScene = false,
+    }) =>
         MotionEpisode(
           startFrame: 0,
           settledFrame: 10,
           start: Duration.zero,
           settled: const Duration(seconds: 1),
           peakChange: peak,
+          peakShape: shape,
           changeFromBefore: 0,
           wasBlocked: blocked,
           acceptedNewScene: newScene,
@@ -136,6 +150,33 @@ void main() {
               .clamp(0, 255),
       ]));
       expect(classifyThrow(episode(noisy), f.calibration).kind, ThrowOutcomeKind.bounceOut);
+    });
+
+    group('how big a shape moved', () {
+      test('a knife-sized one, leaving nothing new, is a bounce-out', () {
+        expect(classifyThrow(episode(still, shape: 0.003), f.calibration).kind, ThrowOutcomeKind.bounceOut);
+      });
+
+      test('specks only (a camera refocusing, compression) are nothing', () {
+        expect(classifyThrow(episode(still, shape: 0.001), f.calibration).kind, ThrowOutcomeKind.nothing);
+      });
+
+      test('a person-sized one is a board visit, even if no one stood still', () {
+        expect(classifyThrow(episode(still, shape: 0.04), f.calibration).kind, ThrowOutcomeKind.boardVisit);
+      });
+    });
+
+    test('a new shape far bigger than a knife (the board re-exposing) is not a stick', () {
+      final o = f.calibration.outer.rescaled(still.width / f.calibration.imageWidth);
+      final after = LumaImage(still.width, still.height, Uint8List.fromList(still.pixels));
+      // Invert a square covering ~20% of the target's area, at its centre.
+      final half = (o.semiMinor * 0.4).round();
+      for (var y = o.cy.round() - half; y < o.cy.round() + half; y++) {
+        for (var x = o.cx.round() - half; x < o.cx.round() + half; x++) {
+          after.pixels[y * still.width + x] = 255 - after.pixels[y * still.width + x];
+        }
+      }
+      expect(classifyThrow(episode(after, shape: 0.003), f.calibration).kind, ThrowOutcomeKind.bounceOut);
     });
 
     test('someone blocking the board is a board visit', () {

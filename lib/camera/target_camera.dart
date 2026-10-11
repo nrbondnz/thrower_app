@@ -8,6 +8,12 @@ abstract interface class TargetCamera implements CameraSource {
   /// upright (see `frameRotation`).
   int get uprightRotation;
 
+  /// The smallest brightness difference between two frames (0–255) that can
+  /// be a real change rather than how this source makes its frames: a live
+  /// camera's sensor noise is learned on top, but compressed video also
+  /// re-encodes blocks of the picture that differ by up to ~20 levels.
+  int get minChange;
+
   /// The furthest this camera can zoom in (1 = it can't).
   double get maxZoom;
 

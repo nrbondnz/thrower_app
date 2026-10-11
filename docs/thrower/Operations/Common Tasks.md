@@ -95,6 +95,16 @@ dart run tool/render_throw_sequences.dart [throw-stick-ring4 throw-stick-ring3 t
 
 15 fps, 640 × 360 frames with motion blur and noise, plus full-resolution `before.jpg` / `after.jpg`, `preview.gif` and `truth.json`, in `docs/thrower/reference/sequences/<name>/`. About 3.5 min per throw sequence and 13 min for the retrieval. Knife positions, timings and the release point are constants at the top of the tool.
 
+## Make a Live Test Recording
+
+The app's **Live test** plays packed recordings (`assets/live/*.tfrm`) in place of the camera. See [[Design Decisions]] → Live Test.
+
+1. Crop the video to one board, e.g. `ffmpeg -i in.mov -vf crop=140:140:50:232 -an 1.mp4`. Keep the original pixels: don't upscale. The crops so far are listed in `docs/thrower/reference/live-camera/README.md`.
+2. Pack it: `dart run tool/pack_recording.dart 1.mp4 assets/live/target1.tfrm --ffmpeg <path to ffmpeg>`. The defaults are 15 fps and JPEG `q:v` 5.
+3. A new recording also needs an entry in `liveTestRecordings` (`lib/camera/recorded_camera.dart`).
+
+There's no ffmpeg on Nigel's PC. `pip install imageio-ffmpeg` brings one, at `python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())"`.
+
 ## Read Logs from the Android Phone (Wireless Debugging)
 
 `adb` isn't on `PATH`; use the SDK copy:

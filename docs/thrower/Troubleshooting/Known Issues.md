@@ -57,3 +57,23 @@
 - **Cause:** the camera moves by about 1 pixel (a phone propped on a sofa arm, image stabilisation, refocusing). Every sharp ring edge then "differs": 9% of the watch region on Nigel's frames, with brightness unchanged (169 vs 169), so it was not the lighting.
 - **Fix:** `lib/vision/image_difference.dart`. Before comparing two frames, find the shift (±3 px; ±8 px at full resolution) that best lines them up. Count a pixel as changed only if it is also unlike all its neighbours. A knife is new content, so it still counts. On the real frames: 9.1% → 2.6% changed, no longer "blocked". The classifier also ignores new shapes only 1 px thick (slivers along ring edges). The regression fixtures are `test/fixtures/real/nudge-*.pgm` and the test is `test/vision/camera_nudge_test.dart`.
 - **Still:** prop the phone on something rigid (a tripod or a shelf), not a sofa arm. A big knock (more than a few pixels) still needs recalibrating.
+- **Zoom makes it bigger (2026-10-11):** since Find target zooms the camera in on the board, a nudge moves the picture by the zoom factor more pixels (a 1 px shake at 1× is about 3 px at 3×). The shift search covers ±8 px at full resolution; if zoomed play starts reporting "someone at the board" again, this is the first suspect.
+
+## TestFlight Tester Invitation Loops Back to "Sign in with Apple Account"
+
+- **Symptom (2026-10-10):** the internal tester opens the App Store Connect invitation, signs in, and lands back on the sign-in page, over and over.
+- **Likely causes, most likely first (not yet confirmed which):**
+  1. **Signed in with a different Apple ID** from the invited email address. The invitation only works for an Apple ID **on that exact address**. Fix: re-invite using his existing Apple ID's email, or create an Apple ID on the invited address.
+  2. **The browser blocks the sign-in cookies.** This happens with iPhone Safari, private browsing, or "Prevent cross-site tracking" turned on. Fix: open the link on a computer, in a normal (not private) Chrome or Safari window.
+  3. **The account isn't set up for App Store Connect:** no two-factor authentication, or a child/managed Apple ID. Fix: turn on two-factor authentication at account.apple.com.
+  4. **The invitation is stale.** Fix: Nigel resends it from *Users and Access*.
+- **Way round it:** use an **external** tester with a **public TestFlight link**. He needs no App Store Connect sign-in, only Apple's TestFlight app. The catch is that each version's first build needs Beta App Review, usually under a day. See [[Common Tasks]] → Ship a Build to TestFlight.
+
+## Compressed Video: Whole-Picture "Pulses"
+
+- **Seen in:** the Live test recordings (a video compressed by a messaging app, 834 kb/s).
+- **Symptom:** about once a second, and strongly at 4, 10, 33, 40, 112, 144, 165 and 179 s, the **whole picture** changes slightly at once (sharpness, colour), with nothing moving. Frame differencing reads that as motion on the board.
+- **Why:** the video's compression refreshing the picture (keyframes, and quality switches).
+- **Handled (Task 5 of [[story-checkpoint-live-test]], 2026-10-11):** each pair of frames sets its own change threshold from its robust noise, motion is judged on the largest connected changed shape, and recordings use a minimum change of 20 (`RecordedCamera.minChange`). See [[Design Decisions]] → Throw Detection on Real Footage.
+- **Also from the same compression:** when something moves elsewhere in the video, the board's picture gets re-encoded in blocks. On board 1 this happened every time board 2 was hit (the throwers throw together).
+- **Also:** the recording's first 4 s repeat one frame, a still at the start of the video.

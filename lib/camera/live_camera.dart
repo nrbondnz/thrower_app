@@ -81,6 +81,10 @@ class LiveCamera implements TargetCamera {
     return camera;
   }
 
+  /// Uncompressed frames: only sensor noise, which the motion detector learns.
+  @override
+  int get minChange => 12;
+
   double _maxZoom = 1;
   double _zoom = 1;
 

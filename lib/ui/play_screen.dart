@@ -75,6 +75,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
           _message = null;
         case ThrowOutcomeKind.sceneChanged:
           _message = 'The view changed (lights? camera moved?). Re-calibrate if the rings no longer line up.';
+        case ThrowOutcomeKind.nothing:
+          break;
       }
     });
   }

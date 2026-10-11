@@ -40,7 +40,7 @@ class ThrowEvent {
 /// Knives are remembered until a board visit (someone collecting them).
 class ThrowWatcher {
   ThrowWatcher(this.camera, this.calibration)
-      : _detector = MotionDetector(WatchRegion.fromCalibration(calibration)),
+      : _detector = MotionDetector(WatchRegion.fromCalibration(calibration), minThreshold: camera.minChange),
         _tracker = ThrowTracker(calibration),
         _debug = WatchDebugLog(calibration);
 

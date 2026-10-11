@@ -114,3 +114,37 @@ int tolerantColourDifference(RgbImage a, RgbImage b, int x, int y, {int dx = 0, 
   }
   return best;
 }
+
+/// The size (in pixels) of the largest 8-connected shape of true pixels in
+/// [mask], a [width] × [height] grid, row by row.
+int largestShape(List<bool> mask, int width, int height) {
+  final seen = List<bool>.filled(mask.length, false);
+  final stack = <int>[];
+  var largest = 0;
+  for (var start = 0; start < mask.length; start++) {
+    if (!mask[start] || seen[start]) continue;
+    seen[start] = true;
+    stack.add(start);
+    var size = 0;
+    while (stack.isNotEmpty) {
+      final i = stack.removeLast();
+      size++;
+      final x = i % width, y = i ~/ width;
+      for (var dy = -1; dy <= 1; dy++) {
+        final ny = y + dy;
+        if (ny < 0 || ny >= height) continue;
+        for (var dx = -1; dx <= 1; dx++) {
+          final nx = x + dx;
+          if (nx < 0 || nx >= width) continue;
+          final n = ny * width + nx;
+          if (mask[n] && !seen[n]) {
+            seen[n] = true;
+            stack.add(n);
+          }
+        }
+      }
+    }
+    if (size > largest) largest = size;
+  }
+  return largest;
+}

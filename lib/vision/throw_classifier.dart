@@ -25,6 +25,11 @@ enum ThrowOutcomeKind {
   /// A knife already in the board disappeared on its own (fell out). The
   /// change sits where that knife was.
   fellOut,
+
+  /// Something flickered, but too little moved for a throw (a camera
+  /// refocusing, someone passing at the edge of the picture) and nothing is
+  /// new. Ignored.
+  nothing,
 }
 
 /// A new object found on the board: the pixels (in the brightness frame) that
@@ -85,9 +90,10 @@ class ThrowOutcome {
 /// and after it.
 ///
 /// - The view was accepted as a new normal: **scene changed**.
-/// - Someone stood at the board ([MotionEpisode.wasBlocked]) or the episode
-///   changed a large share of the region at once ([visitPeak]): a **board
-///   visit** (collecting knives), unless the visit left a knife-sized shape
+/// - Someone stood at the board ([MotionEpisode.wasBlocked]), the episode
+///   changed a large share of the region at once ([visitPeak]), or one
+///   person-sized shape moved ([visitShape] of the region): a **board visit**
+///   (collecting knives), unless the visit left a knife-sized shape
 ///   that **appeared** ([appeared]), took none of the [knownKnives] and isn't
 ///   one of them: then someone placed a knife (or a pen, to test) by hand,
 ///   which is a **stuck** knife.
@@ -96,9 +102,17 @@ class ThrowOutcome {
 ///   larger than [minKnifeShare] of the target's area that touches the target
 ///   is a **stuck** knife, if it is also at least 2 px thick (the rendered
 ///   knives show ~0.3–1.4% of the target's area, 4–16 px thick; the sliver a
-///   slight camera move left along a ring edge on Nigel's A4 test was 1 px);
-///   otherwise a **bounce-out**. Single noisy pixels and JPEG speckle never
-///   form a shape that big.
+///   slight camera move left along a ring edge on Nigel's A4 test was 1 px)
+///   and no more than [maxKnifeShare] of it (the largest real knife so far:
+///   1.9%; the whole board re-exposing on the Live test recordings: 15%).
+///   Otherwise it's a **bounce-out**, as long as a knife-sized shape was seen
+///   moving ([bounceShape] of the region); smaller flickers are **nothing**.
+///   Single noisy pixels and JPEG speckle never form a shape that big.
+///
+/// On the Live test recordings (2026-10-11), every real bounce-out moved a
+/// shape of 42+ px (0.26% of the 126 × 126 region) and every false one,
+/// from refocusing or people at the picture's edge, 27 px or less; a person
+/// walking up to the board 686 px (4.3%), while no knife moved over 132 px.
 ///
 /// [knownKnives] are the shapes of knives already in the board (recorded when
 /// each stuck, cleared when someone collects them). A new shape that covers
@@ -110,21 +124,30 @@ ThrowOutcome classifyThrow(
   TargetCalibration calibration, {
   List<NewObject> knownKnives = const [],
   double visitPeak = 0.10,
+  double visitShape = 0.02,
+  double bounceShape = 0.0022,
   double minKnifeShare = 0.0025,
+  double maxKnifeShare = 0.06,
   double searchMargin = 1.5,
   double fellOutOverlap = 0.5,
 }) {
   if (episode.acceptedNewScene) return const ThrowOutcome(ThrowOutcomeKind.sceneChanged);
-  final visit = episode.wasBlocked || episode.peakChange >= visitPeak;
+  final shape = episode.peakShape;
+  final visit = episode.wasBlocked || episode.peakChange >= visitPeak || (shape != null && shape >= visitShape);
   const visited = ThrowOutcome(ThrowOutcomeKind.boardVisit);
+  final nothingNew = visit
+      ? visited
+      : ThrowOutcome(shape == null || shape >= bounceShape ? ThrowOutcomeKind.bounceOut : ThrowOutcomeKind.nothing);
   final before = episode.before, after = episode.after;
-  if (before == null || after == null) return visit ? visited : const ThrowOutcome(ThrowOutcomeKind.bounceOut);
+  if (before == null || after == null) return nothingNew;
 
-  final object = findNewObject(before, after, calibration, threshold: episode.threshold, searchMargin: searchMargin);
+  final threshold = visit ? episode.visitThreshold : episode.threshold;
+  final object = findNewObject(before, after, calibration, threshold: threshold, searchMargin: searchMargin);
   if (object == null ||
       object.thickness < 2 ||
-      object.area < minKnifeArea(calibration, after.width, minKnifeShare: minKnifeShare)) {
-    return visit ? visited : const ThrowOutcome(ThrowOutcomeKind.bounceOut);
+      object.area < minKnifeArea(calibration, after.width, minKnifeShare: minKnifeShare) ||
+      object.area > minKnifeArea(calibration, after.width, minKnifeShare: maxKnifeShare)) {
+    return nothingNew;
   }
 
   final pixels = object.pixels.toSet();
@@ -132,12 +155,17 @@ ThrowOutcome classifyThrow(
     final known = knownKnives[k];
     if (known.imageWidth != object.imageWidth) continue;
     final shared = known.pixels.where(pixels.contains).length;
-    if (shared >= fellOutOverlap * math.min(known.area, object.area)) {
+    // A knife thrown right next to one already in the board (head-on knives
+    // overlap) is new content, not that knife leaving.
+    if (shared >= fellOutOverlap * math.min(known.area, object.area) && !appeared(object, before, after)) {
       return visit ? visited : ThrowOutcome(ThrowOutcomeKind.fellOut, object: object, knownKnifeIndex: k);
     }
   }
   if (visit) {
-    final tookKnife = knownKnives.any((k) => k.imageWidth == after.width && _gone(k, before, after, episode.threshold));
+    // Knives taken out are looked for at the sensitive threshold, new
+    // shapes at the strict one.
+    final tookKnife =
+        knownKnives.any((k) => k.imageWidth == after.width && _gone(k, before, after, episode.threshold));
     if (tookKnife || !appeared(object, before, after)) return visited;
   }
   return ThrowOutcome(ThrowOutcomeKind.stuck, object: object);

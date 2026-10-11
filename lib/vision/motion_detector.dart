@@ -56,10 +56,12 @@ class MotionEpisode {
     required this.changeFromBefore,
     this.acceptedNewScene = false,
     this.wasBlocked = false,
+    this.peakShape,
     this.before,
     this.after,
     this.threshold = 12,
-  });
+    int? visitThreshold,
+  }) : visitThreshold = visitThreshold ?? threshold;
 
   /// True if, while settling, something stood in front of the board for a
   /// while (someone at the board).
@@ -69,14 +71,25 @@ class MotionEpisode {
   final LumaImage? before;
   final LumaImage? after;
 
-  /// The changed-pixel threshold in use (brightness levels).
+  /// The changed-pixel threshold for comparing [before] and [after]
+  /// (brightness levels).
   final int threshold;
+
+  /// A stricter threshold for the same comparison after a board visit, when
+  /// marks left by collecting knives mustn't look like a placed knife.
+  final int visitThreshold;
 
   final int startFrame;
   final int settledFrame;
   final Duration start;
   final Duration settled;
   final double peakChange;
+
+  /// The largest connected shape that changed between two frames during the
+  /// episode, as a share of the region: a flying knife makes a compact shape,
+  /// a refocusing camera only scattered specks, a person a huge one. Null if
+  /// not measured (hand-made episodes in tests).
+  final double? peakShape;
 
   /// Share of the region that differs from how it looked before the episode
   /// (a new knife: ~1–2%; knives removed: a few %).
@@ -125,11 +138,13 @@ class MotionUpdate {
 class MotionDetector {
   MotionDetector(
     this.region, {
-    this.startFraction = 0.002,
-    this.stillFraction = 0.0008,
+    this.startFraction = 0.001,
+    this.stillFraction = 0.0005,
     this.settleTime = const Duration(milliseconds: 300),
     this.minThreshold = 12,
     this.noiseFactor = 6,
+    this.pairNoiseFactor = 5,
+    this.settledNoiseFactor = 3.5,
     this.blockedFraction = 0.08,
     this.maxBlocked = const Duration(seconds: 5),
   });
@@ -141,15 +156,33 @@ class MotionDetector {
 
   final WatchRegion region;
 
-  /// Share of the region that must change to start an episode (at 320 px,
-  /// about 20 pixels of a 100 × 100 region: one blurred knife frame is more).
+  /// Share of the region the largest changed shape must cover to start an
+  /// episode (at 320 px, about 10 pixels of a 100 × 100 region; 16 of the
+  /// Live test's 126 × 126: one blurred knife frame is more).
   final double startFraction;
 
-  /// Below this share, a frame counts as still.
+  /// While the largest changed shape is below this share, a frame counts as
+  /// still.
   final double stillFraction;
   final Duration settleTime;
+
+  /// The smallest brightness difference that counts as a change: the frame
+  /// source's `TargetCamera.minChange` (12 for the live camera; 20 for the
+  /// Live test's compressed recordings, whose re-encoded blocks differ by up
+  /// to ~20 levels).
   final int minThreshold;
   final double noiseFactor;
+
+  /// See [pairNoise].
+  final double pairNoiseFactor;
+
+  /// Like [pairNoiseFactor], for the threshold an episode's settled board is
+  /// compared with the board before it at ([MotionEpisode.threshold]): lower,
+  /// because both are still frames, so only re-encoding separates them, and
+  /// a head-on knife is small. On the Live test recordings, the before/after
+  /// threshold at 5 × σ was 30–44 and three knives showed as 9–12 px, just
+  /// under the 12.6 px a knife needs; no bounce-out left anything behind.
+  final double settledNoiseFactor;
 
   LumaImage? _previous;
 
@@ -162,6 +195,7 @@ class MotionDetector {
   Duration? _start;
   Duration? _stillSince;
   var _peak = 0.0;
+  var _peakShape = 0.0;
   var _wasBlocked = false;
 
   WatchState get state => _state;
@@ -178,36 +212,47 @@ class MotionDetector {
       return MotionUpdate(_state, 0);
     }
 
-    final (changed, quietMean) = _difference(image, previous);
+    final difference = _difference(image, previous);
+    final changed = difference.changed;
+    // Motion is judged on the largest connected changed shape, not on the
+    // total: a knife is one compact shape, while compressed video re-encodes
+    // scattered blocks (up to ~12 px at 140 px on the Live test recordings,
+    // against 20+ for every real throw).
+    final moving = difference.largest;
+    final quietMean = difference.quietMean;
 
     switch (_state) {
       case WatchState.watching:
         // Learn the noise from still frames: the mean |difference| of two
         // noisy frames is ≈ 1.13 σ.
-        if (changed < stillFraction && quietMean != null) {
+        if (moving < stillFraction && quietMean != null) {
           _noise = 0.9 * _noise + 0.1 * (quietMean / 1.13);
           // Follow slow changes (light drifting) while nothing is happening.
           _reference = image;
         }
-        if (changed >= startFraction) {
+        if (moving >= startFraction) {
           _state = WatchState.motion;
           _startFrame = _frame;
           _start = time;
           _peak = changed;
+          _peakShape = moving;
         }
       case WatchState.motion:
         _peak = math.max(_peak, changed);
-        if (changed < stillFraction) {
+        _peakShape = math.max(_peakShape, moving);
+        if (moving < stillFraction) {
           _state = WatchState.settling;
           _stillSince = time;
         }
       case WatchState.settling:
       case WatchState.blocked:
-        if (changed >= stillFraction) {
+        if (moving >= stillFraction) {
           _peak = math.max(_peak, changed);
+          _peakShape = math.max(_peakShape, moving);
           _state = WatchState.motion;
         } else if (time - _stillSince! >= settleTime) {
-          final fromBefore = _difference(image, _reference ?? image).$1;
+          final settledDifference = _difference(image, _reference ?? image);
+          final fromBefore = settledDifference.changed;
           final stillFor = time - _stillSince!;
           if (fromBefore > blockedFraction && stillFor < maxBlocked) {
             _state = WatchState.blocked;
@@ -220,12 +265,14 @@ class MotionDetector {
             start: _start!,
             settled: time,
             peakChange: _peak,
+            peakShape: _peakShape,
             changeFromBefore: fromBefore,
             acceptedNewScene: fromBefore > blockedFraction,
             wasBlocked: _wasBlocked,
             before: _reference,
             after: image,
-            threshold: threshold,
+            threshold: math.max(threshold, (settledNoiseFactor * settledDifference.sigma).round()),
+            visitThreshold: math.max(threshold, (pairNoiseFactor * settledDifference.sigma).round()),
           );
           _wasBlocked = false;
           _state = WatchState.watching;
@@ -236,25 +283,28 @@ class MotionDetector {
     return MotionUpdate(_state, changed);
   }
 
-  /// Share of the region whose content really changed between [a] and [b]
-  /// ([lumaChanged] at [threshold], after re-aligning a small camera shift of
-  /// up to ±3 px: see `image_difference.dart`). Frame to frame too: a nudge of
-  /// 2 px between two frames would otherwise start an episode that settles as
-  /// a false bounce-out. Returns also the plain mean |difference| of the
-  /// plain mean |difference| of the pixels that don't (for the noise estimate;
-  /// null if none).
-  (double, double?) _difference(LumaImage a, LumaImage b) {
+  /// How [a] differs from [b] within the region, after re-aligning a small
+  /// camera shift of up to ±3 px (see `image_difference.dart`; frame to frame
+  /// too: a nudge of 2 px between two frames would otherwise start an episode
+  /// that settles as a false bounce-out). A pixel has changed if it passes
+  /// [lumaChanged] at the pair's threshold (see [pairNoise]).
+  _Difference _difference(LumaImage a, LumaImage b) {
     final x0 = (region.left * a.width).floor(), x1 = (region.right * a.width).ceil();
     final y0 = (region.top * a.height).floor(), y1 = (region.bottom * a.height).ceil();
-    final (dx, dy) = bestShift(a, b, PixelRect(x0, y0, x1, y1), step: 2);
-    final limit = threshold;
-    var changedCount = 0, total = 0, quietSum = 0, quietCount = 0;
+    final w = x1 - x0, h = y1 - y0;
+    if (w <= 0 || h <= 0) return const _Difference(0, 0, null, 0);
+    final area = PixelRect(x0, y0, x1, y1);
+    final (dx, dy) = bestShift(a, b, area, step: 2);
+    final sigma = pairNoise(a, b, area, dx: dx, dy: dy);
+    final limit = math.max(threshold, (pairNoiseFactor * sigma).round());
+    final changed = List<bool>.filled(w * h, false);
+    var changedCount = 0, quietSum = 0, quietCount = 0;
     for (var y = y0; y < y1; y++) {
       final row = y * a.width, sy = y + dy;
       for (var x = x0; x < x1; x++) {
-        total++;
         final sx = x + dx;
         if (lumaChanged(a, b, x, y, limit, dx: dx, dy: dy)) {
+          changed[(y - y0) * w + (x - x0)] = true;
           changedCount++;
         } else if (sx >= 0 && sy >= 0 && sx < b.width && sy < b.height) {
           quietSum += (a.pixels[row + x] - b.pixels[sy * b.width + sx]).abs();
@@ -262,6 +312,63 @@ class MotionDetector {
         }
       }
     }
-    return (total == 0 ? 0.0 : changedCount / total, quietCount == 0 ? null : quietSum / quietCount);
+    final total = w * h;
+    return _Difference(
+      changedCount / total,
+      largestShape(changed, w, h) / total,
+      quietCount == 0 ? null : quietSum / quietCount,
+      sigma,
+    );
   }
+
+  /// The noise (σ) between [a] and [b] (shifted by [dx], [dy]), estimated
+  /// robustly from the median |difference| over [area] (σ ≈ 1.4826 ×
+  /// median), so a few changed pixels (a knife) don't move it. A pixel has
+  /// changed if it differs by more than the learned [threshold], raised to
+  /// [pairNoiseFactor] × this pair's σ when that's higher.
+  ///
+  /// Why (Live test recordings, 2026-10-11): compressed video re-encodes the
+  /// whole picture about once a second, shifting every pixel by a few levels
+  /// (median |difference| 3–9 instead of ~0). At a fixed threshold, 1–10% of
+  /// the board then "changed", and every jump became a false bounce-out. A
+  /// live camera's noise is steady, so this rarely changes anything there.
+  double pairNoise(LumaImage a, LumaImage b, PixelRect area, {int dx = 0, int dy = 0}) {
+    final histogram = List<int>.filled(256, 0);
+    var count = 0;
+    for (var y = area.y0; y < area.y1; y++) {
+      final sy = y + dy;
+      if (sy < 0 || sy >= b.height) continue;
+      for (var x = area.x0; x < area.x1; x++) {
+        final sx = x + dx;
+        if (sx < 0 || sx >= b.width) continue;
+        histogram[(a.pixels[y * a.width + x] - b.pixels[sy * b.width + sx]).abs()]++;
+        count++;
+      }
+    }
+    var median = 0, seen = 0;
+    while (median < 255) {
+      seen += histogram[median];
+      if (seen * 2 >= count) break;
+      median++;
+    }
+    return 1.4826 * median;
+  }
+}
+
+/// Frame-to-frame (or frame-to-reference) difference within the region.
+class _Difference {
+  const _Difference(this.changed, this.largest, this.quietMean, this.sigma);
+
+  /// Share of the region that changed.
+  final double changed;
+
+  /// Share of the region covered by the largest connected changed shape.
+  final double largest;
+
+  /// Mean |difference| of the unchanged pixels (null if none), for the noise
+  /// estimate.
+  final double? quietMean;
+
+  /// The pair's noise ([MotionDetector.pairNoise]).
+  final double sigma;
 }
