@@ -83,19 +83,6 @@ void main() {
     expect(camera.current.value!.index, 3);
   });
 
-  test('pause holds the position; resume carries on from it', () {
-    camera.restart();
-    now = const Duration(milliseconds: 600);
-    camera.pause();
-    now = const Duration(seconds: 5);
-    camera.tick();
-    expect(camera.current.value!.index, 1);
-    camera.resume();
-    now = const Duration(milliseconds: 5500); // 0.6 + 0.5 s = frame 2
-    camera.tick();
-    expect(camera.current.value!.index, 2);
-  });
-
   test('restart after the end plays from the start again', () {
     camera.restart();
     now = const Duration(seconds: 10);

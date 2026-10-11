@@ -119,19 +119,6 @@ class RecordedCamera implements TargetCamera {
     tick();
   }
 
-  void pause() {
-    if (!playing.value) return;
-    _positionAtStart = _position();
-    _startedAt = null;
-    playing.value = false;
-  }
-
-  void resume() {
-    if (playing.value || _position() >= duration) return;
-    _startedAt = _now();
-    playing.value = true;
-  }
-
   Duration _position() {
     final started = _startedAt;
     final p = started == null ? _positionAtStart : _positionAtStart + (_now() - started);
