@@ -14,7 +14,7 @@ So the app should play each recorded board (`docs/thrower/reference/live-camera/
 - Recorded data to build (1).
 
 ## Status
-IN PROGRESS: Tasks 1–5 complete (1–4 committed, f68a5d7); waiting for Nigel's check of Task 5.
+COMPLETE (2026-10-11): all 7 tasks done and committed (f68a5d7, 6a8f5c4, 5ca68ec, 00981f4); archived. Device checks and the original video moved to the [[backlog]] (Carry-overs from Live Test).
 
 ---
 
@@ -178,7 +178,7 @@ IN PROGRESS: Tasks 1–5 complete (1–4 committed, f68a5d7); waiting for Nigel'
   - A headless test replays each clip and compares the event list with the truth.
 - **Verify:** on Play, the event log for each target matches the truth table (sticks, bounce-out, board visits).
 
-- **Status:** COMPLETE: waiting for Nigel's check.
+- **Status:** COMPLETE, committed by Nigel (6a8f5c4).
 - **Before:** replaying the recordings gave a false bounce-out almost every second (compression jumps), board 2 "blocked" for 49 s, and missed knives.
 - **Now:** both recordings give exactly the answer key's throws (stuck or bounce-out, at the right time) and collections. The only extras are harmless: "nothing" flickers, and repeat visits in rounds with no throws.
 - **What changed** (each rule and its measured reason: [[Design Decisions]] → Throw Detection on Real Footage):
@@ -212,9 +212,66 @@ IN PROGRESS: Tasks 1–5 complete (1–4 committed, f68a5d7); waiting for Nigel'
     - each bounce-out shows a **"0" marker beside the board**
 - **Verify:** Nigel plays Target 1 and Target 2, and the final scoreboards match the truth table.
 
+- **Status:** COMPLETE, committed (5ca68ec); Nigel's device check pending.
+- **Rounds match:** replayed through the real `GameSession`, both recordings give the answer key's rounds exactly, throw by throw (stuck or bounce-out), including the 1-throw rounds. That needed one more rule: someone passing close to the camera (board 2 at 97 s, 2.6 s) had ended a round, so a "visit" under 3 s that takes no known knife is now **nothing**.
+- **Scores:** 11 of 19 knives exactly as Nigel scored them, and all but two within a ring.
+  - **Target 1** (Nigel / app): R1 4 5 5 / 4 4 5; R2 0 5 5 / 0 2 3; R3 4 5 0 / 4 4 0; R4 3 3 4 / 3 4 4. Total 43 / 37.
+  - **Target 2:** R1 5 4 5 / 5 5 5; R2 4 3 0 / 4 5 0; R3 2 0 4 / 2 0 4; R4 5 / 5; R5 3 / 4. Total 35 / 39.
+  - The two misses by more than a ring, board 1 at 40.5 s and 43.2 s: the changed shape isn't where Nigel places the knife (dark knives in the dark bull barely change the picture). Rings are ~8 px apart at 140 px; the original video would help most here.
+- **What changed:**
+  - `faceOnEntry` and `isFaceOn` (`entry_point.dart`): on a face-on board, the entry is the knife shape's pixels nearest the bull. `ThrowWatcher` uses it at once (no full-resolution capture); side views keep `GeometricEntryEstimator`. See [[Design Decisions]] → Throw Detection on Real Footage.
+  - `classifyThrow`: `minVisit` 3 s (someone passing the camera).
+  - **On-screen marks** (`RoundMarks`, `round_marks.dart`; drawn by `PlayOverlayPainter`): a yellow circle with its score at each knife's entry; an orange "0" beside the board for a bounce-out, a stuck knife without an entry, or one that fell out; cleared on collection or a new round. Replaces the numbered dots.
+  - In-app Instructions: the yellow circle and the 0 beside the target.
+- **Verify (Nigel):** Live test → Target 1 → Calibrate → Play. Each knife gets a yellow circle with its score, bounce-outs a 0 beside the board, the marks clear when the knives are collected, and the rounds follow the footage. Then Target 2.
+- **To check on the A4 printout:** a waved hand (the paper bounce-out) is now judged by size and length. A big hand held in for under 3 s could read as nothing rather than a bounce-out; if so, the paper instructions need a tweak.
+
+#### Test Report (Task 6)
+- **New:**
+  - `live_replay_test.dart`: the game's rounds hold the answer key's throws, round by round; knives scored exactly as Nigel did, at least 5 of 10 and 6 of 9.
+  - `round_marks_test.dart`: score circle at the entry; bounce-out → 0 beside; no entry → 0 beside; falling out moves the mark beside as 0; collection clears; a new round clears; `besidePosition` right of the board, or left if no room.
+  - `throw_classifier_test.dart`: a person-sized change under 3 s that takes nothing is nothing.
+- **Updated:** `throw_classifier_test.dart` (visit tests last 5 s).
+- **Result:** `flutter analyze` clean; `flutter test` 316 passed.
+
+
 ### Task 7: Traceability and docs
 - **Work:** Traceability Agent; Design Decisions (head-on cameras, paint vs wood, recorded camera); Known Issues (compression pulse).
 - **Verify:** all tests pass; the docs match the code.
+
+- **Status:** COMPLETE, committed (00981f4).
+- **What changed:**
+  - Orphan code removed: `RecordedCamera.pause` / `resume` (from Task 2; nothing used or asked for them), with their test.
+  - Docs: the Code Layout table in [[Design Decisions]] now lists `lib/game/`, `TargetCamera`, `RecordedCamera`, `FramePack`, the throw-detection and entry-point pieces, and `RoundMarks` (drift noted in Task 4).
+- **Result:** `flutter analyze` clean; `flutter test` 315 passed (one fewer: the pause/resume test).
+
+#### Traceability Report: Live Test
+
+**Coverage summary:** 12 requirements; 8 fully covered (design + code + test); 3 partly covered (only checkable on a device, or known to be imperfect); 1 config-only (no test possible). Orphan code: 1 found and removed.
+
+| # | Requirement (source) | Design | Implementation | Test | Status |
+|---|---|---|---|---|---|
+| R1 | A **Live test** button on the main screen, then **Target 1** / **Target 2** (Nigel) | Live Test: A Recording in Place of the Camera | `HomeScreen`, `LiveTestScreen`, `recordingChoiceProvider` | `live_test_screen_test.dart` | ✅ |
+| R2 | Each recording runs **live** through the same calibrate → Play pipeline, analysed every run (Nigel) | Same | `RecordedCamera`, `FramePack`, `cameraProvider`, `RecordedPreview` | `recorded_camera_test.dart`, `frame_pack_test.dart`, `camera_view_test.dart` | ✅ |
+| R3 | Find the rings whatever their colours (Nigel: "the ring colors change") | Ring Finding on Real Boards | `ColourRingLocator` (edge reading), `RgbImage.upscaled` | `live_recording_locate_test.dart` | ✅ |
+| R4 | Pale outer edge scores 0, bull 5 (Q3) | Throwing Sport | `TargetModel.ikthof` | `target_model_test.dart` | ✅ |
+| R5 | Detect every throw, **including bounce-outs**, and nothing else (Nigel) | Throw Detection on Real Footage | `MotionDetector` (pair noise, largest shape), `classifyThrow`, `ThrowTracker`, `TargetCamera.minChange` | `live_replay_test.dart` (every throw; nothing extra), `motion_detector_test.dart`, `throw_classifier_test.dart`, `throw_tracker_test.dart`, `image_difference_test.dart` | ✅ |
+| R6 | Rounds, **including rounds of just 1 throw** (Nigel) | Rounds and Scoring; Throw Detection on Real Footage | `GameSession.boardVisited`, `classifyThrow` (`minVisit`), `ThrowTracker` (cool-down) | `live_replay_test.dart` (rounds, throw by throw), `game_session_test.dart` | ✅ |
+| R7 | Score each throw **correctly** (Nigel) | Throw Detection on Real Footage → Where a face-on knife went in | `faceOnEntry`, `isFaceOn`, `ThrowWatcher` | `live_replay_test.dart` (floor: 5 of 10, 6 of 9 exact) | ⚠️ **Partial:** 11 of 19 exact, 17 within a ring. Limited by the 140 px footage. The original video is the fix. |
+| R8 | A **yellow circle with the score** at each knife and a **0 marker beside the board** for a bounce-out, cleared on collection (Nigel) | Rounds and Scoring (Play screen) | `RoundMarks`, `besidePosition`, `PlayOverlayPainter` | `round_marks_test.dart` | ⚠️ **Partial:** the painting itself isn't tested (Nigel's visual check). |
+| R9 | Live test in **TestFlight builds** too (Q4) | Live Test section | `pubspec.yaml` assets | none (config) | ⚠️ **Config only.** Safety flags stand: +21 MB, people in the recordings (before any public release). |
+| R10 | **Camera zoom** onto the target on Find (Nigel) | Zoom the Camera onto the Target | `findTarget`, `zoomToFit`, `TargetCamera.setZoom`, `LiveCamera`, `CalibrationState.zoom`, `cameraProvider` | `zoom_to_fit_test.dart`, `find_target_test.dart`, `calibration_editor_test.dart` | ⚠️ **Partial:** that the plugin zooms the image stream, and the zoom is restored on reopening, needs a device. |
+| R11 | Off-centre board: zoom what it can, plus a tip (Nigel's choice) | Zoom section | `ZoomPlan.offCentre`, `calibrationStatus` | `zoom_to_fit_test.dart`, `calibration_screen_test.dart` | ✅ |
+| R12 | Answer key: Claude drafts, Nigel corrects (Q2) | Task 1 | `reference/live-camera/truth.json` | used by `live_replay_test.dart` | ✅ |
+
+**Gaps and recommendations:**
+1. **R7, score accuracy.** Recommend the original phone video (Q1): boards would be roughly 250–500 px across instead of 106, and the replay test's floor can then be raised towards a full match.
+2. **R8, R10: device checks.** Look at the marks on Play; zoom on a real phone, including going from Calibrate to Play.
+3. **A4 paper bounce-out** (waving a hand): now judged by the moving shape's size and how long it lasts; check it still reads as a bounce-out.
+4. **Unconfirmed rule:** a knife that falls out scores 0 (from before this story); still waiting for Nigel to confirm.
+
+**Backward check:** every class and function added in this story traces to R1–R12. `GeometricEntryEstimator` stays for side-view mounts (the app's intended set-up). `RecordedCamera.pause` / `resume` had no requirement and was removed.
+
 
 ---
 
@@ -231,6 +288,8 @@ IN PROGRESS: Tasks 1–5 complete (1–4 committed, f68a5d7); waiting for Nigel'
 - 2026-10-11: Nigel confirmed that recordings are analysed live on every run (no stored answers in the app). Added the score circles and bounce-out markers to the scoring task (now Task 6).
 - 2026-10-11: **Nigel asked for camera zoom on Find target** (the phone's zoom, not a crop). Added as a new **Task 4** after Task 3 (his choice); the old Tasks 4–6 are now 5–7. Off-centre board: zoom what it can, plus a tip to centre it (his choice).
 - 2026-10-11: Tasks 3 and 4 committed (f68a5d7); Task 5 started.
+- 2026-10-11: Task 5 committed by Nigel (6a8f5c4, with the docs and reference videos); Task 6 started.
+- 2026-10-11: Task 6 committed (5ca68ec); Task 7 (traceability) done and committed (00981f4). Nigel said "commit this": story archived; open checks moved to the backlog.
 
 ## Notes
 - **Why the original video matters (Q1).** At 106 px per board, the ring edges are 2–3 px apart near the bull, and a knife is a few pixels. Scores near a line will be guesses. The original phone file, sent by AirDrop, an iCloud/Google Photos link, or email "actual size", is probably 1080 × 1920 or 4K, which makes each board roughly 250–500 px across. The plan works either way, but "correctly" is far more achievable with the original.

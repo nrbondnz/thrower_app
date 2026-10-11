@@ -92,9 +92,10 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 |---|---|---|
 | `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
 | `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. No provider until the backend is chosen; `authServiceProvider` throws until overridden. |
-| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `LiveCamera` (the `camera` plugin's back camera), `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
-| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`. |
-| `lib/ui/` | Screens and painters | Depends on the layers through providers. |
+| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`), with two implementations: `LiveCamera` (the `camera` plugin's back camera) and `RecordedCamera` (a Live test recording, `FramePack`). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
+| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`. |
+| `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`. |
+| `lib/ui/` | Screens and painters | Depends on the layers through providers. `RoundMarks` holds the Play screen's marks for the round. |
 | `lib/providers.dart` | Wiring | One place to see and override every layer. |
 
 Folders are created when their first code arrives, never empty "just in case". Navigation is plain `Navigator` until there are enough screens to justify a router.
@@ -236,7 +237,12 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 - **The board re-exposing** made an 860 px "knife". → A knife covers at most **6%** of the target's area (the largest real one: 1.9%).
 - **Knives side by side:** board 1's 140.5 s knife overlapped the 133 s one and was read as it falling out. → Fell out only if the shape **disappeared** (`appeared` is false).
 
-**Not yet:** where a head-on knife went in. Most of these knives get no entry point (the side-view estimator needs a long blade), so their scores are still wrong. That's Task 6.
+- **Someone passing close to the camera** (board 2 at 97 s: a body filled the picture for 2.6 s) ended a round with one knife thrown. → A "visit" under **3 s** (`minVisit`) in which no one stood still and no known knife was taken is **nothing**. The shortest real collection took 3.9 s.
+
+**Where a face-on knife went in (Task 6):** the side-view estimator decides which end is the handle from the board's tilt, which is noise on a face-on board (both recordings' rings are 0.95–0.97 as tall as wide), and it re-finds the knife by colour without the compression handling. On a **face-on** board (`isFaceOn`: short axis ≥ 0.9 × long axis), `faceOnEntry` takes the classifier's knife shape and uses its pixels **nearest the bull**. A camera in front of the board sees a handle lean away from the point it looks along (roughly the bull), and it's also the line rule (touching a line scores the higher ring).
+- Against Nigel's scores (19 knives): **11 exact**, off by 12 rings in all. Alternatives: the shape's middle 11 exact (off by 13); the end along its axis nearer the bull 10; the side-view estimator 5–9.
+- All but two are within a ring. The two are board 1 at 40.5 s and 43.2 s, where the changed shape isn't where Nigel places the knife (dark knives in the dark bull barely change the picture).
+- At 140 px the rings are ~8 px apart and Nigel's own reading "is not always clear", so the replay test sets a floor (5 of 10 and 6 of 9), not a match.
 
 **Confirmed:** 2026-10-11 (rules derived from the recordings; Nigel's device check pending).
 
@@ -253,7 +259,7 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
   - `ThrowTracker` (pure): classification + the knives in the board.
   - `ThrowWatcher`: camera → detector → tracker → full-resolution entry, off the UI thread; emits `ThrowEvent`s.
   - `GameNotifier` (`gameProvider`): events → `GameSession`, scoring entries with `TargetMapping` + `TargetModel`.
-  - **Play screen:** live picture, locked rings, numbered dots, round and game totals.
+  - **Play screen:** live picture, locked rings, round and game totals, and the round's marks (`RoundMarks`, since 2026-10-11): a yellow circle with its score where each knife went in, and a "0" beside the board for each bounce-out (or a stuck knife whose entry wasn't found, or one that fell out). Cleared when the knives are collected or the next round starts.
 - **Safety:** at the end of a round the screen says *"Collect your knives when no one is throwing"*. It never says the lane is clear.
 
 **Update (2026-10-09, [[story-checkpoint-instructions-and-game-length]]):**
@@ -270,7 +276,7 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 3. The steel pixels' **principal axis** is the knife's line; its ends are the 2nd / 98th percentile along it.
 4. **Which end is the entry:** the knife sticks out towards the thrower. In the image "out of the board" points from the outer ring's ellipse centre towards the bull's centre (a tilted circle's centre appears shifted towards the far side). The handle is that way; the entry is the other end, taken as the centre of the knife pixels within 2 px of it.
 
-**On the phone (`WatchStatus`):** while still, a full-resolution "before" is kept (refreshed every second, off the UI thread). When an episode is classed **stuck**, the next frame is the "after"; the entry is found in the background, scored through `TargetMapping` and shown as a yellow dot. The after then becomes the next before.
+**On the phone (`WatchStatus`):** while still, a full-resolution "before" is kept (refreshed every second, off the UI thread). When an episode is classed **stuck**, the next frame is the "after"; the entry is found in the background, scored through `TargetMapping` and shown as a yellow circle with its score. **Face on** (`isFaceOn`), the entry comes straight from the classifier's knife shape instead (`faceOnEntry`; see Throw Detection on Real Footage). The after then becomes the next before.
 
 **Accuracy on 6 rendered throws** (2 sequences at 1280 × 720, 4 camera views at 1600 × 1200, 1× and 2×): **0.7–1.7% of the target radius (about 3–6 mm on an 80 cm board); every score correct**, including the ring-3 knife next to the 3/2 line.
 

@@ -9,9 +9,15 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
 | 3 | **Refine scoring by hit point** | Line-touch rules and per-sport variants (IKTHOF / WATL / IATF). Nigel put this on the backlog on 2026-10-04. `LineTouchRule` already supports higher/lower. | 2 |
 | 4 | **Accounts** | Choose the backend and auth provider; implement `AuthService`. Revisit CI/CD (A8) at the same time. | — |
 | 5 | **Game modes** | Single-player games of **9 rounds of 3 throws** with reset (done 2026-10-09, [[story-checkpoint-instructions-and-game-length]]); next: players, history, other game lengths. | 2 |
-| 6 | **Store-release hygiene** | Remove or gate the 170 KB debug asset (`assets/debug/target-example.jpg`); review debug screens; check the iOS `NSMicrophoneUsageDescription` question (Review Agent note, setup story). | before any store build |
+| 6 | **Store-release hygiene** | ~~Remove or gate the 170 KB debug asset~~ (`assets/debug/` removed before 2026-10-11); review debug screens; check the iOS `NSMicrophoneUsageDescription` question (Review Agent note, setup story). **Live test recordings** (`assets/live/`, +21 MB): remove them, or confirm the people filmed are happy to be in a public app ([[story-checkpoint-live-test]] safety flags). | before any store build |
 | 7 | **Axes** | Axe throws: wide head, long handle; entry point and scoring differ from knives (Nigel: knives first, 2026-10-08). | 2 |
 | 8 | **Full-screen Play (optional)** | Hide the system bars while playing (immersive sticky mode) for a cleaner view on a stand. Content already stays clear of them (`SafeArea`), so this is cosmetic. | — |
+
+## Carry-overs from Live Test
+
+- **Device checks** ([[story-checkpoint-live-test]], archived 2026-10-11): the Live test on a phone (marks on Play, rounds following the footage); **camera zoom** on Find target (the image stream zooms too; Play keeps the zoom); the A4 printout's waved-hand bounce-out still registering.
+- **The original phone video** (Q1): would make each board roughly 250–500 px across instead of 106. Repack it with `tool/pack_recording.dart`, then raise the replay test's floor on exact scores (today 11 of 19).
+- **Side-mounted phones on real boards:** the Live test recordings are filmed face on (`faceOnEntry`); the app's intended 45° mount still has only renders and the A4 printout behind it.
 
 ## Carry-overs from Throw Detection
 
