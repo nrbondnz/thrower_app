@@ -9,14 +9,15 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
 | 3 | **Refine scoring by hit point** | Line-touch rules and per-sport variants (IKTHOF / WATL / IATF). Nigel put this on the backlog on 2026-10-04. `LineTouchRule` already supports higher/lower. | 2 |
 | 4 | **Accounts** | Choose the backend and auth provider; implement `AuthService`. Revisit CI/CD (A8) at the same time. | — |
 | 5 | **Game modes** | Single-player games of **9 rounds of 3 throws** with reset (done 2026-10-09, [[story-checkpoint-instructions-and-game-length]]); next: players, history, other game lengths. | 2 |
-| 6 | **Store-release hygiene** | ~~Remove or gate the 170 KB debug asset~~ (`assets/debug/` removed before 2026-10-11); review debug screens; check the iOS `NSMicrophoneUsageDescription` question (Review Agent note, setup story). **Live test recordings** (`assets/live/`, +21 MB): remove them, or confirm the people filmed are happy to be in a public app ([[story-checkpoint-live-test]] safety flags). | before any store build |
+| 6 | **Store-release hygiene** | ~~Remove or gate the 170 KB debug asset~~ (`assets/debug/` removed before 2026-10-11); review debug screens; check the iOS `NSMicrophoneUsageDescription` question (Review Agent note, setup story). **Live test recordings** (`assets/live/`, +52 MB since 2026-10-12): remove them, or confirm the people filmed are happy to be in a public app ([[story-checkpoint-live-test]] safety flags). | before any store build |
 | 7 | **Axes** | Axe throws: wide head, long handle; entry point and scoring differ from knives (Nigel: knives first, 2026-10-08). | 2 |
 | 8 | **Full-screen Play (optional)** | Hide the system bars while playing (immersive sticky mode) for a cleaner view on a stand. Content already stays clear of them (`SafeArea`), so this is cosmetic. | — |
 
 ## Carry-overs from Live Test
 
 - **Device checks** ([[story-checkpoint-live-test]], archived 2026-10-11): the Live test on a phone (marks on Play, rounds following the footage); **camera zoom** on Find target (the image stream zooms too; Play keeps the zoom); the A4 printout's waved-hand bounce-out still registering.
-- **The original phone video** (Q1): would make each board roughly 250–500 px across instead of 106. Repack it with `tool/pack_recording.dart`, then raise the replay test's floor on exact scores (today 11 of 19).
+- ~~**The original phone video**~~: done 2026-10-12 (boards ~245 px; 12 of 19 knives scored as Nigel did). **Next: re-check the answer key's scores against the original.** They were read from the blurry copy. The app differs on 7 knives: board 1 at 18.2, 40.5, 133.0 and 136.5 s; board 2 at 69.6, 105.2 and 177.0 s.
+- **App size:** the Live test recordings are now 51.8 MB (Nigel's choice, 2026-10-12).
 - **Side-mounted phones on real boards:** the Live test recordings are filmed face on (`faceOnEntry`); the app's intended 45° mount still has only renders and the A4 printout behind it.
 
 ## Carry-overs from Throw Detection
@@ -24,6 +25,7 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
 - **Device checks of Tasks 2–5** (motion, stuck/bounce, entry dot, Play): approved without reported device results. **Test plan for Nigel's brother: [[Device Test Plan]]** (interactive page records results). Android with the A4 printout (a grey pen in Blu Tack as the "knife"), then **iOS**, then a **real board and real knives**.
 - **Confirm the fall-out rule:** a knife that sticks then falls out before being collected scores 0 (assumed).
 - **Speed on the phone:** the motion pass runs ~15 times a second on the UI thread (brightness only, ~320 px); full-resolution conversion and the entry search run in background isolates. Not yet measured on a device.
+  - **2026-10-13: the Live test jumps and freezes on Nigel's Samsung SM A065F.** Likely cause: pure-Dart JPEG decoding of the 322 px recording frames on the UI thread (see [[Known Issues]] → Live Test Playback Jumps and Freezes). **Done: (a)** (Nigel's choice): Flutter's native image codec, asynchronous, skipping to the newest frame; Nigel to re-check on the Samsung. Rejected: (b) a background isolate running the same slow decoder, and (c) smaller recordings (they give back detail). Also worth doing for the live camera: one long-lived worker isolate instead of a new `compute` isolate for each full-resolution copy (about one a second).
 - **Things the renders don't cover:** wind moving the board, moving shadows (clouds, trees), a dog or a person crossing the background inside the board's region, knives landing touching an existing knife, the board's bark edge being hit (outside the rings: stuck, 0).
 
 ## Carry-overs from Target Calibration

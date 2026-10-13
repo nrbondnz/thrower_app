@@ -99,8 +99,8 @@ dart run tool/render_throw_sequences.dart [throw-stick-ring4 throw-stick-ring3 t
 
 The app's **Live test** plays packed recordings (`assets/live/*.tfrm`) in place of the camera. See [[Design Decisions]] → Live Test.
 
-1. Crop the video to one board, e.g. `ffmpeg -i in.mov -vf crop=140:140:50:232 -an 1.mp4`. Keep the original pixels: don't upscale. The crops so far are listed in `docs/thrower/reference/live-camera/README.md`.
-2. Pack it: `dart run tool/pack_recording.dart 1.mp4 assets/live/target1.tfrm --ffmpeg <path to ffmpeg>`. The defaults are 15 fps and JPEG `q:v` 5.
+1. Start from the **original** phone file (AirDrop, iCloud link, or a cable), not one sent through a messaging app: that copy was 4× smaller and compressed. Crop it to one board, e.g. `ffmpeg -i IMG_1628.mov -vf crop=322:322:118:535 -c:v libx264 -crf 12 -an 1.mp4`. Keep the original pixels: don't upscale. The crops so far are listed in `docs/thrower/reference/live-camera/README.md`.
+2. Pack it: `dart run tool/pack_recording.dart 1.mp4 assets/live/target1.tfrm --ffmpeg <path to ffmpeg> --quality 12`. 15 fps is the default. At q12 a 322 px crop is ~9.8 KB a frame (25.9 MB for 3 min 10 s); the default q5 doubles that for no visible gain.
 3. A new recording also needs an entry in `liveTestRecordings` (`lib/camera/recorded_camera.dart`).
 
 There's no ffmpeg on Nigel's PC. `pip install imageio-ffmpeg` brings one, at `python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())"`.

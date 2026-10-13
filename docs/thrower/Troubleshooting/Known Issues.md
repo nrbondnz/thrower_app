@@ -71,9 +71,26 @@
 
 ## Compressed Video: Whole-Picture "Pulses"
 
-- **Seen in:** the Live test recordings (a video compressed by a messaging app, 834 kb/s).
+- **Seen in:** the first Live test recordings (2026-10-11), cut from a copy of the video that a messaging app had compressed to 834 kb/s. Since 2026-10-12 the recordings come from the original (24 Mb/s), which has no pulses. The handling below stays, for any compressed source.
+- **Sending videos for testing:** use AirDrop, an iCloud/Google Photos link, or a cable, not a messaging app. The messaging copy was 4× smaller, compressed, and hid board 1's last bounce-out completely.
 - **Symptom:** about once a second, and strongly at 4, 10, 33, 40, 112, 144, 165 and 179 s, the **whole picture** changes slightly at once (sharpness, colour), with nothing moving. Frame differencing reads that as motion on the board.
 - **Why:** the video's compression refreshing the picture (keyframes, and quality switches).
 - **Handled (Task 5 of [[story-checkpoint-live-test]], 2026-10-11):** each pair of frames sets its own change threshold from its robust noise, motion is judged on the largest connected changed shape, and recordings use a minimum change of 20 (`RecordedCamera.minChange`). See [[Design Decisions]] → Throw Detection on Real Footage.
 - **Also from the same compression:** when something moves elsewhere in the video, the board's picture gets re-encoded in blocks. On board 1 this happened every time board 2 was hit (the throwers throw together).
 - **Also:** the recording's first 4 s repeat one frame, a still at the start of the video.
+
+## Live Test Playback Jumps and Freezes on a Slower Android
+
+- **Symptom (Nigel, 2026-10-13, Samsung SM A065F):** in the Live test, the recording jumps seconds at a time, then freezes, then jumps again.
+- **Likely cause (measured on the PC, not yet on the phone):** `RecordedCamera._show` decodes every frame's JPEG with the pure-Dart `image` package **on the UI thread**, then copies it out twice (BGRA for the watcher, RGBA for the preview). The recordings moved from 140 px to 322 px crops on 2026-10-12 (5.3× the pixels). A 322 × 322 frame takes **14.5 ms** on the PC under JIT and **27 ms** AOT-compiled, so a release build doesn't help. A budget phone is several times slower than a desktop core, so 15 frames a second needs more than a second of UI-thread time per second. Throw watching runs on the same thread. Playback position comes from the clock, so when the thread catches up it **jumps** to the current frame.
+- **Not the cause:** the live camera's own frames aren't JPEG-decoded. Whether the live camera on Play also stutters on this phone hasn't been checked.
+- **Fix in place (2026-10-13; Nigel chose option a):** `RecordedCamera` decodes with Flutter's native image codec (`decodeFrameNatively`), asynchronously and one frame at a time, skipping to the newest frame if it falls behind. The preview draws the decoded image directly, so there's no extra RGBA copy. **Not yet checked on the Samsung.** If it still stutters, the next suspects are throw watching on the UI thread and the `compute` isolate started about once a second (see [[backlog]] → Speed on the phone).
+- **Result (Nigel, 2026-10-13):** no stutter. But at the end of Target 1's recording the screen stopped responding (no button, no way back).
+- **Found while looking (fixed 2026-10-13):** with asynchronous decoding, the recording re-sent its last decoded frame on every tick, and rounded the frame number down. Throw detection got repeats and skips (0, 0, 1, 3, 3, 4, …), which look like the board standing still mid-throw. Through the Play screen, Target 1's last round scored a stuck 3 instead of a bounce-out. Now each frame is delivered once, when decoded, at the nearest frame number; a still frame is repeated only while paused or after the end. `live_replay_test.dart` now replays through `RecordedCamera` → `ThrowWatcher` (the app's own path), so this can't drift again.
+- **The freeze itself: not reproduced on the PC.** Checked:
+  - a widget test plays Target 1 to the end through the real Play screen, and back works
+  - only one decoded image is open at any time over 600 frames (no image leak)
+  - the detector takes a steady ~9–10 ms a frame on the PC, with no rise at the end
+  - every frame in both packs decodes
+  
+  Next: the phone's console output (or DevTools' memory and CPU views) at the moment it freezes.

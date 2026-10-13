@@ -224,7 +224,7 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 
 **Falling out (Task 5):** a knife falling out on its own leaves a "new shape" where it was. `classifyThrow(knownKnives:)` compares the shape with the knives already in the board (kept by `ThrowTracker` until someone collects them). Overlapping one by ≥ 50% means **fell out**, not stuck, unless the shape **appeared** (head-on knives thrown side by side overlap; 2026-10-11).
 
-## Throw Detection on Real Footage (Live Test, 2026-10-11)
+## Throw Detection on Real Footage (Live Test, 2026-10-11; Full Resolution 2026-10-12)
 
 **Goal:** the two Live test recordings give exactly the throws, bounce-outs and collections in Nigel's answer key (`reference/live-camera/truth.json`), checked by `test/game/live_replay_test.dart`, which replays every frame through `MotionDetector` and `ThrowTracker`. Before these changes, nearly every second was a false bounce-out, and board 2 was "blocked" for 49 s. Now both boards match (Task 5 of [[story-checkpoint-live-test]]).
 
@@ -246,6 +246,13 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 
 **Confirmed:** 2026-10-11 (rules derived from the recordings; Nigel's device check pending).
 
+
+**The original video (2026-10-12).** Re-cut at full resolution (boards ~245 px instead of 106), the recordings needed four more changes. Both now give every throw, bounce-out and round in the answer key:
+- **Sizes in board length, not area.** A knife is a thin streak, so its pixel count grows with the board's size, not its area. Motion starts when the largest changed shape's pixels ÷ the watched region's side reach **0.12** (`startSize`; still below `stillSize` 0.06). That's 16 px on the copy, 33 px at full resolution, about 18 px on a phone. At 0.1% of the area, board 1's bounce-out at 177 s (a 39 px streak at 15 fps) fell short of the 77 px needed.
+- **People are judged by area** (`MotionEpisode.peakArea` ≥ **2%** of the region; `visitArea`). On both versions people are 4%+ and knives at most ~1.1%, even when the board jolts on impact (800+ px at full resolution).
+- **Bounce-out evidence must be on the target** (`MotionEpisode.peakShape`: the largest changed shape **touching the outer ring**, ≥ **0.12**; `bounceShape`). At full resolution, people moving at the edge of board 2's picture made shapes of up to 214 px but touched the target by 3 px at most. Every real throw's shape (138–852 px) touches it. `WatchRegion.target` carries the outer ring for this.
+- **Ring finding: concentric refit.** On a face-on board, or when a fit is rejected because the ring centres disagree, a boundary whose centre strays more than 5% of its size from the others is refitted from only its points within ±12% of where the steadiest other boundary puts it. Board 2's hook and stand dragged its outer boundary 10 px off. Tilted boards keep their small perspective offsets.
+- **Results:** rings found right every 10 s at 17 of 19 times (board 1) and 10 of 19 (board 2), against 13 and 8 on the copy. Knives scored exactly as Nigel did: **12 of 19** (11 on the copy). Nearest-the-bull is still the best entry rule (the middle of the shape: 9; the axis end: 7). Nigel's key was read from the copy, so some of the 7 differences may be the key's.
 ## Rounds and Scoring (Throw Detection, Task 5)
 
 **Decision:**
@@ -388,10 +395,13 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
   - It delivers a frame every 1/fps seconds to whoever listens: BGRA, already upright, stamped with a monotonic clock.
   - It **opens paused on the first frame**, so the board can be calibrated before anything happens.
   - Play calls `restart()`; playback stops on the last frame.
-- **Recording format:** `FramePack` (`.tfrm`, `lib/camera/frame_pack.dart`) is JPEG frames at a fixed rate in one asset, decoded in pure Dart with `package:image`. That means no video plugin, so no native code or permissions.
+  - **Frames are decoded asynchronously, one at a time** (2026-10-13). If decoding falls behind, it skips to the newest frame wanted rather than queueing, as a slow live camera drops frames. Until a new frame is ready, ticks keep delivering the last one.
+- **Recording format:** `FramePack` (`.tfrm`, `lib/camera/frame_pack.dart`) is JPEG frames at a fixed rate in one asset. That means no video plugin, so no native code or permissions.
+  - **Decoding:** the app uses `decodeFrameNatively`, Flutter's own image codec (native, off the UI thread). It gives a `ui.Image` for `RecordedPreview` (which keeps a `clone()`) and BGRA bytes for the watcher (`toByteData` RGBA, with red and blue swapped by `rgbaToBgra`). Tests inject `decodeFramePureDart` (`package:image`), which needs no engine. Until 2026-10-13 the app decoded in pure Dart on the UI thread: 15–27 ms per 322 px frame on a PC, which made playback jump and freeze on Nigel's Samsung SM A065F (see [[Known Issues]]).
   - Made with `tool/pack_recording.dart` (needs ffmpeg).
-  - Target 1 and Target 2: 140 × 140 px, 15 fps, 2,848 frames, about 10.4 MB each.
+  - Target 1 and Target 2: cut from Nigel's **original** video (since 2026-10-12): 322 × 322 px (boards ~245 px across), 15 fps, 2,848 frames, JPEG q12, **25.9 MB each** (Nigel's choice of size: same frame rate as the phone's analysis, quality that looks the same as q5 at half the size). Until 2026-10-12 they were 140 × 140 crops of a compressed copy, 10.4 MB each.
   - **In TestFlight builds too** (Nigel, 2026-10-11), so his brother can run them.
+  - Recordings keep `minChange` 20 (the live camera 12): even from the original, JPEG and video blocks gave false bounce-outs at 12.
 - **Rejected:** a video plugin for decoding (native code, and no frame-pixel access in `video_player`); pre-computed results (not a test of the pipeline).
 
 ## Ring Finding on Real Boards: Colour Edges, Any Paint (2026-10-11)
