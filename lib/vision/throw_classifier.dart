@@ -92,7 +92,7 @@ class ThrowOutcome {
 /// - The view was accepted as a new normal: **scene changed**.
 /// - Someone stood at the board ([MotionEpisode.wasBlocked]), the episode
 ///   changed a large share of the region at once ([visitPeak]), or one
-///   person-sized shape moved ([visitShape] of the region): a **board visit**
+///   person-sized shape moved ([visitArea] of the region's area): a **board visit**
 ///   (collecting knives). But a visit shorter than [minVisit] in which no one
 ///   stood still and no known knife was taken is someone passing close to
 ///   the camera: **nothing** (Live test, board 2 at 97 s: a body filled the
@@ -110,13 +110,18 @@ class ThrowOutcome {
 ///   and no more than [maxKnifeShare] of it (the largest real knife so far:
 ///   1.9%; the whole board re-exposing on the Live test recordings: 15%).
 ///   Otherwise it's a **bounce-out**, as long as a knife-sized shape was seen
-///   moving ([bounceShape] of the region); smaller flickers are **nothing**.
+///   moving **on the target** ([bounceShape], as `MotionUpdate.shape`);
+///   smaller flickers, or ones off the target, are **nothing**.
 ///   Single noisy pixels and JPEG speckle never form a shape that big.
 ///
-/// On the Live test recordings (2026-10-11), every real bounce-out moved a
-/// shape of 42+ px (0.26% of the 126 × 126 region) and every false one,
-/// from refocusing or people at the picture's edge, 27 px or less; a person
-/// walking up to the board 686 px (4.3%), while no knife moved over 132 px.
+/// On the 140 px copy of the Live test recordings (2026-10-11; a 126 × 126
+/// region), every real bounce-out moved a shape of 42+ px (size 0.33) and
+/// every false one, from refocusing, 27 px or less (0.21). On the
+/// full-resolution recordings (2026-10-12; 277 × 277) every throw moved
+/// 138–852 px on the target (0.5–3.1), while people moving at the picture's
+/// edge made shapes of up to 214 px that touched the target by 3 px at most.
+/// People are 4%+ of the region's area on both; knives and the board's jolt
+/// at most 1.1%.
 ///
 /// [knownKnives] are the shapes of knives already in the board (recorded when
 /// each stuck, cleared when someone collects them). A new shape that covers
@@ -128,17 +133,17 @@ ThrowOutcome classifyThrow(
   TargetCalibration calibration, {
   List<NewObject> knownKnives = const [],
   double visitPeak = 0.10,
-  double visitShape = 0.02,
+  double visitArea = 0.02,
   Duration minVisit = const Duration(seconds: 3),
-  double bounceShape = 0.0022,
+  double bounceShape = 0.12,
   double minKnifeShare = 0.0025,
   double maxKnifeShare = 0.06,
   double searchMargin = 1.5,
   double fellOutOverlap = 0.5,
 }) {
   if (episode.acceptedNewScene) return const ThrowOutcome(ThrowOutcomeKind.sceneChanged);
-  final shape = episode.peakShape;
-  final visit = episode.wasBlocked || episode.peakChange >= visitPeak || (shape != null && shape >= visitShape);
+  final shape = episode.peakShape, area = episode.peakArea;
+  final visit = episode.wasBlocked || episode.peakChange >= visitPeak || (area != null && area >= visitArea);
   const visited = ThrowOutcome(ThrowOutcomeKind.boardVisit);
   final nothingNew = visit
       ? visited

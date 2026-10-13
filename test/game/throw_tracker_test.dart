@@ -17,7 +17,7 @@ void main() {
         start: Duration(milliseconds: (start * 1000).round()),
         settled: Duration(milliseconds: (settled * 1000).round()),
         peakChange: 0.01,
-        peakShape: 0.005,
+        peakShape: 0.5,
         changeFromBefore: 0,
         wasBlocked: blocked,
         before: still,

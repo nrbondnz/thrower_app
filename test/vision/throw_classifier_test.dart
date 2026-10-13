@@ -123,6 +123,7 @@ void main() {
       LumaImage after, {
       double peak = 0.01,
       double? shape,
+      double? area,
       bool blocked = false,
       bool newScene = false,
       int seconds = 1,
@@ -134,6 +135,7 @@ void main() {
           settled: Duration(seconds: seconds),
           peakChange: peak,
           peakShape: shape,
+          peakArea: area,
           changeFromBefore: 0,
           wasBlocked: blocked,
           acceptedNewScene: newScene,
@@ -155,19 +157,19 @@ void main() {
 
     group('how big a shape moved', () {
       test('a knife-sized one, leaving nothing new, is a bounce-out', () {
-        expect(classifyThrow(episode(still, shape: 0.003), f.calibration).kind, ThrowOutcomeKind.bounceOut);
+        expect(classifyThrow(episode(still, shape: 0.5), f.calibration).kind, ThrowOutcomeKind.bounceOut);
       });
 
       test('specks only (a camera refocusing, compression) are nothing', () {
-        expect(classifyThrow(episode(still, shape: 0.001), f.calibration).kind, ThrowOutcomeKind.nothing);
+        expect(classifyThrow(episode(still, shape: 0.1), f.calibration).kind, ThrowOutcomeKind.nothing);
       });
 
       test('a person-sized one is a board visit, even if no one stood still', () {
-        expect(classifyThrow(episode(still, shape: 0.04, seconds: 5), f.calibration).kind, ThrowOutcomeKind.boardVisit);
+        expect(classifyThrow(episode(still, area: 0.05, seconds: 5), f.calibration).kind, ThrowOutcomeKind.boardVisit);
       });
 
       test('a person-sized one for under 3 s, taking nothing, is someone passing the camera: nothing', () {
-        expect(classifyThrow(episode(still, shape: 0.04, seconds: 2), f.calibration).kind, ThrowOutcomeKind.nothing);
+        expect(classifyThrow(episode(still, area: 0.05, seconds: 2), f.calibration).kind, ThrowOutcomeKind.nothing);
       });
     });
 
@@ -181,7 +183,7 @@ void main() {
           after.pixels[y * still.width + x] = 255 - after.pixels[y * still.width + x];
         }
       }
-      expect(classifyThrow(episode(after, shape: 0.003), f.calibration).kind, ThrowOutcomeKind.bounceOut);
+      expect(classifyThrow(episode(after, shape: 0.5), f.calibration).kind, ThrowOutcomeKind.bounceOut);
     });
 
     test('someone blocking the board is a board visit', () {

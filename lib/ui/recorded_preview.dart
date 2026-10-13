@@ -44,19 +44,16 @@ class _RecordedPreviewState extends State<RecordedPreview> {
     super.dispose();
   }
 
+  /// Shows the camera's decoded frame. The camera disposes its image when the
+  /// next frame arrives, so this keeps its own clone.
   void _update() {
     final frame = widget.camera.current.value;
     if (frame == null || frame.index == _shownIndex) return;
     _shownIndex = frame.index;
-    ui.decodeImageFromPixels(frame.rgba, frame.width, frame.height, ui.PixelFormat.rgba8888, (image) {
-      if (!mounted) {
-        image.dispose();
-        return;
-      }
-      setState(() {
-        _image?.dispose();
-        _image = image;
-      });
+    final image = frame.image?.clone();
+    setState(() {
+      _image?.dispose();
+      _image = image;
     });
   }
 

@@ -5,7 +5,8 @@
 //   dart run tool/pack_recording.dart <video> <out.tfrm> [--ffmpeg <path>] [--fps 15] [--quality 5]
 //
 // Needs ffmpeg (on the PATH, or give its path). --quality is ffmpeg's JPEG
-// q:v (2 best … 31 worst); 5 keeps the 140 px board crops at ~3.7 KB a frame.
+// q:v (2 best … 31 worst). The Live test recordings (322 px board crops) use
+// 12: ~9.8 KB a frame, 25.9 MB each (5 would double that for no visible gain).
 import 'dart:io';
 
 import 'package:image/image.dart' as img;

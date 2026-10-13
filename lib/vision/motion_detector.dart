@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'ellipse.dart';
 import 'image_difference.dart';
 import 'luma_image.dart';
 import 'target_calibration.dart';
@@ -7,7 +8,7 @@ import 'target_calibration.dart';
 /// The part of the image to watch, as fractions of its width and height (so
 /// it doesn't depend on how far frames are downscaled).
 class WatchRegion {
-  const WatchRegion(this.left, this.top, this.right, this.bottom);
+  const WatchRegion(this.left, this.top, this.right, this.bottom, {this.target});
 
   /// The board around a locked calibration: the outer ring's bounding box,
   /// grown by [margin] about its centre for knife handles sticking out (a
@@ -19,13 +20,18 @@ class WatchRegion {
     final halfH = math.sqrt(math.pow(e.semiMajor * sin, 2) + math.pow(e.semiMinor * cos, 2)) * margin;
     double fx(double x) => (x / c.imageWidth).clamp(0.0, 1.0);
     double fy(double y) => (y / c.imageHeight).clamp(0.0, 1.0);
-    return WatchRegion(fx(e.cx - halfW), fy(e.cy - halfH), fx(e.cx + halfW), fy(e.cy + halfH));
+    return WatchRegion(fx(e.cx - halfW), fy(e.cy - halfH), fx(e.cx + halfW), fy(e.cy + halfH),
+        target: e.rescaled(1 / c.imageWidth));
   }
 
   final double left;
   final double top;
   final double right;
   final double bottom;
+
+  /// The target's outer ring, in fractions of the image's **width** (both
+  /// axes), or null if unknown: then every shape counts as on the target.
+  final Ellipse? target;
 }
 
 enum WatchState {
@@ -57,6 +63,7 @@ class MotionEpisode {
     this.acceptedNewScene = false,
     this.wasBlocked = false,
     this.peakShape,
+    this.peakArea,
     this.before,
     this.after,
     this.threshold = 12,
@@ -85,11 +92,19 @@ class MotionEpisode {
   final Duration settled;
   final double peakChange;
 
-  /// The largest connected shape that changed between two frames during the
-  /// episode, as a share of the region: a flying knife makes a compact shape,
-  /// a refocusing camera only scattered specks, a person a huge one. Null if
-  /// not measured (hand-made episodes in tests).
+  /// The largest connected shape **touching the target** that changed between
+  /// two frames during the episode, sized as [MotionUpdate.shape]: a knife
+  /// flying in or bouncing off makes one; a refocusing camera only scattered
+  /// specks, and people moving at the edge of the picture shapes that don't
+  /// touch the target. Null if not measured (hand-made episodes in tests).
   final double? peakShape;
+
+  /// The largest connected shape anywhere that changed between two frames
+  /// during the episode, as a share of the region's **area**: a person is a
+  /// big blob (4%+ of the region on both the 140 px and the full-resolution
+  /// Live test recordings), a knife and the board's jolt at most ~1%. Null if
+  /// not measured.
+  final double? peakArea;
 
   /// Share of the region that differs from how it looked before the episode
   /// (a new knife: ~1–2%; knives removed: a few %).
@@ -105,12 +120,20 @@ class MotionEpisode {
 }
 
 class MotionUpdate {
-  const MotionUpdate(this.state, this.changed, {this.finished, this.fromBefore});
+  const MotionUpdate(this.state, this.changed, {this.shape = 0, this.finished, this.fromBefore});
 
   final WatchState state;
 
   /// Share of the region that changed since the previous frame.
   final double changed;
+
+  /// The largest connected shape that changed since the previous frame (what
+  /// starts and ends motion): its pixels ÷ the region's side, i.e. the
+  /// length of a 1 px wide streak in region sides. Measured in length, not
+  /// area, because a knife is thin: on a board twice the size (more pixels,
+  /// a closer or zoomed camera) its streak has twice the pixels, while the
+  /// region has four times as many.
+  final double shape;
 
   /// Set on the frame an episode settles.
   final MotionEpisode? finished;
@@ -138,8 +161,8 @@ class MotionUpdate {
 class MotionDetector {
   MotionDetector(
     this.region, {
-    this.startFraction = 0.001,
-    this.stillFraction = 0.0005,
+    this.startSize = 0.12,
+    this.stillSize = 0.06,
     this.settleTime = const Duration(milliseconds: 300),
     this.minThreshold = 12,
     this.noiseFactor = 6,
@@ -156,14 +179,18 @@ class MotionDetector {
 
   final WatchRegion region;
 
-  /// Share of the region the largest changed shape must cover to start an
-  /// episode (at 320 px, about 10 pixels of a 100 × 100 region; 16 of the
-  /// Live test's 126 × 126: one blurred knife frame is more).
-  final double startFraction;
+  /// How big ([MotionUpdate.shape]) the largest changed shape must be to
+  /// start an episode: 12 px in a 100 × 100 region, 33 px in the Live test's
+  /// 277 × 277. One blurred knife frame is more: 20+ px at 126 × 126 on the
+  /// 140 px copy of the recordings, where compression specks stayed ≤ 12.
+  /// (Until 2026-10-12 this was 0.1% of the region's area, which grew too
+  /// fast for the full-resolution recordings: a bounce-out's 39 px streak
+  /// fell short of 77.)
+  final double startSize;
 
-  /// While the largest changed shape is below this share, a frame counts as
+  /// While the largest changed shape is smaller than this, a frame counts as
   /// still.
-  final double stillFraction;
+  final double stillSize;
   final Duration settleTime;
 
   /// The smallest brightness difference that counts as a change: the frame
@@ -196,6 +223,7 @@ class MotionDetector {
   Duration? _stillSince;
   var _peak = 0.0;
   var _peakShape = 0.0;
+  var _peakArea = 0.0;
   var _wasBlocked = false;
 
   WatchState get state => _state;
@@ -225,30 +253,33 @@ class MotionDetector {
       case WatchState.watching:
         // Learn the noise from still frames: the mean |difference| of two
         // noisy frames is ≈ 1.13 σ.
-        if (moving < stillFraction && quietMean != null) {
+        if (moving < stillSize && quietMean != null) {
           _noise = 0.9 * _noise + 0.1 * (quietMean / 1.13);
           // Follow slow changes (light drifting) while nothing is happening.
           _reference = image;
         }
-        if (moving >= startFraction) {
+        if (moving >= startSize) {
           _state = WatchState.motion;
           _startFrame = _frame;
           _start = time;
           _peak = changed;
-          _peakShape = moving;
+          _peakShape = difference.onTarget;
+          _peakArea = difference.largestArea;
         }
       case WatchState.motion:
         _peak = math.max(_peak, changed);
-        _peakShape = math.max(_peakShape, moving);
-        if (moving < stillFraction) {
+        _peakShape = math.max(_peakShape, difference.onTarget);
+        _peakArea = math.max(_peakArea, difference.largestArea);
+        if (moving < stillSize) {
           _state = WatchState.settling;
           _stillSince = time;
         }
       case WatchState.settling:
       case WatchState.blocked:
-        if (moving >= stillFraction) {
+        if (moving >= stillSize) {
           _peak = math.max(_peak, changed);
-          _peakShape = math.max(_peakShape, moving);
+          _peakShape = math.max(_peakShape, difference.onTarget);
+          _peakArea = math.max(_peakArea, difference.largestArea);
           _state = WatchState.motion;
         } else if (time - _stillSince! >= settleTime) {
           final settledDifference = _difference(image, _reference ?? image);
@@ -257,7 +288,7 @@ class MotionDetector {
           if (fromBefore > blockedFraction && stillFor < maxBlocked) {
             _state = WatchState.blocked;
             _wasBlocked = true;
-            return MotionUpdate(_state, changed, fromBefore: fromBefore);
+            return MotionUpdate(_state, changed, shape: moving, fromBefore: fromBefore);
           }
           final episode = MotionEpisode(
             startFrame: _startFrame!,
@@ -266,6 +297,7 @@ class MotionDetector {
             settled: time,
             peakChange: _peak,
             peakShape: _peakShape,
+            peakArea: _peakArea,
             changeFromBefore: fromBefore,
             acceptedNewScene: fromBefore > blockedFraction,
             wasBlocked: _wasBlocked,
@@ -277,10 +309,10 @@ class MotionDetector {
           _wasBlocked = false;
           _state = WatchState.watching;
           _reference = image;
-          return MotionUpdate(_state, changed, finished: episode, fromBefore: fromBefore);
+          return MotionUpdate(_state, changed, shape: moving, finished: episode, fromBefore: fromBefore);
         }
     }
-    return MotionUpdate(_state, changed);
+    return MotionUpdate(_state, changed, shape: moving);
   }
 
   /// How [a] differs from [b] within the region, after re-aligning a small
@@ -292,7 +324,7 @@ class MotionDetector {
     final x0 = (region.left * a.width).floor(), x1 = (region.right * a.width).ceil();
     final y0 = (region.top * a.height).floor(), y1 = (region.bottom * a.height).ceil();
     final w = x1 - x0, h = y1 - y0;
-    if (w <= 0 || h <= 0) return const _Difference(0, 0, null, 0);
+    if (w <= 0 || h <= 0) return const _Difference(0, 0, 0, 0, null, 0);
     final area = PixelRect(x0, y0, x1, y1);
     final (dx, dy) = bestShift(a, b, area, step: 2);
     final sigma = pairNoise(a, b, area, dx: dx, dy: dy);
@@ -313,9 +345,17 @@ class MotionDetector {
       }
     }
     final total = w * h;
+    final target = region.target?.rescaled(a.width.toDouble());
+    final (largest, onTarget) = largestShapes(changed, w, h,
+        touching: target == null
+            ? null
+            : (i) => target.normalisedRadius(Point2((x0 + i % w).toDouble(), (y0 + i ~/ w).toDouble())) <= 1.05);
+    final side = math.sqrt(total);
     return _Difference(
       changedCount / total,
-      largestShape(changed, w, h) / total,
+      largest / side,
+      largest / total,
+      onTarget / side,
       quietCount == 0 ? null : quietSum / quietCount,
       sigma,
     );
@@ -357,13 +397,20 @@ class MotionDetector {
 
 /// Frame-to-frame (or frame-to-reference) difference within the region.
 class _Difference {
-  const _Difference(this.changed, this.largest, this.quietMean, this.sigma);
+  const _Difference(this.changed, this.largest, this.largestArea, this.onTarget, this.quietMean, this.sigma);
 
   /// Share of the region that changed.
   final double changed;
 
-  /// Share of the region covered by the largest connected changed shape.
+  /// The largest connected changed shape, as [MotionUpdate.shape].
   final double largest;
+
+  /// The same shape as a share of the region's area.
+  final double largestArea;
+
+  /// The largest connected changed shape touching the target, as
+  /// [MotionUpdate.shape].
+  final double onTarget;
 
   /// Mean |difference| of the unchanged pixels (null if none), for the noise
   /// estimate.

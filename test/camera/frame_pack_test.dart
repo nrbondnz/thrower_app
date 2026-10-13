@@ -32,12 +32,12 @@ void main() {
 
   group('the bundled Live test recordings', () {
     for (final recording in liveTestRecordings) {
-      test('${recording.name}: 3 min 10 s of 140 × 140 frames at 15 fps, first frame decodes', () {
+      test('${recording.name}: 3 min 10 s of 322 × 322 frames (cut from the original video) at 15 fps, first frame decodes', () {
         final pack = FramePack.parse(File(recording.asset).readAsBytesSync());
-        expect((pack.width, pack.height, pack.fps), (140, 140, 15));
+        expect((pack.width, pack.height, pack.fps), (322, 322, 15));
         expect(pack.frameCount, 2848);
         final first = img.decodeJpg(pack.jpeg(0))!;
-        expect((first.width, first.height), (140, 140));
+        expect((first.width, first.height), (322, 322));
       });
     }
   });

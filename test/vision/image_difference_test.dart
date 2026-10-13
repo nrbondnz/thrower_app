@@ -28,4 +28,21 @@ void main() {
       expect(largestShape(List.filled(12, false), 4, 3), 0);
     });
   });
+
+  group('largestShapes', () {
+    test('also gives the largest shape touching something (the target)', () {
+      final mask = [
+        for (final c in ('###...'
+                '......'
+                '....#.'
+                '....##')
+            .split(''))
+          c == '#',
+      ];
+      // Only the bottom-right corner (index 23) is "on the target".
+      expect(largestShapes(mask, 6, 4, touching: (i) => i == 23), (3, 3));
+      expect(largestShapes(mask, 6, 4, touching: (i) => i == 0), (3, 3));
+      expect(largestShapes(mask, 6, 4, touching: (i) => i == 6), (3, 0));
+    });
+  });
 }

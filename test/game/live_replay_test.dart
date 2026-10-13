@@ -6,21 +6,19 @@ import 'package:image/image.dart' as img;
 import 'package:thrower_app/camera/camera_frame.dart';
 import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
-import 'package:thrower_app/game/throw_tracker.dart';
+import 'package:thrower_app/game/throw_watcher.dart';
 import 'package:thrower_app/scoring/game_session.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/entry_point.dart';
 import 'package:thrower_app/vision/frame_to_rgb.dart';
-import 'package:thrower_app/vision/luma_image.dart';
-import 'package:thrower_app/vision/motion_detector.dart';
 import 'package:thrower_app/vision/target_calibration.dart';
 import 'package:thrower_app/vision/target_locator.dart';
 import 'package:thrower_app/vision/target_mapping.dart';
 import 'package:thrower_app/vision/throw_classifier.dart';
 
-/// Replays each Live test recording through throw detection, as Play does
-/// (every frame at 15 fps is within `ThrowWatcher.interval`), and checks the
+/// Replays each Live test recording through the app's own path
+/// (`RecordedCamera` → `ThrowWatcher`, as Play), and checks the
 /// events against Nigel's answer key (`docs/thrower/reference/live-camera/
 /// truth.json`): every throw is found as stuck or bounce-out at the right
 /// time, nothing else is taken for a throw, and every collection is seen.
@@ -44,44 +42,57 @@ CameraFrame frameOf(FramePack pack, int i) {
   );
 }
 
-List<Detected> replay(Recording recording) {
+/// Plays [recording] through the app's own path, the recorded camera into
+/// the throw watcher, with a clock stepped one frame at a time, and collects
+/// what the watcher reports.
+Future<List<Detected>> replay(Recording recording) async {
   final pack = FramePack.parse(File(recording.asset).readAsBytesSync());
-  final camera = RecordedCamera(pack, recording: recording, autoTick: false);
+  var now = Duration.zero;
+  final camera = RecordedCamera(pack, recording: recording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
   final model = TargetModel.ikthof();
   final radii = [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius];
   // Calibrated on the first frame, as the Live test does.
   final found = buildTargetLocator(radii).locate(frameToRgb(frameOf(pack, 0), maxSide: 1920)!) as TargetFound;
   final calibration =
       TargetCalibration(imageWidth: pack.width, imageHeight: pack.height, boundaries: found.boundaries, outer: found.outer);
-  final detector = MotionDetector(WatchRegion.fromCalibration(calibration), minThreshold: camera.minChange);
-  final tracker = ThrowTracker(calibration);
   final mapping = TargetMapping(calibration);
   expect(isFaceOn(calibration), isTrue, reason: 'the recordings are filmed face on');
   final detected = <Detected>[];
-  for (var i = 0; i < pack.frameCount; i++) {
-    final frame = frameOf(pack, i);
-    final episode = detector.add(frameToLuma(frame)!, frame.timestamp).finished;
-    if (episode == null) continue;
-    final (outcome, _) = tracker.onEpisode(episode);
+  final watcher = ThrowWatcher(camera, calibration)..start();
+  final events = watcher.events.listen((event) {
+    final entry = event.entry;
     detected.add((
-      kind: outcome.kind,
-      start: episode.start.inMilliseconds / 1000,
-      settled: episode.settled.inMilliseconds / 1000,
-      score: outcome.kind == ThrowOutcomeKind.stuck
-          ? model.scoreAt(mapping.toTarget(faceOnEntry(outcome.object!, calibration).point))
+      kind: event.outcome.kind,
+      start: event.episode.start.inMilliseconds / 1000,
+      settled: event.episode.settled.inMilliseconds / 1000,
+      score: event.outcome.kind == ThrowOutcomeKind.stuck && entry != null
+          ? model.scoreAt(mapping.toTarget(entry.point))
           : null,
     ));
+  });
+  await pumpEventQueue();
+  camera.restart();
+  // The whole recording, then a second of its last frame (as after the end).
+  for (var i = 0; i < pack.frameCount + 15; i++) {
+    now = Duration(microseconds: i * 1000000 ~/ pack.fps);
+    camera.tick();
+    await pumpEventQueue();
   }
+  await events.cancel();
+  await watcher.dispose();
+  await camera.dispose();
   return detected;
 }
 
 String describe(Detected d) =>
     '${d.kind.name} ${d.start.toStringAsFixed(1)}–${d.settled.toStringAsFixed(1)} s${d.score == null ? '' : ' scores ${d.score}'}';
 
-/// Stuck knives scored exactly as Nigel did, at least (results 2026-10-11:
-/// 5 of 10 and 6 of 9; all but board 1's 40.5 s and 43.2 s within a ring,
-/// where the changed shape isn't where Nigel places the knife).
-const exactScores = {'Target 1': 5, 'Target 2': 6};
+/// Stuck knives scored exactly as Nigel did, at least. Results on the
+/// full-resolution recordings (2026-10-12): 6 of 10 and 6 of 9, all but
+/// board 1's 40.5 s within a ring. (On the 140 px copy: 5 and 6.) Nigel
+/// judged the answer key from the copy, so some of the differences may be
+/// the key's.
+const exactScores = {'Target 1': 6, 'Target 2': 6};
 
 void main() {
   final truth = jsonDecode(File('docs/thrower/reference/live-camera/truth.json').readAsStringSync()) as Map<String, dynamic>;
@@ -90,7 +101,7 @@ void main() {
     group(recording.name, () {
       final events = (truth['board${index + 1}'] as List).cast<Map<String, dynamic>>();
       late final List<Detected> detected;
-      setUpAll(() => detected = replay(recording));
+      setUpAll(() async => detected = await replay(recording));
 
       // A throw's answer-key time is within the episode, give or take [slack]
       // (times were read from the footage by eye).

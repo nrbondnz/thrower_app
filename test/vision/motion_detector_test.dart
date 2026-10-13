@@ -126,6 +126,23 @@ void main() {
     expect(fixtures['throw-stick-ring4']!.run(override: drift), isEmpty);
   });
 
+  test('motion off the target (people at the edge of the picture) is not counted as on it', () {
+    final f = fixtures['throw-stick-ring4']!;
+    final still = f.frames.first;
+    // A blob in a corner of the watched region, outside the target.
+    final x0 = (f.region.left * still.width).ceil() + 1, y0 = (f.region.top * still.height).ceil() + 1;
+    final flicker = LumaImage(still.width, still.height, Uint8List.fromList(still.pixels));
+    for (var y = y0; y < y0 + 5; y++) {
+      for (var x = x0; x < x0 + 5; x++) {
+        flicker.pixels[y * still.width + x] = 255 - flicker.pixels[y * still.width + x];
+      }
+    }
+    final episodes = f.run(override: [for (var i = 0; i < 30; i++) i == 10 ? flicker : still]);
+    expect(episodes, hasLength(1));
+    expect(episodes.single.peakShape, 0);
+    expect(episodes.single.peakArea, greaterThan(0));
+  });
+
   group('compressed video (Live test recordings)', () {
     // A video encoder re-encodes the whole picture about once a second: every
     // pixel jumps by a few levels at once (here 15, with ±5 of grain).

@@ -117,18 +117,25 @@ int tolerantColourDifference(RgbImage a, RgbImage b, int x, int y, {int dx = 0, 
 
 /// The size (in pixels) of the largest 8-connected shape of true pixels in
 /// [mask], a [width] × [height] grid, row by row.
-int largestShape(List<bool> mask, int width, int height) {
+int largestShape(List<bool> mask, int width, int height) => largestShapes(mask, width, height).$1;
+
+/// The sizes (in pixels) of the largest 8-connected shape of true pixels in
+/// [mask], and of the largest one with at least one pixel (an index into
+/// [mask]) [touching] something (any shape if null).
+(int, int) largestShapes(List<bool> mask, int width, int height, {bool Function(int i)? touching}) {
   final seen = List<bool>.filled(mask.length, false);
   final stack = <int>[];
-  var largest = 0;
+  var largest = 0, largestTouching = 0;
   for (var start = 0; start < mask.length; start++) {
     if (!mask[start] || seen[start]) continue;
     seen[start] = true;
     stack.add(start);
     var size = 0;
+    var touches = touching == null;
     while (stack.isNotEmpty) {
       final i = stack.removeLast();
       size++;
+      if (!touches && touching!(i)) touches = true;
       final x = i % width, y = i ~/ width;
       for (var dy = -1; dy <= 1; dy++) {
         final ny = y + dy;
@@ -145,6 +152,7 @@ int largestShape(List<bool> mask, int width, int height) {
       }
     }
     if (size > largest) largest = size;
+    if (touches && size > largestTouching) largestTouching = size;
   }
-  return largest;
+  return (largest, largestTouching);
 }

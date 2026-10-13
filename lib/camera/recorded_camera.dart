@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +20,8 @@ class Recording {
   final String asset;
 }
 
-/// The two real boards from Nigel's video (2026-10-11), cropped one per board:
+/// The two real boards from Nigel's video, cropped one per board from the
+/// original (2026-10-12; 322 × 322 px, boards ~245 px across):
 /// `docs/thrower/reference/live-camera/`.
 const liveTestRecordings = [
   Recording(
@@ -34,14 +36,70 @@ const liveTestRecordings = [
   ),
 ];
 
-/// One decoded frame for the preview: RGBA, row by row.
+/// The frame on show, for the preview.
 class RecordedFrame {
-  const RecordedFrame(this.index, this.width, this.height, this.rgba);
+  const RecordedFrame(this.index, this.image);
 
   final int index;
+
+  /// Owned by the camera and disposed when the next frame replaces it: a
+  /// widget that keeps it must take its own `clone()`. Null when the decoder
+  /// makes no image (tests).
+  final ui.Image? image;
+}
+
+/// One recording frame, decoded: BGRA bytes for throw detection (like a live
+/// camera frame) and, optionally, an image for the preview.
+class DecodedFrame {
+  const DecodedFrame(this.width, this.height, this.bgra, [this.image]);
+
   final int width;
   final int height;
-  final Uint8List rgba;
+  final Uint8List bgra;
+  final ui.Image? image;
+}
+
+/// Decodes one frame's JPEG.
+typedef FrameDecoder = Future<DecodedFrame?> Function(Uint8List jpeg);
+
+/// The app's decoder: Flutter's native image codec, which decodes off the UI
+/// thread. The pure-Dart decoder took 15–27 ms per 322 px frame on a PC, all
+/// on the UI thread, which made playback jump and freeze on a budget Android
+/// (Known Issues → Live Test Playback Jumps and Freezes).
+Future<DecodedFrame?> decodeFrameNatively(Uint8List jpeg) async {
+  final codec = await ui.instantiateImageCodec(jpeg);
+  final ui.Image image;
+  try {
+    image = (await codec.getNextFrame()).image;
+  } finally {
+    codec.dispose();
+  }
+  final rgba = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+  if (rgba == null) {
+    image.dispose();
+    return null;
+  }
+  return DecodedFrame(image.width, image.height, rgbaToBgra(rgba.buffer.asUint8List(rgba.offsetInBytes, rgba.lengthInBytes)), image);
+}
+
+/// Pure-Dart decoding (the `image` package), with no preview image: for tests,
+/// where it is synchronous underneath and needs no engine.
+Future<DecodedFrame?> decodeFramePureDart(Uint8List jpeg) async {
+  final image = img.decodeJpg(jpeg);
+  if (image == null) return null;
+  return DecodedFrame(image.width, image.height, image.getBytes(order: img.ChannelOrder.bgra));
+}
+
+/// Swaps red and blue in place, four bytes at a time, and returns [rgba].
+@visibleForTesting
+Uint8List rgbaToBgra(Uint8List rgba) {
+  final words = rgba.buffer.asUint32List(rgba.offsetInBytes, rgba.lengthInBytes ~/ 4);
+  for (var i = 0; i < words.length; i++) {
+    final w = words[i];
+    // Little-endian: bytes R, G, B, A are bits 0–7, 8–15, 16–23, 24–31.
+    words[i] = (w & 0xFF00FF00) | ((w & 0xFF) << 16) | ((w >> 16) & 0xFF);
+  }
+  return rgba;
 }
 
 /// Where playback time comes from; tests replace it.
@@ -53,10 +111,17 @@ typedef PlaybackClock = Duration Function();
 ///
 /// It opens **paused on the first frame** (so the board can be calibrated
 /// before anything happens); [restart] plays from the start, and it stops on
-/// the last frame. Frames are decoded only when the position moves on.
+/// the last frame. Frames are decoded only when the position moves on, one at
+/// a time and asynchronously: if decoding can't keep up, frames in between are
+/// skipped (as a slow live camera drops them) rather than holding up the UI.
 class RecordedCamera implements TargetCamera {
-  RecordedCamera(this.pack, {required this.recording, PlaybackClock? clock, bool autoTick = true})
-      : _now = clock ?? _systemClock() {
+  RecordedCamera(
+    this.pack, {
+    required this.recording,
+    PlaybackClock? clock,
+    bool autoTick = true,
+    this.decoder = decodeFrameNatively,
+  }) : _now = clock ?? _systemClock() {
     _show(0);
     if (autoTick) {
       _timer = Timer.periodic(Duration(microseconds: 1000000 ~/ pack.fps), (_) => tick());
@@ -77,6 +142,9 @@ class RecordedCamera implements TargetCamera {
   final FramePack pack;
   final Recording recording;
   final PlaybackClock _now;
+
+  /// Turns each frame's JPEG into pixels ([decodeFrameNatively] in the app).
+  final FrameDecoder decoder;
   Timer? _timer;
   StreamController<CameraFrame>? _frames;
 
@@ -91,13 +159,20 @@ class RecordedCamera implements TargetCamera {
   Duration? _startedAt;
   Uint8List? _bgra;
 
+  /// The frame being decoded, and the newest one wanted when it's done.
+  int? _decoding;
+  int? _wanted;
+  var _disposed = false;
+
   Duration get duration => pack.duration;
 
   @override
   int get uprightRotation => 0;
 
-  /// The recordings are compressed video: blocks re-encoded about once a
-  /// second differ by up to ~20 levels (measured on both Live test boards).
+  /// The recordings are compressed (video, then JPEG frames), which adds
+  /// block noise of up to ~20 levels that a live camera doesn't have. At the
+  /// live camera's 12, the full-resolution recordings (2026-10-12) gave false
+  /// bounce-outs on board 1 (69.4 s, 129.5 s); the 140 px copy did too.
   @override
   int get minChange => 20;
 
@@ -113,6 +188,7 @@ class RecordedCamera implements TargetCamera {
 
   /// Plays from the start.
   void restart() {
+    _delivered = null;
     _positionAtStart = Duration.zero;
     _startedAt = _now();
     playing.value = true;
@@ -132,7 +208,10 @@ class RecordedCamera implements TargetCamera {
   void tick() {
     final p = _position();
     position.value = p;
-    var index = p.inMicroseconds * pack.fps ~/ 1000000;
+    // The nearest frame, not the one before: ticks come every 1 / fps seconds
+    // give or take timer jitter, and rounding down turned a tick a hair early
+    // into the previous frame again, then a skip (0, 0, 1, 3, 3, 4, …).
+    var index = (p.inMicroseconds * pack.fps + 500000) ~/ 1000000;
     if (index >= pack.frameCount - 1) {
       index = pack.frameCount - 1;
       if (playing.value) {
@@ -141,10 +220,28 @@ class RecordedCamera implements TargetCamera {
         playing.value = false;
       }
     }
-    if (current.value?.index != index) _show(index);
+    _show(index);
+    // Playing, each frame is delivered once, when it has been decoded
+    // ([_decoded]), or now if it already was (frame 0 on restart). Paused
+    // (before Play, or after the end), the camera keeps seeing the same still
+    // picture.
+    if (!playing.value || (current.value?.index == index && _delivered != index)) _deliver();
+  }
+
+  /// The frame last delivered while playing (null since [restart]).
+  int? _delivered;
+
+  /// Sends the frame on show to whoever listens, stamped now.
+  ///
+  /// While playing this happens once per decoded frame, never on every tick:
+  /// re-sending the last frame while the next is still decoding fed throw
+  /// detection repeats (0, 0, 1, 3, 3, 4, …), which look like the board
+  /// standing still mid-throw (2026-10-13).
+  void _deliver() {
     final frames = _frames;
     final bgra = _bgra;
     if (frames == null || !frames.hasListener || bgra == null) return;
+    _delivered = current.value?.index;
     frames.add(CameraFrame(
       width: pack.width,
       height: pack.height,
@@ -154,11 +251,40 @@ class RecordedCamera implements TargetCamera {
     ));
   }
 
+  /// Asks for frame [index]; it is decoded now, or straight after the frame
+  /// already being decoded (skipping any asked for in between).
   void _show(int index) {
-    final image = img.decodeJpg(pack.jpeg(index));
-    if (image == null) return;
-    _bgra = image.getBytes(order: img.ChannelOrder.bgra);
-    current.value = RecordedFrame(index, image.width, image.height, image.getBytes(order: img.ChannelOrder.rgba));
+    if (_decoding != null) {
+      if (_decoding != index) _wanted = index;
+      return;
+    }
+    if (current.value?.index == index) return;
+    _decoding = index;
+    _wanted = null;
+    decoder(pack.jpeg(index)).then(
+      (decoded) => _decoded(index, decoded),
+      onError: (Object e, StackTrace s) {
+        _decoding = null;
+        FlutterError.reportError(FlutterErrorDetails(exception: e, stack: s, library: 'recorded camera'));
+      },
+    );
+  }
+
+  void _decoded(int index, DecodedFrame? decoded) {
+    _decoding = null;
+    if (_disposed) {
+      decoded?.image?.dispose();
+      return;
+    }
+    if (decoded != null) {
+      _bgra = decoded.bgra;
+      final previous = current.value?.image;
+      current.value = RecordedFrame(index, decoded.image);
+      previous?.dispose();
+      if (playing.value) _deliver();
+    }
+    final next = _wanted;
+    if (next != null) _show(next);
   }
 
   @override
@@ -166,7 +292,9 @@ class RecordedCamera implements TargetCamera {
 
   @override
   Future<void> dispose() async {
+    _disposed = true;
     _timer?.cancel();
+    current.value?.image?.dispose();
     await _frames?.close();
     _frames = null;
   }

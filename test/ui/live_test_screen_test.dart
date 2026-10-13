@@ -76,7 +76,7 @@ void main() {
   });
 
   testWidgets('the camera view shows a recording with its playing time', (tester) async {
-    final camera = RecordedCamera(greyPack(), recording: testRecording, autoTick: false, clock: () => Duration.zero);
+    final camera = RecordedCamera(greyPack(), recording: testRecording, autoTick: false, clock: () => Duration.zero, decoder: decodeFramePureDart);
     addTearDown(camera.dispose);
     await pump(tester, const Scaffold(body: CameraView()), camera: camera);
     await tester.pump();
@@ -85,7 +85,7 @@ void main() {
 
   testWidgets('Play starts the recording from the beginning, and can replay it', (tester) async {
     var now = Duration.zero;
-    final camera = RecordedCamera(greyPack(), recording: testRecording, autoTick: false, clock: () => now);
+    final camera = RecordedCamera(greyPack(), recording: testRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
     addTearDown(camera.dispose);
     await pump(tester, const PlayScreen(), camera: camera, overrides: [
       calibrationProvider.overrideWith(LockedCalibration.new),

@@ -335,19 +335,55 @@ class ColourRingLocator implements TargetLocator {
 
   /// One ellipse per boundary from its points (RANSAC); null if any fails.
   /// Confidence: the share of rays that agree with each fitted boundary.
+  ///
+  /// A single boundary can be dragged off centre by clutter on a few rays
+  /// (Live test board 2 at full resolution, 2026-10-12: the hook and stand
+  /// pulled its outer boundary 10 px off). Rings are near-concentric and in
+  /// proportion, so on a face-on board (or when the fit is rejected because
+  /// the centres disagree) a boundary whose centre strays more than
+  /// [_strayCentre] × its size from the others' is refitted from only its
+  /// points within ±[_predictedSlack] of where the steadiest other boundary
+  /// (scaled) puts it.
   _Fit? _fitPoints(Map<double, List<Point2>> points, Point2 centre) {
     final ellipses = <double, Ellipse>{};
     final inliers = <double, List<Point2>>{};
-    var agreed = 0;
     for (final r in boundaryRadii) {
       final fitted = fitEllipseRansac(points[r]!);
       if (fitted == null) return null;
       ellipses[r] = fitted.ellipse;
       inliers[r] = fitted.inliers;
-      agreed += fitted.inliers.length;
     }
+
+    double median(Iterable<double> values) {
+      final sorted = values.toList()..sort();
+      return sorted[sorted.length ~/ 2];
+    }
+
+    final mx = median(ellipses.values.map((e) => e.cx)), my = median(ellipses.values.map((e) => e.cy));
+    double stray(double r) => math.sqrt(math.pow(ellipses[r]!.cx - mx, 2) + math.pow(ellipses[r]!.cy - my, 2));
+    // A tilted board's ring centres differ a little anyway (perspective), and
+    // that's kept: there this is only a rescue. Face on (the outer boundary
+    // nearly round), the centres should agree.
+    final outer = ellipses[boundaryRadii.last]!;
+    final faceOn = outer.semiMinor >= 0.9 * outer.semiMajor;
+    for (final r in faceOn || _implausible(ellipses) == _centresDisagree ? boundaryRadii : const <double>[]) {
+      if (stray(r) <= ellipses[r]!.semiMajor * _strayCentre) continue;
+      final steadiest = boundaryRadii.where((k) => k != r).reduce((a, b) => stray(a) <= stray(b) ? a : b);
+      final predicted = ellipses[steadiest]!.scaled(r / steadiest);
+      final near = [for (final p in points[r]!) if ((predicted.normalisedRadius(p) - 1).abs() <= _predictedSlack) p];
+      final refitted = fitEllipseRansac(near);
+      if (refitted == null) continue;
+      ellipses[r] = refitted.ellipse;
+      inliers[r] = refitted.inliers;
+    }
+    final agreed = inliers.values.fold(0, (sum, list) => sum + list.length);
     return _Fit(ellipses, inliers, agreed / (rayCount * boundaryRadii.length));
   }
+
+  /// See [_fitPoints].
+  static const _strayCentre = 0.05;
+  static const _centresDisagree = 'Ring centres disagree';
+  static const _predictedSlack = 0.12;
 
   /// Each sample becomes the majority of the samples within [halfWidth] of it,
   /// so a soft, sprayed edge lands at its midpoint and specks disappear.
@@ -398,7 +434,7 @@ class ColourRingLocator implements TargetLocator {
       final e = ellipses[r]!;
       final expected = outer.semiMajor * r / boundaryRadii.last;
       final centreGap = math.sqrt(math.pow(e.cx - outer.cx, 2) + math.pow(e.cy - outer.cy, 2));
-      if (centreGap > outer.semiMajor * 0.1) return 'Ring centres disagree';
+      if (centreGap > outer.semiMajor * 0.1) return _centresDisagree;
       if (e.semiMajor <= previous) return 'Rings out of order';
       if ((e.semiMajor - expected).abs() > expected * 0.35) return 'Ring sizes out of proportion';
       previous = e.semiMajor;
