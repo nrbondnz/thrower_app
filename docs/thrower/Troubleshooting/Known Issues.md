@@ -7,6 +7,12 @@
 - **Likely cause:** the app was still running from a session started before the native plugin was built in (a hot reload/restart doesn't add native code). Not confirmed: a fresh `flutter run` worked, including the first-time permission prompt.
 - **Fix:** stop the app fully and re-run it. In debug builds the error view now shows the underlying exception, so if this recurs the cause is on screen. See [[Common Tasks#Run the App on a Phone]].
 
+## Tester Told to "Renew Your Membership" in App Store Connect
+
+- **Symptom (2026-10-14, Joanna):** after signing in to App Store Connect, a tester sees a message that the membership must be renewed, naming Nigel's **old** developer account (nigel.bond@orcon.net.nz).
+- **Cause:** Nigel has two developer teams, both probably named "Nigel Bond". The **old** one (account holder nigel.bond@orcon.net.nz) has a lapsed membership. The **new** one (account holder bondsfamily0007@gmail.com, team `QCQ64RLD77`) holds Knife and Axe Thrower, its builds and the Field testers group. A tester who belongs to both teams can be signed into the old one, where everyone sees the renewal notice. **Don't renew the old team**: nothing for this app is there.
+- **Fix:** check in the **new** team's Users and Access that the tester has accepted (no *Resend Invitation*), then add them to **TestFlight → Field testers**. Accepting alone doesn't make someone a tester; Joanna had accepted but wasn't in the group. Testers then use only Apple's TestFlight app, so the website message doesn't matter. On the website they can switch team from their name (top right). Optionally, remove them from the old team (sign in as nigel.bond@orcon.net.nz → Users and Access) if Apple still allows it with the membership lapsed.
+
 ## iPhone: Target Outline in the Wrong Place (Frames Rotated Twice)
 
 - **Symptom (Nigel, 2026-10-09, first iPhone test):** *Find target* finds the rings (95%+), but the outline lands on the wrong side of the preview, or higher and smaller than the target.
