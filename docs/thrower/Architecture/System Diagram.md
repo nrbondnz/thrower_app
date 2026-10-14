@@ -7,11 +7,13 @@ flowchart TB
   subgraph UI["UI (lib/ui)"]
     Home[HomeScreen]
     Cal[CalibrationScreen<br/>CalibrationEditor · CalibrationControls]
-    Cam[CameraScreen · CameraView]
-    Dbg[DebugTargetScreen · DebugLocatorScreen]
+    Cam[CameraView<br/>shared by Calibrate and Play]
+    Ins[InstructionsScreen]
+    Live[LiveTestScreen<br/>recordings in place of the camera]
+    Dbg[DebugTargetScreen]
   end
   subgraph Providers["Wiring (lib/providers.dart)"]
-    P1[liveCameraProvider]
+    P1[cameraProvider<br/>live camera or a recording]
     P2[calibrationProvider]
     P3[targetModelProvider · ringBoundaryRadiiProvider]
     P4[authServiceProvider]
@@ -37,11 +39,13 @@ flowchart TB
   subgraph Game["Game (lib/game, lib/scoring/game_session.dart)"]
     TW["ThrowWatcher: camera → MotionDetector → ThrowTracker → entry"]
     TT["ThrowTracker - pure"]
-    GS["GameSession - pure: rounds of 3"]
+    GS["GameSession - pure: 9 rounds of 3"]
   end
   Auth["Auth (lib/auth): AuthService interface, no provider yet"]
 
-  Home --> Play[PlayScreen] & Cal & Cam & Dbg
+  Home --> Ins & Play[PlayScreen] & Live & Cal & Dbg
+  Live --> P1
+  Cal & Play --> Cam
   Play --> TW --> TT
   Play --> GS
   Cal --> P1 & P2 & P3

@@ -25,7 +25,7 @@ A4 printout at 100% (`reference/printable/target-A4.pdf`), taped flat at chest h
 | Part | Steps | Checks | Requirements |
 |---|---|---|---|
 | S: Set up | S0–S4 | print scale (100 mm bar), placement and mount recorded; S4 reads the in-app Instructions, *Paper target* version first, then skims *Real board* (clear / mostly / confusing) | story instructions R3, R4 |
-| C: Camera | C1 camera prompt, picture smooth?; C2 swipe up and return | camera permission, preview, lifecycle | setup R4 |
+| C: Camera | C1 camera prompt on Calibrate target, picture smooth?; C2 swipe up and return | camera permission, preview, lifecycle | setup R4 |
 | F: Find the target | F1 find (confidence, ms, rings line up or turned/mirrored, screenshot); F2 ×3 repeat; F3 dim light; F4 at 1 m; F5 adjust and lock; F6 tap-to-score 5…0 | ring finder, coarse-to-fine, dim-light fallback, adjust/lock, mapping | calibration C1–C6, C8 |
 | W: Watching | W1 still 20 s (false motion count); W2 wave → bounced off; W3 hand held → blocked → board visit | motion detector, blocked state, classifier | throw T-R1, T-R2 |
 | K: Pen knives | K1–K3: ring by eye vs app score, dot distance from the pen tip (one near a line) | entry point, scoring | T-R3, calibration C5 |

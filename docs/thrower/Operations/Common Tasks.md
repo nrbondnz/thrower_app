@@ -14,10 +14,11 @@ On the Mac, with the repo pulled. The first time takes about an hour, later buil
    4. Each processed build then reaches them straight away; they get a TestFlight email and install it in Apple's TestFlight app.
    - The alternative, **external** testers, needs no account access but a Beta App Review of each version's first build (usually within a day).
 
-**Each build**
-1. Bump the build number in `pubspec.yaml` (`version: 1.0.0+N`, N one higher than the last upload).
-2. `flutter build ipa --release` → `build/ios/ipa/*.ipa`.
-3. Upload with Apple's **Transporter** app (drag the `.ipa` in) or Xcode → *Window → Organizer → Distribute App*.
+**Each build** (done in the foreground in Xcode: see [[dont-ask-again]] → Xcode work)
+1. Bump the build number in `pubspec.yaml` (`version: 1.0.0+N`, N one higher than the last upload), then `flutter build ios --config-only --release` so Xcode picks up the new number.
+2. `open ios/Runner.xcworkspace` → destination **Any iOS Device (arm64)** → **Product → Archive**. Organizer opens with the new archive when it's done.
+3. Organizer → **Distribute App → App Store Connect → Upload**. (CLI alternative, not the default: `flutter build ipa --release`, then upload the `.ipa` with Transporter.)
+   - "Redundant Binary Upload" means that build number was already uploaded: bump N and archive again.
 4. Wait for *Processing* in App Store Connect (10–30 min). Export compliance is pre-answered (`ITSAppUsesNonExemptEncryption = NO`).
 5. With automatic distribution on, the internal group gets the build as soon as it's processed; otherwise *TestFlight* → the build → add it to the group. Testers get an email and a TestFlight notification.
 

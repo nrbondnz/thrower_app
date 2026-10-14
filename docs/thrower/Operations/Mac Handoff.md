@@ -43,7 +43,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - Signing: team **QCQ64RLD77** ("Nigel Bond", the paid Individual team, not the free Personal Team), automatic signing (`b560803`).
 - **First iPhone test:** *Find target* drew the outline in the wrong place. iOS frames arrive already upright and were being rotated again. Fixed in `252127c` and confirmed on Nigel's iPhone. See [[Known Issues]] → iPhone: Target Outline in the Wrong Place.
 - **App Store Connect:** the app record is **"Knife and Axe Thrower"** ("Thrower App" is taken by another account), Apple ID `6820805327`, bundle `nz.nrbond.thrower`. Xcode created it during *Distribute App*. The home-screen name is still "Thrower App" (`CFBundleDisplayName`).
-- **Build 1.0.0 (1)** uploaded and processed. Internal group **"Field testers"** (automatic distribution) created; Nigel added. **The tester (Nigel's brother) is not invited yet**: invite him in Users and Access, then add him to the group. Build **1.0.0 (2)** (instructions, 9-round games, reset) uploaded 2026-10-09 21:25; **1.0.0 (3)** archived from the same code. **Next upload must be `1.0.0+4`** (or `+3` if build 3 was never uploaded).
+- **Build 1.0.0 (1)** uploaded and processed. Internal group **"Field testers"** (automatic distribution) created; Nigel added. **The tester (Nigel's brother) is not invited yet**: invite him in Users and Access, then add him to the group. Build **1.0.0 (2)** (instructions, 9-round games, reset) uploaded 2026-10-09 21:25; **1.0.0 (3)** archived from the same code. Build **1.0.0 (4)** (Camera and Ring finder test screens removed) archived 2026-10-10. **Next upload must be `1.0.0+5`.**
 
 ## 2. App Store / TestFlight Setup
 
@@ -79,8 +79,8 @@ The tester is **an internal tester** (decided 2026-10-08), so he gets each build
 
 ### 5. Build and upload (every build)
 1. **Claude:** bump the build number in `pubspec.yaml`: `version: 1.0.0+N`, where N is one higher than the last upload. The first upload can stay `+1`.
-2. **Claude:** `flutter build ipa --release` → `build/ios/ipa/*.ipa`. If it fails on signing, step 2 isn't done.
-3. **Nigel:** upload it. Either drag the `.ipa` into Apple's **Transporter** app (free, on the Mac App Store), or use Xcode → *Window → Organizer* → the archive → *Distribute App* → *App Store Connect* → *Upload*.
+2. **Claude:** `flutter build ios --config-only --release` (refreshes the version Xcode uses), then `open ios/Runner.xcworkspace`. **All Xcode work happens in the foreground in Xcode** so Nigel can follow it (Nigel, 2026-10-10; see `docs/dont-ask-again.md`).
+3. **Nigel**, in Xcode: destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**. If it fails on signing, step 2 isn't done.
 4. Wait 10–30 minutes for *Processing* in App Store Connect. Export compliance is already answered in `Info.plist` (`ITSAppUsesNonExemptEncryption = NO`).
 5. With automatic distribution on, the tester gets a TestFlight email. He installs Apple's **TestFlight** app and then Thrower App from it.
 

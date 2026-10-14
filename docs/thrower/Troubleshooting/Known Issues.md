@@ -38,7 +38,7 @@
 
 - **Symptom:** `Isolate.run(() => ...)` called from a `State` method throws `Illegal argument in isolate message: object is unsendable`.
 - **Cause:** the closure's context includes the widget state, which can't be sent to another isolate.
-- **Fix:** use `compute(topLevelFunction, data)` (or `Isolate.run` with a closure built in a top-level function) and pass plain data only. See `lib/ui/debug_locator_screen.dart`.
+- **Fix:** use `compute(topLevelFunction, data)` (or `Isolate.run` with a closure built in a top-level function) and pass plain data only. See `_find` in `lib/ui/calibration_screen.dart` (`compute(locateInFrame, …)`).
 
 ## Wireless `adb` Device ID Changes
 
