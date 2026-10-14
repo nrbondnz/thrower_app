@@ -55,13 +55,27 @@ Worked out 2026-10-14 from `reference/live-camera/1.mp4` and `2.mp4`: two crops 
 | | Mark: board 2 (right) | The Captain: board 1 (left) |
 |---|---|---|
 | Knife lands (video) | 162.12–162.13 s: in flight 162.083–162.117 s from the top right | 162.15–162.17 s: first seen above the bull at 162.150 s |
-| Thud (audio) | **162.132 s** | **162.162 s** |
+| Sound (audio) | **162.132 s**: one sharp onset from silence | not separable: the sound rattles on for ~70 ms with peaks at .136, .154 and .174 s and never drops back |
 | Result | **5**, top of the bull | **bounce-out**: hits the bull, slides off down the board (it lands below at about 162.55 s, a later thud) |
 
-- **Winner: Mark, by about 30 ms**, and on score.
+- **Winner: Mark, by 1–2 frames (about 17–33 ms) on the video**, and on score. The audio's single onset at 162.132 s fits Mark's landing, but the Captain's impact can't be picked out of the rattle that follows, so the margin rests on the video. (Corrected 2026-10-14: an earlier reading of "two thuds 30 ms apart" was an artefact of the onset detector's 30 ms minimum gap.)
 - **Decoy:** board 1 brightens across its whole face at about 162.0 s (light or exposure flicker, not a knife). A plain frame-difference trigger takes it for the throw and gets the order wrong; this test should catch that.
 - **The knife already in board 1** at the right of the bull (3 o'clock) is from an earlier throw and doesn't move.
 - **"Go":** unconfirmed. There's a speech-band burst at about 160.9–161.4 s with quiet after it. If that's "go", both throws took about 1.2 s from go to landing. A clear "three, two, one" isn't separable in the audio; Nigel to listen around 2:40–2:41 and confirm.
-- **Possible second duel:** both boards also have a single-throw round at about 177.0 s (`b1-t14` bounce-out, `b2-t11` stuck 3). Not yet checked for a countdown or impact order.
-- **Method** (to turn into a test): per-board frame difference restricted to the target, plus a 2 ms audio envelope (onsets over 6× the median), then match thuds to boards by the video landing frames.
+- **Method** (to turn into a test): per-board frame difference restricted to the target (with a background strip to reject whole-frame changes), plus a 2 ms audio envelope. Count an onset only where the sound **rises from near-silence**, not on a fixed minimum gap (that splits one long sound into fake "thuds"). Then match onsets to boards by the video landing frames.
+
+## Second Pair (Original Video, 2:57)
+
+Checked 2026-10-14. Both boards have a single-throw round here (answer key `b1-t14`, `b2-t11`). **No countdown found**: the only sound before is a knock at about 175.1–175.25 s that also shakes the whole frame. So it may be two throws at about the same time rather than a duel.
+
+| | The Captain: board 1 (left) | Mark: board 2 (right) |
+|---|---|---|
+| Video | Nothing lands on the face. At 177.050 s a streak below the bull, at 177.067 s a knife falling past the bottom (hit the **top edge**, as the answer key says) | In the air, top right, from 177.100 s; stuck at the left of the bull from **177.183 s** |
+| Sound (audio) | **A: 177.042 s**, sharp onset from silence. It must be the Captain's, since Mark's knife is still in the air | **B: 177.178 s**, a second sharp onset (the loudest in the clip), 136 ms after A |
+| Result | **bounce-out** (0) | **stuck, 3** (red ring) |
+
+- **First to hit: the Captain, by about 136 ms.** **First to stick, and the only score: Mark.** Whoever "wins" depends on the duel rule (open question in item 9).
+- A third, smaller sound at about 177.30 s fits the Captain's knife reaching the ground.
+- **Video glitch:** board 2's video repeats a frame at 177.017 s, then jumps, so frame times right there can be one frame off. A good test of handling dropped or duplicated frames.
+- This is the cleaner audio case: two impacts well apart, each rising from quiet.
 
