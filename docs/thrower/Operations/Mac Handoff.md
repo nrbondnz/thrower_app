@@ -1,8 +1,45 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-15 (section 0). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
+
+---
+
+## 0. Handover 2026-10-15: Try Quick Draw on the iPhone
+
+**Start here.** Sections 1–3 below are from 2026-10-09: the TestFlight setup and commit rules still apply, but section 1's "current state" is out of date. This section is what's new.
+
+### What's changed since 2026-10-09
+- **Live test** (Home → *Live test*): plays recordings of two real boards (Nigel's video) in place of the camera, through the normal calibrate → Play screens. Target 1 / Target 2. Archived story: [[story-checkpoint-live-test]].
+- **Quick draw** (Live test → *Quick draw*), story [[story-checkpoint-quick-draw]], **Tasks 1–3 of 5 done**:
+  - Two throwers, one board each, throwing at the same time after a countdown. The clip (`assets/live/quickdraw.tfrm`, 720 × 1280 at **60 fps**, with sound `quickdraw.m4a`) plays full screen, system bars hidden.
+  - Tap the centre (bull) of **Player 1's board**, then **Player 2's**: each is outlined and numbered. **Lock boards**, then **Play**.
+  - While it plays, each board gets its time (seconds into the clip) and result underneath: right board (Player 2, Nigel's brother Mark) about **"3.62 s · 5"**, left board (Player 1) about **"3.65 s · bounced"**. The knives land **37 ms apart** (the answer key, `docs/thrower/reference/live-camera/quickdraw.json`).
+  - The winner, false starts and timing from "go" (2.8 s into the clip) are **Task 4, not built yet**.
+- **New native plugin: `audioplayers` ^6.8.1** (plays the clip's sound). No new permissions or `Info.plist` keys. It needs iOS 13 (the project targets 15.0). The sound **ducks** other audio (music gets quieter, not stopped) and plays with the **silent switch on**, so the countdown is heard.
+- Commits: `6ec8721` (code, tests, clip) and `022e35b` (docs), plus this handover. `flutter test`: **373 pass** on the PC.
+
+### Steps
+1. **Claude:** `git pull` (check `git log --oneline -4` shows `6ec8721` and `022e35b`), `flutter pub get`, `flutter test` (expect 373 passing; the replay tests take ~2 min).
+2. **Claude:** `flutter build ios --config-only --debug` or let the first run do it: CocoaPods installs the audio plugin's pod and **`ios/Podfile.lock` changes**. That's expected.
+3. **Nigel, in Xcode** (settled rule: iOS work is done visibly in Xcode; see `docs/dont-ask-again.md`): `open ios/Runner.xcworkspace`, choose his iPhone, **Run** (a **debug** build: the frames-per-second label only shows in debug builds). Or `flutter run` with Xcode open.
+4. **Nigel, on the iPhone:** Home → *Live test* → *Quick draw* → tap the left bull, then the right bull → *Lock boards* → *Play*. Note:
+   - the **frames/s label** (top right of the picture) while it plays: the Samsung A06 managed **11–12**, so some runs gave both players the same time;
+   - whether the two times **differ** (they should, by about 0.03 s, if it keeps up with 60 fps);
+   - the scores under each board (right: 5; left: bounced);
+   - the **sound**: heard with the silent switch on; music playing in another app gets quieter, then comes back.
+5. **Claude:** record the results in [[story-checkpoint-quick-draw]] (Task 3 notes) and [[Known Issues]] → Quick Draw: Dropped Frames Make Times Coarser.
+6. **Claude:** commit the changed **`ios/Podfile.lock`** after a quick "Be Careful" check (only the audioplayers / path_provider pods added; the Task 1 Safety Report in the story file already passed the plugin). E.g. `iOS: Podfile.lock for audioplayers`. Then `git push origin main`.
+
+### Worth knowing
+- **Debug builds are slower than release.** The frame rate in a debug build (where the label shows) understates what a release build does: the Dart that watches each board runs unoptimised. Both boards see the same frames, so the **order** is always fair; a slow phone can only turn a win into a tie.
+- **No TestFlight upload is needed for this.** If one is wanted later, the next build number is **`1.0.0+5`** (`pubspec.yaml` is at `+4`). Release builds have no frames/s label.
+- **Not ready for the App Store:** the Live test recordings are ~87 MB, and the Quick draw clip shows people (full frame, with voices). Fine for internal TestFlight; see [[backlog]] #6 before any public build.
+- **Taps:** aim for the bull. Taps 15–30 px off the centre sometimes miss the green-and-red board; *Start again* clears and rewinds ([[Known Issues]] → Quick Draw: a Board Isn't Found).
+
+### Next (either machine)
+**Task 4** of [[story-checkpoint-quick-draw]]: times from "go", a false start if a knife lands before "go", the winner (the first knife to **stick**; a bounce-out loses; both bounce = no winner), and a results line. In the final, live-camera version the app counts down itself, Formula 1 style (5 beeps, a random pause, a long beep for go): [[backlog]] #9.
 
 ---
 
