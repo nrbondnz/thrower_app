@@ -131,6 +131,36 @@ void main() {
       expect(gameText(g), contains('Game total: 12'));
     });
 
+    // Backlog #12 (Nigel, 2026-10-15): the next round showed only once its
+    // first throw landed.
+    test('once the knives are collected, the next round shows straight away', () {
+      final g = const GameSession().stuck(4, tp).stuck(3, tp).bounceOut().boardVisited();
+      expect(roundText(g), 'Round 2 of 9: – · – · –  (0)');
+      expect(gameText(g), 'Game total: 7\nRounds: 7');
+    });
+
+    test('collecting early moves on too, with the short round in the totals', () {
+      final g = const GameSession().stuck(4, tp).boardVisited();
+      expect(roundText(g), 'Round 2 of 9: – · – · –  (0)');
+      expect(gameText(g), contains('Rounds: 4'));
+    });
+
+    test('the first throw of the next round goes into it', () {
+      final g = const GameSession().stuck(4, tp).stuck(3, tp).bounceOut().boardVisited().stuck(5, tp);
+      expect(roundText(g), 'Round 2 of 9: 5 · – · –  (5)');
+      expect(gameText(g), 'Game total: 12\nRounds: 7');
+    });
+
+    test('collecting after the last round leaves the game over, not a round 10', () {
+      var g = const GameSession();
+      for (var i = 0; i < 27; i++) {
+        g = g.stuck(1, tp);
+      }
+      g = g.boardVisited();
+      expect(roundText(g), startsWith('Round 9 of 9'));
+      expect(gameText(g), startsWith('Game over! Final total: 27'));
+    });
+
     test('round 9 of 9', () {
       var g = const GameSession();
       for (var i = 0; i < 25; i++) {

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'target_model.dart';
 
 enum ThrowResult {
@@ -66,6 +68,20 @@ class GameSession {
 
   /// The last round is complete: the game is over.
   bool get isOver => rounds.length >= maxRounds && roundComplete;
+
+  /// The knives have been collected (the current round is closed) and the
+  /// game goes on: the next round is under way, though it has no throws yet.
+  /// (Its record is only made by its first throw.)
+  bool get awaitingNextRound => !isOver && (currentRound?.closed ?? false);
+
+  /// The round being played (1-based): the next one as soon as the knives
+  /// are collected, not only once its first throw lands.
+  int get roundNumber => rounds.isEmpty ? 1 : rounds.length + (awaitingNextRound ? 1 : 0);
+
+  /// The rounds already finished and collected (or, once the game is over,
+  /// all of them), for the list of round totals.
+  List<RoundRecord> get finishedRounds =>
+      isOver || awaitingNextRound ? rounds : rounds.take(math.max(0, rounds.length - 1)).toList();
 
   GameSession _withRounds(List<RoundRecord> rounds) =>
       GameSession(throwsPerRound: throwsPerRound, maxRounds: maxRounds, rounds: rounds);

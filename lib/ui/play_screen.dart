@@ -243,9 +243,11 @@ String playStateText(WatchState state) => switch (state) {
 
 /// "Round 2 of 9: 4 · 3 · –  (7)".
 String roundText(GameSession game) {
-  final round = game.currentRound;
+  // Once the knives are collected, the next round is shown straight away
+  // (backlog #12, 2026-10-15), not after its first throw.
+  final round = game.awaitingNextRound ? null : game.currentRound;
   final throws = round?.throws ?? const <ThrowRecord>[];
-  final number = game.rounds.isEmpty ? 1 : game.rounds.length;
+  final number = game.roundNumber;
   final marks = [
     for (final t in throws) t.unscored ? '?' : '${t.score}',
     for (var i = throws.length; i < game.throwsPerRound; i++) '–',
@@ -265,11 +267,10 @@ String gameText(GameSession game, {String? message}) {
   }
   final lines = <String>[
     ?message,
-    if (game.roundComplete)
+    if (game.roundComplete && !game.awaitingNextRound)
       'Round complete: ${game.currentRound!.total}. Collect your knives when no one is throwing.',
     'Game total: ${game.total}',
-    if (game.rounds.length > 1)
-      'Rounds: ${[for (final r in game.rounds.take(game.rounds.length - 1)) r.total].join(', ')}',
+    if (game.finishedRounds.isNotEmpty) 'Rounds: ${[for (final r in game.finishedRounds) r.total].join(', ')}',
   ];
   return lines.join('\n');
 }

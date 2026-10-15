@@ -35,9 +35,36 @@ void main() {
     expect(g.rounds.last.total, 5);
   });
 
+  group('the round being played (backlog #12)', () {
+    test('a full round not yet collected is still that round', () {
+      final g = const GameSession().stuck(1, p).stuck(1, p).stuck(1, p);
+      expect((g.roundNumber, g.awaitingNextRound, g.finishedRounds.length), (1, false, 0));
+    });
+
+    test('collected, the next round is under way before its first throw', () {
+      final g = const GameSession().stuck(1, p).stuck(1, p).stuck(1, p).boardVisited();
+      expect((g.roundNumber, g.awaitingNextRound, g.finishedRounds.length), (2, true, 1));
+    });
+
+    test('its first throw makes the round record; the number stays the same', () {
+      final g = const GameSession().stuck(1, p).boardVisited().stuck(4, p);
+      expect((g.roundNumber, g.awaitingNextRound, g.finishedRounds.length), (2, false, 1));
+    });
+
+    test('after the last round, collecting does not start a round 10', () {
+      var g = const GameSession();
+      for (var i = 0; i < 27; i++) {
+        g = g.stuck(1, p);
+      }
+      g = g.boardVisited();
+      expect((g.isOver, g.roundNumber, g.awaitingNextRound, g.finishedRounds.length), (true, 9, false, 9));
+    });
+  });
+
   test('a board visit with no throws in the round changes nothing', () {
     const g = GameSession();
     expect(identical(g.boardVisited(), g), isTrue);
+    expect(g.awaitingNextRound, isFalse);
     final full = const GameSession().stuck(1, p).stuck(1, p).stuck(1, p).boardVisited();
     expect(identical(full.boardVisited(), full), isTrue);
   });
