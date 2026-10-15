@@ -1,0 +1,31 @@
+{
+ "source": "Quick draw clip, cut from IMG_1628.mov at 158.5-166.0 s (2026-10-14). Go time: Nigel, by ear. Impact frames: Claude, from the 60 fps frames, checked against the two thuds in the sound (162.133 s and 162.170 s, 37 ms apart). Results: truth.json (b2-t10, b1-t13).",
+ "clipStart": 158.5,
+ "fps": 60,
+ "times": "Seconds from the start of the clip; add clipStart for the original video.",
+ "go": 2.8,
+ "boards": [
+  {
+   "id": "left",
+   "board": "Target 1: red rings on wood, dark bull",
+   "impactFrame": 219,
+   "impact": 3.65,
+   "kind": "bounceOut",
+   "score": 0,
+   "truth": "b1-t13",
+   "note": "Hits at the bull and slides off down the board. Frame 218 shows the knife in flight over the board; 219 is the first frame at the bull."
+  },
+  {
+   "id": "right",
+   "board": "Target 2: green and red rings, red bull",
+   "impactFrame": 217,
+   "impact": 3.617,
+   "kind": "stuck",
+   "score": 5,
+   "truth": "b2-t10",
+   "note": "Top of the bull. Frame 216 shows the knife in flight above the board."
+  }
+ ],
+ "winner": "right",
+ "why": "First to the board, and stuck; the left knife bounced out (a loss either way)."
+}

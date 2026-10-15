@@ -100,3 +100,24 @@
   - every frame in both packs decodes
   
   Next: the phone's console output (or DevTools' memory and CPU views) at the moment it freezes.
+
+## Re-calibrating After Play in the Live Test Didn't Always Work
+
+- **Symptom (Nigel, 2026-10-13):** in the Live test, going back from Play and tapping Find again sometimes failed to find the rings, or found them wrongly.
+- **Cause:** leaving Play left the recording running (or stopped on its last frame). Find again then ran the ring finder on whatever frame was showing: knives in the board, people collecting, the end of the recording. The locked calibrate screen's throw watcher also reacted to the footage.
+- **Fix in place (2026-10-13):** `PlayScreen.dispose` calls `RecordedCamera.rewind()`, which stops playback and waits on the first frame again. A recording now plays only while Play is open. Covered by `recorded_camera_test.dart` ('rewind mid-play stops on the first frame and keeps delivering it') and `live_test_screen_test.dart` ('leaving Play rewinds the recording to its first frame, for re-calibrating').
+- **Live camera:** not affected; it has no first frame to go back to. Re-calibrate with the board clear.
+
+## Quick Draw: a Board Isn't Found, or the Wrong Outline
+
+- **Symptom:** on Quick draw, a tap says "No board found there.", or the outline drawn doesn't match the board (a ring too small or too big, or off centre).
+- **Cause:** the ring finder starts from the tap, and fits only start well from near the board's centre. Measured on the Quick draw clip's 16 still frames (2026-10-14): a tap on the centre finds the left (red on wood) board on 16 and the right (green and red) board on 15–16; a tap **15–30 px off centre** finds the green and red board on only **10–12** (the left still 15–16). It isn't resolution or compression: the right board fails as often on the uncompressed original at full size. See [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping.
+- **What to do:** tap the **bull** (the middle of the board), not a ring. If the outline is wrong, press **Start again** (it also rewinds the clip to its still first frame) and tap again. There's no drag-to-adjust per board yet ([[story-checkpoint-quick-draw]] Task 2).
+
+## Quick Draw: Dropped Frames Make Times Coarser
+
+- **Seen 2026-10-15 on Nigel's Samsung SM-A065F:** Quick draw played at **11–12 frames a second**, and a couple of runs gave both players the same time. iPhone not yet tried.
+- **Symptom:** on a slow phone, Quick draw's times under the boards jump in steps bigger than a frame (17 ms), or both boards show the **same** time.
+- **Cause:** the clip is 720 × 1280 at **60 fps**, and `RecordedCamera` skips to the newest frame when decoding can't keep up (see Live Test Playback Jumps and Freezes on a Slower Android above). Each board's `ThrowWatcher` looks at every frame it's given (Quick draw sets `interval` to zero), so frames the camera skipped are never seen, and an impact is timed to the next frame that was delivered. The two knives on the clip land **37 ms apart** (about 2 frames), so they can land in one delivered frame.
+- **Still fair:** both boards are crops of the **same** frames (`CroppedCamera`), so a dropped frame delays both alike and the order can't be swapped; at worst it becomes a tie.
+- **What to do:** watch the frame-rate label (debug builds) on the Samsung while Quick draw plays ([[story-checkpoint-quick-draw]] Task 3). If it drops well below 60, the options are decoding off the UI thread or a smaller clip (see [[backlog]] → Speed on the phone). The replay test (`quick_draw_replay_test.dart`) delivers every frame, so it doesn't catch this.

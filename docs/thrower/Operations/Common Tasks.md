@@ -104,6 +104,12 @@ The app's **Live test** plays packed recordings (`assets/live/*.tfrm`) in place 
 2. Pack it: `dart run tool/pack_recording.dart 1.mp4 assets/live/target1.tfrm --ffmpeg <path to ffmpeg> --quality 12`. 15 fps is the default. At q12 a 322 px crop is ~9.8 KB a frame (25.9 MB for 3 min 10 s); the default q5 doubles that for no visible gain.
 3. A new recording also needs an entry in `liveTestRecordings` (`lib/camera/recorded_camera.dart`).
 
+**Full frame at 60 fps, with sound** (the Quick draw clip, 2026-10-14). Both boards in one picture, for timing races:
+1. Cut it, scaled to 720 × 1280, without audio: `ffmpeg -ss 158.5 -i IMG_1628.mov -t 7.5 -map 0:0 -vf scale=720:1280 -c:v libx264 -crf 12 -an quickdraw.mp4`.
+2. Cut the sound separately, mono: `ffmpeg -ss 158.5 -i IMG_1628.mov -t 7.5 -map 0:1 -ac 1 -c:a aac -b:a 96k assets/live/quickdraw.m4a`. Same start and length, so it lines up with the first frame.
+3. Pack it at 60 fps: `dart run tool/pack_recording.dart quickdraw.mp4 assets/live/quickdraw.tfrm --ffmpeg <path to ffmpeg> --fps 60 --quality 20`. 449 frames, 34.2 MB. q12 was 53.1 MB; q31 was 23.0 MB but blocky on the boards (the grass compresses poorly).
+4. Give its `Recording` the `audio` asset (see `quickDrawRecording` in `lib/camera/recorded_camera.dart`). The audio asset needs no `pubspec.yaml` change: `assets/live/` is already listed.
+
 There's no ffmpeg on Nigel's PC. `pip install imageio-ffmpeg` brings one, at `python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())"`.
 
 ## Read Logs from the Android Phone (Wireless Debugging)

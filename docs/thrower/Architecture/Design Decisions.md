@@ -92,9 +92,9 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 |---|---|---|
 | `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
 | `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. No provider until the backend is chosen; `authServiceProvider` throws until overridden. |
-| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`), with two implementations: `LiveCamera` (the `camera` plugin's back camera) and `RecordedCamera` (a Live test recording, `FramePack`). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
-| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`. |
-| `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`. |
+| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`), with two implementations: `LiveCamera` (the `camera` plugin's back camera) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `playbackTime`). `CroppedCamera` (a part of another camera's picture as a camera of its own; Quick draw, one per board). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
+| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw). |
+| `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board; `QuickDrawThrow`). |
 | `lib/ui/` | Screens and painters | Depends on the layers through providers. `RoundMarks` holds the Play screen's marks for the round. |
 | `lib/providers.dart` | Wiring | One place to see and override every layer. |
 
@@ -205,18 +205,18 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 
 ## Motion and Settle (Throw Detection, Task 2)
 
-**Decision:** `MotionDetector` (pure Dart) works on **brightness only**, downscaled to ~320 px (`frameToLuma`: the Y plane on Android, converted BGRA on iOS), inside a `WatchRegion` = the locked outer ring's bounding box × 1.5 (room for handles). It runs about 15 times a second (`WatchStatus` processes a frame at most every 60 ms).
+**Decision:** `MotionDetector` (pure Dart) works on **brightness only**, downscaled to ~320 px (`frameToLuma`: the Y plane on Android, converted BGRA on iOS), inside a `WatchRegion` = the locked outer ring's bounding box × 1.5 (room for handles). It runs about 15 times a second (`ThrowWatcher.interval`: a frame at most every 60 ms; Quick draw sets it to zero and looks at every frame).
 - A pixel has **changed** if it differs from the previous frame by more than 6 × the estimated sensor noise, at least `TargetCamera.minChange` levels (12 for the live camera, 20 for a recording). The noise is learned while the board is still. **Each pair of frames also sets its own floor:** 5 × its robust noise (1.4826 × the median difference), so compressed video's whole-picture jumps don't count (2026-10-11; see Throw Detection on Real Footage).
 - States: **watching → motion** (the **largest connected changed shape** ≥ 0.1% of the region) **→ settling** (< 0.05%) **→ settled** after 0.3 s still, reporting a `MotionEpisode`. Until 2026-10-11 this was the total share that changed (0.2% / 0.08%); one compact shape tells a knife from scattered compression blocks.
 - **"Still" isn't "clear":** the rendered retrieval showed a person standing still at the board reads as settled. So the detector keeps a **reference** frame of the last settled board, and only settles when **< 8%** of the region differs from it; otherwise it's **blocked** (something in the way). After 5 s still but different, the view is accepted as the new normal (flagged), e.g. lights switched on.
 - Each episode reports its **peak change** (a person: ~25%; a throw: ~0.6–1.5%) and its **change from before** (a stuck knife: ~0.6–0.7%; a bounce-out: 0.0%; knives removed: ~1.2%), the basis for telling stick from bounce-out (Task 3) and retrieval (Task 5).
-- The knife's flight is effectively invisible (one faint blurred frame): **episodes start at the impact.**
+- The knife's flight is effectively invisible (one faint blurred frame): **episodes start at the impact.** True side-on; not seen from behind the thrower (Quick draw), where the knife is over the board's face all the way in. So each episode also reports its **impact** (`MotionEpisode.impact` / `impactFrame`: the frame with the largest moving shape on the target); see Quick Draw: Timing and Scoring Each Board.
 
 ## Stuck or Bounced Off (Throw Detection, Task 3)
 
 **Decision:** `classifyThrow(episode, calibration)` decides what a settled episode was:
 1. Accepted as a new view → **scene changed** (not a throw; maybe re-calibrate).
-2. Someone stood at the board (`wasBlocked`), ≥ 10% of the region changed at once, or one person-sized shape moved (`peakShape` ≥ 2% of the region) → **board visit** (not a throw).
+2. Someone stood at the board (`wasBlocked`), ≥ 10% of the region changed at once, or one person-sized shape moved (`peakArea` ≥ 3% of the region, `visitArea`; see Throw Detection on Real Footage) → **board visit** (not a throw).
    - **Except a knife placed by hand** (decided 2026-10-09, so Nigel can test with a pen on the A4 printout): if the visit left a knife-sized new shape that **appeared** (`appeared`: the shape stands out from the board around it in the *after* picture, not the *before*), isn't one of the known knives and no known knife was taken out, it's a **stuck** knife and scores like a throw. A visit that removes knives the app never saw stays a board visit, because that shape disappeared.
 3. Otherwise, pixels differing from the before frame by more than the episode's threshold are grouped into connected shapes (8-connected) within 1.5 × the outer ring. The largest one that touches the target (outer × 1.05) and covers ≥ **0.25%** and ≤ **6%** of the target's area (min 4 px) → **stuck**, with the shape kept for the entry point (Task 4). Otherwise → **bounce-out** (0), if a knife-sized shape was seen moving (`peakShape` ≥ 0.22% of the region), or else **nothing** (a flicker; ignored).
 
@@ -231,7 +231,7 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 **What the footage needed, and the rule each led to (all measured on the recordings):**
 - **Compression jumps:** about once a second the encoder re-encodes the picture and every pixel shifts by a few levels (median difference 3–9 instead of ~0). → **Per-pair threshold** (`MotionDetector.pairNoise`): 5 × that pair's robust noise.
 - **Re-encoded blocks:** when anything moves elsewhere in the video (board 2 being hit), board 1's picture gets mid-grey blocky changes: up to 12 px shapes at a 20-level floor, while every real throw made 20+ px. → **Motion = largest connected shape**, and a **minimum change of 20** for recordings (`RecordedCamera.minChange`). The live camera keeps 12: at 20, the rendered ring-3 knife (low contrast on paint) was missed.
-- **Refocusing and people at the picture's edge:** soft, spread-out changes with nothing left behind. Real bounce-outs moved a 42+ px shape (0.26% of the region), the false ones 27 px or less. → A bounce-out needs `peakShape` ≥ **0.22%**; smaller is **nothing**. A person walking up moves 686 px (4.3%), and no knife more than 132 px. → `peakShape` ≥ **2%** is a **visit**.
+- **Refocusing and people at the picture's edge:** soft, spread-out changes with nothing left behind. Real bounce-outs moved a 42+ px shape (0.26% of the region), the false ones 27 px or less. → A bounce-out needs `peakShape` ≥ **0.22%**; smaller is **nothing**. A person walking up moves 686 px (4.3%), and no knife more than 132 px. → `peakShape` ≥ **2%** is a **visit** (now judged by area, 3%: see below).
 - **People walking back after collecting:** false events 0.6–1.6 s after a visit; the next real throw comes 6+ s after it. → `ThrowTracker.visitCooldown` **3 s**: anything but a stuck knife within it is part of the visit.
 - **Small head-on knives:** before and after straddle a compression jump, so at 5 × noise (thresholds 30–44) three knives showed as only 9–12 px against the 12.6 px minimum. → The before/after comparison uses **3.5 × noise** (`settledNoiseFactor`); no bounce-out left anything behind even then. After a **visit** it stays at 5 × (`MotionEpisode.visitThreshold`), so marks left by collecting don't look like a placed knife; knives being **taken out** are still checked at the sensitive threshold.
 - **The board re-exposing** made an 860 px "knife". → A knife covers at most **6%** of the target's area (the largest real one: 1.9%).
@@ -249,10 +249,12 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 
 **The original video (2026-10-12).** Re-cut at full resolution (boards ~245 px instead of 106), the recordings needed four more changes. Both now give every throw, bounce-out and round in the answer key:
 - **Sizes in board length, not area.** A knife is a thin streak, so its pixel count grows with the board's size, not its area. Motion starts when the largest changed shape's pixels ÷ the watched region's side reach **0.12** (`startSize`; still below `stillSize` 0.06). That's 16 px on the copy, 33 px at full resolution, about 18 px on a phone. At 0.1% of the area, board 1's bounce-out at 177 s (a 39 px streak at 15 fps) fell short of the 77 px needed.
-- **People are judged by area** (`MotionEpisode.peakArea` ≥ **2%** of the region; `visitArea`). On both versions people are 4%+ and knives at most ~1.1%, even when the board jolts on impact (800+ px at full resolution).
+- **People are judged by area** (`MotionEpisode.peakArea` ≥ **3%** of the region; `visitArea`; it was 2% until 2026-10-14). On both versions people are 4%+ and knives at most ~1.1%, even when the board jolts on impact (800+ px at full resolution). Raised to 3% for the Quick draw clip, where a knife flying in close to the camera moved 2.2% (see Quick Draw: Timing and Scoring Each Board).
 - **Bounce-out evidence must be on the target** (`MotionEpisode.peakShape`: the largest changed shape **touching the outer ring**, ≥ **0.12**; `bounceShape`). At full resolution, people moving at the edge of board 2's picture made shapes of up to 214 px but touched the target by 3 px at most. Every real throw's shape (138–852 px) touches it. `WatchRegion.target` carries the outer ring for this.
 - **Ring finding: concentric refit.** On a face-on board, or when a fit is rejected because the ring centres disagree, a boundary whose centre strays more than 5% of its size from the others is refitted from only its points within ±12% of where the steadiest other boundary puts it. Board 2's hook and stand dragged its outer boundary 10 px off. Tilted boards keep their small perspective offsets.
 - **Results:** rings found right every 10 s at 17 of 19 times (board 1) and 10 of 19 (board 2), against 13 and 8 on the copy. Knives scored exactly as Nigel did: **12 of 19** (11 on the copy). Nearest-the-bull is still the best entry rule (the middle of the shape: 9; the axis end: 7). Nigel's key was read from the copy, so some of the 7 differences may be the key's.
+- **2026-10-13: the key re-scored from the original.** Nigel re-scored every stuck knife ("as close as I can get"), then reviewed the app's misses: three were his (now changed in the key), three are the app's. Now **16 of 19** exact (Target 1: 9 of 10; Target 2: 7 of 9; the replay test floors are 9 and 7). All three misses score too high: `faceOnEntry` takes the pixels nearest the bull, and a shadow pulls that in (board 1 at 2:17 and board 2 at 1:10 followed the shadow; board 2 at 1:46 put the tip in red where the board below it is white).
+- **How Nigel scores a knife (the rule the app should follow):** "find the solid shape of the knife; score where the blade goes into the wood; a shadow comes from the knife, on the side away from the light". And: *"we need the app to focus on finding the entry point. If it's obscured, it's likely the score that you can see, as the knife has gone in directly in line with the camera."* Planned in [[story-checkpoint-entry-point]]; the misses and his reasons are in the Live Camera README → Answer Key.
 ## Rounds and Scoring (Throw Detection, Task 5)
 
 **Decision:**
@@ -395,6 +397,7 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
   - It delivers a frame every 1/fps seconds to whoever listens: BGRA, already upright, stamped with a monotonic clock.
   - It **opens paused on the first frame**, so the board can be calibrated before anything happens.
   - Play calls `restart()`; playback stops on the last frame.
+  - **Leaving Play calls `rewind()`** (2026-10-13): playback stops and waits on the first frame again, so a recording plays only while Play is open. Re-calibrating afterwards sees the empty board, and the calibrate screen's throw watcher sees a still picture (see [[Known Issues]] → Re-calibrating After Play in the Live Test).
   - **Frames are decoded asynchronously, one at a time** (2026-10-13). If decoding falls behind, it skips to the newest frame wanted rather than queueing, as a slow live camera drops frames. Until a new frame is ready, ticks keep delivering the last one.
 - **Recording format:** `FramePack` (`.tfrm`, `lib/camera/frame_pack.dart`) is JPEG frames at a fixed rate in one asset. That means no video plugin, so no native code or permissions.
   - **Decoding:** the app uses `decodeFrameNatively`, Flutter's own image codec (native, off the UI thread). It gives a `ui.Image` for `RecordedPreview` (which keeps a `clone()`) and BGRA bytes for the watcher (`toByteData` RGBA, with red and blue swapped by `rgbaToBgra`). Tests inject `decodeFramePureDart` (`package:image`), which needs no engine. Until 2026-10-13 the app decoded in pure Dart on the UI thread: 15–27 ms per 322 px frame on a PC, which made playback jump and freeze on Nigel's Samsung SM A065F (see [[Known Issues]]).
@@ -403,6 +406,70 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
   - **In TestFlight builds too** (Nigel, 2026-10-11), so his brother can run them.
   - Recordings keep `minChange` 20 (the live camera 12): even from the original, JPEG and video blocks gave false bounce-outs at 12.
 - **Rejected:** a video plugin for decoding (native code, and no frame-pixel access in `video_player`); pre-computed results (not a test of the pipeline).
+- **Quick draw clip** (2026-10-14, Task 1 of [[story-checkpoint-quick-draw]]): both boards in one picture, for the two-thrower race.
+  - `quickDrawRecording` (`lib/camera/recorded_camera.dart`): `assets/live/quickdraw.tfrm`, cut from the original at 158.5–166.0 s. The **full frame** scaled to 720 × 1280 (boards ~163 px across), **60 fps**, JPEG q20: 449 frames, **34.2 MB**. 60 fps because the two knives land 37 ms apart: about 2 frames at 60 fps, but under one at 15 fps.
+  - **Why q20** (Nigel, 2026-10-14): q12 was 53.1 MB; q31 was 23.0 MB but visibly blocky on the boards. The grass makes full frames compress poorly, so this is well over the story's 15–20 MB estimate.
+  - Not in `liveTestRecordings`: it has its own `quickDrawCameraProvider` (`lib/providers.dart`), separate from the single-target `cameraProvider`, and released when Quick draw closes.
+  - Answer key: `reference/live-camera/quickdraw.json` (see the Live Camera README).
+- **Sound** (2026-10-14): a `Recording` can carry an `audio` asset, the same length and starting with the first frame. The Quick draw clip has one (`assets/live/quickdraw.m4a`, mono AAC 96 kb/s, 93 KB): the footage's quiet countdown and the two thuds.
+  - `RecordedCamera.sound` (a `RecordingSound`): `restart()` plays it from the start, `rewind()` stops it, and it's disposed with the camera.
+  - **Sound is a nice-to-have:** if it fails, the error is reported (`FlutterError.reportError`) and the frames play on.
+  - `AssetRecordingSound` uses the **`audioplayers`** plugin (^6.8.1), loaded once and kept ready (`ReleaseMode.stop`), so a replay doesn't reload. It's a native plugin, for playback only; the app still records no audio. Tests inject a fake `RecordingSound`.
+  - Played separately rather than packed into the `.tfrm`, so `FramePack` stays frames only.
+  - **Audio context** (Nigel, 2026-10-14): `AssetRecordingSound.audioContext` **ducks other apps** (music is turned down while it plays, not stopped) and **ignores the silent switch** (`respectSilence: false`), so a countdown is always heard. The plugin's default stopped other apps' audio. Built for the platform it runs on.
+- **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`), reached from **Live test → Quick draw**: the clip full screen on black, with the system bars hidden (`immersiveSticky`, back to `edgeToEdge` on leaving). A back button, and a **Play** button (**Play again** once played) that's hidden while it plays. Debug builds show the frame rate. Before playing, the user chooses the boards by tapping (see Quick Draw: Choosing the Boards by Tapping below). Played with the boards locked, each board shows its knife's time and result (see Quick Draw: Timing and Scoring Each Board). No winner yet (Task 4).
+
+## Quick Draw: Choosing the Boards by Tapping (2026-10-14)
+
+**Decision:** on Quick draw the user **taps the centre of Player 1's board, then Player 2's** (Task 2 of [[story-checkpoint-quick-draw]]). There may be more boards in the picture than players, so the app doesn't guess. Nigel: *"selecting the two targets by touching the camera is the way to go ... assume the centre of the boards is selected in order, 1 then 2"*.
+
+**Why not automatic:** finding one board in the whole picture, then searching beside it, found the right-hand (green and red) board on only **8 of 16** still frames, one of them the wrong ring; the whole-picture pass also failed on 3 of 8 frames for the left board. The ring finder learns the two ring colours from what it's shown, and boards side by side can be painted differently.
+
+**How (`locateTargetAt`, `lib/vision/tapped_target_locator.dart`):**
+1. A square **window** around the tap, **0.45 ×** the picture's shorter side (kept inside the picture).
+2. The window is **enlarged 3×** (`workingSize` and `minWorkingSize` both 3 × the window, at least 420 px) before the rings are traced: small boards trace far more reliably enlarged.
+3. `ColourRingLocator.seed`: the tap, in the window's coordinates, is tried **first** as the board's centre. Then the centres of the colour regions **under and just around the tap** (`_regionCentresNear`: the tap and 4 points 1% of the picture's side away; a region over a quarter of the picture is background and skipped). A tap rarely lands on the exact centre, but the bull, or the ring it lands in, is centred on the board. Then the usual candidates (largest regions first).
+4. The result is moved back into the whole picture's coordinates (`CoarseToFineLocator.moved`).
+
+`locateTappedInFrame` does this for each tap on one camera frame (upright, at most 1920 px), and runs in a background isolate (`compute`, via `locateAtTap` in `lib/game/quick_draw_targets.dart`) so the preview doesn't stall: about 1–1.5 s per board on the PC.
+
+**Measured** on the clip's 16 still frames, taps at the measured centres (boards found, of 16):
+
+| Approach | Player 1 (red on wood) | Player 2 (green and red) |
+|---|---|---|
+| Window at the tap, 1.3× (the finder's usual) | 15 | 10 |
+| Window at the tap, **3×** | **16** | **15–16** |
+| 3×, tap 10 px off centre, with region snapping | 16 | 15 |
+| 3×, tap 15–30 px off centre | 15–16 | 10–12 |
+
+The misses aren't resolution or compression: the right board fails as often on the uncompressed original at full size. So **tap the bull** (see [[Known Issues]] → Quick Draw: a Board Isn't Found, or the Wrong Outline).
+
+**State:** `QuickDrawTargets` (`lib/game/quick_draw_targets.dart`): the boards as `TargetCalibration`s in tap order, two players, `locked`. `quickDrawTargetsProvider` adds the next player's board, `clear`s ("Start again") and `lock`s (only once both are found); it's auto-disposed, so leaving Quick draw starts over. `tapLocatorProvider` is the tap search (tests replace it).
+
+**Screen:** an instruction line ("Tap the centre of Player 1's board.", "No board found there.", "Both boards found: lock them, or start again."), `BoardsPainter` (each board's rings, with its player number in a disc above it; blue while choosing, green once locked), and **Start again** / **Lock boards** / **Play**. Taps are ignored while the clip plays or a search is running. **Start again** also **rewinds** the clip, so boards are chosen on the still first frame, not where playback stopped. No drag-to-adjust yet: a wrong outline means Start again.
+
+## Quick Draw: Timing and Scoring Each Board (2026-10-15)
+
+**Decision:** each locked board is watched on its **own crop** of the picture by the **single-board throw detection**, looking at **every frame**, and each player's first throw (stuck or bounce-out) is kept with its **impact** time (Task 3 of [[story-checkpoint-quick-draw]]).
+
+**How (`QuickDrawWatcher`, `lib/game/quick_draw_watcher.dart`):**
+- Per board, a square crop **4 × the board's radius** (`cropRadii`; kept inside the picture). The watched region is 3 radii wide (`WatchRegion.fromCalibration`), so this leaves room around it.
+- `CroppedCamera` (`lib/camera/cropped_camera.dart`) turns the crop into a camera of its own: frames are views into the source frame's bytes (no copying), at the source's full detail. BGRA and YUV; `x` and `y` are rounded down to even numbers so YUV's half-size colour planes line up. **Upright sources only** (the recordings): a live camera's sideways frames would need the rectangle rotated too.
+- `TargetCalibration.within` moves the board's rings into the crop's coordinates.
+- A `ThrowWatcher` per crop, with `interval` zero: every frame (60 fps), because the two knives land 37 ms apart. Every board sees the same frames, so the players are timed alike.
+- The first stuck or bounce-out event per player becomes a `QuickDrawThrow`: `impact`, `stuck`, and for a stuck knife its ring `score` (`TargetModel.scoreAt` on the entry point; null if no entry was found). Later events are ignored.
+
+**Impact = `MotionEpisode.impact`:** the frame with the **largest moving shape on the target** (where a knife hits, the board jolts and the knife stops at once). Not the episode's start: seen from behind the thrower, a knife in flight is over the board's face all the way in, so motion starts frames before it arrives. On the clip (60 fps), motion started **1 and 7 frames** before the answer key's impact frames, the first shape on the target **1 and 5** before; the largest was **on** them. (Falls back to the episode's start if nothing moved on the target.)
+
+**Board visits: 2% → 3% of the region (`classifyThrow` `visitArea`).** The right board's knife, flying in close to the camera, moved a shape of **2.2%** of the region and was taken for a person. People are **4%+** (Target 1 and Target 2); knives on the Target 1 / Target 2 recordings at most **1.1%**. So 3% still separates them.
+
+**Shown:** **Play** with the boards locked starts a fresh `QuickDrawWatcher` (Start again or Play again throws the old one away). Each board shows a line under it (`throwText`, drawn by `BoardsPainter`): the impact on the clip's own timeline (`RecordedCamera.playbackTime`) and the score, e.g. "3.62 s · 5", or "3.65 s · bounced". Without a lock, Play just plays the clip.
+
+**Checked by** `test/game/quick_draw_replay_test.dart`: the clip through `RecordedCamera` → `QuickDrawWatcher`, boards tapped at their centres: Player 1 (left) bounces out, Player 2 (right) sticks for 5, each impact within a frame of the answer key, Player 2 first.
+
+**Not yet:** "go", false starts and the winner (Task 4). On a slow phone, dropped frames make the times coarser ([[Known Issues]] → Quick Draw: Dropped Frames Make Times Coarser).
+
+**Confirmed:** 2026-10-15 (built; Nigel's device check pending).
 
 ## Ring Finding on Real Boards: Colour Edges, Any Paint (2026-10-11)
 

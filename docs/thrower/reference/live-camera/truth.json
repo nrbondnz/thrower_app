@@ -1,5 +1,5 @@
 {
- "source": "Throws and scores: Nigel, 2026-10-11 (from the footage; he notes it is not always clear). Times and places: Claude, from the footage.",
+ "source": "Throws: Nigel, 2026-10-11, from the compressed copy. Scores: re-checked by Nigel from the original, 2026-10-13 (\"as close as I can get\"). Times and places: Claude, from the footage.",
  "scoring": "Outer painted ring 1 ... bull 5; pale outer wood edge 0.",
  "board1": [
   {
@@ -7,7 +7,7 @@
    "kind": "stuck",
    "time": 12.0,
    "score": 4,
-   "zone": "Lower-right edge of the bull (Nigel: one knife in round 1 is a 4; this is the likeliest)",
+   "zone": "Lower-right edge of the bull (Nigel: one knife in round 1 is a 4; this is the likeliest). Re-scored by Nigel from the original, 2026-10-13: 5 (at 0:11). Revised to 4, as the app has it (Nigel, 2026-10-13, on review)",
    "round": 1
   },
   {
@@ -15,15 +15,15 @@
    "kind": "stuck",
    "time": 15.8,
    "score": 5,
-   "zone": "In the bull, left side",
+   "zone": "In the bull, left side. Re-scored by Nigel from the original, 2026-10-13: 4 (at 0:16). Revised to 5, as the app has it (Nigel, 2026-10-13, on review)",
    "round": 1
   },
   {
    "id": "b1-t03",
    "kind": "stuck",
    "time": 18.2,
-   "score": 5,
-   "zone": "At the bull (unsure: a third knife, or the others settling?)",
+   "score": 4,
+   "zone": "At the bull (unsure: a third knife, or the others settling?). Re-scored by Nigel from the original, 2026-10-13: 4 (at 0:19)",
    "round": 1
   },
   {
@@ -45,8 +45,8 @@
    "id": "b1-t05",
    "kind": "stuck",
    "time": 40.5,
-   "score": 5,
-   "zone": "Low left, outer red ring",
+   "score": 2,
+   "zone": "Low left, outer red ring. Re-scored by Nigel from the original, 2026-10-13: 2 (at 0:41)",
    "round": 2
   },
   {
@@ -54,7 +54,7 @@
    "kind": "stuck",
    "time": 43.2,
    "score": 5,
-   "zone": "Top of the bull",
+   "zone": "Top of the bull. Re-scored by Nigel from the original, 2026-10-13: 5 (at 0:45)",
    "round": 2
   },
   {
@@ -69,7 +69,7 @@
    "kind": "stuck",
    "time": 105.5,
    "score": 4,
-   "zone": "Upper left of the bull, pale ring",
+   "zone": "Upper left of the bull, pale ring. Re-scored by Nigel from the original, 2026-10-13: 4 (at 1:46, \"4 (shadow)\")",
    "round": 3
   },
   {
@@ -77,7 +77,7 @@
    "kind": "stuck",
    "time": 107.5,
    "score": 5,
-   "zone": "Upper right of the bull",
+   "zone": "Upper right of the bull. Re-scored by Nigel from the original, 2026-10-13: 5 (at 1:48)",
    "round": 3
   },
   {
@@ -99,8 +99,8 @@
    "id": "b1-t10",
    "kind": "stuck",
    "time": 133.0,
-   "score": 3,
-   "zone": "Left of the bull, handle up-left",
+   "score": 4,
+   "zone": "Left of the bull, handle up-left. Re-scored by Nigel from the original, 2026-10-13: 1 (at 2:14, \"1?\"). Revised to 4, as the app has it: hidden in the footage, but Nigel watched the thrower pull it out of the 4 ring (2026-10-13, on review)",
    "round": 4
   },
   {
@@ -108,7 +108,7 @@
    "kind": "stuck",
    "time": 136.5,
    "score": 3,
-   "zone": "Right of the bull, red ring",
+   "zone": "Right of the bull, red ring. Re-scored by Nigel from the original, 2026-10-13: 3 (at 2:17). Confirmed 3 on review: the solid knife shape is in the 3; the app followed its shadow",
    "round": 4
   },
   {
@@ -116,7 +116,7 @@
    "kind": "stuck",
    "time": 140.5,
    "score": 4,
-   "zone": "Left edge of the bull",
+   "zone": "Left of the bull, in the red ring. Re-scored by Nigel from the original, 2026-10-13: 4 (at 2:20, \"4 (handle end leans into 5)\")",
    "round": 4
   },
   {
@@ -163,7 +163,7 @@
    "kind": "stuck",
    "time": 66.8,
    "score": 5,
-   "zone": "Left of the bull",
+   "zone": "Left of the bull. Re-scored by Nigel from the original, 2026-10-13: 5 (at 1:07)",
    "round": 1
   },
   {
@@ -171,7 +171,7 @@
    "kind": "stuck",
    "time": 69.6,
    "score": 4,
-   "zone": "Right of the bull, handle down-right",
+   "zone": "Right of the bull, handle down-right. Re-scored by Nigel from the original, 2026-10-13: 4 (at 1:10). Confirmed 4 on review: look for the solid shape of the knife; the shadow comes from the knife, with the light to the right on this board",
    "round": 1
   },
   {
@@ -179,7 +179,7 @@
    "kind": "stuck",
    "time": 72.5,
    "score": 5,
-   "zone": "Top of the bull",
+   "zone": "Top of the bull. Re-scored by Nigel from the original, 2026-10-13: 5 (at 1:13)",
    "round": 1
   },
   {
@@ -194,15 +194,15 @@
    "kind": "stuck",
    "time": 94.3,
    "score": 4,
-   "zone": "Below the bull, pale ring",
+   "zone": "Below the bull, pale ring. Re-scored by Nigel from the original, 2026-10-13: 4 (at 1:36)",
    "round": 2
   },
   {
    "id": "b2-t05",
    "kind": "stuck",
    "time": 105.2,
-   "score": 3,
-   "zone": "Upper left of the bull",
+   "score": 4,
+   "zone": "Upper left of the bull. Re-scored by Nigel from the original, 2026-10-13: 4 (at 1:46, \"4?\"). Confirmed 4 on review: hard to pick out, but below the blade tip is white (ring 4), not red",
    "round": 2
   },
   {
@@ -225,7 +225,7 @@
    "kind": "stuck",
    "time": 133.0,
    "score": 2,
-   "zone": "Bottom, outer dark ring, handle hanging down",
+   "zone": "Bottom, outer dark ring, handle hanging down. Re-scored by Nigel from the original, 2026-10-13: 2 (at 2:13, \"2 or 3 (think 2)\")",
    "round": 3
   },
   {
@@ -241,7 +241,7 @@
    "kind": "stuck",
    "time": 140.0,
    "score": 4,
-   "zone": "Below the bull, handle down",
+   "zone": "Below the bull, handle down. Re-scored by Nigel from the original, 2026-10-13: 4 (at 2:20, \"point gets to 4\")",
    "round": 3
   },
   {
@@ -256,7 +256,7 @@
    "kind": "stuck",
    "time": 162.0,
    "score": 5,
-   "zone": "Top of the bull: the only throw this round",
+   "zone": "Top of the bull: the only throw this round. Re-scored by Nigel from the original, 2026-10-13: 5 (at 2:43, \"5 or 4 (think 5, as though the point is 4, the part sticking in is 5)\")",
    "round": 4
   },
   {
@@ -270,8 +270,8 @@
    "id": "b2-t11",
    "kind": "stuck",
    "time": 177.0,
-   "score": 3,
-   "zone": "Left, red ring: the only throw this round",
+   "score": 4,
+   "zone": "Left, red ring: the only throw this round. Re-scored by Nigel from the original, 2026-10-13: 4 (at 2:59)",
    "round": 5
   },
   {

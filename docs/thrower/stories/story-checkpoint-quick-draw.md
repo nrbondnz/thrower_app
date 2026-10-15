@@ -1,0 +1,140 @@
+# Story Checkpoint: Quick Draw
+
+## Story Goal
+Two throwers, one board each, both in one camera view. After a countdown they throw at the same moment. The app finds which knife reaches its board first, and whether each one sticks, plus its score. Nigel, 2026-10-14: *"two throwers given a count down and throwing at the same time. The app measures who gets to the board first, and their scores, bounce out means a loss."* The first version is a Live test on Nigel's original video (158.5–166 s), played full screen.
+
+## Complexity Score
+6 (Large): crosses camera → vision → game → UI (4), conditional branches (stick / bounce / false start / tie) (1), more than 3 acceptance criteria (1). Audio playback may add a plugin (+1).
+
+## Status
+IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone (2026-10-15). Plan approved 2026-10-14; "go" at 161.3 s (Nigel, by ear).
+
+## Decisions (Nigel, 2026-10-14)
+- **Winner:** the first knife to **stick** wins. A bounce-out loses. If both stick, the faster one wins; ring scores are shown but don't decide it. If both bounce, there's no winner.
+- **Recording:** the full frame, **720 × 1280, 60 fps** (boards ~163 px across), JPEG q20: **34.2 MB** (the grass compresses badly; see the Plan Changes Log).
+- **Countdown, this story:** **follow the footage's audio** (Nigel, 2026-10-14, replacing "both"). The clip's own quiet countdown is heard; "go" is the answer key's go time (2.8 s). The app plays no countdown of its own on the Live test.
+- **Countdown, final version (live camera):** the app counts down itself, **like Formula 1**: 5 beeps, then a **random pause**, then a final **longer beep for go** (Nigel, 2026-10-14). The random pause stops throwers anticipating "go". Not in this story: backlog #9.
+- **Order:** before [[story-checkpoint-entry-point]] (paused while waiting for new footage). This clip's two results (a clear 5 and a bounce-out) don't depend on the shadow problem.
+
+## The Footage (`IMG_1628.mov`, 158–166 s; measured by Claude, 2026-10-14)
+- **Countdown:** quiet voice at 160.0–160.2 s and 160.6–161.4 s, then silence. **"Go" is at 161.3 s** (Nigel, by ear): 2.8 s into the clip.
+- **Board 2** (right, green/red): the knife arrives at about **162.12 s** (60 fps frames) and sticks: **5** (`b2-t10` in `truth.json`).
+- **Board 1** (left, red): the knife arrives at about **162.15 s**, hits the bull and slides off: **bounce-out** (`b1-t13`).
+- **Sound:** two separate thuds at **162.133 s** and **162.170 s**: **37 ms apart**, board 2 first, matching the video.
+- **Result:** board 2 wins (first, and stuck).
+- The throwers are out of shot until they walk up at ~164 s.
+
+**Timing resolution:** 37 ms is ~2 frames at 60 fps, but under one frame at 15 fps (67 ms). So at the current 15 fps this race could come out as a tie or the wrong way. Hence 60 fps. The sound separates impacts to ~5 ms but can't say which board; it could refine timing later (not in this story).
+
+## Acceptance Criteria
+1. **Live test → Quick draw** plays the clip full screen, with its audio.
+2. The user taps the centre of Player 1's board, then Player 2's (there may be more boards in shot); each is found and outlined, then locked, and each is scored separately.
+3. "Go" is the footage's own (2.8 s into the clip, from the answer key); times are measured from it.
+4. On the clip: board 2 is first and sticks (5), board 1 bounces out, so **board 2 wins**. Impact times are within 1 frame (17 ms) of the answer key.
+5. A knife that reaches its board before "go" is a false start (a loss).
+6. A results screen shows each board's time after "go", stuck/bounce, score and the winner.
+7. The existing Live test (Target 1 / Target 2) and its replay tests are unchanged.
+
+---
+
+## Task 1: The clip, answer key, and full-screen playback
+- **Status:** BUILT, waiting for Nigel's device check (2026-10-14)
+- **What changed:** `assets/live/quickdraw.tfrm` (449 frames, 720 × 1280, 60 fps, q20) and `quickdraw.m4a`; `audioplayers` ^6.8.1; `RecordingSound` / `AssetRecordingSound` (`lib/camera/recording_sound.dart`); `Recording.audio`, `RecordedCamera.sound`, `quickDrawRecording`; `quickDrawCameraProvider`; `QuickDrawScreen`; Live test → Quick draw. Answer key `reference/live-camera/quickdraw.json`: go 2.8 s; right board frame 217 (3.617 s) stuck 5; left frame 219 (3.650 s) bounce-out; right wins.
+- **Test Report (2026-10-14):** `flutter analyze` clean; `flutter test` 332 passed, 0 failed. New: `recorded_camera_test.dart` → sound track (silent until play, plays on each restart, stops on rewind, released with the camera, a failing sound leaves frames playing); `frame_pack_test.dart` → Quick draw clip (720 × 1280, 60 fps, 449 frames, first frame decodes) and its sound bundled; `quick_draw_screen_test.dart` (opens full screen with the bars hidden, Play starts clip and sound and comes back as "Play again", leaving restores the bars).
+- **Safety Report (2026-10-14): OK for development; NOT OK for a store build.**
+  - ✅ No new permissions (audioplayers' Android manifest is empty; no Info.plist key; `http` is web-only). minSdk / iOS 15 fine. `kDebugMode` on the frame-rate label. Commit `ios/Podfile.lock` after the next iOS build.
+  - ✅ **Audio context:** Nigel chose **duck others** (2026-10-14): `AssetRecordingSound.audioContext`. Still plays with the silent switch on.
+  - ⚠️ App size: `assets/live/` is now ~87 MB (backlog #6).
+  - ⚠️ Privacy: this clip is the **full frame with people walking up, and has sound (voices)**: consent, blur/strip, or keep it out of release (backlog #6).
+  - ⚠️ Physical safety, for the Task 4 instructions and UI: experienced throwers and venue rules only; separate side-by-side lanes; "go" never means the lane is clear; nobody goes forward until both have finished; the phone out of both lines of throw and not between the lanes (behind the throwers is fine); a bounce-out loses (don't throw harder); no re-throw after a false start until retrieved; the countdown must be audible; results readable without walking up to the phone.
+- **Work:**
+  - Cut 158.5–166 s from the original: full frame, 720 × 1280, 60 fps; pack it as `assets/live/quickdraw.tfrm`, and its audio as a separate asset.
+  - `quickdraw.json`: go time, and for each board: impact time, stuck or bounce, score.
+  - **Live test → Quick draw** plays it full screen with sound. Playing audio needs an audio plugin (a `pubspec.yaml` native plugin): **"Be Careful" Review Agent first**.
+- **Verify:** Nigel opens Live test → Quick draw on his phone, sees the whole picture full screen and hears the countdown and thuds.
+- **Save:** pack test (size, 60 fps, frame count).
+- **Doc Update Log (2026-10-14):**
+  - `Architecture/Design Decisions.md`: camera layer row (`RecordingSound`, `AssetRecordingSound`); Live Test section: the Quick draw clip (full frame, 60 fps, q20, 34.2 MB and why), sound (`Recording.audio`, `RecordedCamera.sound`, `audioplayers`, failures don't stop frames), `quickDrawCameraProvider`, `QuickDrawScreen`.
+  - `Architecture/Glossary.md`: `RecordedCamera` (with `RecordingSound`) and `QuickDrawScreen` in the component tree; concept **Quick draw**.
+  - `reference/live-camera/README.md`: the Quick draw clip, and an Answer Key section for `quickdraw.json`.
+  - `Operations/Common Tasks.md` → Make a Live Test Recording: the full-frame, 60 fps, with-sound variant (the three commands).
+  - In-app Instructions (`lib/ui/instructions.dart`): no change; they don't mention the Live test. Quick draw instructions are Task 4.
+
+## Task 2: Choose both boards by tapping them
+- **Status:** COMPLETE (2026-10-15): Nigel, on the phone: "It finds the boards".
+- **Depends on:** Task 1
+- **Work (as built):** on Quick draw, tap the centre of Player 1's board, then Player 2's; each tap is searched (`locateTargetAt`) and the board outlined with its player number; **Lock boards**, or **Start again** (which also rewinds the clip). Taps are ignored while the clip plays. No drag-to-adjust yet: a wrong outline → Start again.
+  - `locateTargetAt` (`lib/vision/tapped_target_locator.dart`): a square window (0.45 × the picture's shorter side) around the tap, **enlarged 3×**, with the tap tried first as the centre (`ColourRingLocator.seed`) and then the centres of the colour regions under and around the tap (the bull, or the ring tapped, is centred on the board). `locateTappedInFrame` runs it in a background isolate.
+  - `QuickDrawTargets` / `quickDrawTargetsProvider` (tap order, two players, lock), `tapLocatorProvider`, `boardAt` (`lib/game/quick_draw_targets.dart`); `QuickDrawScreen` (instruction line, `BoardsPainter`, Start again / Lock boards / Play).
+- **Measured on the clip's 16 still frames (taps at the measured centres, 2026-10-14):**
+  | Approach | Player 1 (red on wood) | Player 2 (green and red) |
+  |---|---|---|
+  | Whole picture, then search beside the first board (dropped) | 16 of 16 in a window; the whole-picture pass failed on 3 of 8 frames | 8 of 16, 1 wrong ring |
+  | Window at the tap, 1.3× (the finder's usual) | 15 | 10 |
+  | Window at the tap, **3×** | **16** | **15–16** |
+  | 3×, tap 10 px off centre, with snapping to the region under the tap | 16 | 15 |
+  | 3×, tap 15–30 px off centre | 15–16 | 10–12 |
+  About 1–1.5 s per board on the PC. The cause of the misses isn't resolution or compression: the right board fails as often on the uncompressed original at full size.
+- **Verify:** Nigel opens Quick draw, taps the left board's centre (outlined, "1"), then the right's ("2"), and locks them. A tap that misses says so; Start again clears.
+- **Test Report (2026-10-14):** `flutter analyze` clean; `flutter test` 355 passed, 0 failed (Live test replay unchanged). New `tapped_target_locator_test.dart` (each board found where measured on frames 0, 30, 60, 90, 120, 150; a tap 10 px off; a tap on the grass finds nothing; a camera frame's taps in tap order), `quick_draw_targets_test.dart` (`boardAt`; tap order, two players, lock needs both, start again), `quick_draw_screen_test.dart` (asks for Player 1 then 2 and passes taps in image pixels; a miss says so; taps stop and Lock once both are found; Start again clears and rewinds; no taps while playing). Sound: `recording_sound_test.dart` (ducks on Android and iOS; plays with the silent switch on).
+- **Doc Update Log (2026-10-14):**
+  - `Architecture/Design Decisions.md`: new section **Quick Draw: Choosing the Boards by Tapping** (why tapping, not automatic; window 0.45×, enlarged 3×, seed then region snapping; the measurements table; `QuickDrawTargets` and its providers; the screen and Start again's rewind); Live Test → Sound: the audio context (duck others, silent switch ignored); `QuickDrawScreen` bullet; code layout rows for vision (`locateTargetAt`, `locateTappedInFrame`) and game (`QuickDrawTargets`).
+  - `Architecture/Glossary.md`: `QuickDrawScreen` (tap flow, `BoardsPainter`), `QuickDrawTargets`, `locateTappedInFrame` / `locateTargetAt`, `ColourRingLocator` candidate centres (`seed`, `_regionCentresNear`), `CoarseToFineLocator.moved`, `AssetRecordingSound.audioContext`; concepts **Seed (tap) centre** and **Ducking**; Quick draw concept updated.
+  - `Architecture/System Diagram.md`: `BoardsPainter` (UI), `quickDrawTargetsProvider` / `tapLocatorProvider` (wiring), `QuickDrawTargets` (game), `locateTappedInFrame` → `locateTargetAt` (vision), "tap boards 1, 2 → lock" and the still-to-come line (Tasks 3–4).
+  - `Architecture/Data Flow.md`: new box diagram **Quick Draw: Choosing the Boards**, replacing the "will add its own flow" sentence.
+  - `Troubleshooting/Known Issues.md`: **Quick Draw: a Board Isn't Found, or the Wrong Outline** (tap the bull; Start again).
+  - In-app Instructions (`lib/ui/instructions.dart`): no change; they don't mention the Live test or Quick draw. Quick draw instructions are Task 4.
+  - Drift (fixed 2026-10-15): the Notes size and `locateTargetAt`'s doc comment now match the table.
+
+## Task 3: Impact time and result per board
+- **Status:** COMPLETE (2026-10-15). Nigel, on the Samsung SM-A065F: "it shows the scores and the times". Playback ran at **11–12 frames a second** there (not 60), and a couple of runs gave both players the same time: at that rate the two knives (37 ms apart) can land in one delivered frame. Nigel: both throwers are professionals, so a draw at that frame rate is no surprise; the Target 2 thrower always draws or wins on time, as analysed. He'll check on his iPhone, expecting a clearer difference at a higher frame rate.
+- **Depends on:** Task 2
+- **Work (as built):**
+  - `CroppedCamera` (`lib/camera/cropped_camera.dart`): a part of another camera's picture as a camera of its own, frames as views into the source's bytes (BGRA and YUV; upright sources only). `TargetCalibration.within` moves a board's rings into its crop.
+  - `QuickDrawWatcher` (`lib/game/quick_draw_watcher.dart`): per board, a crop 4 × the board's radius around it and the single-board `ThrowWatcher` on it, looking at **every** frame (`ThrowWatcher.interval`, new, default 60 ms; zero here). Keeps each player's first throw (`QuickDrawThrow`: impact, stuck or not, score).
+  - **Impact = `MotionEpisode.impact`** (new): the frame with the largest moving shape on the target. Not the episode's start: seen from behind the thrower, a knife in flight is over the board all the way in. On the clip, motion started 1 and 7 frames before the answer key's impact frames, the first shape on the target 1 and 5 before; the largest was on them.
+  - **`classifyThrow` visitArea 2% → 3%:** the right board's knife, flying in close to the camera, moved a shape of 2.2% of the region and was taken for a person (people are 4%+; knives on the Target 1/2 recordings at most 1.1%).
+  - `RecordedCamera.playbackTime`: a frame's time on the recording's own timeline.
+  - Quick draw screen: Play with the boards locked starts a fresh watcher; each board shows "3.62 s · 5" or "3.65 s · bounced" under it.
+- **Verify:** Nigel locks both boards and presses Play: under the right board "3.6x s · 5", under the left "3.6x s · bounced" (left about 0.03 s later).
+- **Test Report (2026-10-15):** `flutter analyze` clean; `flutter test` 373 passed, 0 failed (Target 1/2 replays unchanged with visitArea 3%). New: `quick_draw_replay_test.dart`, `cropped_camera_test.dart`, `motion_detector_test.dart` → impact, `target_calibration_test.dart` → within, `quick_draw_screen_test.dart` → the line under each board.
+- **Save:** `quick_draw_replay_test.dart` (the clip through `RecordedCamera` → `QuickDrawWatcher`, boards tapped at their centres): Player 1 bounce-out, Player 2 stuck 5, each impact within a frame of the answer key, Player 2 first. Watch on the Samsung whether 60 fps playback keeps up (skipped frames make timing coarser).
+- **Doc Update Log (2026-10-15):**
+  - `Architecture/Design Decisions.md`: new section **Quick Draw: Timing and Scoring Each Board** (crop 4 × radius + single-board `ThrowWatcher` at every frame; impact = largest on-target moving shape, with the 1/7 and 1/5 frame evidence; `visitArea` 2% → 3% and why; `throwText` / `playbackTime`; the replay test). Visit threshold updated in Stuck or Bounced Off (now `peakArea` ≥ 3%) and Throw Detection on Real Footage (People are judged by area). Motion and Settle: `ThrowWatcher.interval` (was "`WatchStatus` ... 60 ms"), and "episodes start at the impact" qualified for Quick draw. `QuickDrawScreen` bullet: times and results shown, no winner yet. Code layout: `CroppedCamera`, `RecordedCamera.playbackTime` (camera); `QuickDrawWatcher` / `QuickDrawThrow` (game).
+  - `Architecture/Glossary.md`: `CroppedCamera` (`crop`), `RecordedCamera.playbackTime`, `QuickDrawWatcher` / `QuickDrawThrow`, `TargetCalibration.within`, `ThrowWatcher.interval`, `MotionEpisode.impact` / `impactFrame`, `classifyThrow`'s visit rule, `QuickDrawScreen` (Play starts a watcher, `throwText`, `BoardsPainter.results`); concepts **Impact (frame)**, **Board crop**, **Board visit** (3%); Quick draw concept updated.
+  - `Architecture/System Diagram.md`: `CroppedCamera` (camera), `QuickDrawWatcher` → `ThrowWatcher` × 2 (game); Play flow "Quick draw: all" frames; Quick draw box "Play → QuickDrawWatcher: time · score per board"; still-to-come line (Task 3 done; go, false start, winner in Task 4). All lines 71 wide.
+  - `Architecture/Data Flow.md`: new box diagram **Quick Draw: a Throw per Board**; the "will be added" note now covers Task 4 only; Coordinate Spaces row **Board crop**.
+  - `Troubleshooting/Known Issues.md`: **Quick Draw: Dropped Frames Make Times Coarser**.
+  - In-app Instructions (`lib/ui/instructions.dart`): no change; they don't mention the Live test or Quick draw. Quick draw instructions are Task 4.
+  - Drift: Design Decisions → Throw Detection: Before/After and Motion and Settle still describe `peakShape` as the person test in places written before 2026-10-12 (left as history); `RecordedCamera`'s class doc comment has one over-long line (source, not docs).
+
+## Task 4: The Quick draw game
+- **Status:** NOT STARTED
+- **Depends on:** Task 3
+- **Work:** "go" from the answer key (the footage's audio gives the countdown; shown on screen as a "Go" marker at 2.8 s); false start if an impact comes before go; the winner rule (Decisions above); results screen.
+- **Verify:** Nigel plays Quick draw: "Go" shows as he hears it in the footage, and the result says board 2 wins (5, stuck, ~0.8 s after go) and board 1 bounced.
+- **Save:** unit tests for the winner rule (both stick, one bounces, both bounce, false start, a tie on the same frame).
+
+## Task 5: Docs and traceability
+- **Status:** NOT STARTED
+- **Depends on:** Task 4
+- **Work:** Design Decisions (Quick draw, two targets, 60 fps timing), Glossary (impact time, false start), the in-app Instructions, Known Issues; Traceability Agent over criteria 1–7.
+- **Verify:** Nigel reads the summary.
+- **Save:** story archived.
+
+---
+
+## Plan Changes Log
+
+- **2026-10-14:** Task 2 changed from automatic to **tapping**: Nigel, "selecting the two targets by touching the camera is the way to go, there might actually be more than 2 targets in shot, so for this test assume the centre of the boards is selected in order, 1 then 2". The automatic search (find one board, then search beside it) found the right board on only 8 of 16 frames. Drag-to-adjust per board isn't in this task.
+- **2026-10-14:** Sound: **duck others** (Nigel), so other apps' audio is turned down, not stopped; the silent switch is still ignored so the countdown is heard.
+- **2026-10-14:** Countdown changed from "both" to **the footage's audio only** for this story; the app's own Formula 1-style countdown (5 beeps, random pause, long go beep) is for the final, live-camera version (backlog #9). Task 4 no longer plays a countdown.
+- **2026-10-14:** Task 1: the clip is 34.2 MB at q20, not the planned 15–20 MB (full frames of grass compress badly: q12 53.1 MB, q31 23.0 MB but blocky). Nigel chose q20.
+- **2026-10-14:** Plan approved by Nigel; "go" is at 161.3 s (2.8 s into the clip).
+- **2026-10-14:** Plan drafted; Nigel's decisions on winner rule, recording size, countdown and order recorded above.
+
+---
+
+## Notes
+- Size: the Live test recordings are already 51.8 MB; this adds 34.3 MB (the clip and its sound) (backlog #6, store-release hygiene).
+- Real games (live camera) will need a phone that sees both boards, and 60 fps analysis on the device; this story proves it on the recording first.
