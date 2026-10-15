@@ -79,4 +79,39 @@ void main() {
     await playTo(const Duration(milliseconds: 1600));
     expect(decodes, 0);
   });
+
+  group('starting part-way in', () {
+    late RecordingAnalysisFeed fromOne;
+
+    setUp(() => fromOne = RecordingAnalysisFeed(camera, from: const Duration(milliseconds: 1000), decoder: decodeFramePureDart));
+    tearDown(() => fromOne.dispose());
+
+    test('frames before it are never analysed', () async {
+      fromOne.frames().listen(analysed.add);
+      camera.restart();
+      await playTo(const Duration(milliseconds: 1600));
+      expect(greys(), [160, 240]);
+      expect([for (final f in analysed) f.timestamp.inMilliseconds], [1000, 1500]);
+    });
+
+    test('nothing is analysed until the picture reaches it', () async {
+      fromOne.frames().listen(analysed.add);
+      camera.restart();
+      await playTo(const Duration(milliseconds: 600));
+      expect(analysed, isEmpty);
+      expect(fromOne.analysed.value, fromOne.first - 1);
+    });
+
+    test('played again, it starts again from there', () async {
+      fromOne.frames().listen(analysed.add);
+      camera.restart();
+      await playTo(const Duration(milliseconds: 1600));
+      analysed.clear();
+      now = const Duration(seconds: 5);
+      camera.restart();
+      await pumpEventQueue();
+      await playTo(const Duration(milliseconds: 6100));
+      expect(greys(), [160]);
+    });
+  });
 }

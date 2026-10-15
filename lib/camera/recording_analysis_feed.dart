@@ -19,11 +19,17 @@ import 'target_camera.dart';
 /// one by when it happened to arrive (Nigel, 2026-10-15: "analysis can come
 /// back with the actual result 1/2 second later").
 ///
+/// Analysis starts at [from] (the frame nearest it), not at the beginning:
+/// Quick draw needs only the second before "go" onwards.
+///
 /// It follows the camera: when playback starts again from the beginning, it
-/// starts again from the first frame. Frames are decoded only while someone
-/// listens.
+/// starts again from [from]. Frames are decoded only while someone listens.
 class RecordingAnalysisFeed implements TargetCamera {
-  RecordingAnalysisFeed(this.camera, {FrameDecoder? decoder}) : decoder = decoder ?? camera.decoder {
+  RecordingAnalysisFeed(this.camera, {FrameDecoder? decoder, Duration from = Duration.zero})
+      : decoder = decoder ?? camera.decoder,
+        first = math.min(camera.pack.frameCount - 1, (from.inMicroseconds * camera.pack.fps + 500000) ~/ 1000000) {
+    _next = first;
+    analysed.value = first - 1;
     _lastPosition = camera.position.value;
     camera.position.addListener(_onPosition);
   }
@@ -31,12 +37,15 @@ class RecordingAnalysisFeed implements TargetCamera {
   final RecordedCamera camera;
   final FrameDecoder decoder;
 
-  /// The last frame analysed, or -1 before the first (for showing how far
+  /// The first frame analysed.
+  final int first;
+
+  /// The last frame analysed, or [first] − 1 before any (for showing how far
   /// behind analysis is).
   final analysed = ValueNotifier(-1);
 
   StreamController<CameraFrame>? _frames;
-  var _next = 0;
+  late int _next;
   var _busy = false;
   var _generation = 0;
   var _disposed = false;
@@ -56,8 +65,8 @@ class RecordingAnalysisFeed implements TargetCamera {
     if (p < _lastPosition) {
       // Played again from the start: analyse again from the first frame.
       _generation++;
-      _next = 0;
-      analysed.value = -1;
+      _next = first;
+      analysed.value = first - 1;
     }
     _lastPosition = p;
     _pump();

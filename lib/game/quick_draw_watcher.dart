@@ -11,6 +11,11 @@ import '../vision/target_mapping.dart';
 import '../vision/throw_classifier.dart';
 import 'throw_watcher.dart';
 
+/// How long before "go" Quick draw starts analysing: a knife any earlier
+/// would be an obvious false start without the app (Nigel, 2026-10-15), and
+/// it leaves the board's watchers a still second to learn the board from.
+const quickDrawLeadIn = Duration(seconds: 1);
+
 /// One player's throw in a Quick draw.
 class QuickDrawThrow {
   const QuickDrawThrow({required this.impact, required this.stuck, this.score});

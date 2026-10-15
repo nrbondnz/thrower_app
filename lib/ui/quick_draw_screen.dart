@@ -51,7 +51,8 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
     _stopWatching();
     final targets = ref.read(quickDrawTargetsProvider);
     if (targets.locked) {
-      final feed = RecordingAnalysisFeed(camera);
+      final go = camera.recording.go;
+      final feed = RecordingAnalysisFeed(camera, from: go == null ? Duration.zero : go - quickDrawLeadIn);
       setState(() {
         _feed = feed;
         _watcher = QuickDrawWatcher(feed, targets.boards, model: ref.read(targetModelProvider))..start();
@@ -73,7 +74,8 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
   String _progress(RecordedCamera camera, RecordingAnalysisFeed feed, List<QuickDrawThrow?> throws) {
     final done = feed.analysed.value >= camera.pack.frameCount - 1;
     if (throws.every((t) => t != null) || done) return verdictText(judgeQuickDraw(throws, camera.recording.go!));
-    final behind = camera.position.value - feed.timeOf(math.max(0, feed.analysed.value));
+    final behind = camera.position.value - feed.timeOf(math.max(feed.first, feed.analysed.value));
+    if (camera.position.value < feed.timeOf(feed.first)) return 'Watching…';
     if (behind > const Duration(milliseconds: 200)) {
       return 'Analysing… ${(behind.inMilliseconds / 1000).toStringAsFixed(1)} s behind the picture.';
     }

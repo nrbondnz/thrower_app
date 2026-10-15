@@ -40,7 +40,8 @@ Future<List<QuickDrawThrow?>> replay({int step = 1}) async {
         TargetNotFound(:final reason) => throw StateError('board at $tap not found: $reason'),
       },
   ];
-  final feed = RecordingAnalysisFeed(camera);
+  // As the app does: from a second before go.
+  final feed = RecordingAnalysisFeed(camera, from: quickDrawRecording.go! - quickDrawLeadIn);
   final watcher = QuickDrawWatcher(feed, boards, model: model)..start();
   await pumpEventQueue();
   camera.restart();
