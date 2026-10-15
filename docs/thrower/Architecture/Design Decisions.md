@@ -478,13 +478,14 @@ The misses aren't resolution or compression: the right board fails as often on t
 **Why:** `RecordedCamera` decodes only the newest frame when it falls behind, and the same decoded frame fed both the picture and the watchers. On the 60 fps clip the iPhone showed about **42** frames a second (debug build), the Samsung A06 **11–12**. The two knives land 2 frames (about 33 ms) apart, so a skipped frame can hold the moment a knife lands, and both players often got the same time. Frames were also timed by when they arrived (`_now()`), which added decode jitter.
 
 **How (`RecordingAnalysisFeed`, `lib/camera/recording_analysis_feed.dart`):** a `TargetCamera` that follows a `RecordedCamera`.
-- It decodes its **own copy** of every frame (with the camera's `decoder`), one after another, from frame 0 up to the frame on show: **never ahead of the picture**, so a result can't appear before the moment it shows.
+- It decodes its **own copy** of every frame (with the camera's `decoder`), one after another, from its **`first`** frame up to the frame on show: **never ahead of the picture**, so a result can't appear before the moment it shows.
 - Each frame is stamped with its place in the recording, `timeOf(index)` = frame number ÷ frame rate, not with when it was decoded.
-- `analysed`: the last frame analysed (-1 before the first), so the screen can show how far behind analysis is.
-- When playback starts again from the beginning (the position goes back), so does the feed, from frame 0. It decodes only while someone listens. `dispose` stops following the camera (the camera isn't the feed's to dispose).
+- **Starts 1 s before go** (`from:`, `quickDrawLeadIn` in `quick_draw_watcher.dart`; frame 108 on the clip, 1.8 s in). Nigel, 2026-10-15: *"I don't think analysis needs to start till 1 second before go, it will be super obvious if they go earlier than that."* So a false start more than a second early isn't detected by the app; the watchers still get 1.8 s of still board before the knives. It cuts the frames analysed before the throws by about half (108 of 217).
+- `analysed`: the last frame analysed (`first` − 1 before any), so the screen can show how far behind analysis is; "Watching…" until the picture reaches `first`.
+- When playback starts again from the beginning (the position goes back), so does the feed, from `first`. It decodes only while someone listens. `dispose` stops following the camera (the camera isn't the feed's to dispose).
 - `QuickDrawWatcher` watches this feed, not the camera. The picture and the sound keep their own pace.
 
-**The cost:** each frame is decoded twice (once for the picture, once for analysis). If a phone analyses ~42 frames a second, analysis falls behind by about 0.4 s per second of clip: about 1.5 s by the throws at 3.6 s (less in a release build). If that's too slow, only the board crops need decoding (see [[backlog]] → Speed on the phone).
+**The cost:** each frame from 1 s before go is decoded twice (once for the picture, once for analysis). If a phone analyses ~42 frames a second, analysis falls behind by about 0.4 s per second analysed: about 0.75 s by the throws at 3.6 s (less in a release build). If that's too slow, only the board crops need decoding (see [[backlog]] → Speed on the phone).
 
 **Shown:** while analysis is more than 0.2 s behind, the bottom line says **"Analysing… 0.4 s behind the picture."**, otherwise **"Watching…"**; then the verdict, once both throws are in or the whole clip has been analysed.
 
