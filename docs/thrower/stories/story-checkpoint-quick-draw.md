@@ -7,7 +7,7 @@ Two throwers, one board each, both in one camera view. After a countdown they th
 6 (Large): crosses camera → vision → game → UI (4), conditional branches (stick / bounce / false start / tie) (1), more than 3 acceptance criteria (1). Audio playback may add a plugin (+1).
 
 ## Status
-IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone (2026-10-15). Plan approved 2026-10-14; "go" at 161.3 s (Nigel, by ear).
+IN PROGRESS: Tasks 1–3 complete; Task 4 next. Tried on Nigel's iPhone 2026-10-15 (~42 frames a second; times shown are clip time); Task 4 to be done on the PC. Plan approved 2026-10-14; "go" at 161.3 s (Nigel, by ear).
 
 ## Decisions (Nigel, 2026-10-14)
 - **Winner:** the first knife to **stick** wins. A bounce-out loses. If both stick, the faster one wins; ring scores are shown but don't decide it. If both bounce, there's no winner.

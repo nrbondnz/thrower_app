@@ -43,6 +43,9 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - **iPhone, Quick draw:** about **42 frames a second**, and the two players "quite often" got the same time.
 - **Decision (Nigel):** leave the playback frame rate; the analysis may come back late ("1/2 second later") if every frame is analysed and timed by its place in the clip. Written up as the first part of **Task 4** in [[story-checkpoint-quick-draw]] (Plan Changes Log 2026-10-15) and in [[Known Issues]] → Quick Draw: Dropped Frames Make Times Coarser.
 - **Live game, not this story:** 60 fps capture and capture timestamps, added to [[backlog]] #9.
+- **Times on screen are clip time, not time from "go":** Nigel saw "3.69 s" and expected about 1.2 s. The line under each board counts from the clip's start (2.8 s before "go"); from go it's about **0.85–0.9 s** (Nigel's by-ear go at 161.3 s; the 1.2 s was the Mac's early guess at go). Task 4 must show time from go everywhere (story, Task 4).
+
+**Handover to the PC (2026-10-15):** Nigel picks up **Task 4** of [[story-checkpoint-quick-draw]] there. Start with `git pull` (latest docs commits: `3c51166`, `0c23a84`, plus this one), then read Task 4 in the story file. It now starts with two additions from today: (1) **analyse every frame in order, timed by its place in the clip, and report late** (playback may still skip frames); (2) **show times from "go"**, not clip time. Then the planned work: false start, the winner rule, the results line. No Xcode or TestFlight work is pending on the Mac; the next TestFlight build would be `1.0.0+6`.
 
 ### Next (either machine)
 **Task 4** of [[story-checkpoint-quick-draw]]: times from "go", a false start if a knife lands before "go", the winner (the first knife to **stick**; a bounce-out loses; both bounce = no winner), and a results line. In the final, live-camera version the app counts down itself, Formula 1 style (5 beeps, a random pause, a long beep for go): [[backlog]] #9.
