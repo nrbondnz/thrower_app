@@ -18,7 +18,7 @@ Every screen and the throw detection use a `TargetCamera`. Both kinds deliver th
 │   │ iOS: BGRA                    │  │ T1/T2: 322 px, 15 fps      │  │
 │   │ uprightRotation: from sensor │  │ Quick draw: 720×1280,      │  │
 │   │ minChange: 12 (+ noise)      │  │  60 fps, + sound           │  │
-│   │                              │  │ minChange: 20 (JPEG noise) │  │
+│   │ Quick draw: asks for 60 fps  │  │ minChange: 20 (JPEG noise) │  │
 │   └──────────────┬───────────────┘  └─────────────┬──────────────┘  │
 │                  │                                │                 │
 │                  └───────────────┬────────────────┘                 │
@@ -28,7 +28,7 @@ Every screen and the throw detection use a `TargetCamera`. Both kinds deliver th
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Quick draw's analysis uses a third `TargetCamera`, `RecordingAnalysisFeed`: every frame of a `RecordedCamera`'s clip, in order, stamped with its place in the clip, while the picture may skip frames (see Quick Draw: a Throw per Board, and the Winner, below).
+Quick draw's analysis uses a third `TargetCamera`, `RecordingAnalysisFeed`: every frame of a `RecordedCamera`'s clip, in order, stamped with its place in the clip, while the picture may skip frames (see Quick Draw: a Throw per Board, and the Winner, below). The live Quick draw puts each board's crop of the `LiveCamera` through a `QueuedCamera` instead: every frame, in order, stamped when it arrived (see Quick Draw (Live): Every Frame, Cropped and Queued, below).
 
 ## A Frame → a Calibration
 
@@ -168,7 +168,7 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 │   ┌──────────────────────────────────────────────────────────────┐  │
 │   │ found: quickDrawTargetsProvider.add (next player's board)    │  │
 │   │ none: "No board found there."; tap again                     │  │
-│   │ after two: Lock boards → lock()   ·   Start again → clear()  │  │
+│   │ after two: Lock → lock() · Choose boards again → clear()     │  │
 │   │ (the recording also rewinds to its first frame)              │  │
 │   └──────────────────────────────────────────────────────────────┘  │
 │   BoardsPainter: each board's rings, scaled from its own image      │
@@ -234,6 +234,92 @@ Once the boards are locked, Play watches each board on its own crop with the sin
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## Quick Draw (Live): Every Frame, Cropped and Queued
+
+On the live camera, both boards are watched at once from 1 s before the start signal's go (Task 4 of [[story-checkpoint-live-quick-draw]]; Task 2 started at Lock boards). The camera can't be asked for a frame again, so each frame's board crops are kept in a queue per board and analysed in order: a slow phone falls behind and reports late rather than skipping frames, as `RecordingAnalysisFeed` does for the recording. Crops are cut in the sensor's layout, so an Android frame (sideways) is never turned whole. Why, and the numbers, in [[Design Decisions]] → Quick Draw: the Live Camera — 60 fps, Crops and a Queue; what to check on the phones in [[Known Issues]] → Live Quick Draw: 60 fps Is Asked For, Not Guaranteed.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│          QUICK DRAW (LIVE): EVERY FRAME, CROPPED AND QUEUED         │
+│                                                                     │
+│   go − 1 s: LiveCamera (liveQuickDrawCameraProvider), 60 fps        │
+│   asked for (its default rate if it won't open at 60)               │
+│          │  whole frames, sensor layout (Android: sideways)         │
+│          ▼                                                          │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ per board, a CroppedCamera: the upright square (4 radii,     │  │
+│   │ even sides) mapped into the sensor's layout (sensorRect)     │  │
+│   │ and cut there, a view (no copy); rotation fixed when made;   │  │
+│   │ a frame the rectangle doesn't fit is skipped                 │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ crops, in the sensor's layout    │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ per board, a QueuedCamera: each crop kept as a compact       │  │
+│   │ copy (compactFrame), handed on in order, one per turn of     │  │
+│   │ the event loop; timestamp = arrival; past 75 MB a board      │  │
+│   │ the oldest are dropped and counted                           │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ every frame, in order (late ok)  │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ ThrowWatcher per board, interval zero: turns the crop        │  │
+│   │ upright (its uprightRotation) → MotionDetector →             │  │
+│   │ classifyThrow → QuickDrawWatcher.throws (as above)           │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ QuickDrawWatcher.states, .queues │
+│                                  ▼                                  │
+│   Debug builds (_WatchDebugLine): "1: watching · 2: motion ·        │
+│   0.03 s behind" (· N dropped); frames/s label top left             │
+│   Next duel, Stop, Choose boards again: watcher disposed. The duel: │
+│   next section                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Quick Draw (Live): the Duel
+
+Once the boards are locked, **Start** runs a duel (Tasks 3–4 of [[story-checkpoint-live-quick-draw]]): the start signal, both boards watched from 1 s before go, each knife timed from go on the camera's own clock, then the result in large type with a chime. Nobody touches the phone between Start and the result. Why, and the numbers, in [[Design Decisions]] → Quick Draw: the Start Signal and Quick Draw: the Live Duel and the Result.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     QUICK DRAW (LIVE): THE DUEL                     │
+│                                                                     │
+│   Boards locked → Start (startScheduleProvider: a new schedule,     │
+│   a random pause)                                                   │
+│          │                                                          │
+│          ▼                                                          │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ StartSignal: a beep (SignalSounds.beep) and a light          │  │
+│   │ (_Lights) at 0, 1, 2, 3, 4 s, then a pause of 1.0–3.0 s      │  │
+│   │ (startPauses, 0.2 s steps). Stop: cancelled, boards kept     │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ onWatch, at go − 1 s             │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ QuickDrawWatcher(queue: true) on both boards: every          │  │
+│   │ frame, cropped and queued, in order (the box above)          │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ onGo, at go                      │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ go beep (SignalSounds.go), lights out, GO! for 0.7 s;        │  │
+│   │ goAt = camera.now: the clock the frames are stamped with     │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ each throw timed from goAt       │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ _checkResult every 250 ms: both throws in, or 4 s after      │  │
+│   │ go (resultWindow) with every queue caught up →               │  │
+│   │ judgeQuickDraw(throws, goAt): the same rule as the clip      │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ QuickDrawVerdict                 │
+│                                  ▼                                  │
+│   _Result panel: "Player 2 wins" (52 pt), then each player's        │
+│   line (34 pt), "2:  0.82 s · 5"; the chime (SignalSounds.result)   │
+│   Next duel: the watcher disposed, the boards kept, ready to Start  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ## Coordinate Spaces
 
 | Space | Where | Notes |
@@ -241,7 +327,7 @@ Once the boards are locked, Play watches each board on its own crop with the sin
 | Camera frame | `CameraFrame` | Live: sensor orientation (usually sideways), 1280 × 720 at `ResolutionPreset.high`. Recording: already upright, the pack's size (322 × 322, or 720 × 1280 for Quick draw) |
 | Upright image | `RgbImage` from `frameToRgb` | Rotated by the camera's `uprightRotation` (0 for a recording); calibration ellipses live here |
 | Tap (Quick draw) | `BoardsOverlay` → `TapLocator` | A **fraction** of the upright picture, 0–1 each way (since 2026-10-15). `locateTappedInFrame` multiplies it by the upright image's size after `frameToRgb`, so a sideways live frame and an upright recording are treated alike |
-| Board crop (Quick draw) | `CroppedCamera` frames | A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner) |
+| Board crop (Quick draw) | `CroppedCamera` frames | A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner). The frames themselves are cut in the camera's **sensor layout** (`sensorRect`; live Quick draw Task 2): a sideways live crop stays sideways, carrying the source's `uprightRotation` (fixed when the crop is made: each duel, 1 s before go), and is turned upright by whoever reads it; a recording's (rotation 0) is the rectangle as it is |
 | Preview widget | `CalibrationEditor` | Upright image × (preview width ÷ image width); drawn as `CameraPreview`'s (or `RecordedPreview`'s) child so it lines up |
 | Brightness frame | `LumaImage` from `frameToLuma` | Upright, ~320 px long side (180 × 320 portrait from a 1280 × 720 stream); motion detection and stuck/bounce classification; `WatchRegion` is in fractions so it's size-independent |
 | Target | `TargetPoint` | Normalised: centre 0,0, outer edge of ring 1 at radius 1, v up; **ideal** ring radii 0.2 … 1.0 |

@@ -112,7 +112,7 @@
 
 - **Symptom:** on Quick draw, a tap says "No board found there.", or the outline drawn doesn't match the board (a ring too small or too big, or off centre).
 - **Cause:** the ring finder starts from the tap, and fits only start well from near the board's centre. Measured on the Quick draw clip's 16 still frames (2026-10-14): a tap on the centre finds the left (red on wood) board on 16 and the right (green and red) board on 15–16; a tap **15–30 px off centre** finds the green and red board on only **10–12** (the left still 15–16). It isn't resolution or compression: the right board fails as often on the uncompressed original at full size. See [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping.
-- **What to do:** tap the **bull** (the middle of the board), not a ring. If the outline is wrong, press **Start again** (it also rewinds the clip to its still first frame) and tap again. There's no drag-to-adjust per board yet ([[story-checkpoint-quick-draw]] Task 2).
+- **What to do:** tap the **bull** (the middle of the board), not a ring. If the outline is wrong, press **Choose boards again** (it also rewinds the clip to its still first frame) and tap again. There's no drag-to-adjust per board yet ([[story-checkpoint-quick-draw]] Task 2).
 
 ## Quick Draw: Dropped Frames Make Times Coarser
 
@@ -122,3 +122,18 @@
 - **Cause:** the clip is 720 × 1280 at **60 fps**, and `RecordedCamera` skips to the newest frame when decoding can't keep up (see Live Test Playback Jumps and Freezes on a Slower Android above). Each board's `ThrowWatcher` looks at every frame it's given (Quick draw sets `interval` to zero), so frames the camera skipped are never seen, and an impact is timed to the next frame that was delivered. The two knives on the clip land **2 frames (about 33 ms) apart**, so they can land in one delivered frame.
 - **Still fair:** both boards are crops of the **same** frames (`CroppedCamera`), so a dropped frame delays both alike and the order can't be swapped; at worst it becomes a tie.
 - **What to do:** watch the frame-rate label (debug builds) on the Samsung while Quick draw plays ([[story-checkpoint-quick-draw]] Task 3). If it drops well below 60, the options are decoding off the UI thread or a smaller clip (see [[backlog]] → Speed on the phone). **Chosen fix (Nigel, 2026-10-15): leave playback as it is, and let the analysis report late** (every frame analysed, timed by its place in the clip): see [[story-checkpoint-quick-draw]] Task 4. A live camera has no decoding to do, so this is mainly a test cost; the live-game timing questions are in [[backlog]] #9. The replay test (`quick_draw_replay_test.dart`) delivered every frame, so it didn't catch this; since Task 4 it also plays the clip skipping 2 of every 3 frames and checks the impacts land on the same frames.
+
+## Live Quick Draw: 60 fps Is Asked For, Not Guaranteed
+
+- **What:** the live Quick draw asks the camera for 60 frames a second (`LiveCamera.open(fps: 60)`). iOS picks the nearest rate its 720p formats offer; Android's CameraX does its best and may stay at 30, or change the stream size. Neither throws, so the "open again at the default rate" fallback only covers real errors. (Review Agent, 2026-10-15; [[story-checkpoint-live-quick-draw]] Task 2.)
+- **Check:** the debug frames/s label (top left of the live Quick draw) shows what the phone delivers. At 30, two knives 33 ms apart can land in one frame: a draw.
+- **Dim light:** a fixed 60 fps caps exposure at 1/60 s, so frames get darker and noisier indoors; the motion detector learns the noise, but test in the dimmest lighting you expect.
+- **Heat:** while the boards are locked, both boards' crops are analysed on every frame on the UI thread. On a slow phone, watch "s behind" in the debug line over 10+ minutes; if it climbs or the phone gets hot, the fix is a long-lived worker isolate. The queue is capped at 75 MB a board (frames dropped past it are counted in the debug line).
+
+## Live Quick Draw: Sound Notes
+
+From the Review Agent's Safety Report on the start signal ([[story-checkpoint-live-quick-draw]], 2026-10-15):
+- **The go beep sounds a little after "go" is timed.** `goAt` is taken as the go beep is asked to play; the phone's sound start delay (tens of ms, more for the very first sound on iOS, where the low-latency mode does nothing) comes after it. It's the same for both throwers, so the winner is fair, but the times shown include it, and a throw that anticipates the beep by less than that delay still counts. Device Test Plan Q3 asks whether GO! and the beep line up.
+- **Android: other apps' music stays turned down** from the first Start until Quick draw closes. Android's low-latency player gives no "finished" signal, so each sound keeps its duck-others audio focus until it's next stopped. Harmless; leaving Quick draw restores the music.
+- **Fixed before the first device test:** the sounds were released as soon as they were read (an auto-disposed provider nothing watched), so a real phone would have played no beeps; the screen now keeps them loaded while it's open (`live_quick_draw_screen_test` checks it).
+

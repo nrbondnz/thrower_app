@@ -12,6 +12,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
+│  │              │    Start → _Lights · GO! · _Result (large)     │  │
 │  │              ├─ CalibrationScreen ── CalibrationEditor        │  │
 │  │              ├─ LiveTestScreen ─┬─ CalibrationScreen, Play    │  │
 │  │              │                  └─ QuickDrawScreen            │  │
@@ -30,7 +31,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  gameProvider (GameNotifier)    targetModelProvider           │  │
 │  │  ringBoundaryRadiiProvider      authServiceProvider           │  │
 │  │  quickDrawTargetsProvider       tapLocatorProvider            │  │
-│  │  liveQuickDrawCameraProvider (live Quick draw's own camera)   │  │
+│  │  liveQuickDrawCameraProvider (live Quick draw's own, 60 fps)  │  │
+│  │  signalSoundsProvider           startScheduleProvider         │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -48,9 +50,16 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ ├Recording- │  │  └ThrowWatcher×2│  │            │ │          │  │
 │  │ │ Analysis- │  │ judgeQuickDraw  │  │            │ │          │  │
 │  │ │ Feed      │  │  go, false start│  │            │ │          │  │
-│  │ └Cropped-   │  │  → winner       │  │            │ │          │  │
-│  │  Camera     │  └────────┬────────┘  └────────────┘ └──────────┘  │
-│  │CameraFrame  │           │                  ▲                     │
+│  │ ├Cropped-   │  │  → winner       │  │            │ │          │  │
+│  │ │ Camera    │  │ StartSignal     │  │            │ │          │  │
+│  │ │           │  │  beeps, lights, │  │            │ │          │  │
+│  │ │           │  │  goAt = now     │  │            │ │          │  │
+│  │ │           │  └────────┬────────┘  └────────────┘ └──────────┘  │
+│  │ └Queued-    │           │                  ▲                     │
+│  │  Camera     │           │                  │                     │
+│  │ now: frames'│           │                  │                     │
+│  │ clock (go)  │           │                  │                     │
+│  │CameraFrame  │           │                  │                     │
 │  └──────┬──────┘           ▼                  │                     │
 │         │       ┌─────────────────────────────┴───────────────────┐ │
 │         │       │            VISION  (lib/vision)  pure Dart      │ │
@@ -65,9 +74,17 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │                 │    GeometricEntryEstimator          (the knife) │ │
 │                 └─────────────────────────────────────────────────┘ │
 │                                                                     │
+│  ┌──────────────────────── SOUND (lib/sound) ─────────────────────┐ │
+│  │ SignalSounds (interface) ◀── StartSignal, LiveQuickDrawScreen  │ │
+│  │  └AssetSignalSounds: assets/sounds/ beep · go · result (WAV,   │ │
+│  │    made by tool/make_signal_sounds.dart); signalSoundsProvider │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
 │  ┌───────────────────────── NATIVE CODE ──────────────────────────┐ │
-│  │ camera (LiveCamera: back camera, image stream, no audio)       │ │
-│  │ audioplayers (RecordingSound: Live test clip sound, play only) │ │
+│  │ camera (LiveCamera: back camera, image stream, no audio;       │ │
+│  │   Quick draw asks for 60 fps)                                  │ │
+│  │ audioplayers (RecordingSound: Live test clip; SignalSounds:    │ │
+│  │   Quick draw beeps and chime, low latency; play only)          │ │
 │  │ Flutter engine image codec (decodeFrameNatively), not a plugin │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
@@ -154,15 +171,18 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │   and result under each board, every frame analysed, times          │
 │   after go, false start and winner (story complete). The live       │
 │   game is Home → Quick draw: LiveQuickDrawScreen on the live        │
-│   camera (liveQuickDrawCameraProvider), boards chosen the same      │
-│   way (quick_draw_boards); start signal and live duel to come       │
+│   camera (liveQuickDrawCameraProvider, 60 fps asked), boards chosen │
+│   the same way (quick_draw_boards), then each board watched on      │
+│   every frame (CroppedCamera → QueuedCamera → ThrowWatcher) from    │
+│   1 s before the start signal's go; the result in large type        │
+│   (see Data Flow)                                                   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 **Rules:**
 - `lib/vision` and `lib/scoring` have **no Flutter imports**. They run in background isolates and in tests on a PC.
 - Vision depends on the camera layer's **data** types (`CameraFrame`) only, never on a plugin.
-- Plugins stay in the camera layer, behind interfaces (`TargetCamera`, `RecordingSound`), so tests feed recorded frames and fake sound.
+- Plugins stay in the camera and sound layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`), so tests feed recorded frames and fake sound.
 - Heavy work (frame conversion, ring finding, the entry search) runs off the UI thread via `compute`, using top-level functions and plain data. See [[Known Issues]] → Isolate Fails.
 
 See [[Data Flow]] for one frame's path to a score, and [[Glossary]] for the component → function tree and terms.

@@ -34,6 +34,26 @@ A4 printout at 100% (`reference/printable/target-A4.pdf`), taped flat at chest h
 
 Safety: with a real board, the phone and stand sit outside the throwing lane; the phone and the board are only approached when no one is throwing.
 
+## Quick Draw Checks (added 2026-10-15)
+
+For [[story-checkpoint-live-quick-draw]]: Nigel can't check the live camera himself, so these are for his brother, on his iPhone, from a TestFlight build **1.0.0 (7) or later** (`+6` was uploaded from the Mac on 2026-10-14). The interactive page above doesn't have these steps yet; record them in a message (or ask Claude to add a Q part to the page).
+
+**Setup:** two A4 printouts side by side on a wall, about 1 m apart (or two real boards), the phone on a stand **behind where the throwers would stand**, 2–4 m back, seeing both. Pens in Blu Tack stand in for knives; nothing is thrown at paper. A TestFlight build is a release build: no frames/s label or debug line.
+
+| Step | Do | Look for |
+|---|---|---|
+| Q0 | Open the app | Home shows **Play** ("Rounds on one target") and **Quick draw** ("Two throwers, on a start signal"). Build number. |
+| Q1 | Live test → Quick draw (the recording): tap the left bull, then the right, Lock boards, Play | GO! as the footage says go; "Player 2 wins: stuck 5, 0.82 s after go" (about) |
+| Q2 | Home → **Quick draw**: tap Player 1's bull, then Player 2's, Lock boards | Both outlined and numbered, lining up with the rings (screenshot). A wrong outline: Choose boards again |
+| Q3 | **Start**, three times | 5 beeps a second apart with 5 lights, a pause that differs each time (roughly how long?), then the long beep, lights out, GO!. Also with the **silent switch on**, and with music playing (it should go quieter, not stop). **Stand 2–4 m in front of the phone, where a thrower would be: can you hear the beeps there?** Does GO! appear at the same moment as the long beep, or noticeably before it? |
+| Q4 | **Paper only.** Start; right after the long beep, press a pen onto board 2, then a moment later wave a hand past board 1 | The result in large type: **Player 2 wins**, board 1 "bounced". Readable from 4 m? Times plausible (under a second or two)? How long after the throws did it appear? |
+| Q5 | **Paper only.** Start; press a pen onto board 1 during the pause, before the long beep | Board 1: **false start** |
+| Q6 | Start, then **Stop** during the beeps, and once after the long beep; later **Next duel** after a result | Stop: back to Start, no more beeps. Next duel: the boards stay locked |
+| Q7 | Ten duels in a row (about 10 minutes) | Does the phone get hot? Does the picture stutter? Does the result take longer each time? |
+| Q8 | Later, **real knives**: two experienced throwers, in separate lanes, under the venue's rules; a **third person (the starter) taps Start from behind**, with the phone out of reach of a backswing. Nobody goes forward until both have thrown and agree it's clear, whatever the screen shows (walking to the boards in Q4–Q5 is for paper only) | The winner and scores as seen by eye |
+
+Safety: the phone stays behind the throwers, out of both lines of throw and not between the lanes; nobody goes forward until both have finished.
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

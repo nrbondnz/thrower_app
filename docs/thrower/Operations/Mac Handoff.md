@@ -1,8 +1,39 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-15 (section 0). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-15 evening (section 00). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
+
+---
+
+## 00. Handover 2026-10-15 (evening): TestFlight Build 1.0.0 (7) for the Live Quick Draw
+
+**Start here.** Section 0 below is the morning's handover (the recording's Quick draw on Nigel's iPhone), kept as history. This one is the latest.
+
+### Why
+The **live** Quick draw is built (story [[story-checkpoint-live-quick-draw]], all 5 tasks), but Nigel can't test the live camera himself: **his brother tests it on his iPhone from TestFlight**. So this build goes to the **Field testers** group. Nothing else is pending on the Mac.
+
+### What's in it (all from the PC, pushed to `main`)
+- **Home → Quick draw** (new button; **Play** is still rounds on one target): the live camera full screen; tap Player 1's bull, then Player 2's, **Lock boards**; a starter taps **Start**: 5 beeps with 5 lights, a random 1.0–3.0 s pause, the long "go" beep, **GO!**; both boards analysed on every frame from 1 s before go (60 fps asked for); the result in large type with a chime ("Player 2 wins", each time after go and score); **Next duel**, **Stop**, **Choose boards again** (renamed from "Start again").
+- Backlog #12: Play shows the next round as soon as the knives are collected.
+- **No new plugins or permissions.** `pubspec.yaml` adds only the asset folder `assets/sounds/` (three WAVs, ~60 KB, from `tool/make_signal_sounds.dart`); `audioplayers` was already there, so **`ios/Podfile.lock` shouldn't change** (if it does, look before committing). The camera now asks for 60 fps (`LiveCamera.open(fps: 60)`), a Dart-side setting.
+- `flutter test`: **471 pass** on the PC.
+
+### Steps (iOS work in the foreground, in Xcode: `docs/dont-ask-again.md`)
+1. **Claude:** `git pull` (expect the live Quick draw commits on top of `da00c7e`), `flutter pub get`, `flutter test` (471; the replay tests take ~2–3 min).
+2. **Optional, Nigel:** a quick **debug** run on his own iPhone from Xcode before uploading: Home → Quick draw opens the camera, and **Start** plays the beeps (the review found and fixed a bug where they'd never play; this is the first time they run on a phone). Debug builds also show the frames/s label and the per-board debug line.
+3. **Claude:** bump `pubspec.yaml` to **`version: 1.0.0+7`** (`+6` was the last upload), then `flutter build ios --config-only --release`, then `open ios/Runner.xcworkspace`.
+4. **Nigel, in Xcode:** destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**.
+5. **Claude:** confirm from the Xcode logs (`$TMPDIR/*.xcdistributionlogs`) and App Store Connect (processing, then available to **Field testers**); commit the bump, e.g. `Build 1.0.0+7 for TestFlight (live Quick draw)`, and `git push origin main`.
+6. **Nigel:** check the brother is in **TestFlight → Field testers** in the **new** team (QCQ64RLD77; see [[Known Issues]] → the old-team note), then send him the checklist: [[Device Test Plan]] → **Quick Draw Checks** (Q0–Q8). Two A4 printouts side by side and pens are enough for Q0–Q7; **Q8, real knives, has its own safety rules** (separate lanes, a third person as starter, nobody forward until both have thrown).
+
+### Worth knowing
+- **A TestFlight build is a release build:** no frames/s label or debug line, so the checklist only asks what he can see: do the two times differ, can the beeps be heard at the throwing line, is the result readable from 4 m, does the phone get hot over 10 duels, and does it say "Some frames were skipped" on a result.
+- **Sound on iOS:** the first beep may start a little late (iOS has no low-latency player mode); "go" is timed when the go beep is asked to play, so both throwers' times include the same delay. Q3 asks whether GO! and the beep line up.
+- **Not for the App Store yet:** the Live test recordings (~87 MB, people in the footage): [[backlog]] #6.
+
+### Next (either machine)
+When the brother's results come back: record them in [[story-checkpoint-live-quick-draw]] and [[Known Issues]], fix what fails, then archive the story. After that: backlog #11 **Record and share** (decisions already taken there).
 
 ---
 

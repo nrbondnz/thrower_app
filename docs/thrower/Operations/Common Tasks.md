@@ -34,7 +34,7 @@ On the Mac, with the repo pulled. The first time takes about an hour, later buil
 The *Instructions* screen (Home → Instructions) is what players and testers read. Its text is in **`lib/ui/instructions.dart`** → `instructionSections`, with two versions picked by `InstructionTarget`: **Real board** (default) and **Paper target** (A4 printout, pens in Blu Tack). Shared points are written once; version-specific ones sit under `if (paper)`. Keep both versions in mind when editing.
 - **When:** any change to setup advice, button names, how rounds work, scoring or safety wording. The Docs Agent checks this on every change to `lib/ui/`, `lib/scoring/` or `lib/game/`.
 - **Numbers aren't typed in:** rounds, throws per round, ring scores and the line-touch rule come from `GameSession` and `TargetModel`, so they follow rule changes automatically.
-- **Button names are typed in** (*Find target*, *Lock target*, *Re-calibrate*, *Reset game*, *New game*): if a label changes, update the text.
+- **Button names are typed in** (*Find target*, *Lock target*, *Re-calibrate*, *Reset game*, *New game*; Quick draw: *Quick draw*, *Lock boards*, *Choose boards again*, *Start*, *Next duel*): if a label changes, update the text.
 - **Safety wording:** never imply the app knows the lane is clear (Review Agent checklist §7).
 - Run `flutter test test/ui/instructions_test.dart` and update its expected phrases if the wording changed on purpose.
 
@@ -59,6 +59,16 @@ dart run tool/printable_target.dart
 ```
 
 Writes `docs/thrower/reference/printable/target-A4.pdf`, `target-A3.pdf`, `target-A1-full-size.pdf` and `target-A4.jpg` (300 dpi, 2480 × 3508; JPEGs carry no physical size, so print it "fit to page"). Files already up to date are skipped, so a PDF left open in a viewer doesn't block a run. Ring sizes come from `TargetModel.ikthof()`, so rerun this after changing the rings. Print at **100% / actual size** and measure the 100 mm bar to confirm the scale.
+
+## Remake the Quick Draw Sounds
+
+The live Quick draw's start signal and result chime are small WAVs made by a tool, not recorded:
+
+```
+dart run tool/make_signal_sounds.dart
+```
+
+Writes `assets/sounds/beep.wav` (each countdown beep, 1 kHz, 0.2 s), `go.wav` (1.5 kHz, 0.8 s) and `result.wav` (660 then 990 Hz) as mono 16-bit 22.05 kHz, with 5 ms fades so they don't click (~61 KB together). To change a pitch, length or volume, edit the `sounds` map (or `tone`) in the tool and rerun it; `pubspec.yaml` already lists `assets/sounds/`, so a full restart (not a hot reload) picks up the new files. Which sound plays when, and why: [[Design Decisions]] → Quick Draw: the Start Signal.
 
 ## Check the Ring Finder on a Photo
 
