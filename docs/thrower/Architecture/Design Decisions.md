@@ -93,9 +93,9 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 | `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
 | `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. No provider until the backend is chosen; `authServiceProvider` throws until overridden. |
 | `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`), with two implementations: `LiveCamera` (the `camera` plugin's back camera) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `Recording.go`). `RecordingAnalysisFeed` (every frame of a recording, in order, timed by its place in the clip, for analysis; Quick draw). `CroppedCamera` (a part of another camera's picture as a camera of its own; Quick draw, one per board). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
-| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw). |
+| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw; the tap is a fraction of the upright picture). |
 | `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board; `QuickDrawThrow`), `judgeQuickDraw` (Quick draw's winner rule; `QuickDrawVerdict`). |
-| `lib/ui/` | Screens and painters | Depends on the layers through providers. `RoundMarks` holds the Play screen's marks for the round. |
+| `lib/ui/` | Screens and painters | Depends on the layers through providers. `RoundMarks` holds the Play screen's marks for the round. `CameraView` takes the camera to show as a `camera:` provider (default `cameraProvider`). `quick_draw_boards.dart` holds what both Quick draw screens share: `BoardChoosing`, `BoardsOverlay`, `BoardsPainter`, `boardLines`, `quickDrawLine`. |
 | `lib/providers.dart` | Wiring | One place to see and override every layer. |
 
 Folders are created when their first code arrives, never empty "just in case". Navigation is plain `Navigator` until there are enough screens to justify a router.
@@ -277,6 +277,13 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 - **In-app Instructions** (`lib/ui/instructions.dart`, *Instructions* on Home): Dart content, no Markdown package. Game length, throws per round, ring scores and the line-touch rule are read from `GameSession` / `TargetModel`, so the text follows the rules. Chosen over a Markdown asset (easier prose editing, but a new dependency and hand-typed numbers that drift). Keeping it current: [[Common Tasks#Update the In-App Instructions]]. Since 2026-10-15 it has a **Quick draw** section (how to choose the boards and play, the winning rule, and the safety points from the Review Agent's Quick draw Safety Report: "go" never means the lanes are clear, separate lanes, the phone out of both lines of throw); the paper version says Quick draw isn't played on paper.
 - **Two versions** (Nigel, 2026-10-09): **Real board** (default; the main one: 75–85 cm board, phone 2 m away out of the line of throw, lane safety) and **Paper target** (A4 printout at 100%, phone 50 cm away, pens in Blu Tack placed by hand, hand-wave = bounce-out, never throw at the paper). One page with a switch at the top (`InstructionTarget`), not two screens: calibrating, scoring, resetting and reporting are shared, so they can't diverge.
 
+**Update (2026-10-15, [[backlog]] #12): the next round shows as soon as the knives are collected.** Play used to keep showing the collected round until the next round's first throw, because a round's record is only made by its first throw. `GameSession` now says where the game is:
+- `awaitingNextRound`: the current round is closed (the knives were collected) and the game isn't over;
+- `roundNumber`: the round being played, 1-based; the next one as soon as the knives are collected;
+- `finishedRounds`: the rounds already collected (all of them once the game is over).
+
+Play's `roundText` then shows the new round, empty ("Round 2 of 9: – · – · –  (0)"), and `gameText` drops "Round complete…" and lists the collected round under "Rounds:" straight away. No empty round is stored: the session's rounds are as before. Checked by `game_session_test.dart` and `game_notifier_test.dart`.
+
 ## Blade Entry Point (Throw Detection, Task 4)
 
 **Decision (D1 option A, geometry):** `GeometricEntryEstimator` (behind `EntryPointEstimator`, so a trained model can replace it) works on **full-resolution** upright before/after pictures (the calibration's own size):
@@ -417,7 +424,7 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
   - `AssetRecordingSound` uses the **`audioplayers`** plugin (^6.8.1), loaded once and kept ready (`ReleaseMode.stop`), so a replay doesn't reload. It's a native plugin, for playback only; the app still records no audio. Tests inject a fake `RecordingSound`.
   - Played separately rather than packed into the `.tfrm`, so `FramePack` stays frames only.
   - **Audio context** (Nigel, 2026-10-14): `AssetRecordingSound.audioContext` **ducks other apps** (music is turned down while it plays, not stopped) and **ignores the silent switch** (`respectSilence: false`), so a countdown is always heard. The plugin's default stopped other apps' audio. Built for the platform it runs on.
-- **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`), reached from **Live test → Quick draw**: the clip full screen on black, with the system bars hidden (`immersiveSticky`, back to `edgeToEdge` on leaving). A back button, and a **Play** button (**Play again** once played) that's hidden while it plays. Debug builds show the frame rate. Before playing, the user chooses the boards by tapping (see Quick Draw: Choosing the Boards by Tapping below). Played with the boards locked, **GO!** flashes at the footage's go, every frame is analysed (see Quick Draw: Analysing Every Frame, Reporting Late), each board shows its knife's time after go and its result, and the bottom line gives the winner (see Quick Draw: Go, False Starts and the Winner).
+- **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`), reached from **Live test → Quick draw**: the clip full screen on black, with the system bars hidden (`immersiveSticky`, back to `edgeToEdge` on leaving). A back button, and a **Play** button (**Play again** once played) that's hidden while it plays. Debug builds show the frame rate. Before playing, the user chooses the boards by tapping (see Quick Draw: Choosing the Boards by Tapping below). Played with the boards locked, **GO!** flashes at the footage's go, every frame is analysed (see Quick Draw: Analysing Every Frame, Reporting Late), each board shows its knife's time after go and its result, and the bottom line gives the winner (see Quick Draw: Go, False Starts and the Winner). The live camera version is **Home → Quick draw** (see Quick Draw: the Live Screen).
 
 ## Quick Draw: Choosing the Boards by Tapping (2026-10-14)
 
@@ -433,6 +440,8 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
 
 `locateTappedInFrame` does this for each tap on one camera frame (upright, at most 1920 px), and runs in a background isolate (`compute`, via `locateAtTap` in `lib/game/quick_draw_targets.dart`) so the preview doesn't stall: about 1–1.5 s per board on the PC.
 
+**Taps are fractions of the picture** (2026-10-15, Task 1 of [[story-checkpoint-live-quick-draw]]). `BoardsOverlay` divides the tap by the picture's size on screen, so a tap is 0–1 each way (`TapLocator`). `locateTappedInFrame` turns it into pixels only after `frameToRgb` has turned the frame upright, when the upright picture's size is known. Until then taps were upright image pixels, worked out on screen from the recording's width. That only works for frames that are already upright: a live Android frame arrives sideways, so the same pixels would land somewhere else. Checked by `tapped_target_locator_test.dart` (a sideways, 90° frame with fraction taps finds the board where measured).
+
 **Measured** on the clip's 16 still frames, taps at the measured centres (boards found, of 16):
 
 | Approach | Player 1 (red on wood) | Player 2 (green and red) |
@@ -446,7 +455,9 @@ The misses aren't resolution or compression: the right board fails as often on t
 
 **State:** `QuickDrawTargets` (`lib/game/quick_draw_targets.dart`): the boards as `TargetCalibration`s in tap order, two players, `locked`. `quickDrawTargetsProvider` adds the next player's board, `clear`s ("Start again") and `lock`s (only once both are found); it's auto-disposed, so leaving Quick draw starts over. `tapLocatorProvider` is the tap search (tests replace it).
 
-**Screen:** an instruction line ("Tap the centre of Player 1's board.", "No board found there.", "Both boards found: lock them, or start again."), `BoardsPainter` (each board's rings, with its player number in a disc above it; blue while choosing, green once locked), and **Start again** / **Lock boards** / **Play**. Taps are ignored while the clip plays or a search is running. **Start again** also **rewinds** the clip, so boards are chosen on the still first frame, not where playback stopped. No drag-to-adjust yet: a wrong outline means Start again.
+**Screen:** an instruction line ("Tap the centre of Player 1's board.", "No board found there.", "Both boards found: lock them, or start again."), `BoardsPainter` (each board's rings, scaled from its own image size, with its player number in a disc above it; blue while choosing, green once locked), and **Start again** / **Lock boards** / **Play**. Taps are ignored while the clip plays or a search is running. **Start again** also **rewinds** the clip, so boards are chosen on the still first frame, not where playback stopped. No drag-to-adjust yet: a wrong outline means Start again.
+
+**Shared** (since 2026-10-15) by the recording's `QuickDrawScreen` and the live `LiveQuickDrawScreen`, in `lib/ui/quick_draw_boards.dart`: `BoardChoosing` (a mixin on the screen's state: `findBoardAt`, `searching`, `missed`, and the instruction line, `choosingInstruction`), `BoardsOverlay` (the painted boards, and the taps as fractions; `tapsOff` while a recording plays), `BoardsPainter`, `boardLines` and `quickDrawLine` (the bottom line). Until then they were private to `quick_draw_screen.dart`.
 
 ## Quick Draw: Timing and Scoring Each Board (2026-10-15)
 
@@ -515,6 +526,21 @@ The misses aren't resolution or compression: the right board fails as often on t
 **On the clip:** Player 2 (right) wins, stuck 5, about **0.82 s** after go; Player 1 (left) bounced out.
 
 **Checked by** `test/game/quick_draw_judge_test.dart` (a table: both stick, a bounce-out, both bounce, false starts, exactly at go, the same frame, no throws; times from go; the result line), `quick_draw_replay_test.dart` (the verdict on the clip) and `quick_draw_screen_test.dart` (the line under each board; GO! shows at go and not before or long after; the bottom line follows the analysis, then gives the verdict).
+
+**Confirmed:** 2026-10-15 (built; Nigel's device check pending).
+
+## Quick Draw: the Live Screen (2026-10-15)
+
+**Decision (Nigel, 2026-10-15):** Quick draw with the live camera has **its own Home button**, beside Play, so the two games are clearly different: *"one version is for scoring rounds on one target and the other is quick draw."* Home shows **Play** ("Rounds on one target") and **Quick draw** ("Two throwers, on a start signal"). Live test → Quick draw stays the recording (Task 1 of [[story-checkpoint-live-quick-draw]]).
+
+**How:**
+- `LiveQuickDrawScreen` (`lib/ui/live_quick_draw_screen.dart`): the live camera full screen on black, system bars hidden (as on the recording), a back button. Tap Player 1's board, then Player 2's, then **Lock boards**; **Start again** clears them. Locked, it says "Boards locked." No game yet: the start signal, timing and result are Tasks 2–4.
+- The picture comes from `CameraView`, which now takes a `camera:` provider (default `cameraProvider`), so camera errors, release in the background and re-opening work as on Play.
+- **`liveQuickDrawCameraProvider`** (`lib/providers.dart`): Quick draw's own `LiveCamera`, not `cameraProvider` (which Calibrate and Play share with the Live test's recordings, and which carries the calibration's zoom). Auto-disposed: released when Quick draw closes; never retried automatically.
+- Choosing the boards is the shared code above (`BoardChoosing`, `BoardsOverlay`), with taps as fractions, so the live camera's sideways Android frames find the same board as the upright picture shows.
+- **No zoom** for now: both boards must be in view, and zooming in is rarely wanted (Plan Changes Log, 2026-10-15).
+
+**Checked by** `test/ui/live_quick_draw_screen_test.dart` (Home's two buttons and captions; Play still opens Play; Quick draw full screen asking for Player 1; tapping both in order, then Lock boards; Start again; a refused camera shows the camera error; leaving restores the system bars).
 
 **Confirmed:** 2026-10-15 (built; Nigel's device check pending).
 

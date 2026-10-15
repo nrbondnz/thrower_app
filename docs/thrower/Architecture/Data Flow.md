@@ -139,25 +139,29 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 
 ## Quick Draw: Choosing the Boards
 
-On Quick draw the user picks each player's board by tapping its centre (Task 2 of [[story-checkpoint-quick-draw]]; why, and the measurements, in [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping).
+On Quick draw the user picks each player's board by tapping its centre (Task 2 of [[story-checkpoint-quick-draw]]; why, and the measurements, in [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping). Both Quick draw screens do it the same way: the recording's `QuickDrawScreen` and the live camera's `LiveQuickDrawScreen` share `BoardChoosing` and `BoardsOverlay` (`lib/ui/quick_draw_boards.dart`). Taps are fractions of the picture, turned into pixels only once the frame is upright (Task 1 of [[story-checkpoint-live-quick-draw]]).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│          QUICK DRAW: CHOOSING THE BOARDS (QuickDrawScreen)          │
+│       QUICK DRAW: CHOOSING THE BOARDS (both Quick draw screens)     │
 │                                                                     │
 │   User taps the centre of Player 1's board, then Player 2's         │
-│          │  screen point ÷ preview scale = upright image pixels     │
+│          │  BoardsOverlay: screen point ÷ the picture's size on     │
+│          │  screen = a fraction, 0–1 each way (not pixels)          │
 │          ▼                                                          │
 │   ┌──────────────────────────────────────────────────────────────┐  │
-│   │ tapLocatorProvider → locateAtTap: camera's next frame        │  │
+│   │ BoardChoosing.findBoardAt → tapLocatorProvider               │  │
+│   │ → locateAtTap: the camera's next frame                       │  │
 │   │ background isolate (compute): locateTappedInFrame            │  │
-│   │  1. frameToRgb: upright RGB, at most 1920 px                 │  │
-│   │  2. locateTargetAt: square window around the tap,            │  │
+│   │  1. frameToRgb: upright RGB, at most 1920 px (a live         │  │
+│   │     Android frame arrives sideways and is turned first)      │  │
+│   │  2. tap fraction × the upright picture's size = pixels       │  │
+│   │  3. locateTargetAt: square window around the tap,            │  │
 │   │     0.45 × the picture's shorter side, enlarged 3×           │  │
-│   │  3. ColourRingLocator: centres tried = the tap (seed),       │  │
+│   │  4. ColourRingLocator: centres tried = the tap (seed),       │  │
 │   │     then the colour regions under and around it, then        │  │
 │   │     the largest regions → rings (as in Calibration)          │  │
-│   │  4. CoarseToFineLocator.moved: back to picture coordinates   │  │
+│   │  5. CoarseToFineLocator.moved: back to picture coordinates   │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
 │                                  │ TargetFound / TargetNotFound     │
 │                                  ▼ boardAt → TargetCalibration?     │
@@ -165,10 +169,11 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 │   │ found: quickDrawTargetsProvider.add (next player's board)    │  │
 │   │ none: "No board found there."; tap again                     │  │
 │   │ after two: Lock boards → lock()   ·   Start again → clear()  │  │
-│   │ and rewind the clip to its first frame                       │  │
+│   │ (the recording also rewinds to its first frame)              │  │
 │   └──────────────────────────────────────────────────────────────┘  │
-│   BoardsPainter: each board's rings and player number (blue while   │
-│   choosing, green once locked)                                      │
+│   BoardsPainter: each board's rings, scaled from its own image      │
+│   size, and player number (blue while choosing, green once          │
+│   locked)                                                           │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -235,6 +240,7 @@ Once the boards are locked, Play watches each board on its own crop with the sin
 |---|---|---|
 | Camera frame | `CameraFrame` | Live: sensor orientation (usually sideways), 1280 × 720 at `ResolutionPreset.high`. Recording: already upright, the pack's size (322 × 322, or 720 × 1280 for Quick draw) |
 | Upright image | `RgbImage` from `frameToRgb` | Rotated by the camera's `uprightRotation` (0 for a recording); calibration ellipses live here |
+| Tap (Quick draw) | `BoardsOverlay` → `TapLocator` | A **fraction** of the upright picture, 0–1 each way (since 2026-10-15). `locateTappedInFrame` multiplies it by the upright image's size after `frameToRgb`, so a sideways live frame and an upright recording are treated alike |
 | Board crop (Quick draw) | `CroppedCamera` frames | A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner) |
 | Preview widget | `CalibrationEditor` | Upright image × (preview width ÷ image width); drawn as `CameraPreview`'s (or `RecordedPreview`'s) child so it lines up |
 | Brightness frame | `LumaImage` from `frameToLuma` | Upright, ~320 px long side (180 × 320 portrait from a 1280 × 720 stream); motion detection and stuck/bounce classification; `WatchRegion` is in fractions so it's size-independent |

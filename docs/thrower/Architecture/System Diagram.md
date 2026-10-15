@@ -11,12 +11,15 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │                        UI  (lib/ui)                           │  │
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
+│  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
 │  │              ├─ CalibrationScreen ── CalibrationEditor        │  │
 │  │              ├─ LiveTestScreen ─┬─ CalibrationScreen, Play    │  │
 │  │              │                  └─ QuickDrawScreen            │  │
-│  │              │                       ├─ RecordedPreview       │  │
-│  │              │                       └─ BoardsPainter         │  │
+│  │              │                       └─ RecordedPreview       │  │
 │  │              └─ DebugTargetScreen                             │  │
+│  │  quick_draw_boards (shared by both Quick draw screens):       │  │
+│  │    BoardChoosing (tap → find → outline) · BoardsOverlay       │  │
+│  │    ── BoardsPainter · boardLines · quickDrawLine              │  │
 │  └───────────────────────────────┬───────────────────────────────┘  │
 │                                  │ ref.watch / ref.read             │
 │                                  ▼                                  │
@@ -27,6 +30,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  gameProvider (GameNotifier)    targetModelProvider           │  │
 │  │  ringBoundaryRadiiProvider      authServiceProvider           │  │
 │  │  quickDrawTargetsProvider       tapLocatorProvider            │  │
+│  │  liveQuickDrawCameraProvider (live Quick draw's own camera)   │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -146,10 +150,12 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │   │                               │ │ answer key: quickdraw.json│   │
 │   └───────────────────────────────┘ └───────────────────────────┘   │
 │                                                                     │
-│   Quick draw: boards chosen by tapping (Task 2); impact time and    │
-│   result under each board (Task 3); every frame analysed, times     │
-│   after go, false start and winner (Task 4). Still to come:         │
-│   docs, traceability, in-app instructions (Task 5)                  │
+│   Quick draw (recording): boards chosen by tapping, impact time     │
+│   and result under each board, every frame analysed, times          │
+│   after go, false start and winner (story complete). The live       │
+│   game is Home → Quick draw: LiveQuickDrawScreen on the live        │
+│   camera (liveQuickDrawCameraProvider), boards chosen the same      │
+│   way (quick_draw_boards); start signal and live duel to come       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
