@@ -64,6 +64,8 @@ class MotionEpisode {
     this.wasBlocked = false,
     this.peakShape,
     this.peakArea,
+    this.impact,
+    this.impactFrame,
     this.before,
     this.after,
     this.threshold = 12,
@@ -88,6 +90,17 @@ class MotionEpisode {
 
   final int startFrame;
   final int settledFrame;
+
+  /// The frame with the largest moving shape on the target, and its number:
+  /// where a knife hits, the board jolts and the knife stops at once. Null if
+  /// nothing moved on the target, or not measured. Quick draw times throws
+  /// by it. Not [start]: seen from behind the thrower, a knife in flight is
+  /// over the board's face all the way in, so motion starts frames before it
+  /// arrives. On the Quick draw clip at 60 fps, motion started 1 and 7 frames
+  /// before the answer key's impact frames, the first shape on the target
+  /// 1 and 5 before, and the largest was on them (2026-10-14).
+  final Duration? impact;
+  final int? impactFrame;
   final Duration start;
   final Duration settled;
   final double peakChange;
@@ -225,6 +238,17 @@ class MotionDetector {
   var _peakShape = 0.0;
   var _peakArea = 0.0;
   var _wasBlocked = false;
+  Duration? _impact;
+  int? _impactFrame;
+
+  /// Notes the frame with the largest moving shape on the target so far.
+  /// Call before `_peakShape` takes this frame in.
+  void _noteImpact(_Difference difference, Duration time) {
+    if (difference.onTarget >= startSize && (_impact == null || difference.onTarget > _peakShape)) {
+      _impact = time;
+      _impactFrame = _frame;
+    }
+  }
 
   WatchState get state => _state;
 
@@ -265,9 +289,12 @@ class MotionDetector {
           _peak = changed;
           _peakShape = difference.onTarget;
           _peakArea = difference.largestArea;
+          _impact = _impactFrame = null;
+          _noteImpact(difference, time);
         }
       case WatchState.motion:
         _peak = math.max(_peak, changed);
+        _noteImpact(difference, time);
         _peakShape = math.max(_peakShape, difference.onTarget);
         _peakArea = math.max(_peakArea, difference.largestArea);
         if (moving < stillSize) {
@@ -278,6 +305,7 @@ class MotionDetector {
       case WatchState.blocked:
         if (moving >= stillSize) {
           _peak = math.max(_peak, changed);
+          _noteImpact(difference, time);
           _peakShape = math.max(_peakShape, difference.onTarget);
           _peakArea = math.max(_peakArea, difference.largestArea);
           _state = WatchState.motion;
@@ -298,6 +326,8 @@ class MotionDetector {
             peakChange: _peak,
             peakShape: _peakShape,
             peakArea: _peakArea,
+            impact: _impact,
+            impactFrame: _impactFrame,
             changeFromBefore: fromBefore,
             acceptedNewScene: fromBefore > blockedFraction,
             wasBlocked: _wasBlocked,

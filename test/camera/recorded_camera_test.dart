@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:thrower_app/camera/camera_frame.dart';
 import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
+import 'package:thrower_app/camera/recording_sound.dart';
 import 'package:thrower_app/vision/frame_to_rgb.dart';
 
 /// A 4-frame, 2 fps recording whose frames are solid grey levels 0, 80, 160, 240.
@@ -18,6 +19,26 @@ FramePack greyPack() => FramePack.parse(FramePack.build(
           Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 6)..clear(img.ColorRgb8(v, v, v)), quality: 100)),
       ],
     ));
+
+/// Records what playback asked of the sound track.
+class FakeSound implements RecordingSound {
+  FakeSound({this.fail = false});
+
+  final bool fail;
+  final calls = <String>[];
+
+  @override
+  Future<void> playFromStart() async {
+    calls.add('play');
+    if (fail) throw StateError('no audio device');
+  }
+
+  @override
+  Future<void> stop() async => calls.add('stop');
+
+  @override
+  Future<void> dispose() async => calls.add('dispose');
+}
 
 void main() {
   late Duration now;
@@ -113,6 +134,18 @@ void main() {
     expect(camera.current.value!.index, 3);
   });
 
+  test('rewind mid-play stops on the first frame and keeps delivering it', () async {
+    camera.restart();
+    await step(const Duration(milliseconds: 1100)); // frame 2
+    camera.rewind();
+    await pumpEventQueue();
+    delivered.clear();
+    await step(const Duration(seconds: 5)); // Time passes: it stays put.
+    expect(camera.playing.value, isFalse);
+    expect(camera.current.value!.index, 0);
+    expect(delivered.map(greyOf), everyElement(closeTo(0, 3)));
+  });
+
   test('restart after the end plays from the start again', () async {
     camera.restart();
     await step(const Duration(seconds: 10));
@@ -165,6 +198,50 @@ void main() {
     expect((decoded.width, decoded.height), (8, 6));
     expect(decoded.bgra.sublist(0, 4), [closeTo(20, 4), closeTo(100, 4), closeTo(200, 4), 255]);
     expect((decoded.image?.width, decoded.image?.height), (8, 6));
+  });
+
+  group('sound track', () {
+    late FakeSound sound;
+    late RecordedCamera withSound;
+
+    setUp(() async {
+      sound = FakeSound();
+      withSound = RecordedCamera(greyPack(), recording: recording, clock: () => now, autoTick: false, decoder: decodeFramePureDart, sound: sound);
+      await pumpEventQueue();
+    });
+
+    test('is silent until playback starts', () {
+      expect(sound.calls, isEmpty);
+    });
+
+    test('plays from the start on restart, and again on each replay', () async {
+      withSound.restart();
+      withSound.restart();
+      await pumpEventQueue();
+      expect(sound.calls, ['play', 'play']);
+    });
+
+    test('stops on rewind, and is released with the camera', () async {
+      withSound.restart();
+      withSound.rewind();
+      await withSound.dispose();
+      expect(sound.calls, ['play', 'stop', 'dispose']);
+    });
+
+    test('a sound that fails to play leaves the frames playing', () async {
+      final errors = <FlutterErrorDetails>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previous);
+      final failing = RecordedCamera(greyPack(), recording: recording, clock: () => now, autoTick: false, decoder: decodeFramePureDart, sound: FakeSound(fail: true));
+      addTearDown(failing.dispose);
+      await pumpEventQueue();
+
+      failing.restart();
+      await pumpEventQueue();
+      expect(failing.playing.value, isTrue);
+      expect(errors.single.exception, isStateError);
+    });
   });
 
   test('rgbaToBgra swaps red and blue, keeping green and alpha', () {

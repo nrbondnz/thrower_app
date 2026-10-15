@@ -4,6 +4,7 @@ import 'auth/auth_service.dart';
 import 'camera/live_camera.dart';
 import 'camera/recorded_camera.dart';
 import 'camera/target_camera.dart';
+import 'game/quick_draw_targets.dart';
 import 'game/throw_watcher.dart';
 import 'scoring/game_session.dart';
 import 'scoring/target_model.dart';
@@ -51,6 +52,45 @@ final cameraProvider = FutureProvider.autoDispose<TargetCamera>(
     return camera;
   },
   retry: (retryCount, error) => null,
+);
+
+/// Quick draw's camera: for now the Live test clip of both boards
+/// ([quickDrawRecording]), separate from the single-target [cameraProvider].
+/// Released when Quick draw closes.
+final quickDrawCameraProvider = FutureProvider.autoDispose<RecordedCamera>(
+  (ref) async {
+    final camera = await RecordedCamera.load(quickDrawRecording);
+    ref.onDispose(camera.dispose);
+    return camera;
+  },
+  retry: (retryCount, error) => null,
+);
+
+/// Quick draw's boards, tapped in player order, then locked. Kept while
+/// Quick draw is open; leaving it starts over.
+class QuickDrawTargetsNotifier extends Notifier<QuickDrawTargets> {
+  @override
+  QuickDrawTargets build() => const QuickDrawTargets();
+
+  /// The next player's board. Ignored once both are found.
+  void add(TargetCalibration board) {
+    if (!state.complete) state = QuickDrawTargets(boards: [...state.boards, board]);
+  }
+
+  /// "Start again": forget the boards (and the lock).
+  void clear() => state = const QuickDrawTargets();
+
+  void lock() {
+    if (state.complete) state = QuickDrawTargets(boards: state.boards, locked: true);
+  }
+}
+
+final quickDrawTargetsProvider =
+    NotifierProvider.autoDispose<QuickDrawTargetsNotifier, QuickDrawTargets>(QuickDrawTargetsNotifier.new);
+
+/// Finds the board at a tap; tests replace it.
+final tapLocatorProvider = Provider<TapLocator>(
+  (ref) => (camera, tap) => locateAtTap(camera, tap, ref.read(ringBoundaryRadiiProvider)),
 );
 
 /// The target calibration for this session: found, adjusted, then locked.

@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/decode_image.dart';
+import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/luma_image.dart';
 import 'package:thrower_app/vision/motion_detector.dart';
 import 'package:thrower_app/vision/target_calibration.dart';
@@ -91,6 +92,47 @@ void main() {
         expect(e.acceptedNewScene, isFalse, reason: '$e');
       });
     }
+  });
+
+  group('impact (Quick draw times throws by it)', () {
+    /// A 100 × 100 grey picture, with a bright [w] × [h] block at ([x], [y]).
+    LumaImage frame({int x = 0, int y = 0, int w = 0, int h = 0}) {
+      final pixels = Uint8List(100 * 100)..fillRange(0, 100 * 100, 100);
+      for (var r = y; r < y + h; r++) {
+        pixels.fillRange(r * 100 + x, r * 100 + x + w, 220);
+      }
+      return LumaImage(100, 100, pixels);
+    }
+
+    // The whole picture watched; the target a circle of radius 30 in the middle.
+    const region = WatchRegion(0, 0, 1, 1, target: Ellipse(cx: 0.5, cy: 0.5, semiMajor: 0.3, semiMinor: 0.3, angle: 0));
+
+    /// Still frames, then [moving], then still again until it settles.
+    MotionEpisode run(List<LumaImage> moving) {
+      final detector = MotionDetector(region);
+      final frames = [for (var i = 0; i < 10; i++) frame(), ...moving, for (var i = 0; i < 10; i++) frame()];
+      for (var i = 0; i < frames.length; i++) {
+        final e = detector.add(frames[i], Duration(milliseconds: i * 100)).finished;
+        if (e != null) return e;
+      }
+      fail('never settled');
+    }
+
+    test('is the frame with the largest moving shape on the target, not where motion began', () {
+      final e = run([
+        frame(x: 2, y: 2, w: 3, h: 10), // 10: off the target (a knife flying in)
+        frame(x: 45, y: 40, w: 3, h: 10), // 11: on it, small
+        frame(x: 45, y: 40, w: 6, h: 20), // 12: on it, largest (the hit)
+        frame(x: 45, y: 40, w: 3, h: 10), // 13: settling back
+      ]);
+      expect((e.startFrame, e.impactFrame), (10, 12));
+      expect(e.impact, const Duration(milliseconds: 1200));
+    });
+
+    test('is null when nothing moved on the target', () {
+      final e = run([frame(x: 2, y: 2, w: 3, h: 10), frame(x: 2, y: 60, w: 3, h: 10)]);
+      expect(e.impactFrame, isNull);
+    });
   });
 
   test('a person at the board changes far more of the region than a throw', () {

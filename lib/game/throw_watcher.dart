@@ -41,7 +41,7 @@ class ThrowEvent {
 ///
 /// Knives are remembered until a board visit (someone collecting them).
 class ThrowWatcher {
-  ThrowWatcher(this.camera, this.calibration)
+  ThrowWatcher(this.camera, this.calibration, {this.interval = const Duration(milliseconds: 60)})
       : _detector = MotionDetector(WatchRegion.fromCalibration(calibration), minThreshold: camera.minChange),
         _tracker = ThrowTracker(calibration),
         _debug = WatchDebugLog(calibration);
@@ -52,7 +52,9 @@ class ThrowWatcher {
   final ThrowTracker _tracker;
   final WatchDebugLog _debug;
 
-  static const interval = Duration(milliseconds: 60);
+  /// Frames closer together than this are skipped: ~15 a second is enough
+  /// to see a throw. Quick draw times throws, so it looks at every frame.
+  final Duration interval;
   static const beforeRefresh = Duration(seconds: 1);
 
   final _events = StreamController<ThrowEvent>.broadcast();

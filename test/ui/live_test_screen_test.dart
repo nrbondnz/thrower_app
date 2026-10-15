@@ -104,4 +104,27 @@ void main() {
     expect(camera.playing.value, isTrue);
     expect(camera.current.value!.index, 0);
   });
+
+  testWidgets('leaving Play rewinds the recording to its first frame, for re-calibrating', (tester) async {
+    var now = Duration.zero;
+    final camera = RecordedCamera(greyPack(), recording: testRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
+    addTearDown(camera.dispose);
+    await pump(tester, const Scaffold(body: Text('Live test')), camera: camera, overrides: [
+      calibrationProvider.overrideWith(LockedCalibration.new),
+    ]);
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.push(MaterialPageRoute<void>(builder: (_) => const PlayScreen()));
+    await tester.pumpAndSettle();
+    now = const Duration(milliseconds: 1100);
+    camera.tick();
+    await tester.pump();
+    camera.tick();
+    await tester.pump();
+    expect((camera.playing.value, camera.current.value!.index), (true, 2));
+
+    navigator.pop();
+    await tester.pumpAndSettle();
+    expect(camera.playing.value, isFalse);
+    expect(camera.current.value!.index, 0);
+  });
 }

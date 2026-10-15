@@ -7,17 +7,22 @@ import 'package:image/image.dart' as img;
 
 import 'camera_frame.dart';
 import 'frame_pack.dart';
+import 'recording_sound.dart';
 import 'target_camera.dart';
 
 /// A recording the Live test can play, bundled with the app.
 class Recording {
-  const Recording({required this.name, required this.description, required this.asset});
+  const Recording({required this.name, required this.description, required this.asset, this.audio});
 
   final String name;
   final String description;
 
   /// A [FramePack] asset.
   final String asset;
+
+  /// Its sound track (an audio asset the same length, starting with the
+  /// first frame), or null for none.
+  final String? audio;
 }
 
 /// The two real boards from Nigel's video, cropped one per board from the
@@ -35,6 +40,17 @@ const liveTestRecordings = [
     asset: 'assets/live/target2.tfrm',
   ),
 ];
+
+/// Quick draw: both boards in the full picture (720 × 1280, 60 fps), from
+/// the original video at 158.5–166 s: a quiet countdown ("go" at 2.8 s), then
+/// both knives at about 3.6 s. Answer key:
+/// `docs/thrower/reference/live-camera/quickdraw.json`.
+const quickDrawRecording = Recording(
+  name: 'Quick draw',
+  description: 'Two throwers, a countdown, both boards',
+  asset: 'assets/live/quickdraw.tfrm',
+  audio: 'assets/live/quickdraw.m4a',
+);
 
 /// The frame on show, for the preview.
 class RecordedFrame {
@@ -110,8 +126,8 @@ typedef PlaybackClock = Duration Function();
 /// 1 / fps seconds to whoever listens, stamped with a monotonic clock.
 ///
 /// It opens **paused on the first frame** (so the board can be calibrated
-/// before anything happens); [restart] plays from the start, and it stops on
-/// the last frame. Frames are decoded only when the position moves on, one at
+/// before anything happens); [restart] plays from the start, it stops on
+/// the last frame, and [rewind] goes back to waiting on the first. Frames are decoded only when the position moves on, one at
 /// a time and asynchronously: if decoding can't keep up, frames in between are
 /// skipped (as a slow live camera drops them) rather than holding up the UI.
 class RecordedCamera implements TargetCamera {
@@ -121,6 +137,7 @@ class RecordedCamera implements TargetCamera {
     PlaybackClock? clock,
     bool autoTick = true,
     this.decoder = decodeFrameNatively,
+    this.sound,
   }) : _now = clock ?? _systemClock() {
     _show(0);
     if (autoTick) {
@@ -135,8 +152,9 @@ class RecordedCamera implements TargetCamera {
 
   static Future<RecordedCamera> load(Recording recording) async {
     final data = await rootBundle.load(recording.asset);
+    final audio = recording.audio;
     return RecordedCamera(FramePack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes)),
-        recording: recording);
+        recording: recording, sound: audio == null ? null : AssetRecordingSound(audio));
   }
 
   final FramePack pack;
@@ -145,6 +163,9 @@ class RecordedCamera implements TargetCamera {
 
   /// Turns each frame's JPEG into pixels ([decodeFrameNatively] in the app).
   final FrameDecoder decoder;
+
+  /// The recording's sound, started and stopped with playback.
+  final RecordingSound? sound;
   Timer? _timer;
   StreamController<CameraFrame>? _frames;
 
@@ -186,13 +207,50 @@ class RecordedCamera implements TargetCamera {
   @override
   Future<void> setZoom(double level) async {}
 
+  /// The clock when playback last started from the beginning (null before
+  /// the first [restart], and after [rewind]).
+  Duration? _playedFrom;
+
+  /// How far into the recording a frame stamped [timestamp] was delivered
+  /// (Quick draw shows impact times on the recording's own timeline). Null
+  /// before playback starts.
+  Duration? playbackTime(Duration timestamp) {
+    final from = _playedFrom;
+    return from == null ? null : timestamp - from;
+  }
+
   /// Plays from the start.
   void restart() {
     _delivered = null;
     _positionAtStart = Duration.zero;
     _startedAt = _now();
+    _playedFrom = _startedAt;
     playing.value = true;
+    _withSound((s) => s.playFromStart());
     tick();
+  }
+
+  /// Stops and waits on the first frame again, as when it opened: the Play
+  /// screen calls this on leaving, so calibrating afterwards sees the board
+  /// before any throws (not the frame playback had reached).
+  void rewind() {
+    if (_disposed) return;
+    _delivered = null;
+    _positionAtStart = Duration.zero;
+    _startedAt = null;
+    _playedFrom = null;
+    playing.value = false;
+    _withSound((s) => s.stop());
+    tick();
+  }
+
+  /// Sound is a nice-to-have: if it fails, the frames play on regardless.
+  void _withSound(Future<void> Function(RecordingSound sound) action) {
+    final s = sound;
+    if (s == null) return;
+    action(s).catchError((Object e, StackTrace st) {
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: st, library: 'recorded camera'));
+    });
   }
 
   Duration _position() {
@@ -295,6 +353,7 @@ class RecordedCamera implements TargetCamera {
     _disposed = true;
     _timer?.cancel();
     current.value?.image?.dispose();
+    await sound?.dispose();
     await _frames?.close();
     _frames = null;
   }

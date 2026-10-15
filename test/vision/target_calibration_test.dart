@@ -73,4 +73,11 @@ void main() {
     expect(identical(c.withMajorHandleAt(const Point2(640, 360)), c), isTrue);
     expect(identical(c.withMinorHandleAt(const Point2(640, 360)), c), isTrue);
   });
+
+  test("within a crop, the rings move with its corner and the image is the crop's size", () {
+    final c = sample().within(400, 100, 500, 500);
+    expect((c.imageWidth, c.imageHeight), (500, 500));
+    expect((c.outer.cx, c.outer.cy, c.outer.semiMajor), (240, 260, 200));
+    expect((c.boundaries[0.2]!.cx, c.boundaries[0.2]!.cy), (241, 260));
+  });
 }

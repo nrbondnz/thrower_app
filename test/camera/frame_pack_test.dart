@@ -40,5 +40,17 @@ void main() {
         expect((first.width, first.height), (322, 322));
       });
     }
+
+    test('Quick draw: 7.5 s of full 720 × 1280 frames at 60 fps (both boards), first frame decodes', () {
+      final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
+      expect((pack.width, pack.height, pack.fps), (720, 1280, 60));
+      expect(pack.frameCount, 449);
+      final first = img.decodeJpg(pack.jpeg(0))!;
+      expect((first.width, first.height), (720, 1280));
+    });
+
+    test('Quick draw has its sound track bundled', () {
+      expect(File(quickDrawRecording.audio!).lengthSync(), greaterThan(50000));
+    });
   });
 }

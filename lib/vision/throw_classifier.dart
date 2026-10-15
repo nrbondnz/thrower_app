@@ -121,7 +121,9 @@ class ThrowOutcome {
 /// 138–852 px on the target (0.5–3.1), while people moving at the picture's
 /// edge made shapes of up to 214 px that touched the target by 3 px at most.
 /// People are 4%+ of the region's area on both; knives and the board's jolt
-/// at most 1.1%.
+/// at most 1.1%. On the Quick draw clip (2026-10-14: 60 fps, boards ~125 px
+/// in a 188 px region) a knife flying in close to the camera reached 2.2%,
+/// so [visitArea] is 3% (it was 2%, which took that knife for a person).
 ///
 /// [knownKnives] are the shapes of knives already in the board (recorded when
 /// each stuck, cleared when someone collects them). A new shape that covers
@@ -133,7 +135,7 @@ ThrowOutcome classifyThrow(
   TargetCalibration calibration, {
   List<NewObject> knownKnives = const [],
   double visitPeak = 0.10,
-  double visitArea = 0.02,
+  double visitArea = 0.03,
   Duration minVisit = const Duration(seconds: 3),
   double bounceShape = 0.12,
   double minKnifeShare = 0.0025,

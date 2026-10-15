@@ -59,6 +59,15 @@ class TargetCalibration {
     return _transform(majorFactor: 1, minorFactor: reach / outer.semiMinor, turn: 0);
   }
 
+  /// The same rings in the [w] × [h] part of the image whose top-left corner
+  /// is ([x], [y]) (Quick draw watches each board in its own crop).
+  TargetCalibration within(int x, int y, int w, int h) => TargetCalibration(
+        imageWidth: w,
+        imageHeight: h,
+        boundaries: {for (final e in boundaries.entries) e.key: e.value.translated(-x.toDouble(), -y.toDouble())},
+        outer: outer.translated(-x.toDouble(), -y.toDouble()),
+      );
+
   TargetCalibration _transform({required double majorFactor, required double minorFactor, required double turn}) {
     // Stretch along the outer ellipse's own axes, then turn, about its centre.
     final c = math.cos(outer.angle), s = math.sin(outer.angle);

@@ -91,8 +91,9 @@ String describe(Detected d) =>
 /// full-resolution recordings (2026-10-12): 6 of 10 and 6 of 9, all but
 /// board 1's 40.5 s within a ring. (On the 140 px copy: 5 and 6.) Nigel
 /// judged the answer key from the copy, so some of the differences may be
-/// the key's.
-const exactScores = {'Target 1': 6, 'Target 2': 6};
+/// the key's. 2026-10-13: Nigel re-scored every knife from the original
+/// ("as close as I can get"), then reviewed the misses: 9 of 10 and 7 of 9.
+const exactScores = {'Target 1': 9, 'Target 2': 7};
 
 void main() {
   final truth = jsonDecode(File('docs/thrower/reference/live-camera/truth.json').readAsStringSync()) as Map<String, dynamic>;

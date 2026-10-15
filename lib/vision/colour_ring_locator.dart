@@ -38,6 +38,7 @@ class ColourRingLocator implements TargetLocator {
     this.minConfidence = 0.4,
     this.rayCount = 180,
     this.maxCandidates = 12,
+    this.seed,
   });
 
   /// Normalised radii of the boundaries *inside* the target, centre outwards
@@ -61,6 +62,10 @@ class ColourRingLocator implements TargetLocator {
   /// How many candidate centres are tried, largest regions first.
   final int maxCandidates;
 
+  /// Where the user says the target's centre is (a tap on the board, in the
+  /// image's coordinates): tried before the colour regions' centres.
+  final Point2? seed;
+
   /// Palette size for finding candidate regions: the two ring colours plus
   /// room for background, handles and shading.
   static const _paletteSize = 8;
@@ -80,7 +85,12 @@ class ColourRingLocator implements TargetLocator {
     final work = image.downscaled(workingSize).upscaled(minWorkingSize);
     final back = image.width / work.width;
 
-    final candidates = _candidateCentres(work);
+    final labels = _paletteLabels(work, _paletteSize, edgeContrast * 0.75);
+    final s = seed == null ? null : Point2(seed!.x / back, seed!.y / back);
+    final candidates = [
+      if (s != null) ...[s, ..._regionCentresNear(labels, work.width, work.height, s)],
+      ..._candidateCentres(work, labels),
+    ];
     if (candidates.isEmpty) return const TargetNotFound('No large single-colour area found');
 
     _Fit? best;
@@ -123,10 +133,10 @@ class ColourRingLocator implements TargetLocator {
     );
   }
 
-  /// Centres of the largest single-colour regions after palette reduction,
-  /// biggest first, with near-duplicates (a ring and the bull inside it) merged.
-  List<Point2> _candidateCentres(RgbImage img) {
-    final labels = _paletteLabels(img, _paletteSize, edgeContrast * 0.75);
+  /// Centres of the largest single-colour regions after palette reduction
+  /// ([labels]), biggest first, with near-duplicates (a ring and the bull
+  /// inside it) merged.
+  List<Point2> _candidateCentres(RgbImage img, List<int> labels) {
     final regions = _regions(labels, img.width, img.height, (img.width * img.height * 0.001).ceil())
       ..sort((a, b) => b.size.compareTo(a.size));
     final minGap = math.max(img.width, img.height) * 0.02;
@@ -385,6 +395,25 @@ class ColourRingLocator implements TargetLocator {
   static const _centresDisagree = 'Ring centres disagree';
   static const _predictedSlack = 0.12;
 
+  /// The centres of the single-colour regions under and just around [seed]
+  /// (a tap): a tap rarely lands on the board's exact centre, but the bull, or
+  /// the ring it lands in, is centred on it, and fits only start well from
+  /// near the centre (the Quick draw clip, 2026-10-14: a tap 5–10 px off
+  /// found the green and red board on 8–14 of 16 frames). A region over a
+  /// quarter of the picture is background, not a ring.
+  static List<Point2> _regionCentresNear(List<int> labels, int w, int h, Point2 seed) {
+    final reach = math.max(2, (math.min(w, h) * 0.01).round());
+    final centres = <Point2>[];
+    final seen = List<bool>.filled(labels.length, false);
+    for (final (dx, dy) in [(0, 0), (reach, 0), (-reach, 0), (0, reach), (0, -reach)]) {
+      final x = seed.x.round() + dx, y = seed.y.round() + dy;
+      if (x < 0 || y < 0 || x >= w || y >= h || seen[y * w + x]) continue;
+      final region = _regionAt(labels, w, h, x, y, seen, maxSize: w * h ~/ 4);
+      if (region != null) centres.add(Point2(region.cx, region.cy));
+    }
+    return centres;
+  }
+
   /// Each sample becomes the majority of the samples within [halfWidth] of it,
   /// so a soft, sprayed edge lands at its midpoint and specks disappear.
   static List<bool> _majority(List<bool> samples, int halfWidth) {
@@ -507,6 +536,29 @@ class _Colours {
 
   /// Rough pixel radius of the target's outer edge, along its long axis.
   final double outerRadius;
+}
+
+/// The connected region of [labels] containing ([x], [y]), marking it in
+/// [seen]; null if it grows beyond [maxSize].
+_Region? _regionAt(List<int> labels, int w, int h, int x, int y, List<bool> seen, {required int maxSize}) {
+  final colour = labels[y * w + x];
+  var size = 0, sx = 0.0, sy = 0.0;
+  final stack = [y * w + x];
+  seen[y * w + x] = true;
+  while (stack.isNotEmpty) {
+    final i = stack.removeLast();
+    final px = i % w, py = i ~/ w;
+    if (++size > maxSize) return null;
+    sx += px;
+    sy += py;
+    for (final n in [if (px > 0) i - 1, if (px < w - 1) i + 1, if (py > 0) i - w, if (py < h - 1) i + w]) {
+      if (!seen[n] && labels[n] == colour) {
+        seen[n] = true;
+        stack.add(n);
+      }
+    }
+  }
+  return _Region(size, sx / size, sy / size);
 }
 
 class _Region {

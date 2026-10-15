@@ -50,7 +50,7 @@ class CoarseToFineLocator implements TargetLocator {
     // No gain if the crop is (nearly) the whole image, or degenerate.
     if (w < 16 || h < 16 || (w > image.width * 0.9 && h > image.height * 0.9)) return coarse;
 
-    final fine = _moved(inner.locate(image.crop(x0, y0, w, h)), x0.toDouble(), y0.toDouble());
+    final fine = moved(inner.locate(image.crop(x0, y0, w, h)), x0.toDouble(), y0.toDouble());
     if (fine is TargetFound) return fine;
     return coarse is TargetFound ? coarse : fine;
   }
@@ -67,7 +67,9 @@ class CoarseToFineLocator implements TargetLocator {
     }
   }
 
-  static TargetLocateResult _moved(TargetLocateResult r, double dx, double dy) {
+  /// [r] moved by ([dx], [dy]): a result found in a crop, put back into the
+  /// whole image's coordinates.
+  static TargetLocateResult moved(TargetLocateResult r, double dx, double dy) {
     List<Point2> pts(List<Point2> ps) => [for (final p in ps) Point2(p.x + dx, p.y + dy)];
     return switch (r) {
       TargetFound(:final boundaries, :final outer, :final confidence, :final boundaryPoints) => TargetFound(

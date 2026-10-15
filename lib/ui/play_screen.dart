@@ -112,6 +112,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   @override
   void dispose() {
     _stopWatcher();
+    // A Live test recording plays only while Play is open: back on the
+    // calibrate screen it waits on its first frame again.
+    if (_camera case final RecordedCamera camera) camera.rewind();
     super.dispose();
   }
 

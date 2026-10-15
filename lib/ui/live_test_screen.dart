@@ -5,6 +5,7 @@ import '../camera/recorded_camera.dart';
 import '../providers.dart';
 import 'calibration_screen.dart';
 import 'play_screen.dart';
+import 'quick_draw_screen.dart';
 
 /// Live test: plays a recording of a real board in place of the camera,
 /// through the same calibrate → Play screens, analysed live as it plays.
@@ -63,6 +64,15 @@ class LiveTestScreen extends ConsumerWidget {
               FilledButton(
                 onPressed: chosen == null || !calibrated ? null : () => open(const PlayScreen()),
                 child: const Text('2. Play'),
+              ),
+              const SizedBox(height: 32),
+              Text('Quick draw', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              const Text('Two throwers, one board each, after a countdown. Plays full screen, with sound.'),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => open(const QuickDrawScreen()),
+                child: const Text('Quick draw'),
               ),
             ],
           ),
