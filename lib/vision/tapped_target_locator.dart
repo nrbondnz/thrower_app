@@ -58,8 +58,11 @@ class TappedTargetsResult {
 
 /// [locateTargetAt] for each tap, on one camera frame. Top-level and taking
 /// plain data so it can run in a background isolate via `compute`: (frame,
-/// clockwise rotation to upright, ring boundary radii, taps in the upright
-/// image's pixels).
+/// clockwise rotation to upright, ring boundary radii, taps as **fractions**
+/// of the upright picture's width and height). Fractions, because the screen
+/// shows the upright picture at its own size, and only here, after turning
+/// the frame upright, is the picture's size in pixels known (a live camera's
+/// frames arrive sideways on Android).
 TappedTargetsResult locateTappedInFrame((CameraFrame, int, List<double>, List<Point2>) input) {
   final (frame, rotation, boundaries, taps) = input;
   final rgb = frameToRgb(frame, rotation: rotation, maxSide: 1920);
@@ -67,5 +70,9 @@ TappedTargetsResult locateTappedInFrame((CameraFrame, int, List<double>, List<Po
     return TappedTargetsResult(
         [for (final _ in taps) TargetNotFound('Unsupported camera format ${frame.format.name}')], 0, 0);
   }
-  return TappedTargetsResult([for (final t in taps) locateTargetAt(rgb, t, boundaries)], rgb.width, rgb.height);
+  return TappedTargetsResult(
+    [for (final t in taps) locateTargetAt(rgb, Point2(t.x * rgb.width, t.y * rgb.height), boundaries)],
+    rgb.width,
+    rgb.height,
+  );
 }

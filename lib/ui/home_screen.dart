@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'calibration_screen.dart';
 import 'debug_target_screen.dart';
 import 'instructions.dart';
+import 'live_quick_draw_screen.dart';
 import 'live_test_screen.dart';
 import 'play_screen.dart';
 
@@ -25,10 +26,18 @@ class HomeScreen extends StatelessWidget {
               child: const Text('Instructions'),
             ),
             const SizedBox(height: 16),
+            // Two different games, so each says what it is (Nigel, 2026-10-15).
             FilledButton(
               onPressed: () => open(const PlayScreen()),
               child: const Text('Play'),
             ),
+            const _Caption('Rounds on one target'),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => open(const LiveQuickDrawScreen()),
+              child: const Text('Quick draw'),
+            ),
+            const _Caption('Two throwers, on a start signal'),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => open(const LiveTestScreen()),
@@ -49,4 +58,17 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A short line under a Home button saying what it's for.
+class _Caption extends StatelessWidget {
+  const _Caption(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+      );
 }

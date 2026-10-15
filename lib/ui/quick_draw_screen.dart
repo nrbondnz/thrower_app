@@ -8,15 +8,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../camera/recorded_camera.dart';
 import '../camera/recording_analysis_feed.dart';
 import '../game/quick_draw_judge.dart';
-import '../game/quick_draw_targets.dart';
 import '../game/quick_draw_watcher.dart';
 import '../providers.dart';
-import '../vision/ellipse.dart';
-import '../vision/target_calibration.dart';
 import 'camera_view.dart';
+import 'quick_draw_boards.dart';
 import 'recorded_preview.dart';
 
-/// Quick draw (Live test): two throwers, one board each, both in one view.
+/// Quick draw on a recording (Live test → Quick draw): two throwers, one board
+/// each, both in one view. The live camera's Quick draw is
+/// `LiveQuickDrawScreen`; both choose the boards the same way
+/// (`quick_draw_boards.dart`).
 /// It plays the clip full screen with its sound (the system bars hidden).
 /// Before playing, the user taps the centre of Player 1's board, then
 /// Player 2's (there may be more boards in the picture), and locks them.
@@ -32,13 +33,7 @@ class QuickDrawScreen extends ConsumerStatefulWidget {
   ConsumerState<QuickDrawScreen> createState() => _QuickDrawScreenState();
 }
 
-class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
-  /// Looking for a board at the last tap.
-  var _searching = false;
-
-  /// The last tap found no board.
-  var _missed = false;
-
+class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardChoosing {
   /// Every frame of the clip, in order, for the watcher.
   RecordingAnalysisFeed? _feed;
 
@@ -95,29 +90,6 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
     super.dispose();
   }
 
-  Future<void> _findBoardAt(RecordedCamera camera, Point2 tap) async {
-    setState(() {
-      _searching = true;
-      _missed = false;
-    });
-    final board = boardAt(await ref.read(tapLocatorProvider)(camera, tap));
-    if (!mounted) return;
-    if (board != null) ref.read(quickDrawTargetsProvider.notifier).add(board);
-    setState(() {
-      _searching = false;
-      _missed = board == null;
-    });
-  }
-
-  String _instruction(QuickDrawTargets targets) {
-    final next = targets.boards.length + 1;
-    if (_searching) return "Looking for Player $next's board…";
-    if (targets.locked) return 'Boards locked. Press Play.';
-    if (targets.complete) return 'Both boards found: lock them, or start again.';
-    final again = _missed ? 'No board found there. ' : '';
-    return "${again}Tap the centre of Player $next's board.";
-  }
-
   @override
   Widget build(BuildContext context) {
     final camera = ref.watch(quickDrawCameraProvider);
@@ -135,13 +107,12 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      _BoardsOverlay(
+                      BoardsOverlay(
                         targets: targets,
-                        imageWidth: value.pack.width,
-                        onTap: targets.complete || _searching ? null : (tap) => _findBoardAt(value, tap),
-                        playing: value.playing,
-                        results: _watcher?.throws,
-                        go: value.recording.go,
+                        onTap: targets.complete || searching ? null : (tap) => findBoardAt(value, tap),
+                        tapsOff: value.playing,
+                        throws: _watcher?.throws,
+                        go: value.recording.go ?? Duration.zero,
                       ),
                       if (value.recording.go case final go?) _GoFlash(camera: value, go: go),
                       if (kDebugMode)
@@ -177,17 +148,13 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          color: Colors.black54,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          child: switch ((_watcher, _feed)) {
-                            (final watcher?, final feed?) => ListenableBuilder(
-                                listenable: Listenable.merge([watcher.throws, feed.analysed, value.position]),
-                                builder: (context, _) => _line(_progress(value, feed, watcher.throws.value)),
-                              ),
-                            _ => _line(_instruction(targets)),
-                          },
-                        ),
+                        switch ((_watcher, _feed)) {
+                          (final watcher?, final feed?) => ListenableBuilder(
+                              listenable: Listenable.merge([watcher.throws, feed.analysed, value.position]),
+                              builder: (context, _) => quickDrawLine(_progress(value, feed, watcher.throws.value)),
+                            ),
+                          _ => quickDrawLine(choosingInstruction(targets, locked: 'Boards locked. Press Play.')),
+                        },
                         const SizedBox(height: 12),
                         Wrap(
                           alignment: WrapAlignment.center,
@@ -227,14 +194,6 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
   }
 }
 
-/// The instruction or result line at the bottom.
-Widget _line(String text) => Text(
-      text,
-      key: const Key('quickDrawInstruction'),
-      textAlign: TextAlign.center,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-    );
-
 /// "GO!" over the picture for a moment when the footage's countdown says go.
 class _GoFlash extends StatelessWidget {
   const _GoFlash({required this.camera, required this.go});
@@ -270,136 +229,6 @@ class _GoFlash extends StatelessWidget {
       },
     );
   }
-}
-
-/// Each board's rings, with its player number above it (blue while choosing,
-/// green once locked), over the picture; and, while choosing (and not
-/// playing), taps on the picture in image pixels.
-class _BoardsOverlay extends StatelessWidget {
-  const _BoardsOverlay({
-    required this.targets,
-    required this.imageWidth,
-    required this.onTap,
-    required this.playing,
-    required this.results,
-    required this.go,
-  });
-
-  final QuickDrawTargets targets;
-  final int imageWidth;
-  final ValueChanged<Point2>? onTap;
-  final ValueNotifier<bool> playing;
-
-  /// Each player's throw so far, while a locked game plays.
-  final ValueNotifier<List<QuickDrawThrow?>>? results;
-
-  /// When the countdown says go: throws are timed from it.
-  final Duration? go;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final scale = constraints.maxWidth / imageWidth;
-        final throws = results;
-        final paint = throws == null
-            ? CustomPaint(size: Size.infinite, painter: BoardsPainter(targets, scale: scale))
-            : ValueListenableBuilder(
-                valueListenable: throws,
-                builder: (context, list, _) => CustomPaint(
-                  size: Size.infinite,
-                  painter: BoardsPainter(targets, scale: scale, results: boardLines(list, go ?? Duration.zero)),
-                ),
-              );
-        final tap = onTap;
-        if (tap == null) return paint;
-        return ValueListenableBuilder(
-          valueListenable: playing,
-          builder: (context, isPlaying, child) => isPlaying
-              ? child!
-              : GestureDetector(
-                  key: const Key('quickDrawBoardTap'),
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: (d) => tap(Point2(d.localPosition.dx / scale, d.localPosition.dy / scale)),
-                  child: child,
-                ),
-          child: paint,
-        );
-      },
-    );
-  }
-}
-
-/// The line under each board: the throw's time after [go] and its score,
-/// "bounced" or "false start" ([judgedText]); null until its throw is in.
-List<String?> boardLines(List<QuickDrawThrow?> throws, Duration go) {
-  final judged = judgeQuickDraw(throws, go).players;
-  return [for (final (i, t) in throws.indexed) t == null ? null : judgedText(judged[i])];
-}
-
-/// Draws [QuickDrawTargets.boards] at [scale] screen pixels per image pixel,
-/// with each player's [results] line under their board.
-class BoardsPainter extends CustomPainter {
-  BoardsPainter(this.targets, {required this.scale, this.results = const []});
-
-  final QuickDrawTargets targets;
-  final double scale;
-  final List<String?> results;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final colour = targets.locked ? Colors.greenAccent : Colors.lightBlueAccent;
-    final stroke = Paint()
-      ..color = colour
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    for (final (i, board) in targets.boards.indexed) {
-      for (final e in [...board.boundaries.values, board.outer]) {
-        canvas.drawPath(_path(e.rescaled(scale)), stroke);
-      }
-      _label(canvas, board, '${i + 1}', colour);
-      if (i < results.length && results[i] != null) _result(canvas, board, results[i]!);
-    }
-  }
-
-  /// [text] in a dark box just below the board.
-  void _result(Canvas canvas, TargetCalibration board, String text) {
-    final o = board.outer;
-    final bottom = o.cy + math.max(o.semiMajor, o.semiMinor);
-    final painter = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final at = Offset(o.cx * scale - painter.width / 2, bottom * scale + 8);
-    canvas.drawRect((at - const Offset(6, 3)) & Size(painter.width + 12, painter.height + 6), Paint()..color = Colors.black87);
-    painter.paint(canvas, at);
-  }
-
-  /// The player number in a disc just above the board.
-  void _label(Canvas canvas, TargetCalibration board, String text, Color colour) {
-    final o = board.outer;
-    final top = o.cy - math.max(o.semiMajor, o.semiMinor);
-    final at = Offset(o.cx * scale, top * scale - 16);
-    canvas.drawCircle(at, 12, Paint()..color = colour);
-    final painter = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    painter.paint(canvas, at - Offset(painter.width / 2, painter.height / 2));
-  }
-
-  Path _path(Ellipse e) {
-    final path = Path();
-    for (var i = 0; i <= 120; i++) {
-      final p = e.pointAt(2 * math.pi * i / 120);
-      i == 0 ? path.moveTo(p.x, p.y) : path.lineTo(p.x, p.y);
-    }
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(BoardsPainter old) =>
-      old.targets != targets || old.scale != scale || !listEquals(old.results, results);
 }
 
 /// Plays the clip from the start; hidden while it plays.

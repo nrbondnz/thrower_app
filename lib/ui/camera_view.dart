@@ -16,11 +16,14 @@ import 'recorded_preview.dart';
 /// The back camera's preview (or the Live test recording playing in its
 /// place), with permission errors, release on background and re-open on
 /// return handled. [overlayBuilder] draws on top of the preview, sized and
-/// positioned exactly over the camera image.
+/// positioned exactly over the camera image. [camera] is where the camera
+/// comes from: Calibrate and Play's [cameraProvider] by default; Quick draw
+/// has its own.
 class CameraView extends ConsumerStatefulWidget {
-  const CameraView({super.key, this.overlayBuilder});
+  const CameraView({super.key, this.overlayBuilder, this.camera});
 
   final Widget Function(BuildContext context, TargetCamera camera)? overlayBuilder;
+  final FutureProvider<TargetCamera>? camera;
 
   @override
   ConsumerState<CameraView> createState() => _CameraViewState();
@@ -57,14 +60,15 @@ class _CameraViewState extends ConsumerState<CameraView> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     if (_backgrounded) return const SizedBox.expand();
-    return ref.watch(cameraProvider).when(
+    final provider = widget.camera ?? cameraProvider;
+    return ref.watch(provider).when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) {
             debugPrint('Camera failed to start: $error\n$stack');
             return CameraErrorView(
               failure: error is CameraStartException ? error.failure : CameraFailure.unknown,
               detail: kDebugMode ? error.toString() : null,
-              onRetry: () => ref.invalidate(cameraProvider),
+              onRetry: () => ref.invalidate(provider),
             );
           },
           data: (camera) => Stack(

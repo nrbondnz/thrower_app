@@ -20,7 +20,9 @@ class QuickDrawTargets {
   bool get complete => boards.length == players;
 }
 
-/// Finds the board at [tap] (upright image pixels) on the camera's next frame.
+/// Finds the board at [tap] on the camera's next frame. [tap] is a fraction
+/// of the upright picture's width and height (0–1 each way), so it doesn't
+/// depend on the camera's resolution or which way its sensor faces.
 typedef TapLocator = Future<TappedTargetsResult> Function(TargetCamera camera, Point2 tap);
 
 /// The app's [TapLocator]: [locateTappedInFrame] in a background isolate.

@@ -83,9 +83,40 @@ void main() {
       planes: [FramePlane(bytes: bgra, bytesPerRow: first.width * 4, bytesPerPixel: 4)],
       timestamp: Duration.zero,
     );
-    final result = locateTappedInFrame((frame, 0, boundaryRadii, [centreOf(player2Board), centreOf(player1Board)]));
+    // Taps as fractions of the picture (720 × 1280), as the screen sends them.
+    Point2 fraction(Point2 p) => Point2(p.x / 720, p.y / 1280);
+    final result = locateTappedInFrame(
+        (frame, 0, boundaryRadii, [fraction(centreOf(player2Board)), fraction(centreOf(player1Board))]));
     expect((result.imageWidth, result.imageHeight), (720, 1280));
     expect(mismatch(result.boards[0], player2Board), isNull);
     expect(mismatch(result.boards[1], player1Board), isNull);
+  });
+
+  test('a sideways frame (as an Android camera sends it) is turned upright first; taps are fractions of the upright picture', () {
+    // The first frame turned a quarter-turn anticlockwise (1280 × 720), so it
+    // needs rotating 90° clockwise to be upright, as frameToRgb does.
+    const w = 720, h = 1280;
+    final bgra = Uint8List(w * h * 4);
+    for (var uy = 0; uy < h; uy++) {
+      for (var ux = 0; ux < w; ux++) {
+        // Upright (ux, uy) is sideways (uy, w - 1 - ux) in a frame h wide.
+        final i = ((w - 1 - ux) * h + uy) * 4, j = (uy * w + ux) * 3;
+        bgra[i] = first.pixels[j + 2];
+        bgra[i + 1] = first.pixels[j + 1];
+        bgra[i + 2] = first.pixels[j];
+        bgra[i + 3] = 255;
+      }
+    }
+    final frame = CameraFrame(
+      width: h,
+      height: w,
+      format: FrameFormat.bgra8888,
+      planes: [FramePlane(bytes: bgra, bytesPerRow: h * 4, bytesPerPixel: 4)],
+      timestamp: Duration.zero,
+    );
+    Point2 fraction(Point2 p) => Point2(p.x / w, p.y / h);
+    final result = locateTappedInFrame((frame, 90, boundaryRadii, [fraction(centreOf(player1Board))]));
+    expect((result.imageWidth, result.imageHeight), (w, h));
+    expect(mismatch(result.boards.single, player1Board), isNull);
   });
 }

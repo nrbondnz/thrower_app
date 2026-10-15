@@ -93,6 +93,19 @@ final tapLocatorProvider = Provider<TapLocator>(
   (ref) => (camera, tap) => locateAtTap(camera, tap, ref.read(ringBoundaryRadiiProvider)),
 );
 
+/// The live Quick draw's camera: the phone's back camera, its own (not
+/// [cameraProvider], which Calibrate and Play share with the Live test's
+/// recordings). Released when Quick draw closes. Never retried automatically
+/// (see [cameraProvider]).
+final liveQuickDrawCameraProvider = FutureProvider.autoDispose<TargetCamera>(
+  (ref) async {
+    final camera = await LiveCamera.open();
+    ref.onDispose(camera.dispose);
+    return camera;
+  },
+  retry: (retryCount, error) => null,
+);
+
 /// The target calibration for this session: found, adjusted, then locked.
 /// Not auto-disposed, so it survives leaving and returning to the screen.
 /// It belongs to the camera it was made with, so switching between the live

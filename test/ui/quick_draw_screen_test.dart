@@ -6,6 +6,7 @@ import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/game/quick_draw_watcher.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/ui/live_test_screen.dart';
+import 'package:thrower_app/ui/quick_draw_boards.dart';
 import 'package:thrower_app/ui/quick_draw_screen.dart';
 import 'package:thrower_app/ui/recorded_preview.dart';
 import 'package:thrower_app/vision/ellipse.dart';
@@ -108,8 +109,8 @@ void main() {
     expect(instruction(tester), "Tap the centre of Player 2's board.");
     await tapPicture(tester, 0.25, 0.5);
     expect(instruction(tester), 'Both boards found: lock them, or start again.');
-    // Taps reach the finder in the picture's pixels (8 × 6 here).
-    expect([for (final t in taps) (t.x.round(), t.y.round())], [(6, 3), (2, 3)]);
+    // Taps reach the finder as fractions of the picture.
+    expect([for (final t in taps) (t.x, t.y)], [(0.75, 0.5), (0.25, 0.5)]);
   });
 
   testWidgets('a tap that finds no board says so, and asks again', (tester) async {
