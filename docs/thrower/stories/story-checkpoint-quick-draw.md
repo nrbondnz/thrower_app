@@ -87,7 +87,7 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
   - Drift (fixed 2026-10-15): the Notes size and `locateTargetAt`'s doc comment now match the table.
 
 ## Task 3: Impact time and result per board
-- **Status:** COMPLETE (2026-10-15). Nigel, on the Samsung SM-A065F: "it shows the scores and the times". Playback ran at **11–12 frames a second** there (not 60), and a couple of runs gave both players the same time: at that rate the two knives (2 frames, about 33 ms apart) can land in one delivered frame. Nigel: both throwers are professionals, so a draw at that frame rate is no surprise; the Target 2 thrower always draws or wins on time, as analysed. He'll check on his iPhone, expecting a clearer difference at a higher frame rate.
+- **Status:** COMPLETE (2026-10-15). Nigel, on the Samsung SM-A065F: "it shows the scores and the times". Playback ran at **11–12 frames a second** there (not 60), and a couple of runs gave both players the same time: at that rate the two knives (2 frames, about 33 ms apart) can land in one delivered frame. Nigel: both throwers are professionals, so a draw at that frame rate is no surprise; the Target 2 thrower always draws or wins on time, as analysed. He'll check on his iPhone, expecting a clearer difference at a higher frame rate. **iPhone (2026-10-15, debug build from Xcode, on the Mac):** about **42 frames a second**, and "quite often" both players still got the same time. Fix chosen for Task 4 (Plan Changes Log).
 - **Depends on:** Task 2
 - **Work (as built):**
   - `CroppedCamera` (`lib/camera/cropped_camera.dart`): a part of another camera's picture as a camera of its own, frames as views into the source's bytes (BGRA and YUV; upright sources only). `TargetCalibration.within` moves a board's rings into its crop.
@@ -111,6 +111,11 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
 ## Task 4: The Quick draw game
 - **Status:** NOT STARTED
 - **Depends on:** Task 3
+- **Work, first (Nigel, 2026-10-15): analyse every frame, report late.** Playback stays as it is (it may skip frames to keep up with the sound), but **analysis must see every one of the clip's frames, in order**, and time each by its **place in the clip** (frame number ÷ 60), not by when it arrived. Results may appear late: Nigel, "analysis can come back with the actual result 1/2 second later". Points for the design:
+  - Today one decoded frame feeds both the preview and the watchers, and `RecordedCamera` skips to the newest when decoding falls behind (`_show` / `_wanted`), so the watchers never see the skipped frames. The analysis needs its own in-order path (a queue of frame indices), separate from what's on screen.
+  - Lag: if the phone analyses ~42 frames a second, analysis falls behind by ~0.4 s per second of clip, about **1.5 s** by the throws at 3.6 s (less in a release build). If that's too slow, only the frames that matter need full analysis, or decode only the two board crops (the colour swap, `rgbaToBgra`, runs over the whole 720 × 1280 frame on the UI thread today).
+  - Timing by clip position also removes decode jitter from the times (`_deliver` stamps frames with `_now()`).
+  - Tests: the replay test already delivers every frame; add one where playback skips frames and the result is still the answer key's times.
 - **Work:** "go" from the answer key (the footage's audio gives the countdown; shown on screen as a "Go" marker at 2.8 s); false start if an impact comes before go; the winner rule (Decisions above); results screen.
 - **Verify:** Nigel plays Quick draw: "Go" shows as he hears it in the footage, and the result says board 2 wins (5, stuck, ~0.8 s after go) and board 1 bounced.
 - **Save:** unit tests for the winner rule (both stick, one bounces, both bounce, false start, a tie on the same frame).
@@ -125,6 +130,8 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
 ---
 
 ## Plan Changes Log
+
+- **2026-10-15:** iPhone ran Quick draw at ~42 frames a second (debug) with frequent equal times. Nigel: leave the playback frame rate; analysis may come back late ("1/2 second later"). Task 4 now starts with in-order analysis of every frame, timed by clip position. The live-game timing questions (60 fps capture, capture timestamps) went to backlog #9; they're for the live version, not this story.
 
 - **2026-10-14:** Task 2 changed from automatic to **tapping**: Nigel, "selecting the two targets by touching the camera is the way to go, there might actually be more than 2 targets in shot, so for this test assume the centre of the boards is selected in order, 1 then 2". The automatic search (find one board, then search beside it) found the right board on only 8 of 16 frames. Drag-to-adjust per board isn't in this task.
 - **2026-10-14:** Sound: **duck others** (Nigel), so other apps' audio is turned down, not stopped; the silent switch is still ignored so the countdown is heard.

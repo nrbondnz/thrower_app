@@ -38,6 +38,12 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - **Not ready for the App Store:** the Live test recordings are ~87 MB, and the Quick draw clip shows people (full frame, with voices). Fine for internal TestFlight; see [[backlog]] #6 before any public build.
 - **Taps:** aim for the bull. Taps 15–30 px off the centre sometimes miss the green-and-red board; *Start again* clears and rewinds ([[Known Issues]] → Quick Draw: a Board Isn't Found).
 
+### Results on the Mac (2026-10-15), handed back to the PC
+- Steps 1–3 done: `flutter test` **373 pass** on the Mac; the debug build ran on the iPhone from Xcode. `ios/Podfile.lock` (adds only the `audioplayers_darwin` pod) committed by Nigel as `a454bf7`. `pubspec.yaml` is at **`1.0.0+5`**, so the next TestFlight build is **`+6`** (not `+5` as above).
+- **iPhone, Quick draw:** about **42 frames a second**, and the two players "quite often" got the same time.
+- **Decision (Nigel):** leave the playback frame rate; the analysis may come back late ("1/2 second later") if every frame is analysed and timed by its place in the clip. Written up as the first part of **Task 4** in [[story-checkpoint-quick-draw]] (Plan Changes Log 2026-10-15) and in [[Known Issues]] → Quick Draw: Dropped Frames Make Times Coarser.
+- **Live game, not this story:** 60 fps capture and capture timestamps, added to [[backlog]] #9.
+
 ### Next (either machine)
 **Task 4** of [[story-checkpoint-quick-draw]]: times from "go", a false start if a knife lands before "go", the winner (the first knife to **stick**; a bounce-out loses; both bounce = no winner), and a results line. In the final, live-camera version the app counts down itself, Formula 1 style (5 beeps, a random pause, a long beep for go): [[backlog]] #9.
 
