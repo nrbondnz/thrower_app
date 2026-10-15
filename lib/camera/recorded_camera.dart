@@ -208,6 +208,9 @@ class RecordedCamera implements TargetCamera {
   double get maxZoom => 1;
 
   @override
+  Duration get now => _now();
+
+  @override
   double get zoom => 1;
 
   @override

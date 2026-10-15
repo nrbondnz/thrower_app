@@ -116,6 +116,11 @@ class RecordingAnalysisFeed implements TargetCamera {
   @override
   double get maxZoom => 1;
 
+  /// Its frames are stamped with their place in the recording, so its clock
+  /// is the playback position.
+  @override
+  Duration get now => camera.position.value;
+
   @override
   double get zoom => 1;
 

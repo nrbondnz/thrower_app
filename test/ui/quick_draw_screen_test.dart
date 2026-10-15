@@ -108,7 +108,7 @@ void main() {
     await tapPicture(tester, 0.75, 0.5);
     expect(instruction(tester), "Tap the centre of Player 2's board.");
     await tapPicture(tester, 0.25, 0.5);
-    expect(instruction(tester), 'Both boards found: lock them, or start again.');
+    expect(instruction(tester), 'Both boards found: lock them, or choose them again.');
     // Taps reach the finder as fractions of the picture.
     expect([for (final t in taps) (t.x, t.y)], [(0.75, 0.5), (0.25, 0.5)]);
   });
@@ -131,7 +131,7 @@ void main() {
     expect(find.byKey(const Key('quickDrawLock')), findsNothing);
   });
 
-  testWidgets('start again forgets the boards and rewinds the clip', (tester) async {
+  testWidgets('choose boards again forgets the boards and rewinds the clip', (tester) async {
     await pumpLiveTest(tester);
     await tapPicture(tester, 0.75, 0.5);
     camera.restart();

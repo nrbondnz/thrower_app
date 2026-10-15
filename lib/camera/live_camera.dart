@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'camera_frame.dart';
@@ -42,7 +43,10 @@ class LiveCamera implements TargetCamera {
   final _clock = Stopwatch()..start();
   StreamController<CameraFrame>? _frames;
 
-  static Future<LiveCamera> open() async {
+  /// Opens the back camera. [fps] asks for a frame rate (Quick draw asks for
+  /// 60: two knives can land 2 frames apart at 60 fps, and in the same frame
+  /// at 30); a phone that won't open at it is opened again at its default.
+  static Future<LiveCamera> open({int? fps}) async {
     final List<CameraDescription> cameras;
     try {
       cameras = await availableCameras();
@@ -57,17 +61,31 @@ class LiveCamera implements TargetCamera {
       (c) => c.lensDirection == CameraLensDirection.back,
       orElse: () => cameras.first,
     );
-    final controller = CameraController(
-      back,
-      ResolutionPreset.high,
-      enableAudio: false,
-      imageFormatGroup: Platform.isIOS ? ImageFormatGroup.bgra8888 : ImageFormatGroup.yuv420,
-    );
+    CameraController controllerAt(int? rate) => CameraController(
+          back,
+          ResolutionPreset.high,
+          enableAudio: false,
+          fps: rate,
+          imageFormatGroup: Platform.isIOS ? ImageFormatGroup.bgra8888 : ImageFormatGroup.yuv420,
+        );
+    var controller = controllerAt(fps);
     try {
       await controller.initialize();
     } on CameraException catch (e) {
       await controller.dispose();
-      throw CameraStartException(failureFor(e.code), '${e.code}: ${e.description}');
+      final failure = failureFor(e.code);
+      // Refused access isn't about the frame rate: don't ask twice.
+      if (fps == null || failure != CameraFailure.unknown) {
+        throw CameraStartException(failure, '${e.code}: ${e.description}');
+      }
+      debugPrint('Camera would not open at $fps fps (${e.code}); opening at its default rate.');
+      controller = controllerAt(null);
+      try {
+        await controller.initialize();
+      } on CameraException catch (e) {
+        await controller.dispose();
+        throw CameraStartException(failureFor(e.code), '${e.code}: ${e.description}');
+      }
     } on Exception catch (e) {
       await controller.dispose();
       throw CameraStartException(CameraFailure.unknown, e.toString());
@@ -90,6 +108,9 @@ class LiveCamera implements TargetCamera {
 
   @override
   double get maxZoom => _maxZoom;
+
+  @override
+  Duration get now => _clock.elapsed;
 
   @override
   double get zoom => _zoom;

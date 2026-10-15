@@ -34,6 +34,9 @@ class ZoomCamera implements TargetCamera {
   int get minChange => 12;
 
   @override
+  Duration get now => Duration.zero;
+
+  @override
   Stream<CameraFrame> frames() => const Stream.empty();
 
   @override

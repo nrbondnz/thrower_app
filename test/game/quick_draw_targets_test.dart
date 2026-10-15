@@ -70,7 +70,7 @@ void main() {
       expect(state().locked, isTrue);
     });
 
-    test('start again forgets the boards and the lock', () {
+    test('choosing again forgets the boards and the lock', () {
       notifier()
         ..add(boardAtCentre(100, 400))
         ..add(boardAtCentre(300, 400))

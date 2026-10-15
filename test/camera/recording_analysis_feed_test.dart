@@ -114,4 +114,10 @@ void main() {
       expect(greys(), [160]);
     });
   });
+
+  test("its clock is the playback position (its frames' timeline)", () async {
+    camera.restart();
+    await playTo(const Duration(milliseconds: 1200));
+    expect(feed.now, const Duration(milliseconds: 1200));
+  });
 }

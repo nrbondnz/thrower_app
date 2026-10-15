@@ -82,8 +82,31 @@ void main() {
   group('Quick draw (real board)', () {
     test('how to choose the boards and play, with the button names on the screen', () {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
-      expect(text, contains('tap Start again'));
-      expect(text, contains('Tap Play. GO! shows when the countdown says go.'));
+      expect(text, contains('tap Choose boards again'));
+      expect(text, contains('Tap Quick draw on the home screen.'));
+      expect(text, contains('then tap Next duel.'));
+    });
+
+    // The Safety Report on the live Quick draw (Tasks 3–5, 2026-10-15).
+    test('a starter behind the throwers taps Start; throwers never start their own duel', () {
+      expect(text, contains('A third person, the starter, standing behind the throwers, taps Start.'));
+      expect(text, contains('Throwers do not start their own duel: be at your line, ready, before Start is tapped.'));
+    });
+
+    test('the phone and starter stand out of reach of a backswing', () {
+      expect(text, contains('out of reach of a backswing (at least 3 m back for axes, or as your venue says)'));
+    });
+
+    test('neither the chime nor the result means the lanes are clear', () {
+      expect(text, contains('It never means the lanes are clear, and neither do the chime and the result'));
+    });
+
+    test('the beeps must be heard at the throwing lines', () {
+      expect(text, contains('Check the beeps can be heard at the throwing lines.'));
+    });
+
+    test('the start signal: five beeps, a pause that changes, then the long beep is go', () {
+      expect(text, contains('Five beeps, a light coming on with each, then a pause that changes every time, then the long beep: that is go.'));
     });
 
     test('the winning rule: first to stick; bounce-out and false start lose', () {
@@ -103,7 +126,7 @@ void main() {
 
     test('boards are chosen before anyone throws; no one goes to the phone after that', () {
       expect(text, contains('Choose and lock the boards before anyone throws.'));
-      expect(text, contains('read the result from where you stand'));
+      expect(text, contains('read it from where you stand. No one needs to go to the phone during a duel.'));
     });
 
     test('the phone out of both lines of throw and not between the lanes', () {

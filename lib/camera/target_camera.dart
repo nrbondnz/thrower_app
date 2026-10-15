@@ -17,6 +17,11 @@ abstract interface class TargetCamera implements CameraSource {
   /// The furthest this camera can zoom in (1 = it can't).
   double get maxZoom;
 
+  /// The time now on the clock this camera stamps its frames with
+  /// (`CameraFrame.timestamp`), so other moments (Quick draw's "go") can be
+  /// compared with frames.
+  Duration get now;
+
   /// The current zoom: 1 is the full picture, 2 shows the middle half of it
   /// (each way) filling the frame.
   double get zoom;

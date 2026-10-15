@@ -43,7 +43,7 @@ mixin BoardChoosing<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final next = targets.boards.length + 1;
     if (searching) return "Looking for Player $next's board…";
     if (targets.locked) return locked;
-    if (targets.complete) return 'Both boards found: lock them, or start again.';
+    if (targets.complete) return 'Both boards found: lock them, or choose them again.';
     final again = missed ? 'No board found there. ' : '';
     return "${again}Tap the centre of Player $next's board.";
   }

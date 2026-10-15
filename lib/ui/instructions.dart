@@ -92,19 +92,25 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'Quick draw is for two real boards and two throwers. It is not played on the paper target.'
       else ...[
         'A duel: two throwers, one board each, side by side, throwing at the same time on "go". '
-            'For now it plays a recording of a real duel: Live test, then Quick draw.',
+            'Tap Quick draw on the home screen. (Live test, then Quick draw, plays a recording of a real duel.)',
+        'Put the phone on its stand behind the throwers, where it sees both boards: out of both lines of throw, '
+            'not between the lanes, and out of reach of a backswing (at least 3 m back for axes, or as your venue says).',
         "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards. "
-            'If an outline is wrong, tap Start again.',
-        'Choose and lock the boards before anyone throws. After that no one needs to touch the phone: '
-            'read the result from where you stand.',
-        'Tap Play. GO! shows when the countdown says go. Times are measured from go to the knife reaching the board.',
+            'If an outline is wrong, tap Choose boards again.',
+        'Choose and lock the boards before anyone throws.',
+        'A third person, the starter, standing behind the throwers, taps Start. Throwers do not start their own '
+            'duel: be at your line, ready, before Start is tapped.',
+        'Five beeps, a light coming on with each, then a pause that changes every time, then the long beep: '
+            'that is go. GO! shows on the screen. Check the beeps can be heard at the throwing lines.',
         'The first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start). '
-            'Both on the same frame is a draw.',
-        'The result can come a moment after the throws, while the app checks every frame.',
+            'Both on the same frame is a draw. Times are measured from go to the knife reaching the board.',
+        'The result shows in large type with a chime, a moment after the throws: read it from where you stand. '
+            'No one needs to go to the phone during a duel.',
+        'Collect your knives together, then tap Next duel. The boards stay locked.',
         "Quick draw is for experienced throwers only, under your venue's rules for throwing side by side. "
             'Use separate lanes, each thrower at their own line.',
-        'Go only means start. It never means the lanes are clear: no one goes forward until both throwers have '
-            'finished and agree it is clear. Collect your knives together.',
+        'Go only means start. It never means the lanes are clear, and neither do the chime and the result: '
+            'no one goes forward until both throwers have finished and agree it is clear. Collect your knives together.',
         'Keep the phone out of both lines of throw and not between the lanes. Behind the throwers is fine.',
         'A bounce-out loses, so do not throw harder: speed comes from a clean release.',
         'After a false start, no one throws again until the knives are collected.',

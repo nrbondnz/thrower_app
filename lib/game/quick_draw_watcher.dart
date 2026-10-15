@@ -4,8 +4,10 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../camera/cropped_camera.dart';
+import '../camera/queued_camera.dart';
 import '../camera/target_camera.dart';
 import '../scoring/target_model.dart';
+import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
 import '../vision/target_mapping.dart';
 import '../vision/throw_classifier.dart';
@@ -41,7 +43,7 @@ class QuickDrawThrow {
 /// at **every** frame (timing needs it), and keeps each player's first throw
 /// (stuck or bounce-out) in [throws], in player order.
 class QuickDrawWatcher {
-  QuickDrawWatcher(this.camera, this.boards, {required this.model, this.cropRadii = 4})
+  QuickDrawWatcher(this.camera, this.boards, {required this.model, this.cropRadii = 4, this.queue = false})
       : throws = ValueNotifier(List.filled(boards.length, null));
 
   final TargetCamera camera;
@@ -54,7 +56,20 @@ class QuickDrawWatcher {
   /// (`WatchRegion.fromCalibration`), so this leaves room around it.
   final double cropRadii;
 
+  /// Keep every frame's board crops in a queue ([QueuedCamera]) and analyse
+  /// them in order, falling behind if need be: for the live camera, whose
+  /// frames can't be fetched again. (A recording's analysis feed already
+  /// hands over every frame in order.)
+  final bool queue;
+
   final ValueNotifier<List<QuickDrawThrow?>> throws;
+
+  /// Each board's watch state (watching, motion, …), in player order.
+  List<ValueListenable<WatchState>> get states => [for (final w in _watchers) w.state];
+
+  /// Each board's queue, when [queue] is on (for showing how far behind
+  /// analysis is).
+  final queues = <QueuedCamera>[];
   final _watchers = <ThrowWatcher>[];
   final _subscriptions = <StreamSubscription<ThrowEvent>>[];
 
@@ -62,12 +77,14 @@ class QuickDrawWatcher {
     if (_watchers.isNotEmpty) return;
     for (final (player, board) in boards.indexed) {
       final o = board.outer;
-      final side = math.min((cropRadii * (o.semiMajor + o.semiMinor) / 2).round(), math.min(board.imageWidth, board.imageHeight));
+      final side = math.min((cropRadii * (o.semiMajor + o.semiMinor) / 2).round(), math.min(board.imageWidth, board.imageHeight)) & ~1;
       final x = math.max(0, math.min((o.cx - side / 2).round(), board.imageWidth - side));
       final y = math.max(0, math.min((o.cy - side / 2).round(), board.imageHeight - side));
       final crop = CroppedCamera(camera, x: x, y: y, width: side, height: side);
-      final calibration = board.within(crop.x, crop.y, side, side);
-      final watcher = ThrowWatcher(crop, calibration, interval: Duration.zero)..start();
+      final calibration = board.within(crop.x, crop.y, crop.width, crop.height);
+      final watched = queue ? QueuedCamera(crop) : crop;
+      if (watched is QueuedCamera) queues.add(watched);
+      final watcher = ThrowWatcher(watched, calibration, interval: Duration.zero)..start();
       _watchers.add(watcher);
       _subscriptions.add(watcher.events.listen((event) => _onEvent(player, event, calibration)));
     }
@@ -87,12 +104,27 @@ class QuickDrawWatcher {
     throws.value = next;
   }
 
+  /// Takes no new frames; those already queued are still analysed.
+  Future<void> stopFeeding() async {
+    for (final q in queues) {
+      await q.stopTaking();
+    }
+  }
+
+  var _disposed = false;
+
+  /// Stops watching. [throws] keeps its last value.
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     for (final s in _subscriptions) {
       await s.cancel();
     }
     for (final w in _watchers) {
       await w.dispose();
+    }
+    for (final q in queues) {
+      await q.dispose();
     }
   }
 }

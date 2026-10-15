@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth/auth_service.dart';
@@ -5,9 +7,11 @@ import 'camera/live_camera.dart';
 import 'camera/recorded_camera.dart';
 import 'camera/target_camera.dart';
 import 'game/quick_draw_targets.dart';
+import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
 import 'scoring/game_session.dart';
 import 'scoring/target_model.dart';
+import 'sound/signal_sounds.dart';
 import 'vision/target_calibration.dart';
 import 'vision/target_mapping.dart';
 import 'vision/throw_classifier.dart';
@@ -77,7 +81,7 @@ class QuickDrawTargetsNotifier extends Notifier<QuickDrawTargets> {
     if (!state.complete) state = QuickDrawTargets(boards: [...state.boards, board]);
   }
 
-  /// "Start again": forget the boards (and the lock).
+  /// "Choose boards again": forget the boards (and the lock).
   void clear() => state = const QuickDrawTargets();
 
   void lock() {
@@ -95,16 +99,29 @@ final tapLocatorProvider = Provider<TapLocator>(
 
 /// The live Quick draw's camera: the phone's back camera, its own (not
 /// [cameraProvider], which Calibrate and Play share with the Live test's
-/// recordings). Released when Quick draw closes. Never retried automatically
-/// (see [cameraProvider]).
+/// recordings), asking for **60 fps**. Released when Quick draw closes.
+/// Never retried automatically (see [cameraProvider]).
 final liveQuickDrawCameraProvider = FutureProvider.autoDispose<TargetCamera>(
   (ref) async {
-    final camera = await LiveCamera.open();
+    final camera = await LiveCamera.open(fps: 60);
     ref.onDispose(camera.dispose);
     return camera;
   },
   retry: (retryCount, error) => null,
 );
+
+/// Quick draw's start-signal beeps and result chime; released with Quick draw.
+final signalSoundsProvider = Provider.autoDispose<SignalSounds>((ref) {
+  final sounds = AssetSignalSounds();
+  ref.onDispose(sounds.dispose);
+  return sounds;
+});
+
+/// A new start signal's timing, with a random pause; tests fix it.
+final startScheduleProvider = Provider<StartSchedule Function()>((ref) {
+  final random = math.Random();
+  return () => StartSchedule.random(random);
+});
 
 /// The target calibration for this session: found, adjusted, then locked.
 /// Not auto-disposed, so it survives leaving and returning to the screen.

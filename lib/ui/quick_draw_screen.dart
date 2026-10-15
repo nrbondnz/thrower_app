@@ -171,7 +171,7 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                                   // Choose again on the still board, not where playback stopped.
                                   value.rewind();
                                 },
-                                child: const Text('Start again'),
+                                child: const Text('Choose boards again'),
                               ),
                             if (targets.complete && !targets.locked)
                               FilledButton(

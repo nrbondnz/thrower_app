@@ -65,6 +65,8 @@ flutter:
   # Nigel 2026-10-11). Made with tool/pack_recording.dart.
   assets:
     - assets/live/
+    # Quick draw's start signal and result chime (~60 KB; tool/make_signal_sounds.dart).
+    - assets/sounds/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
