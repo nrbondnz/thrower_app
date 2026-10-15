@@ -52,6 +52,7 @@ void main() {
       'Playing a game',
       'Scoring',
       'Resetting',
+      'Quick draw',
       'Safety',
       'Reporting problems',
     ]);
@@ -78,7 +79,50 @@ void main() {
     });
   });
 
+  group('Quick draw (real board)', () {
+    test('how to choose the boards and play, with the button names on the screen', () {
+      expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
+      expect(text, contains('tap Start again'));
+      expect(text, contains('Tap Play. GO! shows when the countdown says go.'));
+    });
+
+    test('the winning rule: first to stick; bounce-out and false start lose', () {
+      expect(text, contains('The first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start).'));
+    });
+
+    // The Safety Report on Quick draw (Task 1 of story-checkpoint-quick-draw).
+    test('go never means the lanes are clear; no one goes forward until both have finished', () {
+      expect(text, contains('It never means the lanes are clear'));
+      expect(text, contains('no one goes forward until both throwers have finished'));
+    });
+
+    test('experienced throwers, venue rules, separate lanes', () {
+      expect(text, contains('experienced throwers only'));
+      expect(text, contains('Use separate lanes'));
+    });
+
+    test('boards are chosen before anyone throws; no one goes to the phone after that', () {
+      expect(text, contains('Choose and lock the boards before anyone throws.'));
+      expect(text, contains('read the result from where you stand'));
+    });
+
+    test('the phone out of both lines of throw and not between the lanes', () {
+      expect(text, contains('Keep the phone out of both lines of throw and not between the lanes.'));
+    });
+
+    test("don't throw harder; no re-throw after a false start; the countdown must be heard", () {
+      expect(text, contains('do not throw harder'));
+      expect(text, contains('After a false start, no one throws again until the knives are collected.'));
+      expect(text, contains('hear the countdown'));
+    });
+  });
+
   group('paper target', () {
+    test('Quick draw is not played on paper', () {
+      expect(paper, contains('It is not played on the paper target.'));
+      expect(paper, isNot(contains('Lock boards')));
+    });
+
     test('never throw at it; pens in Blu Tack stand in for knives', () {
       expect(paper, contains('Never throw anything at the paper target.'));
       expect(paper, contains('pen pushed into Blu Tack'));

@@ -85,6 +85,32 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',
     ]),
+    // Quick draw (story-checkpoint-quick-draw). The safety points come from the
+    // Review Agent's Safety Report on it (§7, two people throwing at once).
+    InstructionSection('Quick draw', [
+      if (paper)
+        'Quick draw is for two real boards and two throwers. It is not played on the paper target.'
+      else ...[
+        'A duel: two throwers, one board each, side by side, throwing at the same time on "go". '
+            'For now it plays a recording of a real duel: Live test, then Quick draw.',
+        "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards. "
+            'If an outline is wrong, tap Start again.',
+        'Choose and lock the boards before anyone throws. After that no one needs to touch the phone: '
+            'read the result from where you stand.',
+        'Tap Play. GO! shows when the countdown says go. Times are measured from go to the knife reaching the board.',
+        'The first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start). '
+            'Both on the same frame is a draw.',
+        'The result can come a moment after the throws, while the app checks every frame.',
+        "Quick draw is for experienced throwers only, under your venue's rules for throwing side by side. "
+            'Use separate lanes, each thrower at their own line.',
+        'Go only means start. It never means the lanes are clear: no one goes forward until both throwers have '
+            'finished and agree it is clear. Collect your knives together.',
+        'Keep the phone out of both lines of throw and not between the lanes. Behind the throwers is fine.',
+        'A bounce-out loses, so do not throw harder: speed comes from a clean release.',
+        'After a false start, no one throws again until the knives are collected.',
+        'Make sure everyone can hear the countdown.',
+      ],
+    ]),
     InstructionSection('Safety', [
       if (paper)
         'Nothing is ever thrown at the paper target: pens are placed by hand.'

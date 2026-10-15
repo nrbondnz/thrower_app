@@ -24,7 +24,7 @@ import 'recorded_preview.dart';
 /// frame is analysed in order (possibly finishing a little after the
 /// picture), each board shows its knife's time after go and its score, and
 /// the result line says who won ([judgeQuickDraw]).
-/// (`docs/thrower/stories/story-checkpoint-quick-draw.md`).
+/// (`docs/thrower/stories/archive/story-checkpoint-quick-draw.md`).
 class QuickDrawScreen extends ConsumerStatefulWidget {
   const QuickDrawScreen({super.key});
 
