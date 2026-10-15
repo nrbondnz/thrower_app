@@ -7,7 +7,7 @@ Two throwers, one board each, both in one camera view. After a countdown they th
 6 (Large): crosses camera → vision → game → UI (4), conditional branches (stick / bounce / false start / tie) (1), more than 3 acceptance criteria (1). Audio playback may add a plugin (+1).
 
 ## Status
-IN PROGRESS: Tasks 1–3 complete; Task 4 built, waiting for Nigel's device check (2026-10-15). iPhone: ~42 frames a second (2026-10-15). Plan approved 2026-10-14; "go" at 161.3 s (Nigel, by ear).
+COMPLETE (2026-10-15). All 5 tasks done; Task 4 checked by Nigel on the Samsung ("it shows Mark winning"). Archived. Plan approved 2026-10-14; "go" at 161.3 s (Nigel, by ear).
 
 ## Decisions (Nigel, 2026-10-14)
 - **Winner:** the first knife to **stick** wins. A bounce-out loses. If both stick, the faster one wins; ring scores are shown but don't decide it. If both bounce, there's no winner.
@@ -32,13 +32,13 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 built, waiting for Nigel's device chec
 3. "Go" is the footage's own (2.8 s into the clip, from the answer key); times are measured from it.
 4. On the clip: board 2 is first and sticks (5), board 1 bounces out, so **board 2 wins**. Impact times are within 1 frame (17 ms) of the answer key.
 5. A knife that reaches its board before "go" is a false start (a loss).
-6. A results screen shows each board's time after "go", stuck/bounce, score and the winner.
-7. The existing Live test (Target 1 / Target 2) and its replay tests are unchanged.
+6. The screen shows each board's time after "go", stuck/bounce and score under the board, and the winner on a result line (a line, not a separate screen; reworded 2026-10-15 to match what was built).
+7. The existing Live test (Target 1 / Target 2) still passes its replay tests. (Reworded 2026-10-15: its code path did change, `classifyThrow` visitArea 2% → 3%, and `live_replay_test`'s exact-score floors rose to 9 / 7 after the answer key's re-score; both replays pass.)
 
 ---
 
 ## Task 1: The clip, answer key, and full-screen playback
-- **Status:** BUILT, waiting for Nigel's device check (2026-10-14)
+- **Status:** COMPLETE (2026-10-15): Nigel ran it on the Samsung and the iPhone (clip full screen with sound).
 - **What changed:** `assets/live/quickdraw.tfrm` (449 frames, 720 × 1280, 60 fps, q20) and `quickdraw.m4a`; `audioplayers` ^6.8.1; `RecordingSound` / `AssetRecordingSound` (`lib/camera/recording_sound.dart`); `Recording.audio`, `RecordedCamera.sound`, `quickDrawRecording`; `quickDrawCameraProvider`; `QuickDrawScreen`; Live test → Quick draw. Answer key `reference/live-camera/quickdraw.json`: go 2.8 s; right board frame 217 (3.617 s) stuck 5; left frame 219 (3.650 s) bounce-out; right wins.
 - **Test Report (2026-10-14):** `flutter analyze` clean; `flutter test` 332 passed, 0 failed. New: `recorded_camera_test.dart` → sound track (silent until play, plays on each restart, stops on rewind, released with the camera, a failing sound leaves frames playing); `frame_pack_test.dart` → Quick draw clip (720 × 1280, 60 fps, 449 frames, first frame decodes) and its sound bundled; `quick_draw_screen_test.dart` (opens full screen with the bars hidden, Play starts clip and sound and comes back as "Play again", leaving restores the bars).
 - **Safety Report (2026-10-14): OK for development; NOT OK for a store build.**
@@ -109,7 +109,7 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 built, waiting for Nigel's device chec
   - Drift: Design Decisions → Throw Detection: Before/After and Motion and Settle still describe `peakShape` as the person test in places written before 2026-10-12 (left as history); `RecordedCamera`'s class doc comment has one over-long line (source, not docs).
 
 ## Task 4: The Quick draw game
-- **Status:** BUILT, waiting for Nigel's device check (2026-10-15)
+- **Status:** COMPLETE (2026-10-15): Nigel, on the Samsung: "it shows Mark winning".
 - **What changed:**
   - `RecordingAnalysisFeed` (`lib/camera/recording_analysis_feed.dart`): every frame of the recording, decoded again in order, never ahead of the picture, each stamped with its **place in the clip** (frame ÷ 60); decodes only while listened to; starts over when playback restarts. `QuickDrawWatcher` now watches this feed, not the picture's frames. The screen and sound keep their own pace; the result may come late.
   - `Recording.go` (`quickDrawRecording`: 2.8 s). `judgeQuickDraw` (`lib/game/quick_draw_judge.dart`): per player `none` / `falseStart` (impact before go) / `bounced` / `stuck`, time after go; the first knife to stick wins; same frame = draw; none stuck = no winner. `judgedText`, `verdictText`.
@@ -139,11 +139,64 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 built, waiting for Nigel's device chec
   - Drift (not fixed): `Operations/Mac Handoff.md` still says Task 4 is "not built yet" and that times on screen are clip time (a dated handover note; left as history). `quick_draw_screen.dart`: the `_line` function sits between `_BoardsOverlay`'s doc comment and the class, so that comment now documents `_line` (source, not docs).
 
 ## Task 5: Docs and traceability
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-10-15)
+- **What changed:** a **Quick draw** section in the in-app Instructions (`instructionSections`): how to choose the boards and play, the winning rule, and every point from the Task 1 Safety Report (experienced throwers and venue rules; separate lanes; "go" never means the lanes are clear; no one goes forward until both have finished; choose and lock the boards before anyone throws, then read the result from where you stand; the phone out of both lines of throw and not between the lanes; don't throw harder; no re-throw after a false start until collected; the countdown must be heard). The paper version says Quick draw isn't played on paper. Tests: `instructions_test.dart` → Quick draw group.
+- **Safety Report (2026-10-15): OK.** All Task 1 points present; nothing implies the lanes are clear; button names match the screen. Fixed from it: "On the screen, tap…" (not the physical board), and "read the result from where you stand". Logged for the live version (backlog #9): the result must be readable from the throwing line (today 15–16 pt).
+- **Traceability:** matrix and report below. Gaps closed: criteria 6 and 7 reworded; Design Decisions → In-app Instructions mentions the Quick draw section; Task 4's device check done. Left noted: no test reaches `QuickDrawWatcher`'s `episode.start` fallback (an episode with no impact on the target; low risk).
+- **Test Report:** `flutter analyze` clean; `flutter test` 407 passed, 0 failed (before the last instructions wording fix, whose 25 tests pass).
 - **Depends on:** Task 4
 - **Work:** Design Decisions (Quick draw, two targets, 60 fps timing), Glossary (impact time, false start), the in-app Instructions, Known Issues; Traceability Agent over criteria 1–7.
 - **Verify:** Nigel reads the summary.
 - **Save:** story archived.
+
+### Traceability Matrix (2026-10-15)
+Design references are sections of `Architecture/Design Decisions.md` (DD). Checked against the code and tests on 2026-10-15, not only this file; the Quick draw tests, Live test replay and instructions tests were run: 144 + 25 passed, 0 failed.
+
+| # | Requirement | Design reference | Implementation | Test | Status |
+|---|---|---|---|---|---|
+| AC1 | Live test → Quick draw plays the clip full screen, with its audio | DD → Live Test: A Recording in Place of the Camera (Quick draw clip, Sound) | `quickDrawRecording` (`audio`, `go`), `quickDrawCameraProvider`, `RecordedCamera.sound`, `RecordingSound` / `AssetRecordingSound`, `QuickDrawScreen` (immersive), Live test's Quick draw button | `quick_draw_screen_test` ("Live test opens Quick draw … full screen", "Play starts the clip and its sound", "leaving … brings the system bars back"); `recorded_camera_test` → sound track (4); `frame_pack_test` → "Quick draw has its sound track bundled" | ✅ Covered (the sound is a fake in tests; heard on device in Task 1) |
+| D-60fps | Full frame 720 × 1280, 60 fps, q20 | DD → Live Test (Quick draw clip, 34.2 MB and why) | `assets/live/quickdraw.tfrm` | `frame_pack_test` → "Quick draw: 7.5 s of full 720 × 1280 frames at 60 fps (both boards), first frame decodes" | ✅ Covered |
+| D-duck | Sound ducks other audio and plays with the silent switch on | DD → Live Test → Sound (audio context) | `AssetRecordingSound.audioContext` | `recording_sound_test` (3 tests) | ✅ Covered |
+| AC2 | Tap Player 1's centre then Player 2's (more boards may be in shot); each found, outlined, locked, scored separately | DD → Quick Draw: Choosing the Boards by Tapping | `locateTargetAt`, `locateTappedInFrame`, `ColourRingLocator.seed` (+ `_regionCentresNear`), `QuickDrawTargets` (`players`, `complete`, `locked`), `quickDrawTargetsProvider`, `TapLocator` / `locateAtTap` / `tapLocatorProvider`, `boardAt`, `BoardsPainter` | `tapped_target_locator_test` (each centre on 6 frames, 10 px off, grass finds nothing, tap order); `quick_draw_targets_test` (tap order, third tap ignored, lock needs both, start again); `quick_draw_screen_test` (tap order, a miss, Lock, Start again rewinds, no taps while playing) | ✅ Covered |
+| AC2b | Each board scored separately | DD → Quick Draw: Timing and Scoring Each Board | `CroppedCamera`, `TargetCalibration.within`, `QuickDrawWatcher` (`ThrowWatcher` per crop, `interval: Duration.zero`), `QuickDrawThrow` | `cropped_camera_test` (5); `target_calibration_test` → within; `quick_draw_replay_test` per player | ✅ Covered |
+| D-impact | Impact = the frame with the largest moving shape on the board | DD → Quick Draw: Timing and Scoring Each Board | `MotionEpisode.impact` (fallback `episode.start` in `QuickDrawWatcher._onEvent`) | `motion_detector_test` → "impact (Quick draw times throws by it)"; `quick_draw_replay_test` "within a frame of the answer key" | ✅ Covered (the `start` fallback is untested) |
+| AC3 / D-countdown | "Go" is the footage's own (2.8 s, from the answer key); the app plays no countdown; times measured from it | DD → Quick Draw: Go, False Starts and the Winner ("Go"; F1 countdown → backlog #9) | `Recording.go` (2800 ms), `_GoFlash` (0.7 s), `JudgedThrow.afterGo`, `judgedText`, `boardLines` | `quick_draw_screen_test` ("GO! shows when the clip reaches go…", the line under each board: 4 tests); `quick_draw_judge_test` "each throw is timed from go" | ✅ Covered |
+| AC4 | On the clip: board 2 first and stuck (5), board 1 bounced, board 2 wins; impacts within 1 frame of the answer key | DD → Timing and Scoring Each Board; Go, False Starts and the Winner; `reference/live-camera/quickdraw.json` | the whole chain (feed → watcher → `judgeQuickDraw`) | `quick_draw_replay_test` (found as stuck/bounce, within a frame of frames 217/219, scores 5, Player 2 first, the verdict ~0.82 s ± 17 ms) | ✅ Covered (on the PC; device check of Task 4 pending) |
+| D-every-frame | Analyse every frame in order, timed by place in the clip; report late | DD → Quick Draw: Analysing Every Frame, Reporting Late | `RecordingAnalysisFeed` (`frames`, `timeOf`, `analysed`, `first`), `_progress` ("Watching…", "Analysing… x s behind the picture.") | `recording_analysis_feed_test` (5 + 3); `quick_draw_replay_test` "playback skipping 2 of every 3 frames…"; `quick_draw_screen_test` "played locked, the line follows the analysis, then gives the verdict" | ✅ Covered |
+| D-lead-in | Analysis starts 1 s before go | DD → Analysing Every Frame (Starts 1 s before go) | `quickDrawLeadIn`, `RecordingAnalysisFeed(from:)`, `QuickDrawScreen._play` | `recording_analysis_feed_test` → "starting part-way in" (3); replay test starts at `go - quickDrawLeadIn` | ✅ Covered |
+| AC5 | A knife before go is a false start (a loss) | DD → Go, False Starts and the Winner | `judgeQuickDraw` (`impact < go` → `falseStart`), `judgedText` "false start" | `quick_draw_judge_test` ("a false start loses, however fast", "both false start", "exactly at go is not"); `quick_draw_screen_test` "a knife before go is a false start" | ✅ Covered (rule only: no footage with a real false start) |
+| D-winner | First to stick wins; bounce loses; both stuck → faster; same frame draw; none stuck no winner; scores don't decide | DD → Go, False Starts and the Winner | `judgeQuickDraw`, `QuickDrawVerdict`, `verdictText` | `quick_draw_judge_test` (11 rule cases + result line: 3) | ✅ Covered |
+| AC6 | Results: each board's time after go, stuck/bounce, score, and the winner | DD → Go, False Starts and the Winner (`boardLines`, `verdictText`) | lines under each board (`BoardsPainter.results`) + the bottom result line | `quick_draw_screen_test`; `quick_draw_judge_test` → the result line | ✅ Covered, ⚠️ wording: built as a line under each board plus a result line, not a "results screen" |
+| AC7 | The Live test (Target 1 / 2) and its replay tests are unchanged | DD → Throw Detection on Real Footage; Stuck or Bounced Off (visit 3%) | `classifyThrow` visitArea 2% → 3% touches the shared path | `live_replay_test` (Target 1 / 2: all pass); `live_test_screen_test` | ✅ Passing, ⚠️ see gap 3 |
+| D-safety | Instructions carry the Task 1 Safety Report points | DD → In-app Instructions (no Quick draw mention, gap 4) | `instructionSections` → 'Quick draw' (paper: "not played on the paper target") | `instructions_test` → section order; "Quick draw (real board)" (6); paper "Quick draw is not played on paper" | ✅ Covered (uncommitted) |
+
+Safety points, one by one: experienced throwers / venue rules ✅; separate lanes ✅; "go" never means the lanes are clear ✅; nobody forward until both have finished ✅; phone out of both lines, not between the lanes, behind is fine ✅; bounce-out loses, don't throw harder ✅; no re-throw after a false start until collected ✅; countdown audible ✅; results readable without walking up ✅ ("read the result from where you stand"; the screen's text is 15–16 pt, 72 pt only for GO!, which is not checked at a distance).
+
+### Traceability Report (2026-10-15)
+
+**Coverage summary:** 15 requirements (7 criteria, 8 decisions). Requirement + design + code + test: 15. Missing tests: 0. Missing design: 1 partial (the Quick draw instructions aren't mentioned in DD). Orphan code: 0. Stale criteria wording: 2 (AC6, AC7).
+
+**Backward check (orphans): none found.**
+- `RecordedCamera.playbackTime`: gone from `lib/` and `test/`; only mentioned as removed (DD → Go, False Starts; Glossary).
+- No `two_target_locator` / `TwoTarget` remnants in `lib/` or `test/`.
+- `TapLocator` / `locateAtTap` / `tapLocatorProvider`: used by `QuickDrawScreen._findBoardAt`, overridden in `quick_draw_screen_test`.
+- `QuickDrawTargets.players`: used by `complete` (and so `lock`, the third tap ignored).
+- `afterGoText`, `boardLines`, `JudgedThrow.score`, `TargetCalibration.within`, `ThrowWatcher.interval`, `RecordingAnalysisFeed.first` / `timeOf` / `analysed`: all used.
+- `CroppedCamera`'s YUV path isn't used by Quick draw (recordings are BGRA); it is tested and is there for the live camera (backlog #10). Not an orphan, but nothing exercises it end to end yet.
+- Commit `77c31c2` also carried non-Quick-draw work (the Play screen rewinding the recording on leave; `live_replay_test` exact scores 6/6 → 9/7 after Nigel's re-scoring). Both trace to the Live test follow-up (memory: "rewind fix + key corrections"), not to this story.
+
+**Gaps and actions:**
+1. **AC1 and AC3 match what was built** (the clip with its audio; "go" from the footage, no app countdown). No action.
+2. **AC6 says "A results screen".** Built as a line under each board ("0.82 s · 5", "0.85 s · bounced", "false start") and a result line at the bottom ("Player 2 wins: stuck 5, 0.82 s after go. Player 1 bounced out."). Action: reword AC6 to "Each board shows its time after go and stuck/bounce/score, and a result line names the winner" (or ask Nigel whether he still wants a separate screen).
+3. **AC7 says "unchanged".** The Target 1/2 code path changed (`classifyThrow` visit 2% → 3%) and `live_replay_test`'s `exactScores` changed (6/6 → 9/7, from the re-scored answer key, not Quick draw). The tests pass. Action: reword AC7 to "still pass" and note the visit change; record that the `exactScores` change came from the Live test key corrections.
+4. **AC4 tolerances match the tests:** impact frames within 1 frame of 217 / 219, and the winner's time after go 817 ms ± 17 ms. Task 3's Verify ("3.6x s") is clip time; it's history, leave it. No action.
+5. **Design Decisions → In-app Instructions** doesn't mention the Quick draw section or that the paper version says it isn't played on paper. Action (Docs Agent): add a bullet there and a Common Tasks note that the Quick draw safety points come from the Task 1 Safety Report and are pinned by `instructions_test` → "Quick draw (real board)".
+6. **Untested fallback.** `QuickDrawWatcher._onEvent` uses `episode.impact ?? episode.start`; no test hits the `start` branch. Low risk. Action: optional unit test with an episode lacking an impact, or leave noted.
+7. **Device evidence.** Task 4 (feed, go, false start, winner) is still waiting for Nigel's device check; AC4 and AC6 are proven on the PC replay only. Action: Nigel's check closes them before archiving.
+8. **Results at a distance.** The result text is 15–16 pt white on the picture. On a recording that's fine; for the live version (backlog #9) "readable without walking up to the phone" will need bigger text or a sound. Action: add to backlog #9 when the live game is planned.
+9. **Uncommitted:** `lib/ui/instructions.dart` and `test/ui/instructions_test.dart` (the Quick draw section) are unstaged, per the Dart rule. Action: Nigel reviews, then commit.
+
+**Verdict:** every criterion and decision traces to design, code and a passing test. Before archiving: Nigel's Task 4 device check, reword AC6 and AC7, and the Docs Agent's DD → Instructions bullet.
 
 ---
 
