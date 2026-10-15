@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
+import 'package:thrower_app/camera/recording_analysis_feed.dart';
+import 'package:thrower_app/game/quick_draw_judge.dart';
 import 'package:thrower_app/game/quick_draw_watcher.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/vision/ellipse.dart';
@@ -15,11 +17,14 @@ import 'package:thrower_app/vision/target_locator.dart';
 import 'live_replay_test.dart' show frameOf;
 
 /// Replays the Quick draw clip through the app's own path (`RecordedCamera`
-/// → `QuickDrawWatcher`, a crop and a throw watcher per board), with the
-/// boards chosen by taps on their centres, and checks each player's throw
-/// against the answer key (`docs/thrower/reference/live-camera/
-/// quickdraw.json`).
-Future<List<QuickDrawThrow?>> replay() async {
+/// → `RecordingAnalysisFeed` → `QuickDrawWatcher`, a crop and a throw
+/// watcher per board), with the boards chosen by taps on their centres, and
+/// checks each player's throw against the answer key
+/// (`docs/thrower/reference/live-camera/quickdraw.json`).
+///
+/// Playback moves on [step] frames per tick: more than 1 is a phone that
+/// can't keep up (the screen skips frames); analysis must still see them all.
+Future<List<QuickDrawThrow?>> replay({int step = 1}) async {
   final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
   var now = Duration.zero;
   final camera = RecordedCamera(pack, recording: quickDrawRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
@@ -35,17 +40,24 @@ Future<List<QuickDrawThrow?>> replay() async {
         TargetNotFound(:final reason) => throw StateError('board at $tap not found: $reason'),
       },
   ];
-  final watcher = QuickDrawWatcher(camera, boards, model: model)..start();
+  final feed = RecordingAnalysisFeed(camera);
+  final watcher = QuickDrawWatcher(feed, boards, model: model)..start();
   await pumpEventQueue();
   camera.restart();
   // The whole clip, then a second of its last frame.
-  for (var i = 0; i < pack.frameCount + 60; i++) {
+  for (var i = 0; i < pack.frameCount + 60; i += step) {
     now = Duration(microseconds: i * 1000000 ~/ pack.fps);
     camera.tick();
     await pumpEventQueue();
   }
+  // Let analysis catch up with the picture.
+  while (feed.analysed.value < pack.frameCount - 1) {
+    await pumpEventQueue();
+  }
+  await pumpEventQueue();
   final throws = watcher.throws.value;
   await watcher.dispose();
+  await feed.dispose();
   await camera.dispose();
   return throws;
 }
@@ -83,4 +95,19 @@ void main() {
   test('Player 2 reached the board first', () {
     expect(throws[1]!.impact, lessThan(throws[0]!.impact));
   });
+
+  test('the verdict: Player 2 (Mark) wins, stuck 5, about 0.82 s after go; Player 1 bounced', () {
+    final v = judgeQuickDraw(throws, quickDrawRecording.go!);
+    expect(v.winner, 1);
+    expect(v.players[0].result, QuickDrawResult.bounced);
+    expect(v.players[1].afterGo!.inMilliseconds, closeTo(817, 17));
+  });
+
+  test('with playback skipping 2 of every 3 frames, analysis still sees them all: the same throws, the same frames', () async {
+    final skipped = await replay(step: 3);
+    for (var p = 0; p < 2; p++) {
+      expect(skipped[p]?.stuck, throws[p]!.stuck, reason: 'Player ${p + 1}');
+      expect(skipped[p]!.impact, throws[p]!.impact, reason: 'Player ${p + 1}');
+    }
+  }, timeout: const Timeout(Duration(minutes: 5)));
 }

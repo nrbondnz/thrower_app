@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../camera/recorded_camera.dart';
+import '../camera/recording_analysis_feed.dart';
+import '../game/quick_draw_judge.dart';
 import '../game/quick_draw_targets.dart';
 import '../game/quick_draw_watcher.dart';
 import '../providers.dart';
@@ -18,8 +20,10 @@ import 'recorded_preview.dart';
 /// It plays the clip full screen with its sound (the system bars hidden).
 /// Before playing, the user taps the centre of Player 1's board, then
 /// Player 2's (there may be more boards in the picture), and locks them.
-/// Played locked, each board shows when its knife arrived (on the clip's
-/// timeline) and whether it stuck, with its score. The winner comes next
+/// Played locked, "GO" flashes when the footage's countdown says it; every
+/// frame is analysed in order (possibly finishing a little after the
+/// picture), each board shows its knife's time after go and its score, and
+/// the result line says who won ([judgeQuickDraw]).
 /// (`docs/thrower/stories/story-checkpoint-quick-draw.md`).
 class QuickDrawScreen extends ConsumerStatefulWidget {
   const QuickDrawScreen({super.key});
@@ -35,23 +39,45 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
   /// The last tap found no board.
   var _missed = false;
 
+  /// Every frame of the clip, in order, for the watcher.
+  RecordingAnalysisFeed? _feed;
+
   /// Times and scores the throws while a locked game plays.
   QuickDrawWatcher? _watcher;
 
   /// Play: with the boards locked, a fresh watcher times and scores each
-  /// player's throw; otherwise the clip just plays.
+  /// player's throw from every frame; otherwise the clip just plays.
   void _play(RecordedCamera camera) {
     _stopWatching();
     final targets = ref.read(quickDrawTargetsProvider);
     if (targets.locked) {
-      setState(() => _watcher = QuickDrawWatcher(camera, targets.boards, model: ref.read(targetModelProvider))..start());
+      final feed = RecordingAnalysisFeed(camera);
+      setState(() {
+        _feed = feed;
+        _watcher = QuickDrawWatcher(feed, targets.boards, model: ref.read(targetModelProvider))..start();
+      });
     }
     camera.restart();
   }
 
   void _stopWatching() {
     _watcher?.dispose();
+    _feed?.dispose();
     _watcher = null;
+    _feed = null;
+  }
+
+  /// While a locked game is analysed: the result once both throws are in
+  /// (or the whole clip has been analysed), otherwise how far analysis has
+  /// got.
+  String _progress(RecordedCamera camera, RecordingAnalysisFeed feed, List<QuickDrawThrow?> throws) {
+    final done = feed.analysed.value >= camera.pack.frameCount - 1;
+    if (throws.every((t) => t != null) || done) return verdictText(judgeQuickDraw(throws, camera.recording.go!));
+    final behind = camera.position.value - feed.timeOf(math.max(0, feed.analysed.value));
+    if (behind > const Duration(milliseconds: 200)) {
+      return 'Analysing… ${(behind.inMilliseconds / 1000).toStringAsFixed(1)} s behind the picture.';
+    }
+    return 'Watching…';
   }
 
   @override
@@ -113,8 +139,9 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
                         onTap: targets.complete || _searching ? null : (tap) => _findBoardAt(value, tap),
                         playing: value.playing,
                         results: _watcher?.throws,
-                        camera: value,
+                        go: value.recording.go,
                       ),
+                      if (value.recording.go case final go?) _GoFlash(camera: value, go: go),
                       if (kDebugMode)
                         Align(
                           alignment: Alignment.topRight,
@@ -151,12 +178,13 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
                         Container(
                           color: Colors.black54,
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          child: Text(
-                            _instruction(targets),
-                            key: const Key('quickDrawInstruction'),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white, fontSize: 16),
-                          ),
+                          child: switch ((_watcher, _feed)) {
+                            (final watcher?, final feed?) => ListenableBuilder(
+                                listenable: Listenable.merge([watcher.throws, feed.analysed, value.position]),
+                                builder: (context, _) => _line(_progress(value, feed, watcher.throws.value)),
+                              ),
+                            _ => _line(_instruction(targets)),
+                          },
                         ),
                         const SizedBox(height: 12),
                         Wrap(
@@ -197,6 +225,51 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> {
   }
 }
 
+/// The instruction or result line at the bottom.
+Widget _line(String text) => Text(
+      text,
+      key: const Key('quickDrawInstruction'),
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: Colors.white, fontSize: 16),
+    );
+
+/// "GO!" over the picture for a moment when the footage's countdown says go.
+class _GoFlash extends StatelessWidget {
+  const _GoFlash({required this.camera, required this.go});
+
+  final RecordedCamera camera;
+  final Duration go;
+
+  /// How long it shows.
+  static const shown = Duration(milliseconds: 700);
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: camera.position,
+      builder: (context, position, _) {
+        final on = camera.playing.value && position >= go && position < go + shown;
+        return IgnorePointer(
+          child: Center(
+            child: on
+                ? Text(
+                    'GO!',
+                    key: const Key('quickDrawGo'),
+                    style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 72,
+                      fontWeight: FontWeight.w900,
+                      shadows: const [Shadow(blurRadius: 12)],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Each board's rings, with its player number above it (blue while choosing,
 /// green once locked), over the picture; and, while choosing (and not
 /// playing), taps on the picture in image pixels.
@@ -207,7 +280,7 @@ class _BoardsOverlay extends StatelessWidget {
     required this.onTap,
     required this.playing,
     required this.results,
-    required this.camera,
+    required this.go,
   });
 
   final QuickDrawTargets targets;
@@ -217,7 +290,9 @@ class _BoardsOverlay extends StatelessWidget {
 
   /// Each player's throw so far, while a locked game plays.
   final ValueNotifier<List<QuickDrawThrow?>>? results;
-  final RecordedCamera camera;
+
+  /// When the countdown says go: throws are timed from it.
+  final Duration? go;
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +306,7 @@ class _BoardsOverlay extends StatelessWidget {
                 valueListenable: throws,
                 builder: (context, list, _) => CustomPaint(
                   size: Size.infinite,
-                  painter: BoardsPainter(targets, scale: scale, results: [for (final t in list) throwText(t, camera)]),
+                  painter: BoardsPainter(targets, scale: scale, results: boardLines(list, go ?? Duration.zero)),
                 ),
               );
         final tap = onTap;
@@ -253,14 +328,11 @@ class _BoardsOverlay extends StatelessWidget {
   }
 }
 
-/// A player's throw as shown under their board: when it arrived on the clip's
-/// timeline, and its score or "bounced". Null before it's in.
-String? throwText(QuickDrawThrow? t, RecordedCamera camera) {
-  if (t == null) return null;
-  final at = camera.playbackTime(t.impact) ?? t.impact;
-  final seconds = '${(at.inMilliseconds / 1000).toStringAsFixed(2)} s';
-  if (!t.stuck) return '$seconds · bounced';
-  return '$seconds · ${t.score ?? '?'}';
+/// The line under each board: the throw's time after [go] and its score,
+/// "bounced" or "false start" ([judgedText]); null until its throw is in.
+List<String?> boardLines(List<QuickDrawThrow?> throws, Duration go) {
+  final judged = judgeQuickDraw(throws, go).players;
+  return [for (final (i, t) in throws.indexed) t == null ? null : judgedText(judged[i])];
 }
 
 /// Draws [QuickDrawTargets.boards] at [scale] screen pixels per image pixel,

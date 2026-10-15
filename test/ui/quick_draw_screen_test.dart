@@ -149,25 +149,66 @@ void main() {
   });
 
   group('the line under each board', () {
+    const go = Duration(milliseconds: 2800);
+
     test('is empty until the throw is in', () {
-      expect(throwText(null, camera), isNull);
+      expect(boardLines([null, null], go), [null, null]);
     });
 
-    test("a stuck knife shows when it arrived, on the clip's timeline, and its score", () {
-      now = const Duration(seconds: 10);
-      camera.restart();
-      final t = QuickDrawThrow(impact: const Duration(seconds: 10, milliseconds: 3617), stuck: true, score: 5);
-      expect(throwText(t, camera), '3.62 s · 5');
+    test('a stuck knife shows its time after go and its score', () {
+      final lines = boardLines([null, const QuickDrawThrow(impact: Duration(milliseconds: 3617), stuck: true, score: 5)], go);
+      expect(lines, [null, '0.82 s · 5']);
     });
 
-    test('a bounce-out says so', () {
-      camera.restart();
-      expect(throwText(const QuickDrawThrow(impact: Duration(milliseconds: 3650), stuck: false), camera), '3.65 s · bounced');
+    test('a bounce-out says so, with its time after go', () {
+      expect(boardLines([const QuickDrawThrow(impact: Duration(milliseconds: 3650), stuck: false)], go), ['0.85 s · bounced']);
     });
 
-    test("a stuck knife whose entry wasn't found shows ?", () {
-      camera.restart();
-      expect(throwText(const QuickDrawThrow(impact: Duration(seconds: 1), stuck: true), camera), '1.00 s · ?');
+    test('a knife before go is a false start', () {
+      expect(boardLines([const QuickDrawThrow(impact: Duration(milliseconds: 2700), stuck: true, score: 5)], go), ['false start']);
     });
+  });
+
+  testWidgets('GO! shows when the clip reaches go, and not before or long after', (tester) async {
+    // A recording whose go is at 1 s (the test pack is 2 s long).
+    await camera.dispose();
+    camera = RecordedCamera(greyPack(),
+        recording: const Recording(name: 'Quick draw', description: '', asset: '', go: Duration(seconds: 1)),
+        autoTick: false,
+        clock: () => now,
+        decoder: decodeFramePureDart,
+        sound: sound);
+    await pumpLiveTest(tester);
+    await tester.tap(find.byKey(const Key('quickDrawPlay')));
+    await tester.pump();
+    Future<bool> goAt(int ms) async {
+      now = Duration(milliseconds: ms);
+      camera.tick();
+      await tester.pump();
+      return find.byKey(const Key('quickDrawGo')).evaluate().isNotEmpty;
+    }
+
+    expect(await goAt(900), isFalse);
+    expect(await goAt(1100), isTrue);
+    expect(await goAt(1900), isFalse);
+  });
+
+  testWidgets('played locked, the line follows the analysis, then gives the verdict', (tester) async {
+    await pumpLiveTest(tester);
+    await tapPicture(tester, 0.75, 0.5);
+    await tapPicture(tester, 0.25, 0.5);
+    await tester.tap(find.byKey(const Key('quickDrawLock')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('quickDrawPlay')));
+    await tester.pump();
+    expect(instruction(tester), 'Watching…');
+    // To the end of the (grey, throw-free) clip, analysing every frame.
+    for (final ms in [500, 1000, 1500, 2000, 2500]) {
+      now = Duration(milliseconds: ms);
+      camera.tick();
+      await tester.pump();
+      await tester.pump();
+    }
+    expect(instruction(tester), 'No winner. Player 1: no throw seen. Player 2: no throw seen.');
   });
 }

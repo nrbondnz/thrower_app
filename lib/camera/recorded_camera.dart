@@ -12,7 +12,7 @@ import 'target_camera.dart';
 
 /// A recording the Live test can play, bundled with the app.
 class Recording {
-  const Recording({required this.name, required this.description, required this.asset, this.audio});
+  const Recording({required this.name, required this.description, required this.asset, this.audio, this.go});
 
   final String name;
   final String description;
@@ -23,6 +23,10 @@ class Recording {
   /// Its sound track (an audio asset the same length, starting with the
   /// first frame), or null for none.
   final String? audio;
+
+  /// Quick draw: when the countdown in the recording says "go", from its
+  /// start. Null for recordings without one.
+  final Duration? go;
 }
 
 /// The two real boards from Nigel's video, cropped one per board from the
@@ -44,12 +48,14 @@ const liveTestRecordings = [
 /// Quick draw: both boards in the full picture (720 × 1280, 60 fps), from
 /// the original video at 158.5–166 s: a quiet countdown ("go" at 2.8 s), then
 /// both knives at about 3.6 s. Answer key:
-/// `docs/thrower/reference/live-camera/quickdraw.json`.
+/// `docs/thrower/reference/live-camera/quickdraw.json` ("go" at 161.3 s in
+/// the original, by Nigel's ear).
 const quickDrawRecording = Recording(
   name: 'Quick draw',
   description: 'Two throwers, a countdown, both boards',
   asset: 'assets/live/quickdraw.tfrm',
   audio: 'assets/live/quickdraw.m4a',
+  go: Duration(milliseconds: 2800),
 );
 
 /// The frame on show, for the preview.
@@ -207,24 +213,11 @@ class RecordedCamera implements TargetCamera {
   @override
   Future<void> setZoom(double level) async {}
 
-  /// The clock when playback last started from the beginning (null before
-  /// the first [restart], and after [rewind]).
-  Duration? _playedFrom;
-
-  /// How far into the recording a frame stamped [timestamp] was delivered
-  /// (Quick draw shows impact times on the recording's own timeline). Null
-  /// before playback starts.
-  Duration? playbackTime(Duration timestamp) {
-    final from = _playedFrom;
-    return from == null ? null : timestamp - from;
-  }
-
   /// Plays from the start.
   void restart() {
     _delivered = null;
     _positionAtStart = Duration.zero;
     _startedAt = _now();
-    _playedFrom = _startedAt;
     playing.value = true;
     _withSound((s) => s.playFromStart());
     tick();
@@ -238,7 +231,6 @@ class RecordedCamera implements TargetCamera {
     _delivered = null;
     _positionAtStart = Duration.zero;
     _startedAt = null;
-    _playedFrom = null;
     playing.value = false;
     _withSound((s) => s.stop());
     tick();
