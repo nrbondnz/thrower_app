@@ -117,6 +117,7 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
   - Timing by clip position also removes decode jitter from the times (`_deliver` stamps frames with `_now()`).
   - Tests: the replay test already delivers every frame; add one where playback skips frames and the result is still the answer key's times.
 - **Work:** "go" from the answer key (the footage's audio gives the countdown; shown on screen as a "Go" marker at 2.8 s); false start if an impact comes before go; the winner rule (Decisions above); results screen.
+- **Times shown from "go", not from the clip's start** (Nigel, iPhone, 2026-10-15: "the timer start is wrong ... they took about 1.2 seconds to strike the board and this says 3.69"). Task 3's line under each board is the time **into the clip** (`throwText` → `playbackTime`), which starts 2.8 s before "go". Task 4 must show the time **after go** (about 0.85–0.9 s here) under each board and in the results, so no clip time is left on screen. The 1.2 s came from the Mac's early guess at "go" (a speech burst at 160.9–161.4 s, backlog → Duel Test Case); Nigel's by-ear "go" at 161.3 s gives about 0.85 s.
 - **Verify:** Nigel plays Quick draw: "Go" shows as he hears it in the footage, and the result says board 2 wins (5, stuck, ~0.8 s after go) and board 1 bounced.
 - **Save:** unit tests for the winner rule (both stick, one bounces, both bounce, false start, a tie on the same frame).
 
