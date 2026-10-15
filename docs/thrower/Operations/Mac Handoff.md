@@ -15,7 +15,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - **Quick draw** (Live test → *Quick draw*), story [[story-checkpoint-quick-draw]], **Tasks 1–3 of 5 done**:
   - Two throwers, one board each, throwing at the same time after a countdown. The clip (`assets/live/quickdraw.tfrm`, 720 × 1280 at **60 fps**, with sound `quickdraw.m4a`) plays full screen, system bars hidden.
   - Tap the centre (bull) of **Player 1's board**, then **Player 2's**: each is outlined and numbered. **Lock boards**, then **Play**.
-  - While it plays, each board gets its time (seconds into the clip) and result underneath: right board (Player 2, Nigel's brother Mark) about **"3.62 s · 5"**, left board (Player 1) about **"3.65 s · bounced"**. The knives land **37 ms apart** (the answer key, `docs/thrower/reference/live-camera/quickdraw.json`).
+  - While it plays, each board gets its time (seconds into the clip) and result underneath: right board (Player 2, Nigel's brother Mark) about **"3.62 s · 5"**, left board (Player 1) about **"3.65 s · bounced"**. The knives land **2 frames (about 33 ms) apart** on the video (the answer key, `docs/thrower/reference/live-camera/quickdraw.json`).
   - The winner, false starts and timing from "go" (2.8 s into the clip) are **Task 4, not built yet**.
 - **New native plugin: `audioplayers` ^6.8.1** (plays the clip's sound). No new permissions or `Info.plist` keys. It needs iOS 13 (the project targets 15.0). The sound **ducks** other audio (music gets quieter, not stopped) and plays with the **silent switch on**, so the countdown is heard.
 - Commits: `6ec8721` (code, tests, clip) and `022e35b` (docs), plus this handover. `flutter test`: **373 pass** on the PC.
@@ -34,7 +34,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 
 ### Worth knowing
 - **Debug builds are slower than release.** The frame rate in a debug build (where the label shows) understates what a release build does: the Dart that watches each board runs unoptimised. Both boards see the same frames, so the **order** is always fair; a slow phone can only turn a win into a tie.
-- **No TestFlight upload is needed for this.** If one is wanted later, the next build number is **`1.0.0+5`** (`pubspec.yaml` is at `+4`). Release builds have no frames/s label.
+- **No TestFlight upload is needed for this.** If one is wanted later, the next build number is **`1.0.0+6`** (`+5` was uploaded from the Mac on 2026-10-14). Release builds have no frames/s label.
 - **Not ready for the App Store:** the Live test recordings are ~87 MB, and the Quick draw clip shows people (full frame, with voices). Fine for internal TestFlight; see [[backlog]] #6 before any public build.
 - **Taps:** aim for the bull. Taps 15–30 px off the centre sometimes miss the green-and-red board; *Start again* clears and rewinds ([[Known Issues]] → Quick Draw: a Board Isn't Found).
 

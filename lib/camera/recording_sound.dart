@@ -1,7 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 
 /// A recording's sound track, played alongside its frames (the Quick draw
-/// clip's countdown and thuds). Tests replace it.
+/// clip's countdown and the knives hitting). Tests replace it.
 abstract interface class RecordingSound {
   /// Plays from the start (again, if it was already playing).
   Future<void> playFromStart();

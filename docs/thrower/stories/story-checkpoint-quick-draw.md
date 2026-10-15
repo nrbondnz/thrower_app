@@ -20,11 +20,11 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
 - **Countdown:** quiet voice at 160.0–160.2 s and 160.6–161.4 s, then silence. **"Go" is at 161.3 s** (Nigel, by ear): 2.8 s into the clip.
 - **Board 2** (right, green/red): the knife arrives at about **162.12 s** (60 fps frames) and sticks: **5** (`b2-t10` in `truth.json`).
 - **Board 1** (left, red): the knife arrives at about **162.15 s**, hits the bull and slides off: **bounce-out** (`b1-t13`).
-- **Sound:** two separate thuds at **162.133 s** and **162.170 s**: **37 ms apart**, board 2 first, matching the video.
+- **Sound:** one sharp onset at 162.132 s (Mark's knife); the Captain's impact can't be picked out of the ~70 ms rattle that follows (corrected 2026-10-15, as the Mac session found on 2026-10-14: "two thuds 37 ms apart" was an artefact of reading peaks in that rattle). So the margin, **2 frames (about 33 ms)**, rests on the video.
 - **Result:** board 2 wins (first, and stuck).
 - The throwers are out of shot until they walk up at ~164 s.
 
-**Timing resolution:** 37 ms is ~2 frames at 60 fps, but under one frame at 15 fps (67 ms). So at the current 15 fps this race could come out as a tie or the wrong way. Hence 60 fps. The sound separates impacts to ~5 ms but can't say which board; it could refine timing later (not in this story).
+**Timing resolution:** 33 ms is 2 frames at 60 fps, but under one frame at 15 fps (67 ms). So at the current 15 fps this race could come out as a tie or the wrong way. Hence 60 fps. The sound separates impacts to ~5 ms but can't say which board; it could refine timing later (not in this story).
 
 ## Acceptance Criteria
 1. **Live test → Quick draw** plays the clip full screen, with its audio.
@@ -51,7 +51,7 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
   - Cut 158.5–166 s from the original: full frame, 720 × 1280, 60 fps; pack it as `assets/live/quickdraw.tfrm`, and its audio as a separate asset.
   - `quickdraw.json`: go time, and for each board: impact time, stuck or bounce, score.
   - **Live test → Quick draw** plays it full screen with sound. Playing audio needs an audio plugin (a `pubspec.yaml` native plugin): **"Be Careful" Review Agent first**.
-- **Verify:** Nigel opens Live test → Quick draw on his phone, sees the whole picture full screen and hears the countdown and thuds.
+- **Verify:** Nigel opens Live test → Quick draw on his phone, sees the whole picture full screen and hears the countdown and the knives hitting.
 - **Save:** pack test (size, 60 fps, frame count).
 - **Doc Update Log (2026-10-14):**
   - `Architecture/Design Decisions.md`: camera layer row (`RecordingSound`, `AssetRecordingSound`); Live Test section: the Quick draw clip (full frame, 60 fps, q20, 34.2 MB and why), sound (`Recording.audio`, `RecordedCamera.sound`, `audioplayers`, failures don't stop frames), `quickDrawCameraProvider`, `QuickDrawScreen`.
@@ -87,7 +87,7 @@ IN PROGRESS: Tasks 1–3 complete; Task 4 next. Nigel is trying it on his iPhone
   - Drift (fixed 2026-10-15): the Notes size and `locateTargetAt`'s doc comment now match the table.
 
 ## Task 3: Impact time and result per board
-- **Status:** COMPLETE (2026-10-15). Nigel, on the Samsung SM-A065F: "it shows the scores and the times". Playback ran at **11–12 frames a second** there (not 60), and a couple of runs gave both players the same time: at that rate the two knives (37 ms apart) can land in one delivered frame. Nigel: both throwers are professionals, so a draw at that frame rate is no surprise; the Target 2 thrower always draws or wins on time, as analysed. He'll check on his iPhone, expecting a clearer difference at a higher frame rate.
+- **Status:** COMPLETE (2026-10-15). Nigel, on the Samsung SM-A065F: "it shows the scores and the times". Playback ran at **11–12 frames a second** there (not 60), and a couple of runs gave both players the same time: at that rate the two knives (2 frames, about 33 ms apart) can land in one delivered frame. Nigel: both throwers are professionals, so a draw at that frame rate is no surprise; the Target 2 thrower always draws or wins on time, as analysed. He'll check on his iPhone, expecting a clearer difference at a higher frame rate.
 - **Depends on:** Task 2
 - **Work (as built):**
   - `CroppedCamera` (`lib/camera/cropped_camera.dart`): a part of another camera's picture as a camera of its own, frames as views into the source's bytes (BGRA and YUV; upright sources only). `TargetCalibration.within` moves a board's rings into its crop.

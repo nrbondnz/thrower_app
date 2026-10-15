@@ -55,4 +55,4 @@ For the [[story-checkpoint-quick-draw]] clip. Times are seconds from the start o
 | Right (Target 2: green and red rings) | 217 | 3.617 s | stuck, 5 |
 | Left (Target 1: red rings, dark bull) | 219 | 3.650 s | bounce-out (hits the bull and slides off) |
 
-**Winner: right**, first to the board and stuck. The sound agrees on the gap: two thuds at 162.133 and 162.170 s in the original, **37 ms apart** (about the frames' 2). It can't say which board each thud is from; the frames do.
+**Winner: right**, first to the board and stuck. The sound has one sharp onset at 162.132 s (Mark's knife); the Captain's impact can't be picked out of the ~70 ms rattle that follows (corrected 2026-10-15, as the Mac session found on 2026-10-14: "two thuds 37 ms apart" was an artefact of reading peaks in that rattle). So the margin, **2 frames (about 33 ms)**, rests on the video.

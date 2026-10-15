@@ -1,5 +1,5 @@
 {
- "source": "Quick draw clip, cut from IMG_1628.mov at 158.5-166.0 s (2026-10-14). Go time: Nigel, by ear. Impact frames: Claude, from the 60 fps frames, checked against the two thuds in the sound (162.133 s and 162.170 s, 37 ms apart). Results: truth.json (b2-t10, b1-t13).",
+ "source": "Quick draw clip, cut from IMG_1628.mov at 158.5-166.0 s (2026-10-14). Go time: Nigel, by ear. Impact frames: Claude, from the 60 fps frames, The sound has one sharp onset at 162.132 s (the right board's knife); the left board's impact can't be separated from the rattle after it, so the margin rests on the video. Results: truth.json (b2-t10, b1-t13).",
  "clipStart": 158.5,
  "fps": 60,
  "times": "Seconds from the start of the clip; add clipStart for the original video.",
