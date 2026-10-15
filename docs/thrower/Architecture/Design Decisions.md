@@ -92,9 +92,9 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 |---|---|---|
 | `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
 | `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. No provider until the backend is chosen; `authServiceProvider` throws until overridden. |
-| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`), with two implementations: `LiveCamera` (the `camera` plugin's back camera) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `playbackTime`). `CroppedCamera` (a part of another camera's picture as a camera of its own; Quick draw, one per board). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
+| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`), with two implementations: `LiveCamera` (the `camera` plugin's back camera) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `Recording.go`). `RecordingAnalysisFeed` (every frame of a recording, in order, timed by its place in the clip, for analysis; Quick draw). `CroppedCamera` (a part of another camera's picture as a camera of its own; Quick draw, one per board). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
 | `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw). |
-| `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board; `QuickDrawThrow`). |
+| `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board; `QuickDrawThrow`), `judgeQuickDraw` (Quick draw's winner rule; `QuickDrawVerdict`). |
 | `lib/ui/` | Screens and painters | Depends on the layers through providers. `RoundMarks` holds the Play screen's marks for the round. |
 | `lib/providers.dart` | Wiring | One place to see and override every layer. |
 
@@ -417,7 +417,7 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
   - `AssetRecordingSound` uses the **`audioplayers`** plugin (^6.8.1), loaded once and kept ready (`ReleaseMode.stop`), so a replay doesn't reload. It's a native plugin, for playback only; the app still records no audio. Tests inject a fake `RecordingSound`.
   - Played separately rather than packed into the `.tfrm`, so `FramePack` stays frames only.
   - **Audio context** (Nigel, 2026-10-14): `AssetRecordingSound.audioContext` **ducks other apps** (music is turned down while it plays, not stopped) and **ignores the silent switch** (`respectSilence: false`), so a countdown is always heard. The plugin's default stopped other apps' audio. Built for the platform it runs on.
-- **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`), reached from **Live test → Quick draw**: the clip full screen on black, with the system bars hidden (`immersiveSticky`, back to `edgeToEdge` on leaving). A back button, and a **Play** button (**Play again** once played) that's hidden while it plays. Debug builds show the frame rate. Before playing, the user chooses the boards by tapping (see Quick Draw: Choosing the Boards by Tapping below). Played with the boards locked, each board shows its knife's time and result (see Quick Draw: Timing and Scoring Each Board). No winner yet (Task 4).
+- **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`), reached from **Live test → Quick draw**: the clip full screen on black, with the system bars hidden (`immersiveSticky`, back to `edgeToEdge` on leaving). A back button, and a **Play** button (**Play again** once played) that's hidden while it plays. Debug builds show the frame rate. Before playing, the user chooses the boards by tapping (see Quick Draw: Choosing the Boards by Tapping below). Played with the boards locked, **GO!** flashes at the footage's go, every frame is analysed (see Quick Draw: Analysing Every Frame, Reporting Late), each board shows its knife's time after go and its result, and the bottom line gives the winner (see Quick Draw: Go, False Starts and the Winner).
 
 ## Quick Draw: Choosing the Boards by Tapping (2026-10-14)
 
@@ -463,11 +463,57 @@ The misses aren't resolution or compression: the right board fails as often on t
 
 **Board visits: 2% → 3% of the region (`classifyThrow` `visitArea`).** The right board's knife, flying in close to the camera, moved a shape of **2.2%** of the region and was taken for a person. People are **4%+** (Target 1 and Target 2); knives on the Target 1 / Target 2 recordings at most **1.1%**. So 3% still separates them.
 
-**Shown:** **Play** with the boards locked starts a fresh `QuickDrawWatcher` (Start again or Play again throws the old one away). Each board shows a line under it (`throwText`, drawn by `BoardsPainter`): the impact on the clip's own timeline (`RecordedCamera.playbackTime`) and the score, e.g. "3.62 s · 5", or "3.65 s · bounced". Without a lock, Play just plays the clip.
+**Shown:** **Play** with the boards locked starts a fresh `QuickDrawWatcher` (Start again or Play again throws the old one away). Each board shows a line under it (drawn by `BoardsPainter`). In Task 3 this was the impact on the clip's own timeline ("3.62 s · 5"); since Task 4 it's the time **after go** (`boardLines`; see Quick Draw: Go, False Starts and the Winner). Without a lock, Play just plays the clip.
 
-**Checked by** `test/game/quick_draw_replay_test.dart`: the clip through `RecordedCamera` → `QuickDrawWatcher`, boards tapped at their centres: Player 1 (left) bounces out, Player 2 (right) sticks for 5, each impact within a frame of the answer key, Player 2 first.
+**Checked by** `test/game/quick_draw_replay_test.dart`: the clip through `RecordedCamera` → `RecordingAnalysisFeed` → `QuickDrawWatcher`, boards tapped at their centres: Player 1 (left) bounces out, Player 2 (right) sticks for 5, each impact within a frame of the answer key, Player 2 first.
 
-**Not yet:** "go", false starts and the winner (Task 4). On a slow phone, dropped frames make the times coarser ([[Known Issues]] → Quick Draw: Dropped Frames Make Times Coarser).
+**Dropped frames (Task 3; fixed in Task 4):** the watchers first looked at the picture's own frames, so a phone that skipped frames (Samsung 11–12 a second, iPhone ~42) made the times coarser ([[Known Issues]] → Quick Draw: Dropped Frames Make Times Coarser). Now they watch the analysis feed (next section).
+
+**Confirmed:** 2026-10-15 (Nigel, Samsung: "it shows the scores and the times").
+
+## Quick Draw: Analysing Every Frame, Reporting Late (2026-10-15)
+
+**Decision (Nigel, 2026-10-15):** playback stays as it is, and may skip frames to keep up with the sound, but **analysis sees every one of the clip's frames, in order**, each timed by its **place in the clip**. The result may come late: *"analysis can come back with the actual result 1/2 second later"* (Task 4 of [[story-checkpoint-quick-draw]]).
+
+**Why:** `RecordedCamera` decodes only the newest frame when it falls behind, and the same decoded frame fed both the picture and the watchers. On the 60 fps clip the iPhone showed about **42** frames a second (debug build), the Samsung A06 **11–12**. The two knives land 2 frames (about 33 ms) apart, so a skipped frame can hold the moment a knife lands, and both players often got the same time. Frames were also timed by when they arrived (`_now()`), which added decode jitter.
+
+**How (`RecordingAnalysisFeed`, `lib/camera/recording_analysis_feed.dart`):** a `TargetCamera` that follows a `RecordedCamera`.
+- It decodes its **own copy** of every frame (with the camera's `decoder`), one after another, from frame 0 up to the frame on show: **never ahead of the picture**, so a result can't appear before the moment it shows.
+- Each frame is stamped with its place in the recording, `timeOf(index)` = frame number ÷ frame rate, not with when it was decoded.
+- `analysed`: the last frame analysed (-1 before the first), so the screen can show how far behind analysis is.
+- When playback starts again from the beginning (the position goes back), so does the feed, from frame 0. It decodes only while someone listens. `dispose` stops following the camera (the camera isn't the feed's to dispose).
+- `QuickDrawWatcher` watches this feed, not the camera. The picture and the sound keep their own pace.
+
+**The cost:** each frame is decoded twice (once for the picture, once for analysis). If a phone analyses ~42 frames a second, analysis falls behind by about 0.4 s per second of clip: about 1.5 s by the throws at 3.6 s (less in a release build). If that's too slow, only the board crops need decoding (see [[backlog]] → Speed on the phone).
+
+**Shown:** while analysis is more than 0.2 s behind, the bottom line says **"Analysing… 0.4 s behind the picture."**, otherwise **"Watching…"**; then the verdict, once both throws are in or the whole clip has been analysed.
+
+**Checked by** `test/camera/recording_analysis_feed_test.dart` (every frame up to the one shown, in order, even when the picture skipped them; stamped with their place, not when analysed; never ahead of the picture; starts again on replay; nothing decoded without a listener) and `quick_draw_replay_test.dart` (with playback skipping 2 of every 3 frames: the same throws, on the same frames).
+
+**Live camera:** there's no decoding to do, but the phone has to keep up with 60 fps analysis; the live game's timing questions are in [[backlog]] #9.
+
+**Confirmed:** 2026-10-15 (built; Nigel's device check pending).
+
+## Quick Draw: Go, False Starts and the Winner (2026-10-15)
+
+**Decision (Nigel, 2026-10-14):** **the first knife to stick wins.** A bounce-out loses. A knife that reaches its board **before "go"** is a **false start**, and loses. If both stick, the one that reached its board first wins; ring scores are shown but don't decide it. Both on the **same frame** is a **draw**. If neither sticks, **nobody wins** (Task 4 of [[story-checkpoint-quick-draw]]).
+
+**"Go":** `Recording.go`, when the recording's countdown says go, from its start. For `quickDrawRecording` it's **2.8 s** (161.3 s in the original, by Nigel's ear; answer key `reference/live-camera/quickdraw.json`). On the recording the app plays no countdown of its own: the footage's audio gives it. The live game's own countdown (Formula 1 style) is [[backlog]] #9.
+
+**How (`judgeQuickDraw`, `lib/game/quick_draw_judge.dart`):** each player's `QuickDrawThrow` (or null) and `go` give a `QuickDrawVerdict`:
+- per player a `JudgedThrow`: `result` (`QuickDrawResult`: `none`, `falseStart` (impact before go; exactly at go is not), `bounced`, `stuck`), `afterGo` (impact − go; negative for a false start) and a stuck knife's `score`.
+- `winner`: the stuck player with the smallest `afterGo`; null for a `draw` (two stuck at the same time, i.e. the same frame) or when nobody stuck.
+
+**Times are shown from go, not from the clip's start** (Nigel, iPhone, 2026-10-15: *"the timer start is wrong ... they took about 1.2 seconds to strike the board and this says 3.69"*). Task 3 showed clip time, which starts 2.8 s before go. No clip time is left on screen, and `RecordedCamera.playbackTime` was removed. (The 1.2 s came from the Mac's early guess at go; from Nigel's by-ear go it's about 0.82–0.85 s.)
+
+**Shown on `QuickDrawScreen`:**
+- **GO!** (big, green) over the picture for **0.7 s** from go, while playing (`_GoFlash`, following `RecordedCamera.position`: the picture's time, so it matches what's heard).
+- Under each board (`boardLines` → `judgedText`): "0.82 s · 5", "0.85 s · bounced", "false start" or "no throw"; empty until its throw is in.
+- The bottom line (`verdictText`), e.g. **"Player 2 wins: stuck 5, 0.82 s after go. Player 1 bounced out."**, or "A draw: both stuck on the same frame. …", or "No winner. …".
+
+**On the clip:** Player 2 (right) wins, stuck 5, about **0.82 s** after go; Player 1 (left) bounced out.
+
+**Checked by** `test/game/quick_draw_judge_test.dart` (a table: both stick, a bounce-out, both bounce, false starts, exactly at go, the same frame, no throws; times from go; the result line), `quick_draw_replay_test.dart` (the verdict on the clip) and `quick_draw_screen_test.dart` (the line under each board; GO! shows at go and not before or long after; the bottom line follows the analysis, then gives the verdict).
 
 **Confirmed:** 2026-10-15 (built; Nigel's device check pending).
 

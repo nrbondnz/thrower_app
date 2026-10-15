@@ -28,6 +28,8 @@ Every screen and the throw detection use a `TargetCamera`. Both kinds deliver th
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+Quick draw's analysis uses a third `TargetCamera`, `RecordingAnalysisFeed`: every frame of a `RecordedCamera`'s clip, in order, stamped with its place in the clip, while the picture may skip frames (see Quick Draw: a Throw per Board, and the Winner, below).
+
 ## A Frame → a Calibration
 
 ```
@@ -170,17 +172,25 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Draw: a Throw per Board
+## Quick Draw: a Throw per Board, and the Winner
 
-Once the boards are locked, Play watches each board on its own crop with the single-board throw detection, at every frame (Task 3 of [[story-checkpoint-quick-draw]]; why, and the measurements, in [[Design Decisions]] → Quick Draw: Timing and Scoring Each Board).
+Once the boards are locked, Play watches each board on its own crop with the single-board throw detection, at every frame of the clip, then judges the race (Tasks 3 and 4 of [[story-checkpoint-quick-draw]]). The watchers don't look at the picture's frames: a phone that can't keep up skips some of those. They get every frame, in order, from `RecordingAnalysisFeed`, so the result can come a little after the picture. Why, and the measurements, in [[Design Decisions]] → Quick Draw: Timing and Scoring Each Board, Quick Draw: Analysing Every Frame, Reporting Late, and Quick Draw: Go, False Starts and the Winner.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│           QUICK DRAW: A THROW PER BOARD (QuickDrawWatcher)          │
+│           QUICK DRAW: A THROW PER BOARD, AND THE WINNER             │
 │                                                                     │
-│   Play with the boards locked: RecordedCamera frames (60 fps)       │
-│          │                                                          │
+│   Play with the boards locked: RecordedCamera (60 fps clip)         │
+│          │  the picture and sound: their own pace, may skip         │
 │          ▼                                                          │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ RecordingAnalysisFeed: its own copy of EVERY frame, decoded  │  │
+│   │ in order, never ahead of the picture (may finish late);      │  │
+│   │ timestamp = timeOf(index) = frame number ÷ 60 (clip time);   │  │
+│   │ starts again from frame 0 when playback restarts             │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ every frame, in order            │
+│                                  ▼                                  │
 │   ┌──────────────────────────────────────────────────────────────┐  │
 │   │ per board, a CroppedCamera: a square 4 × the board's radius  │  │
 │   │ around it, frames as views into the same bytes (no copy);    │  │
@@ -201,14 +211,23 @@ Once the boards are locked, Play watches each board on its own crop with the sin
 │   │ QuickDrawWatcher.throws: each player's first throw only,     │  │
 │   │ QuickDrawThrow(impact, stuck, score); later ones ignored     │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ throws + Recording.go (2.8 s)    │
 │                                  ▼                                  │
-│   BoardsPainter: a line under each board (throwText), impact on     │
-│   the clip's timeline (RecordedCamera.playbackTime):                │
-│   "3.62 s · 5" or "3.65 s · bounced"                                │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ judgeQuickDraw(throws, go) → QuickDrawVerdict                │  │
+│   │  - per player: none / falseStart (impact before go) /        │  │
+│   │    bounced / stuck; afterGo = impact − go; score             │  │
+│   │  - winner: the first to stick; same frame = draw;            │  │
+│   │    nobody stuck = no winner                                  │  │
+│   └──────────────────────────────────────────────────────────────┘  │
+│   BoardsPainter: boardLines → judgedText under each board:          │
+│   "0.82 s · 5", "0.85 s · bounced", "false start"                   │
+│   Bottom line: "Watching…" / "Analysing… 0.4 s behind the           │
+│   picture." → verdictText: "Player 2 wins: stuck 5, 0.82 s after    │
+│   go. Player 1 bounced out."                                        │
+│   GO! flashes 0.7 s at go (from the picture's position)             │
 └─────────────────────────────────────────────────────────────────────┘
 ```
-
-"go", false starts and the winner (Task 4) will be added here once built.
 
 ## Coordinate Spaces
 

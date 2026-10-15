@@ -56,3 +56,5 @@ For the [[story-checkpoint-quick-draw]] clip. Times are seconds from the start o
 | Left (Target 1: red rings, dark bull) | 219 | 3.650 s | bounce-out (hits the bull and slides off) |
 
 **Winner: right**, first to the board and stuck. The sound has one sharp onset at 162.132 s (Mark's knife); the Captain's impact can't be picked out of the ~70 ms rattle that follows (corrected 2026-10-15, as the Mac session found on 2026-10-14: "two thuds 37 ms apart" was an artefact of reading peaks in that rattle). So the margin, **2 frames (about 33 ms)**, rests on the video.
+
+**In the app** (Task 4, 2026-10-15): `quickDrawRecording.go` is this go (2.8 s), and Quick draw shows times **after go**, not clip time: right about **0.82 s**, left about **0.85 s**. `quick_draw_replay_test.dart` checks each impact is within a frame of this key, and the verdict (right wins, stuck 5; left bounced).

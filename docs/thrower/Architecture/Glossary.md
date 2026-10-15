@@ -11,19 +11,31 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`RecordedCamera`** (`lib/camera/recorded_camera.dart`): a Live test recording played as a camera
   - `load(Recording)`: the `FramePack` asset, plus an `AssetRecordingSound` if the recording has `audio`
   - `restart`: play from the start (sound too); `rewind`: stop and wait on the first frame (sound stopped)
-  - `playbackTime(timestamp)`: how far into the recording a frame was delivered (null before playback starts); Quick draw's times
+  - `Recording.go`: when the recording's countdown says go, from its start (`quickDrawRecording`: 2.8 s); null for recordings without one
   - **`RecordingSound`** (`lib/camera/recording_sound.dart`): `playFromStart`, `stop`, `dispose`; `AssetRecordingSound` (`audioplayers`; `audioContext`: ducks other apps, ignores the silent switch). A failing sound is reported; frames play on
+- **`RecordingAnalysisFeed`** (`lib/camera/recording_analysis_feed.dart`): **every** frame of a `RecordedCamera`'s recording, in order, for analysis (Quick draw)
+  - `frames`: decodes its own copy of each frame, one at a time, up to the frame on show (never ahead of the picture); only while listened to; starts again from frame 0 when playback restarts
+  - `timeOf(index)`: a frame's place in the recording (frame number ÷ frame rate), its `timestamp`
+  - `analysed`: the last frame analysed (-1 before the first)
+  - `dispose`: stops following the camera (doesn't dispose it)
 - **`CroppedCamera`** (`lib/camera/cropped_camera.dart`): a part of another camera's picture as a camera of its own (upright sources only)
   - `frames` → `crop`: each frame as a view into the source's bytes (BGRA, YUV; `x`, `y` rounded down to even)
 - **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`): `quickDrawCameraProvider` → full-screen `RecordedPreview`, Play / Play again → `restart`
   - tap (image pixels) → `tapLocatorProvider` → `boardAt` → `quickDrawTargetsProvider.add`; Lock boards → `lock`; Start again → `clear` + `rewind`
-  - Play with the boards locked → a fresh `QuickDrawWatcher`; Start again / leaving → `dispose`
+  - Play with the boards locked → a fresh `RecordingAnalysisFeed` and a `QuickDrawWatcher` on it; Start again / leaving → `dispose` both
   - **`BoardsPainter`**: each board's rings and its player number (blue while choosing, green once locked); `results`: each player's line under their board
-  - `throwText(QuickDrawThrow, camera)`: "3.62 s · 5" / "3.65 s · bounced" (impact via `playbackTime`); null before the throw is in
+  - `boardLines(throws, go)`: the line under each board, via `judgeQuickDraw` → `judgedText` ("0.82 s · 5", "0.85 s · bounced", "false start"); null before the throw is in
+  - `_GoFlash`: "GO!" over the picture for 0.7 s from `Recording.go`, while playing (follows `RecordedCamera.position`)
+  - `_progress`: the bottom line while a locked game plays: "Watching…", "Analysing… 0.4 s behind the picture." (more than 0.2 s behind), then `verdictText` once both throws are in or the whole clip is analysed
 - **`QuickDrawTargets`** (`lib/game/quick_draw_targets.dart`): the boards in tap order, `players` (2), `complete`, `locked`; `QuickDrawTargetsNotifier` (`lib/providers.dart`): `add`, `clear`, `lock`
   - `locateAtTap`: the camera's next frame → `compute(locateTappedInFrame)`; `boardAt`: result → `TargetCalibration` or null
-- **`QuickDrawWatcher`** (`lib/game/quick_draw_watcher.dart`): `start`: per board a `CroppedCamera` (`cropRadii` 4) + `TargetCalibration.within` + `ThrowWatcher(interval: zero)`
+- **`QuickDrawWatcher`** (`lib/game/quick_draw_watcher.dart`), on the `RecordingAnalysisFeed` (since Task 4; was the picture's frames): `start`: per board a `CroppedCamera` (`cropRadii` 4) + `TargetCalibration.within` + `ThrowWatcher(interval: zero)`
   - `throws`: each player's first stuck or bounce-out event as a **`QuickDrawThrow`** (`impact` = `MotionEpisode.impact`, `stuck`, `score` via `TargetMapping` → `TargetModel.scoreAt`); `dispose`
+- **`judgeQuickDraw(throws, go)`** (`lib/game/quick_draw_judge.dart`): the winner rule → a **`QuickDrawVerdict`** (`players`, `winner`, `draw`)
+  - per player a **`JudgedThrow`**: `result` (**`QuickDrawResult`**: `none`, `falseStart`, `bounced`, `stuck`), `afterGo` (impact − go), `score` (stuck only)
+  - `winner`: the stuck player with the smallest `afterGo`; equal times → `draw`; nobody stuck → null
+  - `judgedText(JudgedThrow)`: "0.82 s · 5", "0.85 s · bounced", "false start", "no throw" (`afterGoText`: "0.82 s")
+  - `verdictText(QuickDrawVerdict)`: "Player 2 wins: stuck 5, 0.82 s after go. Player 1 bounced out." / "A draw: …" / "No winner. …"
 - **`locateTappedInFrame`** (`lib/vision/tapped_target_locator.dart`): `frameToRgb` (upright, cap 1920 px) → `locateTargetAt` per tap, in tap order
   - **`locateTargetAt`**: window 0.45 × the shorter side around the tap → `ColourRingLocator` (`seed` = the tap, enlarged 3×) inside `ContrastNormalisingLocator` → `CoarseToFineLocator.moved` back to the whole picture
 - **`locateInFrame`** (`lib/vision/locate_in_frame.dart`)
@@ -85,7 +97,10 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 | **Colour vs brightness change** | Shaded steel can match red paint's brightness, so the full-resolution entry search compares colour (largest channel difference); motion detection uses brightness (cheap, enough to see change). | `GeometricEntryEstimator`, `MotionDetector` |
 | **Steel vs shadow** | A knife's shadow is new too, but keeps the board's hue; the knife is grey (low saturation). | `GeometricEntryEstimator` |
 | **Entry point (how a knife is scored)** | Where the blade goes into the wood. Nigel's rule (2026-10-13): "find the solid shape of the knife; score where the blade goes into the wood; a shadow comes from the knife, on the side away from the light". Not the handle, and not the end of the shadow nearest the bull. | `faceOnEntry`, `GeometricEntryEstimator`, [[story-checkpoint-entry-point]] |
-| **Quick draw** | Two throwers, one board each, both in one camera view, throwing together after a countdown. The first knife to stick wins; a bounce-out loses ([[story-checkpoint-quick-draw]]). So far: the Live test clip, played full screen with its sound, the boards chosen by tapping, and each board's impact time and result. | `QuickDrawScreen`, `quickDrawRecording`, `quickDrawCameraProvider`, `QuickDrawTargets`, `QuickDrawWatcher` |
+| **Quick draw** | Two throwers, one board each, both in one camera view, throwing together after a countdown. The first knife to stick wins; a bounce-out loses ([[story-checkpoint-quick-draw]]). So far: the Live test clip, played full screen with its sound, the boards chosen by tapping, every frame analysed, each board's time after go and result, and the winner. | `QuickDrawScreen`, `quickDrawRecording`, `quickDrawCameraProvider`, `QuickDrawTargets`, `QuickDrawWatcher`, `RecordingAnalysisFeed`, `judgeQuickDraw` |
+| **False start** | In Quick draw, a knife that reaches its board before "go" (exactly at go is not). It loses, however fast. | `judgeQuickDraw` (`QuickDrawResult.falseStart`) |
+| **Time after go** | How long from "go" to the knife reaching the board (its impact). What Quick draw shows and judges by; not the time into the clip. | `JudgedThrow.afterGo`, `Recording.go` |
+| **Analysis feed / report late** | Analysis gets every frame of a recording, in order, timed by its place in the clip, on its own path, while the picture may skip frames to keep up with the sound. Analysis never runs ahead of the picture, so the result can come a little after the moment it shows (Nigel, 2026-10-15: "1/2 second later"). | `RecordingAnalysisFeed`, `QuickDrawScreen` |
 | **Impact (frame)** | When a knife reached the board: the frame, within a motion episode, with the largest moving shape on the target (the board jolts and the knife stops at once). Not the episode's start: seen from behind the thrower, a knife in flight is over the board all the way in. Quick draw times throws by it. | `MotionEpisode.impact` / `impactFrame`, `QuickDrawThrow.impact` |
 | **Board crop** | A square of the picture around one board, treated as a camera of its own, so single-board detection can watch one board of several at full detail. | `CroppedCamera`, `TargetCalibration.within`, `QuickDrawWatcher` |
 | **Seed (tap) centre** | Where the user says a board's centre is, by tapping it. Tried first as the centre, then snapped to the colour regions under and around it (the bull, or the ring tapped, is centred on the board). Lets the user pick which boards count when more are in the picture. | `ColourRingLocator.seed`, `locateTargetAt` |

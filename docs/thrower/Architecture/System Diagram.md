@@ -41,7 +41,10 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ │ ├FramePack│  │ findTarget      │  │ rounds of 3│ │provider  │  │
 │  │ │ └Recording│  │ QuickDrawTargets│  │ 9 rounds   │ │yet       │  │
 │  │ │  Sound    │  │ QuickDrawWatcher│  │            │ │          │  │
-│  │ └Cropped-   │  │  └ThrowWatcher×2│  │            │ │          │  │
+│  │ ├Recording- │  │  └ThrowWatcher×2│  │            │ │          │  │
+│  │ │ Analysis- │  │ judgeQuickDraw  │  │            │ │          │  │
+│  │ │ Feed      │  │  go, false start│  │            │ │          │  │
+│  │ └Cropped-   │  │  → winner       │  │            │ │          │  │
 │  │  Camera     │  └────────┬────────┘  └────────────┘ └──────────┘  │
 │  │CameraFrame  │           │                  ▲                     │
 │  └──────┬──────┘           ▼                  │                     │
@@ -134,14 +137,19 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │   │ same Calibration + Play flow  │ │ quickDrawCameraProvider → │   │
 │   │ answer key: truth.json        │ │ QuickDrawScreen           │   │
 │   │                               │ │ tap boards 1, 2 → lock    │   │
-│   │                               │ │ Play → QuickDrawWatcher:  │   │
-│   │                               │ │ time · score per board    │   │
+│   │                               │ │ Play: GO! at 2.8 s;       │   │
+│   │                               │ │ RecordingAnalysisFeed     │   │
+│   │                               │ │ (every frame, in order) → │   │
+│   │                               │ │ QuickDrawWatcher →        │   │
+│   │                               │ │ judgeQuickDraw: time      │   │
+│   │                               │ │ after go · score, winner  │   │
 │   │                               │ │ answer key: quickdraw.json│   │
 │   └───────────────────────────────┘ └───────────────────────────┘   │
 │                                                                     │
 │   Quick draw: boards chosen by tapping (Task 2); impact time and    │
-│   result under each board (Task 3). Still to come: go, false start, │
-│   winner (story-checkpoint-quick-draw, Task 4)                      │
+│   result under each board (Task 3); every frame analysed, times     │
+│   after go, false start and winner (Task 4). Still to come:         │
+│   docs, traceability, in-app instructions (Task 5)                  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
