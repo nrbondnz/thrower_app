@@ -116,6 +116,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `awaitingNextRound` (knives collected, game not over), `roundNumber` (the next round once collected), `finishedRounds` (the collected rounds); used by Play's `roundText` / `gameText`
 - **`Match`** (`lib/scoring/match.dart`) / **`PlayMode`** / **`playModeProvider`** (`lib/providers.dart`) / **`PlaySetupScreen`** (`lib/ui/play_setup_screen.dart`)
   - `PlayMode`: `solo`, `sharedTarget` (2 players taking turns), `twoTargets` (2 players at once); chosen on the setup screen after Play
+  - `gameLengthProvider` (`GameLengthNotifier`, `choices` 3 / 5 / 9, default 9): the rounds in a game, also chosen there
   - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
   - Play's two-player panel (`lib/ui/play_screen.dart`, `PlayersPanel`): `turnText` ("Player 1's turn" / "Collect your knives" / "Wait for Player 2" / "Player 2 wins" / "A draw"), `turnDetail`, `playerTitle`, `playerDetail`, `matchFooter`; `eventMessage`, `paintRoundMarks`
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**

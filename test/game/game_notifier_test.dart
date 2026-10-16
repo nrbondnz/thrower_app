@@ -235,6 +235,19 @@ void main() {
       expect(totals(), [5, 0]);
     });
 
+    test('a new game keeps the length too', () {
+      container.read(gameLengthProvider.notifier).choose(3);
+      final g = container.read(gameProvider.notifier)
+        ..onEvent(stuckAt(500, 400, 0), c)
+        ..newGame();
+      expect((container.read(gameProvider).maxRounds, container.read(gameProvider).isEmpty), (3, true));
+      // A 3-round game is over after its third round.
+      for (var i = 0; i < 9; i++) {
+        g.onEvent(stuckAt(500, 400, i), c);
+      }
+      expect(container.read(gameProvider).isOver, isTrue);
+    });
+
     test('a new game keeps the mode', () {
       playing(PlayMode.sharedTarget).newGame();
       expect(container.read(gameProvider).mode, PlayMode.sharedTarget);

@@ -62,7 +62,7 @@ For [[story-checkpoint-players-and-targets]] (Play for 1 or 2 players, on 1 targ
 
 | Step | Do | Look for |
 |---|---|---|
-| M0 | Home → **Play** | A setup screen: **1 player / 2 players**; with 2, **1 target / 2 targets**, each with a line saying what it means; **Start**. 1 player → Start plays as before |
+| M0 | Home → **Play** | A setup screen: **1 player / 2 players**; with 2, **1 target / 2 targets**, each with a line saying what it means; **How many rounds? 3 / 5 / 9**; **Start**. 1 player, 9 rounds → Start plays as before; 3 rounds → "Round 1 of 3" |
 | M1 | Live test → Target 1 → Calibrate → **2. Play** → 2 players, 1 target → Start | Large **"Player 1's turn"**; after the first round's knives are collected in the footage, **"Player 2's turn"**, and so on; both players' totals. Readable from where a thrower would stand? |
 | M2 | Live test → **Play on two targets** (bottom of the page): tap the left bull, then the right, **Lock boards** | Player 1: a bounce-out (0); Player 2: stuck, **5**, each under its own player |
 | M3 | **Paper, 1 target, 2 players.** Calibrate, Start; press 3 pens in | After the 3rd: **"Collect your knives"**, then "When no one is throwing. Then Player 2's turn." Take the pens out: **"Player 2's turn"**. The marks clear for Player 2 |

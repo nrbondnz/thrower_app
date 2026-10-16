@@ -9,6 +9,7 @@ import 'camera/target_camera.dart';
 import 'game/quick_draw_targets.dart';
 import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
+import 'scoring/game_session.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
 import 'sound/signal_sounds.dart';
@@ -193,6 +194,20 @@ class PlayModeNotifier extends Notifier<PlayMode> {
 
 final playModeProvider = NotifierProvider<PlayModeNotifier, PlayMode>(PlayModeNotifier.new);
 
+/// How many rounds a game of Play has (the setup screen; Nigel, 2026-10-16):
+/// one of [choices], 9 unless chosen. Kept for the session, like
+/// [playModeProvider].
+class GameLengthNotifier extends Notifier<int> {
+  static const choices = [3, 5, 9];
+
+  @override
+  int build() => const GameSession().maxRounds;
+
+  void choose(int rounds) => state = rounds;
+}
+
+final gameLengthProvider = NotifierProvider<GameLengthNotifier, int>(GameLengthNotifier.new);
+
 /// This session's game of Play, for one or two players ([Match]), fed by
 /// each board's [ThrowEvent]s.
 class GameNotifier extends Notifier<Match> {
@@ -200,19 +215,21 @@ class GameNotifier extends Notifier<Match> {
   /// was recorded as, for knives still in a board.
   final _knives = <(int, int), (int, int, int)>{};
 
-  /// A new game whenever the camera (live camera ↔ a recording) or the
-  /// play mode changes.
+  /// A new game whenever the camera (live camera ↔ a recording), the play
+  /// mode or the game length changes.
   @override
   Match build() {
     ref.watch(recordingChoiceProvider);
     final mode = ref.watch(playModeProvider);
+    final rounds = ref.watch(gameLengthProvider);
     _knives.clear();
-    return Match(mode);
+    return Match(mode, rules: GameSession(maxRounds: rounds));
   }
 
+  /// The same mode and length, from the start.
   void newGame() {
     _knives.clear();
-    state = Match(state.mode);
+    state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds));
   }
 
   /// Applies what [board]'s watcher saw (board 0 on one target).

@@ -29,7 +29,7 @@ COMPONENTS = {
         ],
         functions=[
             ('HomeScreen', 'Instructions, Play, Quick draw, Live test, Calibrate target, Scoring test target'),
-            ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); Start'),
+            ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; Start'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('TwoTargetPlayScreen', "two players on two targets: tap and lock both boards, each board's marks, Wait for Player 2 / Collect your knives, the winner"),
@@ -54,7 +54,7 @@ COMPONENTS = {
             ('quickDrawCameraProvider', 'the Quick draw clip as a RecordedCamera'),
             ('liveQuickDrawCameraProvider', 'LiveCamera.open(fps: 60), auto-disposed'),
             ('calibrationProvider (CalibrationNotifier)', 'start, adjust, lock, unlock'),
-            ('playModeProvider', 'the setup screen\'s choice, kept for the session'),
+            ('playModeProvider · gameLengthProvider', 'the setup screen\'s choices, kept for the session'),
             ('gameProvider (GameNotifier)', 'onEvent(board) → Match → a GameSession per player'),
             ('targetModelProvider · ringBoundaryRadiiProvider', 'the IKTHOF rings'),
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),

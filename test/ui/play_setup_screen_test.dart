@@ -91,4 +91,40 @@ void main() {
     await start(tester);
     expect(container.read(gameProvider).players.single.total, 4);
   });
+
+  group('game length', () {
+    testWidgets('offers 3, 5 or 9 rounds, 9 chosen at first', (tester) async {
+      await pumpSetup(tester);
+      expect(find.text('How many rounds?'), findsOneWidget);
+      final rounds = tester.widget<SegmentedButton<int>>(find.byKey(const Key('playRounds')));
+      expect([for (final s in rounds.segments) s.value], [3, 5, 9]);
+      expect(rounds.selected, {9});
+    });
+
+    testWidgets('Start with 5 rounds plays a 5-round game', (tester) async {
+      await pumpSetup(tester);
+      await tapSegment(tester, '5');
+      await start(tester);
+      expect(container.read(gameProvider).maxRounds, 5);
+      expect(container.read(gameLengthProvider), 5);
+    });
+
+    testWidgets('a different length starts a new game; the same keeps it', (tester) async {
+      await pumpSetup(tester);
+      container.read(gameProvider.notifier).state = Match(PlayMode.solo).stuck(4, p);
+      await tapSegment(tester, '3');
+      await start(tester);
+      expect((container.read(gameProvider).maxRounds, container.read(gameProvider).isEmpty), (3, true));
+    });
+
+    testWidgets('opens on the last length chosen', (tester) async {
+      await pumpSetup(tester);
+      container.read(gameLengthProvider.notifier).choose(5);
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: PlaySetupScreen(key: Key('again'))),
+      ));
+      expect(tester.widget<SegmentedButton<int>>(find.byKey(const Key('playRounds'))).selected, {5});
+    });
+  });
 }

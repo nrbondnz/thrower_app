@@ -61,7 +61,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Calibrate again (Re-calibrate) whenever the phone or the target moves.',
     ]),
     InstructionSection('Playing a game', [
-      'Tap Play, choose how many players (and, for two, how many targets), then Start. '
+      'Tap Play, choose how many players (and, for two, how many targets) and how many rounds '
+          '(${GameLengthNotifier.choices.join(', ')}), then Start. '
           'A game is ${rules.maxRounds} rounds of $n throws for each player.',
       if (paper) ...[
         'A "throw" that sticks: press a pen in its Blu Tack onto the paper so it sticks out about 10 cm, then step '

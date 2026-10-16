@@ -8,9 +8,9 @@ import 'two_target_play_screen.dart';
 
 /// The screen after Home → Play (and Live test → Play): **how many players**,
 /// 1 or 2, and for 2, **one target** (taking turns) or **two** (throwing at
-/// the same time) (Nigel, 2026-10-16). Starts with the last choice. **Start**
-/// keeps a game in progress if the choice is the same, and starts a new one
-/// if it changed.
+/// the same time); and **how many rounds**, 3, 5 or 9 (Nigel, 2026-10-16).
+/// Starts with the last choice. **Start** keeps a game in progress if the
+/// choice is the same, and starts a new one if it changed.
 class PlaySetupScreen extends ConsumerStatefulWidget {
   const PlaySetupScreen({super.key});
 
@@ -24,6 +24,8 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
   /// With 2 players: one target or two.
   late var _targets = ref.read(playModeProvider).targets;
 
+  late var _rounds = ref.read(gameLengthProvider);
+
   PlayMode get _mode => _players == 1
       ? PlayMode.solo
       : _targets == 1
@@ -33,6 +35,7 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
   void _start() {
     final mode = _mode;
     ref.read(playModeProvider.notifier).choose(mode);
+    ref.read(gameLengthProvider.notifier).choose(_rounds);
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => mode == PlayMode.twoTargets ? const TwoTargetPlayScreen() : const PlayScreen(),
     ));
@@ -74,6 +77,17 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
                 onSelectionChanged: (s) => setState(() => _targets = s.single),
               ),
             ],
+            const SizedBox(height: 24),
+            Text('How many rounds?', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SegmentedButton<int>(
+              key: const Key('playRounds'),
+              segments: [
+                for (final n in GameLengthNotifier.choices) ButtonSegment(value: n, label: Text('$n')),
+              ],
+              selected: {_rounds},
+              onSelectionChanged: (s) => setState(() => _rounds = s.single),
+            ),
             const SizedBox(height: 16),
             Text(modeDescription(mode), key: const Key('playModeDescription')),
             const SizedBox(height: 24),

@@ -40,6 +40,10 @@ void main() {
     expect(text, contains('calibrate again'));
   });
 
+  test('says the game length can be chosen: 3, 5 or 9 rounds', () {
+    expect(text, contains('and how many rounds (3, 5, 9), then Start.'));
+  });
+
   test('says the app cannot tell whether the lane is clear', () {
     expect(text, contains('cannot tell whether the lane is clear'));
     expect(text, contains('it never means it is safe to approach'));
