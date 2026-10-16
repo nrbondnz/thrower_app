@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QueuedCamera — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--camera);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Camera · Component</span>
+    <h1>QueuedCamera</h1>
+    <p class="dek">Every frame of a board crop, kept as a compact copy and handed on in order at the listener&#x27;s pace. A live camera can&#x27;t be asked for a frame again.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>TargetCamera</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/camera/queued_camera.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>The live Quick draw, one per board</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>A phone slower than the camera falls behind and reports late, rather than skipping frames. Past 75 MB per board, the oldest frames are dropped and counted, and the result then says times may be less exact.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>frames</code></dt><dd>one frame per turn of the event loop</dd></div>
+    <div><dt><code>waiting · behind · dropped</code></dt><dd>how far behind analysis is</dd></div>
+    <div><dt><code>stopTaking</code></dt><dd>no new frames; those queued are still analysed</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/live-quick-draw.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Live Quick draw: start signal to result</h3>
+      <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/camera/queued_camera.dart</footer>
+</div>
+</body>
+</html>

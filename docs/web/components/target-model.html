@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TargetModel — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--scoring);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Scoring (pure Dart) · Component</span>
+    <h1>TargetModel</h1>
+    <p class="dek">The board&#x27;s rings and their scores: 5 for the inner ring down to 1 for the outer, 0 outside (IKTHOF).</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Class (pure Dart)</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/scoring/target_model.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Every score</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>The line-touch rule decides a blade exactly on a line: the higher ring (IKTHOF, used today) or the lower (WATL). Per-sport rules are backlog #3.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>scoreAt(point, bladeHalfWidth)</code></dt><dd>the ring score, with a LineTouchRule</dd></div>
+    <div><dt><code>TargetModel.ikthof()</code></dt><dd>ideal radii 0.2 / 0.4 / 0.6 / 0.8 / 1.0</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/scoring-a-point.html">
+      <div class="cat"><span class="swatch" style="background:var(--scoring)"></span>Core mechanism</div>
+      <h3>A point → a score</h3>
+      <p>A pixel measured against the board&#x27;s own painted edges, placed on the ideal rings, scored 5 to 0.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/scoring/target_model.dart</footer>
+</div>
+</body>
+</html>

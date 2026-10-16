@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RecordedCamera — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--camera);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Camera · Component</span>
+    <h1>RecordedCamera</h1>
+    <p class="dek">A Live test recording played as a camera: a FramePack of JPEG frames, in real time, with its sound.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>TargetCamera</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/camera/recorded_camera.dart</code><br><code>lib/camera/frame_pack.dart</code><br><code>lib/camera/recording_sound.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Live test</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>Frames are decoded by Flutter's native image codec, off the UI thread. A phone that falls behind skips to the newest frame, so the picture keeps pace with the sound.</p>
+    <p>The recordings are in <code>assets/live/</code>: Target 1 and Target 2 (322 px, 15 fps), and the Quick draw clip (720 × 1280, 60 fps, with <code>quickdraw.m4a</code>). <code>Recording.go</code> is when the clip's countdown says go (2.8 s).</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>load(Recording)</code></dt><dd>the FramePack asset, plus its sound</dd></div>
+    <div><dt><code>restart · rewind</code></dt><dd>play from the start · stop on the first frame</dd></div>
+    <div><dt><code>position · playing</code></dt><dd>where playback is, and whether it plays</dd></div>
+    <div><dt><code>RecordingSound</code></dt><dd>playFromStart, stop; ducks other apps, plays with the silent switch on</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/frame-sources.html">
+      <div class="cat"><span class="swatch" style="background:var(--camera)"></span>Core mechanism</div>
+      <h3>Frame sources: one camera interface</h3>
+      <p>Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/camera/recorded_camera.dart · lib/camera/frame_pack.dart · lib/camera/recording_sound.dart</footer>
+</div>
+</body>
+</html>

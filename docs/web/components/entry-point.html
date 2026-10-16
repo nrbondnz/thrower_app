@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entry point — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--vision);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Vision (pure Dart) · Component</span>
+    <h1>Entry point</h1>
+    <p class="dek">Where the blade goes into the wood, which is what is scored. Not the handle, and not the shadow.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Functions</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/vision/entry_point.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>A stuck knife</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>Seen face on, <code>faceOnEntry</code> takes the knife's shape nearest the bull. From the side, <code>GeometricEntryEstimator</code> compares the before and after pictures by colour, keeps the grey steel pixels (a shadow keeps the board's hue), finds the knife's axis, and takes the end away from the outward direction.</p>
+    <p>Nigel's rule: "find the solid shape of the knife; score where the blade goes into the wood; a shadow comes from the knife, on the side away from the light". Improving this is the paused entry-point story.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>findKnifeEntry</code></dt><dd>faceOnEntry or GeometricEntryEstimator</dd></div>
+    <div><dt><code>outwardDirection</code></dt><dd>which way the handle points in the picture</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/vision/entry_point.dart</footer>
+</div>
+</body>
+</html>

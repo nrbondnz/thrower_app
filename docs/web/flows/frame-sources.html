@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frame sources: one camera interface — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--camera);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Core mechanism</span>
+    <h1>Frame sources: one camera interface</h1>
+    <p class="dek">Every screen and watcher reads a TargetCamera. Live, recorded, cropped and queued cameras all deliver the same CameraFrame.</p>
+  </header>
+
+  <div class="detail-body">
+    <p>This is what lets the whole app run on a PC: the Live test recordings stand in for the live camera, and tests push frames into a fake. A camera's frames are a broadcast stream, made only while someone listens.</p>
+    <p>A live frame arrives in the sensor's layout (on Android, usually sideways). Boards are found in the upright picture; a board crop is cut in the sensor's layout and turned upright only by whoever reads it.</p>
+  </div>
+
+  <div class="legend" aria-hidden="true" style="margin-top:0;">
+    <span class="legend-item">→ the next step (label: what's passed on)</span>
+    <span class="legend-item">click a box for its component</span>
+  </div>
+
+  <figure>
+    <div class="diagram-wrap" style="--svg-width:820px">
+<svg viewBox="0 0 820 527" role="img" aria-label="Frame sources: one camera interface: camera plugin → LiveCamera → RecordedCamera → CroppedCamera · QueuedCamera · RecordingAnalysisFeed → Vision and the watchers"><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--text-faint)"></path></marker></defs><g><rect x="130.0" y="20" width="560" height="70" rx="8" style="fill:var(--surface-2);stroke:var(--external)" stroke-width="1.4" stroke-dasharray="5 4"></rect><rect x="144.0" y="32" width="22" height="22" rx="6" style="fill:var(--external)"></rect><g transform="translate(146.2,34.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="10" height="10" rx="1.5"/><path d="M8,2 V5 M12,2 V5 M8,15 V18 M12,15 V18 M2,8 H5 M2,12 H5 M15,8 H18 M15,12 H18"/></g><text x="676.0" y="47" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">PLUGINS AND NATIVE CODE</text><text x="176.0" y="47" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--external)">camera plugin</text><text x="176.0" y="66" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">back camera, ResolutionPreset.high, no audio</text><text x="176.0" y="81" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">Android: YUV420, sideways · iOS: BGRA, upright</text></g><line x1="410.0" y1="92" x2="410.0" y2="126" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="113.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">image stream</text><a class="node-link" href="../components/live-camera.html" aria-label="LiveCamera"><g><title>The phone&#x27;s back camera through the camera plugin, at ResolutionPreset.high, with no audio.</title><rect class="node-box" x="130.0" y="128" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--camera)" stroke-width="1.8"></rect><rect x="144.0" y="140" width="22" height="22" rx="6" style="fill:var(--camera)"></rect><g transform="translate(146.2,142.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="15" height="10" rx="2"/><path d="M7,6 L8.5,3.5 H11.5 L13,6"/><circle cx="10" cy="11" r="3"/></g><text x="676.0" y="155" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">CAMERA</text><text x="176.0" y="155" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--camera)">LiveCamera</text><text x="176.0" y="174" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">stamped on arrival (now = its stopwatch)</text><text x="176.0" y="189" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">Quick draw asks for 60 fps</text></g></a><line x1="410.0" y1="200" x2="410.0" y2="234" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="221.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">or, for the Live test</text><a class="node-link" href="../components/recorded-camera.html" aria-label="RecordedCamera"><g><title>A Live test recording played as a camera: a FramePack of JPEG frames, in real time, with its sound.</title><rect class="node-box" x="130.0" y="236" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--camera)" stroke-width="1.8"></rect><rect x="144.0" y="248" width="22" height="22" rx="6" style="fill:var(--camera)"></rect><g transform="translate(146.2,250.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="15" height="10" rx="2"/><path d="M7,6 L8.5,3.5 H11.5 L13,6"/><circle cx="10" cy="11" r="3"/></g><text x="676.0" y="263" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">CAMERA</text><text x="176.0" y="263" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--camera)">RecordedCamera</text><text x="176.0" y="282" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">a FramePack of JPEGs, in real time, with sound</text><text x="176.0" y="297" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">may skip frames to keep pace</text></g></a><line x1="410.0" y1="308" x2="410.0" y2="342" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="329.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">CameraFrame</text><a class="node-link" href="../components/target-camera.html" aria-label="CroppedCamera · QueuedCamera · RecordingAnalysisFeed"><g><title>The one camera interface. A live camera, a recording, a board crop and a queue all deliver the same CameraFrame, so nothing downstream knows which it has.</title><rect class="node-box" x="130.0" y="344" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--camera)" stroke-width="1.8"></rect><rect x="144.0" y="356" width="22" height="22" rx="6" style="fill:var(--camera)"></rect><g transform="translate(146.2,358.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="15" height="10" rx="2"/><path d="M7,6 L8.5,3.5 H11.5 L13,6"/><circle cx="10" cy="11" r="3"/></g><text x="676.0" y="371" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">CAMERA</text><text x="176.0" y="371" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--camera)">CroppedCamera · QueuedCamera · RecordingAnalysisFeed</text><text x="176.0" y="390" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">Quick draw: one board&#x27;s crop · every frame kept in order</text><text x="176.0" y="405" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">· every frame of the clip, in order</text></g></a><line x1="410.0" y1="416" x2="410.0" y2="450" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="437.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">CameraFrame (data only)</text><a class="node-link" href="../components/ring-locator.html" aria-label="Vision and the watchers"><g><title>Finds the painted rings in a frame as ellipses, one per ring edge, in a background isolate.</title><rect class="node-box" x="130.0" y="452" width="560" height="55" rx="8" style="fill:var(--node-fill);stroke:var(--vision)" stroke-width="1.8"></rect><rect x="144.0" y="464" width="22" height="22" rx="6" style="fill:var(--vision)"></rect><g transform="translate(146.2,466.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8,10 Q10,2.5 18.2,10 Q10,17.5 1.8,10 Z"/><circle cx="10" cy="10" r="2.6"/></g><text x="676.0" y="479" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">VISION (PURE DART)</text><text x="176.0" y="479" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--vision)">Vision and the watchers</text><text x="176.0" y="498" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">frameToRgb · frameToLuma: turned upright by uprightRotation</text></g></a></svg>
+    </div>
+    <figcaption>Downstream code only ever sees CameraFrame. No plugin type crosses into vision or scoring.</figcaption>
+  </figure>
+
+  <h2 class="section-heading">Components</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../components/target-camera.html">
+      <div class="cat"><span class="swatch" style="background:var(--camera)"></span>Camera</div>
+      <h3>TargetCamera</h3>
+      <p>The one camera interface. A live camera, a recording, a board crop and a queue all deliver the same CameraFrame, so nothing downstream knows which it has.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/live-camera.html">
+      <div class="cat"><span class="swatch" style="background:var(--camera)"></span>Camera</div>
+      <h3>LiveCamera</h3>
+      <p>The phone&#x27;s back camera through the camera plugin, at ResolutionPreset.high, with no audio.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/recorded-camera.html">
+      <div class="cat"><span class="swatch" style="background:var(--camera)"></span>Camera</div>
+      <h3>RecordedCamera</h3>
+      <p>A Live test recording played as a camera: a FramePack of JPEG frames, in real time, with its sound.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/ring-locator.html">
+      <div class="cat"><span class="swatch" style="background:var(--vision)"></span>Vision (pure Dart)</div>
+      <h3>Ring finder</h3>
+      <p>Finds the painted rings in a frame as ellipses, one per ring edge, in a background isolate.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/camera/target_camera.dart · lib/camera/live_camera.dart · lib/camera/recorded_camera.dart</footer>
+</div>
+</body>
+</html>

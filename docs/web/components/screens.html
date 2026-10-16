@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screens — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--ui);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>UI · Component</span>
+    <h1>Screens</h1>
+    <p class="dek">Home leads to Play (rounds on one target), Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Flutter widgets</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/ui/home_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>The user, from Home</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.</p>
+    <p><code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>.</p>
+    <p>On the recording's Quick draw, <strong>Play</strong> shows only once the boards are locked: played unlocked, nothing would be analysed (2026-10-16).</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>HomeScreen</code></dt><dd>Instructions, Play, Quick draw, Live test, Calibrate target, Scoring test target</dd></div>
+    <div><dt><code>PlayScreen</code></dt><dd>the camera, score marks where knives went in (RoundMarks), round and game totals</dd></div>
+    <div><dt><code>CalibrationScreen</code></dt><dd>Find target, drag the rings (CalibrationEditor), Lock</dd></div>
+    <div><dt><code>LiveTestScreen</code></dt><dd>the recordings: Target 1, Target 2, Quick draw</dd></div>
+    <div><dt><code>QuickDrawScreen</code></dt><dd>the recorded duel: tap boards, Lock, Play, GO!, each board&#x27;s time and the winner</dd></div>
+    <div><dt><code>LiveQuickDrawScreen</code></dt><dd>the live duel: tap boards, Lock, Start, 5 lights, GO!, the result in large type</dd></div>
+    <div><dt><code>InstructionsScreen</code></dt><dd>setup, play and the safety points (instructions.dart)</dd></div>
+    <div><dt><code>DebugTargetScreen</code></dt><dd>Scoring test target: tap a drawn target to see the score</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/calibration.html">
+      <div class="cat"><span class="swatch" style="background:var(--vision)"></span>Core mechanism</div>
+      <h3>Finding and locking the target</h3>
+      <p>Find the rings once in a background isolate, drag to adjust, lock for the session.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/choosing-boards.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
+      <h3>Quick draw: choosing the boards by tapping</h3>
+      <p>Tap Player 1&#x27;s board, then Player 2&#x27;s: a fraction of the picture, a window search, the rings.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/live-quick-draw.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Live Quick draw: start signal to result</h3>
+      <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/ui/home_screen.dart · lib/ui/play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart</footer>
+</div>
+</body>
+</html>

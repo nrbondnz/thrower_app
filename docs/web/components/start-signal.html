@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StartSignal — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--game);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Game · Component</span>
+    <h1>StartSignal</h1>
+    <p class="dek">The live Quick draw&#x27;s start, like Formula 1: 5 beeps a second apart with a light each, a random pause, then a long go beep as the lights go out.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>ChangeNotifier</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/game/start_signal.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Start, on the live Quick draw</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>The pause is one of 1.0, 1.2 … 3.0 s, picked at random each duel, so nobody can time it. Watching starts 1 s before go: a knife any earlier is an obvious false start.</p>
+    <p><code>goAt</code> is read on the camera's own clock (<code>TargetCamera.now</code>) when the go beep is asked to play, so go and the frames are compared on one clock.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>start · stop</code></dt><dd>the first beep at once, then timers · cancel</dd></div>
+    <div><dt><code>phase · lit · goAt</code></dt><dd>ready / countdown / go · lights on · go on the camera&#x27;s clock</dd></div>
+    <div><dt><code>StartSchedule</code></dt><dd>beepTimes, go, watchFrom; StartSchedule.random from startPauses</dd></div>
+    <div><dt><code>onWatch · onGo</code></dt><dd>at go − 1 s · at go</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/live-quick-draw.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Live Quick draw: start signal to result</h3>
+      <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/game/start_signal.dart</footer>
+</div>
+</body>
+</html>

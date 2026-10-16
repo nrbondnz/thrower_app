@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TargetCamera — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--camera);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Camera · Component</span>
+    <h1>TargetCamera</h1>
+    <p class="dek">The one camera interface. A live camera, a recording, a board crop and a queue all deliver the same CameraFrame, so nothing downstream knows which it has.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Interface</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/camera/target_camera.dart</code><br><code>lib/camera/camera_frame.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Every screen and watcher that needs frames</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>A <code>CameraFrame</code> is plain data: width, height, format (BGRA, YUV420), planes of bytes and a timestamp. Vision depends on this data type only, never on a plugin.</p>
+    <p><code>now</code> is the clock the camera stamps its frames with, so another moment, such as Quick draw's go, can be compared with frames on one clock.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>frames()</code></dt><dd>a broadcast stream of CameraFrame, only while listened to</dd></div>
+    <div><dt><code>uprightRotation</code></dt><dd>clockwise turn that makes a frame upright</dd></div>
+    <div><dt><code>now</code></dt><dd>the time on the frames&#x27; clock</dd></div>
+    <div><dt><code>minChange</code></dt><dd>the smallest brightness change that counts (sensor or JPEG noise)</dd></div>
+    <div><dt><code>zoom · maxZoom · setZoom</code></dt><dd>camera zoom (1× for recordings and crops)</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/frame-sources.html">
+      <div class="cat"><span class="swatch" style="background:var(--camera)"></span>Core mechanism</div>
+      <h3>Frame sources: one camera interface</h3>
+      <p>Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/live-quick-draw.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Live Quick draw: start signal to result</h3>
+      <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/camera/target_camera.dart · lib/camera/camera_frame.dart</footer>
+</div>
+</body>
+</html>

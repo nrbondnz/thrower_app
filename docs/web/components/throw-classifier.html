@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ThrowTracker and classifyThrow — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--game);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Game · Component</span>
+    <h1>ThrowTracker and classifyThrow</h1>
+    <p class="dek">Decides what an episode was: a new knife stuck, a bounce-out, a known knife falling out, or someone visiting the board.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Class and function</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/game/throw_tracker.dart</code><br><code>lib/vision/throw_classifier.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Each finished motion episode</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>It is a board visit if someone stood there, if 10% or more of the region changed at once, or if one shape covering 3% or more of the region moved. People are 4% and up; knives are up to 2.2%. A visit closes the round, and the known knives are forgotten.</p>
+    <p><code>findNewObject</code> looks for a connected changed shape touching the target, and checks it against the knives already in the board, so a knife falling out isn't taken for a new one.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>ThrowTracker.onEpisode</code></dt><dd>classifyThrow(knownKnives) → stuck / fell out / visit / bounce-out</dd></div>
+    <div><dt><code>classifyThrow</code></dt><dd>visit tests, then findNewObject</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/game/throw_tracker.dart · lib/vision/throw_classifier.dart</footer>
+</div>
+</body>
+</html>

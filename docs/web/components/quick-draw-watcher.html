@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickDrawWatcher — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--game);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Game · Component</span>
+    <h1>QuickDrawWatcher</h1>
+    <p class="dek">Watches both boards at once, each on its own crop with the single-board throw detection at every frame, and keeps each player&#x27;s first throw.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Class</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/game/quick_draw_watcher.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Quick draw, once the boards are locked</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>On the recording it reads the <code>RecordingAnalysisFeed</code>. On the live camera (<code>queue: true</code>) each crop goes through a <code>QueuedCamera</code>, so a slow phone reports late instead of missing frames.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>start</code></dt><dd>per board: CroppedCamera (4 radii) + within + (QueuedCamera) + ThrowWatcher</dd></div>
+    <div><dt><code>throws</code></dt><dd>each player&#x27;s QuickDrawThrow(impact, stuck, score)</dd></div>
+    <div><dt><code>states · queues</code></dt><dd>each board&#x27;s watch state, and how far behind</dd></div>
+    <div><dt><code>stopFeeding · dispose</code></dt><dd>take no new frames · stop</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/live-quick-draw.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Live Quick draw: start signal to result</h3>
+      <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/game/quick_draw_watcher.dart</footer>
+</div>
+</body>
+</html>

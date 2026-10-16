@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MotionDetector — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--vision);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Vision (pure Dart) · Component</span>
+    <h1>MotionDetector</h1>
+    <p class="dek">Finds stretches of motion in the board&#x27;s region (episodes): watching → motion → settling → settled, or blocked when something stands in front of the board.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Class</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/vision/motion_detector.dart</code><br><code>lib/vision/luma_image.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Each frame ThrowWatcher looks at</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>A pixel counts as changed when it differs by more than 6 × the learned sensor noise, at least 12 levels. An episode ends once the board has been still for 0.3 s and looks like the board again.</p>
+    <p>Its <strong>impact</strong> is the frame with the largest moving shape on the target, when the board jolts and the knife stops. Quick draw times throws by it.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>add(frame)</code></dt><dd>changed share vs the previous frame → state</dd></div>
+    <div><dt><code>MotionEpisode</code></dt><dd>peak, change from before, before/after frames, impact</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/vision/motion_detector.dart · lib/vision/luma_image.dart</footer>
+</div>
+</body>
+</html>

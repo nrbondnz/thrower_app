@@ -38,6 +38,21 @@ The *Instructions* screen (Home → Instructions) is what players and testers re
 - **Safety wording:** never imply the app knows the lane is clear (Review Agent checklist §7).
 - Run `flutter test test/ui/instructions_test.dart` and update its expected phrases if the wording changed on purpose.
 
+## Update the Architecture Web Pages
+
+`docs/web/` is a static site, modelled on WhereWillWeVisit's `docs/web/`:
+- `index.html`: a layer diagram where every solid box opens its component's page, plus a card for each flow;
+- `flows/*.html`: one page per flow, as a step diagram;
+- `components/*.html`: one page per component.
+
+The pages are **generated**: edit `tool/web_docs/content.py` (the components, flows, wording and the files each one cites), then run:
+
+```
+python tool/web_docs/build.py
+```
+
+The build stops if a cited source file or a link target doesn't exist. `docs/web/assets/styles.css` is edited by hand. Keep the names the same as in the code and in [[Glossary]]. When a component or flow changes, update `content.py` along with the vault's [[System Diagram]] and [[Data Flow]]. To look at the site, open `docs/web/index.html` in a browser, or serve it with `python -m http.server` from `docs/web`.
+
 ## Run the App on a Phone
 
 - Use the JetBrains `main.dart` run configuration (see `working-with-nigel.md` → IDE).

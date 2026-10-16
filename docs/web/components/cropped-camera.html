@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CroppedCamera — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--camera);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Camera · Component</span>
+    <h1>CroppedCamera</h1>
+    <p class="dek">A square of another camera&#x27;s upright picture around one board, as a camera of its own, so single-board detection can watch one board of several.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>TargetCamera</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/camera/cropped_camera.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Quick draw, one per board</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>The crop is cut in the sensor's own layout (<code>sensorRect</code>), so a sideways Android frame is never turned whole: only the small crop is turned, by whoever reads it. Its frames are views into the source's bytes, with no copying.</p>
+    <p>The rotation is fixed when the crop is made, as the phone is on a stand. A frame the rectangle doesn't fit is skipped. All four sides are rounded to even numbers so YUV's half-size colour planes line up.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>crop(frame)</code></dt><dd>the part at sensorRect, or null</dd></div>
+    <div><dt><code>sensorRect(w, h, rotation)</code></dt><dd>the upright rectangle in the sensor&#x27;s layout</dd></div>
+    <div><dt><code>compactFrame(frame)</code></dt><dd>a tight copy of a crop, letting go of the whole frame</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/quick-draw-recording.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Quick draw on a recording: every frame, then the winner</h3>
+      <p>The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/live-quick-draw.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>Live Quick draw: start signal to result</h3>
+      <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/camera/cropped_camera.dart</footer>
+</div>
+</body>
+</html>

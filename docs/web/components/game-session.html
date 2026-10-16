@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameSession — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--scoring);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Scoring (pure Dart) · Component</span>
+    <h1>GameSession</h1>
+    <p class="dek">A game of 9 rounds of 3 throws. A board visit (collecting the knives) closes the round.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Class (pure Dart) + notifier</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/scoring/game_session.dart</code><br><code>lib/providers.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Play, on each throw event</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>stuck · bounceOut · fellOut · boardVisited</code></dt><dd>the events</dd></div>
+    <div><dt><code>awaitingNextRound · roundNumber · finishedRounds</code></dt><dd>what Play shows</dd></div>
+    <div><dt><code>GameNotifier.onEvent</code></dt><dd>entry → TargetMapping → TargetModel → score</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/scoring/game_session.dart · lib/providers.dart</footer>
+</div>
+</body>
+</html>

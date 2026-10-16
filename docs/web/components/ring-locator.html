@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ring finder — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--vision);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Vision (pure Dart) · Component</span>
+    <h1>Ring finder</h1>
+    <p class="dek">Finds the painted rings in a frame as ellipses, one per ring edge, in a background isolate.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Locator chain</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/vision/locate_in_frame.dart</code><br><code>lib/vision/coarse_to_fine_locator.dart</code><br><code>lib/vision/contrast_normalising_locator.dart</code><br><code>lib/vision/colour_ring_locator.dart</code><br><code>lib/vision/ellipse.dart</code><br><code>lib/vision/frame_to_rgb.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Find target (Calibrate), and each Quick draw tap</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p><code>locateInFrame</code> turns the frame upright (<code>frameToRgb</code>), then a rough pass on a shrunk picture finds the board, and a close-up pass at full resolution fits the rings. If nothing is found, each pass is tried again with the contrast stretched.</p>
+    <p><code>ColourRingLocator</code> learns the board's two colours from the picture (the bull's and the next ring's), casts rays out from a candidate centre, and fits an ellipse to each colour edge with RANSAC, which outvotes rays spoiled by handles or cuts.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>locateInFrame</code></dt><dd>frameToRgb → buildTargetLocator().locate</dd></div>
+    <div><dt><code>CoarseToFineLocator</code></dt><dd>rough pass (retry at 1200 px) → close-up pass → moved back</dd></div>
+    <div><dt><code>ContrastNormalisingLocator</code></dt><dd>as-is, then normaliseContrast</dd></div>
+    <div><dt><code>ColourRingLocator</code></dt><dd>learn two colours → rays → fitEllipseRansac per edge</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/calibration.html">
+      <div class="cat"><span class="swatch" style="background:var(--vision)"></span>Core mechanism</div>
+      <h3>Finding and locking the target</h3>
+      <p>Find the rings once in a background isolate, drag to adjust, lock for the session.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/choosing-boards.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
+      <h3>Quick draw: choosing the boards by tapping</h3>
+      <p>Tap Player 1&#x27;s board, then Player 2&#x27;s: a fraction of the picture, a window search, the rings.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/vision/locate_in_frame.dart · lib/vision/coarse_to_fine_locator.dart · lib/vision/contrast_normalising_locator.dart · lib/vision/colour_ring_locator.dart · lib/vision/ellipse.dart · lib/vision/frame_to_rgb.dart</footer>
+</div>
+</body>
+</html>
