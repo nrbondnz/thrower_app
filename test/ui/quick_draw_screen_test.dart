@@ -63,6 +63,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Taps both boards (on the picture) and locks them, so Play shows.
+  Future<void> lockBoards(WidgetTester tester) async {
+    for (final fx in [0.75, 0.25]) {
+      final area = tester.getRect(find.byKey(const Key('quickDrawBoardTap')));
+      await tester.tapAt(Offset(area.left + area.width * fx, area.top + area.height * 0.5));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(const Key('quickDrawLock')));
+    await tester.pump();
+  }
+
   testWidgets('Live test opens Quick draw, which shows the clip full screen with the system bars hidden', (tester) async {
     await pumpLiveTest(tester);
     expect(find.byType(QuickDrawScreen), findsOneWidget);
@@ -71,8 +82,23 @@ void main() {
     expect(systemUiModes, ['SystemUiMode.immersiveSticky']);
   });
 
+  testWidgets('Play shows only once the boards are locked (played unlocked, nothing is analysed)', (tester) async {
+    await pumpLiveTest(tester);
+    expect(find.byKey(const Key('quickDrawPlay')), findsNothing);
+    final area = tester.getRect(find.byKey(const Key('quickDrawBoardTap')));
+    for (final fx in [0.75, 0.25]) {
+      await tester.tapAt(Offset(area.left + area.width * fx, area.top + area.height * 0.5));
+      await tester.pumpAndSettle();
+    }
+    expect(find.byKey(const Key('quickDrawPlay')), findsNothing, reason: 'both found, not yet locked');
+    await tester.tap(find.byKey(const Key('quickDrawLock')));
+    await tester.pump();
+    expect(find.byKey(const Key('quickDrawPlay')), findsOneWidget);
+  });
+
   testWidgets('Play starts the clip and its sound; the button hides while it plays and returns as "Play again"', (tester) async {
     await pumpLiveTest(tester);
+    await lockBoards(tester);
     await tester.tap(find.byKey(const Key('quickDrawPlay')));
     await tester.pump();
     expect(camera.playing.value, isTrue);
@@ -180,6 +206,7 @@ void main() {
         decoder: decodeFramePureDart,
         sound: sound);
     await pumpLiveTest(tester);
+    await lockBoards(tester);
     await tester.tap(find.byKey(const Key('quickDrawPlay')));
     await tester.pump();
     Future<bool> goAt(int ms) async {

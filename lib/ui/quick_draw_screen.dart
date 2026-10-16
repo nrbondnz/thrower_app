@@ -40,8 +40,8 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
   /// Times and scores the throws while a locked game plays.
   QuickDrawWatcher? _watcher;
 
-  /// Play: with the boards locked, a fresh watcher times and scores each
-  /// player's throw from every frame; otherwise the clip just plays.
+  /// Play (shown only once the boards are locked): a fresh watcher times and
+  /// scores each player's throw from every frame.
   void _play(RecordedCamera camera) {
     _stopWatching();
     final targets = ref.read(quickDrawTargetsProvider);
@@ -179,7 +179,8 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                                 onPressed: notifier.lock,
                                 child: const Text('Lock boards'),
                               ),
-                            _PlayButton(camera: value, onPlay: () => _play(value)),
+                            // Only once the boards are locked: played unlocked, nothing is analysed.
+                            if (targets.locked) _PlayButton(camera: value, onPlay: () => _play(value)),
                           ],
                         ),
                       ],

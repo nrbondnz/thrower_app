@@ -177,6 +177,7 @@ BUILT, all 5 tasks (2026-10-15). Waiting for the device check by Nigel's brother
 
 ## Plan Changes Log
 
+- **2026-10-16:** Live test → Quick draw (the recording): **Play now shows only once the boards are locked.** Nigel pressed Play before locking on the iPhone; the clip played with no analysis and no result, which looked broken (`quick_draw_screen.dart`; test: 'Play shows only once the boards are locked').
 - **2026-10-15:** Nigel can't check the live camera (it needs his brother's iPhone): Tasks 2–4 continue assuming the check passes; the checks are in [[Device Test Plan]] → Quick Draw Checks. Tasks 3 and 4 built together.
 - **2026-10-15:** Task 4: the result comes once both throws are in, or 4 s after go (once analysis has caught up), so a thrower who doesn't throw doesn't hang the duel. **Next duel** is a tap (collect the knives first) rather than waiting to see both boards visited.
 - **2026-10-15:** Task 1: no zoom on the Quick draw screen for now (the plan said "with zoom as on Calibrate"); both boards must stay in view.
