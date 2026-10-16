@@ -8,6 +8,7 @@ import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/game/throw_watcher.dart';
 import 'package:thrower_app/scoring/game_session.dart';
+import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/entry_point.dart';
@@ -159,6 +160,29 @@ void main() {
         }
         final key = [for (final r in rounds.keys.toList()..sort()) kinds(rounds[r]!)];
         expect(app, key);
+      }, timeout: const Timeout(Duration(minutes: 5)));
+
+      // Players-and-targets story, Task 2: the same footage as two players
+      // taking turns on one target. Each collection passes the turn, so the
+      // recording's rounds go to Player 1, Player 2, Player 1, … with the
+      // same scores as one player's rounds 1, 2, 3, …
+      test('as two players on one target, the rounds alternate between the players', () {
+        var solo = Match(PlayMode.solo);
+        var shared = Match(PlayMode.sharedTarget);
+        for (final d in detected) {
+          Match apply(Match m) => switch (d.kind) {
+                ThrowOutcomeKind.stuck => m.stuck(d.score ?? 0, d.score == null ? null : const TargetPoint(0, 0)),
+                ThrowOutcomeKind.bounceOut => m.bounceOut(),
+                ThrowOutcomeKind.boardVisit => m.boardVisited(),
+                _ => m,
+              };
+          solo = apply(solo);
+          shared = apply(shared);
+        }
+        final rounds = [for (final r in solo.players.single.rounds) r.total];
+        expect(rounds.length, greaterThanOrEqualTo(2), reason: 'the recording has at least two rounds');
+        expect([for (final r in shared.players[0].rounds) r.total], [for (var i = 0; i < rounds.length; i += 2) rounds[i]]);
+        expect([for (final r in shared.players[1].rounds) r.total], [for (var i = 1; i < rounds.length; i += 2) rounds[i]]);
       }, timeout: const Timeout(Duration(minutes: 5)));
 
       // Extra visits are harmless: a visit only ends a round that has throws,

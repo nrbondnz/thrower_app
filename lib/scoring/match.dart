@@ -98,23 +98,37 @@ class Match {
     if (mode != PlayMode.sharedTarget) return _with(board, add(players[board]));
     if (isOver) return this;
     // Thrown on without collecting: the turn already had all its knives.
-    final m = turnThrows >= throwsPerRound ? _passTurn() : this;
+    final m = turnComplete ? _passTurn() : this;
     return Match._(mode, _replaced(m.players, m.turn, add(m.players[m.turn])), m.turn, m.turnThrows + 1);
   }
 
-  /// Ends this turn: its round is closed, and the next player whose game
-  /// isn't over has the turn (round order, so Player 1 starts each round).
+  /// One target: this turn has all its throws; the knives are to be
+  /// collected before [nextTurn] throws.
+  bool get turnComplete => mode == PlayMode.sharedTarget && turnThrows >= throwsPerRound;
+
+  /// One target: who throws after this turn: the next player whose game
+  /// isn't over once this turn's round is closed (round order, so Player 1
+  /// starts each round).
+  int get nextTurn => _nextAfter(_replaced(players, turn, players[turn].boardVisited()));
+
+  /// The next throw at [board] starts a new round's (or, on one target, a
+  /// new turn's) marks on the board.
+  bool nextThrowStartsRound({int board = 0}) => mode == PlayMode.sharedTarget
+      ? turnThrows == 0 || turnComplete
+      : players[board].currentRound == null || players[board].roundComplete;
+
+  /// Ends this turn: its round is closed, and [nextTurn] has the turn.
   Match _passTurn() {
     final closed = _replaced(players, turn, players[turn].boardVisited());
-    var next = turn;
+    return Match._(mode, closed, _nextAfter(closed), 0);
+  }
+
+  int _nextAfter(List<GameSession> closed) {
     for (var i = 1; i <= players.length; i++) {
       final p = (turn + i) % players.length;
-      if (!closed[p].isOver) {
-        next = p;
-        break;
-      }
+      if (!closed[p].isOver) return p;
     }
-    return Match._(mode, closed, next, 0);
+    return turn;
   }
 
   Match _with(int player, GameSession game) => Match._(mode, _replaced(players, player, game), turn, turnThrows);

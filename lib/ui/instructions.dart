@@ -61,7 +61,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Calibrate again (Re-calibrate) whenever the phone or the target moves.',
     ]),
     InstructionSection('Playing a game', [
-      'Tap Play, choose 1 player, then Start. A game is ${rules.maxRounds} rounds of $n throws.',
+      'Tap Play, choose how many players (and, for two, how many targets), then Start. '
+          'A game is ${rules.maxRounds} rounds of $n throws for each player.',
       if (paper) ...[
         'A "throw" that sticks: press a pen in its Blu Tack onto the paper so it sticks out about 10 cm, then step '
             'out of the picture. The app waits for the target to settle, then shows the score in a yellow circle '
@@ -74,6 +75,17 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'the app sees someone at the target and starts the next round.',
       'Collecting early ends the round with fewer throws.',
       'After round ${rules.maxRounds} the game is over and shows your final total. Tap New game to play again.',
+    ]),
+    // Players-and-targets story (Nigel, 2026-10-16).
+    InstructionSection('Two players on one target', [
+      'Choose 2 players and 1 target. You take turns: Player 1 throws $n, the $knives are collected, then Player 2 '
+          'throws $n. Player 1 starts every round.',
+      'The screen says whose turn it is in large type. After $n throws it says to collect your $knives'
+          '${paper ? '' : ' when no one is throwing'}, and then whose turn is next.',
+      'Throw only on your turn, once the other player has collected their $knives and stepped back. '
+          'Collecting early ends your turn with fewer throws.',
+      'The game ends when both players have played round ${rules.maxRounds}. The higher total wins; '
+          'equal totals are a draw.',
     ]),
     InstructionSection('Scoring', [
       'Rings score ${ringScores.first} for the centre, then ${ringScores.sublist(1, ringScores.length - 1).join(', ')}, '

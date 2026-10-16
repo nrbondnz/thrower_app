@@ -116,7 +116,8 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `awaitingNextRound` (knives collected, game not over), `roundNumber` (the next round once collected), `finishedRounds` (the collected rounds); used by Play's `roundText` / `gameText`
 - **`Match`** (`lib/scoring/match.dart`) / **`PlayMode`** / **`playModeProvider`** (`lib/providers.dart`) / **`PlaySetupScreen`** (`lib/ui/play_setup_screen.dart`)
   - `PlayMode`: `solo`, `sharedTarget` (2 players taking turns), `twoTargets` (2 players at once); chosen on the setup screen after Play
-  - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
+  - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
+  - Play's two-player panel (`lib/ui/play_screen.dart`): `turnText` ("Player 1's turn" / "Collect your knives" / "Player 2 wins" / "A draw"), `turnDetail`, `playerTitle`, `playerDetail`, `matchFooter`
 - **`TargetModel`** (`lib/scoring/target_model.dart`)
   - `scoreAt(point, bladeHalfWidth)` with a `LineTouchRule`
 - **Test data**: `SyntheticTarget` (flat, affine), `SyntheticScene` (3D ray tracer), `PhotoBoardTexture` (reference photo as the board face, knives removed); tools `render_camera_views`, `locate_target`, `printable_target`

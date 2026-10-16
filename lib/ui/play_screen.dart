@@ -9,6 +9,7 @@ import '../camera/target_camera.dart';
 import '../game/throw_watcher.dart';
 import '../providers.dart';
 import '../scoring/game_session.dart';
+import '../scoring/match.dart';
 import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
 import '../vision/throw_classifier.dart';
@@ -16,11 +17,12 @@ import 'calibration_screen.dart';
 import 'camera_view.dart';
 import 'round_marks.dart';
 
-/// Single-player play: the locked target in the live picture; each throw is
+/// Play on one target: the locked target in the live picture; each throw is
 /// detected and scored, with a yellow circle showing its score where each
 /// knife went in this round and a "0" beside the board for each bounce-out
 /// ([RoundMarks]). Games of 9 rounds of 3; collecting the knives (someone at the
-/// board) closes the round.
+/// board) closes the round. One player, or two taking turns ([PlayMode.sharedTarget]:
+/// whose turn it is in large type, both players' totals, the winner).
 class PlayScreen extends ConsumerStatefulWidget {
   const PlayScreen({super.key});
 
@@ -57,11 +59,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _onEvent(ThrowEvent event, TargetCalibration calibration) {
     final notifier = ref.read(gameProvider.notifier);
-    final wasComplete = ref.read(gameProvider).players.first.roundComplete;
+    final newRound = ref.read(gameProvider).nextThrowStartsRound();
     notifier.onEvent(event, calibration);
-    final score = ref.read(gameProvider).players.first.currentRound?.throws.lastOrNull?.score ?? 0;
+    final match = ref.read(gameProvider);
+    final score = match.players[match.playerAt(0)].currentRound?.throws.lastOrNull?.score ?? 0;
     setState(() {
-      _marks.apply(event, score: score, newRound: wasComplete);
+      _marks.apply(event, score: score, newRound: newRound);
       switch (event.outcome.kind) {
         case ThrowOutcomeKind.stuck:
           _message = event.entry == null ? "Stuck, but couldn't see where it went in." : null;
@@ -121,9 +124,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   @override
   Widget build(BuildContext context) {
     final calibration = ref.watch(calibrationProvider);
-    // One player for now: two-player Play comes in the players-and-targets
-    // story's Tasks 2 and 3.
-    final game = ref.watch(gameProvider).players.first;
+    final match = ref.watch(gameProvider);
+    final game = match.players.first;
     final camera = ref.watch(cameraProvider).value;
 
     if (calibration == null || !calibration.locked) {
@@ -158,7 +160,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
         title: const Text('Play'),
         actions: [
           TextButton(
-            onPressed: game.rounds.isEmpty ? null : _confirmReset,
+            onPressed: match.isEmpty ? null : _confirmReset,
             child: const Text('Reset game'),
           ),
         ],
@@ -199,19 +201,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       ),
                     ),
                   const SizedBox(height: 8),
-                  Text(
-                    roundText(game),
-                    key: const Key('roundText'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    gameText(game, message: _message),
-                    key: const Key('gameText'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
-                  ),
+                  if (match.players.length == 1) ...[
+                    Text(
+                      roundText(game),
+                      key: const Key('roundText'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      gameText(game, message: _message),
+                      key: const Key('gameText'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ] else
+                    _PlayersPanel(match: match, message: _message),
                   if (camera is RecordedCamera) ...[
                     const SizedBox(height: 12),
                     ValueListenableBuilder(
@@ -223,7 +228,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       ),
                     ),
                   ],
-                  if (game.isOver) ...[
+                  if (match.isOver) ...[
                     const SizedBox(height: 12),
                     FilledButton(onPressed: _newGame, child: const Text('New game')),
                   ],
@@ -276,6 +281,97 @@ String gameText(GameSession game, {String? message}) {
   ];
   return lines.join('\n');
 }
+
+/// Two players: whose turn it is (or who won) in large type, to read from
+/// the throwing line, then each player's total and round.
+class _PlayersPanel extends StatelessWidget {
+  const _PlayersPanel({required this.match, this.message});
+
+  final Match match;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    final footer = matchFooter(match, message: message);
+    final detail = turnDetail(match);
+    return Column(
+      children: [
+        Text(
+          turnText(match),
+          key: const Key('turnText'),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: match.isOver ? Colors.greenAccent : Colors.yellowAccent,
+            fontSize: match.isOver ? 44 : 32,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        if (detail != null)
+          Text(detail, key: const Key('turnDetail'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.yellowAccent, fontSize: 18)),
+        const SizedBox(height: 8),
+        for (var i = 0; i < match.players.length; i++) ...[
+          Text(
+            playerTitle(match, i),
+            key: Key('playerTitle$i'),
+            style: TextStyle(
+              color: _highlighted(i) ? Colors.white : Colors.white60,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            playerDetail(match, i),
+            key: Key('playerDetail$i'),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _highlighted(i) ? Colors.white : Colors.white60),
+          ),
+          const SizedBox(height: 4),
+        ],
+        if (footer.isNotEmpty)
+          Text(footer, key: const Key('matchFooter'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+      ],
+    );
+  }
+
+  /// The player throwing now, or the winner.
+  bool _highlighted(int player) => match.isOver ? match.winner == player : match.turn == player;
+}
+
+/// Two players: the big line, kept short to read from the throwing line.
+/// "Player 1's turn"; once a turn has all its throws, "Collect your knives"
+/// (no one is told to throw while someone may be at the board); at the end,
+/// "Player 2 wins" or "A draw".
+String turnText(Match match) {
+  if (match.isOver) {
+    final winner = match.winner;
+    return winner == null ? 'A draw' : 'Player ${winner + 1} wins';
+  }
+  if (match.turnComplete) return 'Collect your knives';
+  return "Player ${match.turn + 1}'s turn";
+}
+
+/// Under [turnText] when the knives are to be collected: "When no one is
+/// throwing. Then Player 2's turn."; otherwise nothing.
+String? turnDetail(Match match) =>
+    !match.isOver && match.turnComplete ? "When no one is throwing. Then Player ${match.nextTurn + 1}'s turn." : null;
+
+/// "Player 1: 23", the player's game total.
+String playerTitle(Match match, int player) => 'Player ${player + 1}: ${match.players[player].total}';
+
+/// The player's round in progress ([roundText]), or every round's total once
+/// the match is over.
+String playerDetail(Match match, int player) {
+  final game = match.players[player];
+  if (match.isOver) return 'Rounds: ${[for (final r in game.rounds) r.total].join(', ')}';
+  return roundText(game);
+}
+
+/// Under the players: what just happened ([message]), and at the end, when
+/// to collect the knives.
+String matchFooter(Match match, {String? message}) => [
+      ?message,
+      if (match.isOver) 'Collect your knives when no one is throwing.',
+    ].join('\n');
 
 /// The locked rings (green), a yellow circle with its score at each knife's
 /// entry, and the "0" marks beside the board.

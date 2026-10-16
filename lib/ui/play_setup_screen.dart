@@ -14,8 +14,8 @@ class PlaySetupScreen extends ConsumerStatefulWidget {
   const PlaySetupScreen({super.key});
 
   /// The modes Play can run so far (players-and-targets story: two players
-  /// on one target comes in Task 2, on two targets in Task 3).
-  static const playable = {PlayMode.solo};
+  /// on two targets comes in Task 3).
+  static const playable = {PlayMode.solo, PlayMode.sharedTarget};
 
   @override
   ConsumerState<PlaySetupScreen> createState() => _PlaySetupScreenState();

@@ -69,14 +69,22 @@ void main() {
     expect(container.read(playModeProvider), PlayMode.solo);
   });
 
-  // Players-and-targets story: the two-player modes come in Tasks 2 and 3.
-  testWidgets('the two-player modes are not playable yet', (tester) async {
+  testWidgets('Start with 2 players on 1 target opens Play taking turns', (tester) async {
     await pumpSetup(tester);
     await tapSegment(tester, '2 players');
-    expect(startEnabled(tester), isFalse);
-    expect(find.text('Coming soon.'), findsOneWidget);
+    expect(find.text('Coming soon.'), findsNothing);
+    await start(tester);
+    expect(find.byType(PlayScreen), findsOneWidget);
+    expect(container.read(gameProvider).mode, PlayMode.sharedTarget);
+  });
+
+  // Players-and-targets story: two players on two targets comes in Task 3.
+  testWidgets('two targets is not playable yet', (tester) async {
+    await pumpSetup(tester);
+    await tapSegment(tester, '2 players');
     await tapSegment(tester, '2 targets');
     expect(startEnabled(tester), isFalse);
+    expect(find.text('Coming soon.'), findsOneWidget);
   });
 
   testWidgets('opens on the last choice', (tester) async {

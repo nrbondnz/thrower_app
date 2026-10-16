@@ -7,7 +7,7 @@ Play (rounds of 3 throws) gets a **second screen** after Home → Play: **how ma
 6 (Large): UI → game wiring → camera crops → scoring (3), two models (one player's game, the two-player match) (1), branches by mode (1), more than 3 acceptance criteria (1).
 
 ## Status
-IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. Plan approved 2026-10-16 ("yes to all, start task 1"): every open question answered as recommended.
+IN PROGRESS: Task 2 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. Task 1 committed (`a1bbd35`). Plan approved 2026-10-16 ("yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `GameSession` (`lib/scoring/game_session.dart`): one player's game, 9 rounds of 3, immutable; a board visit (collecting knives) closes a round; throwing on without collecting starts the next round.
@@ -33,7 +33,7 @@ IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 ---
 
 ## Task 1: Match rules, and the setup screen
-- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-16); Nigel: "commit this and continue to task 2" (`a1bbd35`)
 - **Work:**
   - `Match` (pure Dart, `lib/scoring/`): a `GameSession` per player, and the mode (`PlayMode`: one player; two players on one target; two players on two targets). One target: whose turn it is, the turn passing after 3 knives or a collection, a knife falling out going back to the player who threw it. Two targets: each board's events go to its player's session. Totals, game over, the winner or a draw.
   - `GameNotifier` holds a `Match`; one player stays as today.
@@ -64,9 +64,37 @@ IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - Instructions: one sentence updated; the two-player sections come with Tasks 2–4.
 
 ## Task 2: Two players, one target
+- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
 - **Work:** Play shows whose turn it is (large), both players' round lines and totals; marks clear at each turn; the end result with the winner. **Review Agent** on the wording.
 - **Verify (on this PC, no phone):** Live test → Target 1 as 2 players on 1 target: the recording's rounds go to Player 1, Player 2, Player 1, … and the totals add up to the recording's answer key split the same way.
 - **Next:** Task 3.
+- **What changed:**
+  - `Match`: `turnComplete`, `nextTurn` (who throws after this turn, skipping a player whose game is over), `nextThrowStartsRound` (when the board's marks clear).
+  - `PlayScreen` (`lib/ui/play_screen.dart`): for two players, `_PlayersPanel` in place of the one-player lines: `turnText` in large type ("Player 1's turn", 32 pt; "Collect your knives" with `turnDetail` "When no one is throwing. Then Player 2's turn."; at the end "Player 2 wins" / "A draw", 44 pt green); `playerTitle` ("Player 1: 23") and `playerDetail` (the round in progress, or every round at the end) for each player, the thrower highlighted; `matchFooter` (the last message; at the end, collect when no one is throwing). Marks clear at each new turn. Reset game / New game work on the whole match.
+  - `PlaySetupScreen.playable` adds `sharedTarget`.
+  - Instructions: "Tap Play, choose how many players (and, for two, how many targets), then Start. A game is 9 rounds of 3 throws for each player."; a new section, **Two players on one target** (taking turns, Player 1 starts every round, what the screen says, throw only once the other player has collected and stepped back, collecting early, the end and the winner).
+  - First draft had the whole "Collect your knives when no one is throwing, then Player 2." at 32 pt: rendered, it took most of the screen and squeezed the camera view, so it was split into a short headline and a smaller line.
+- **Verified by:** `flutter test`: 515 passed (13 new), `flutter analyze`: no issues. **The Live test recordings as two players** (`live_replay_test`, both Target 1 and Target 2): the app's own detections fed to a two-player match give Player 1 the one-player game's rounds 1, 3, 5, … and Player 2 rounds 2, 4, 6, …, with the same totals. The panel was rendered in widget tests (turn, collect, game over) and checked by eye. Not run on a phone.
+- **Files changed:** `lib/scoring/match.dart`, `lib/ui/play_screen.dart`, `lib/ui/play_setup_screen.dart`, `lib/ui/instructions.dart`; tests below.
+- **Checkpoint saved:** 2026-10-16
+
+### Test Report — 2026-10-16 (Task 2)
+- **New:** `match_test` (4: a complete turn with Player 2 next; Player 2 next again once Player 1 has finished; marks start at each turn, not within it; one player's marks at each round); `play_screen_test` group 'two players on one target' (3 widget tests: whose turn in large type with both totals; collect first, then the next player; the end with the winner/draw, every round and New game) and 'two-player text' (2); `play_setup_screen_test` 'Start with 2 players on 1 target opens Play taking turns' (replacing 'not playable yet'; two targets still isn't); `instructions_test` (the new section, and its place in the order); `live_replay_test` 'as two players on one target, the rounds alternate between the players' (Target 1 and Target 2).
+- **Updated:** `instructions_test` game-length wording ("for each player").
+- **Results:** 515 passed, 0 failed.
+
+### Safety Report — 2026-10-16 (Task 2, Review Agent §7 on the wording)
+- **Files reviewed:** `lib/ui/play_screen.dart` (`turnText`, `turnDetail`, `matchFooter`), `lib/ui/instructions.dart` (Two players on one target), `lib/ui/play_setup_screen.dart` (`modeDescription`).
+- ✅ No platform, permission, plugin, secret or data change (§1–6, 8 not affected).
+- ✅ §7: the app never tells a player to throw while someone may be at the board. Once a turn has its throws it says "Collect your knives / When no one is throwing", and names the next player only as "Then Player 2's turn"; "Player 2's turn" alone shows only after the collection is seen (a board visit is reported once the board's region has settled).
+- ✅ §7: the Instructions say to throw only once the other player has collected **and stepped back** (the app sees the board, not the lane), alongside the existing Safety section (the app can't tell whether the lane is clear).
+- ✅ The result and whose turn it is are in large type (32 / 44 pt), so nobody walks to the phone to read them.
+- **Verdict:** OK to commit.
+
+### Doc Update — 2026-10-16 (Task 2)
+- `Architecture/Design Decisions.md` → Single Player First, update: what the two-player panel shows, the marks per turn, and the safety point.
+- `Architecture/Glossary.md`: `Match`'s new members; the panel's text functions.
+- Web pages: Screens → `PlayScreen`.
 
 ## Task 3: Two players, two targets
 - **Work:** choose and lock both boards (Quick draw's tapping); a `ThrowWatcher` per board on its own crop; each board's marks and its player's rounds; the end result. The Quick draw clip (both boards) becomes a Live test choice for this mode.
@@ -82,6 +110,7 @@ IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 ## Plan Changes Log
 - **2026-10-16:** Planned. Waiting for Nigel's approval and answers to the open questions.
 - **2026-10-16:** Approved, all questions as recommended ("yes to all, start task 1"). Task 1 done.
+- **2026-10-16:** Task 1 committed; Task 2 done ("commit this and continue to task 2").
 
 ## Notes
 - Two people throwing at the same time is already allowed in Quick draw, with separate lanes (its Safety Report). Two-target Play is the same set-up, but for a whole game, including collecting.

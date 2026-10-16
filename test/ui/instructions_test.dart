@@ -15,13 +15,13 @@ void main() {
   final paper = allText(const GameSession(), TargetModel.ikthof(), kind: InstructionTarget.paper);
 
   test('states the game length from the rules: 9 rounds of 3 throws', () {
-    expect(text, contains('A game is 9 rounds of 3 throws.'));
+    expect(text, contains('A game is 9 rounds of 3 throws for each player.'));
     expect(text, contains('After round 9 the game is over'));
   });
 
   test('follows the rules if they change', () {
     final changed = allText(const GameSession(maxRounds: 5, throwsPerRound: 2), TargetModel.ikthof());
-    expect(changed, contains('A game is 5 rounds of 2 throws.'));
+    expect(changed, contains('A game is 5 rounds of 2 throws for each player.'));
     expect(changed, contains('After 2 throws the round is complete.'));
   });
 
@@ -50,12 +50,20 @@ void main() {
       'Setting up',
       'Calibrating the target',
       'Playing a game',
+      'Two players on one target',
       'Scoring',
       'Resetting',
       'Quick draw',
       'Safety',
       'Reporting problems',
     ]);
+  });
+
+  test('two players on one target: take turns, throw only after the other has collected', () {
+    expect(text, contains('Player 1 starts every round'));
+    expect(text, contains('once the other player has collected their knives and stepped back'));
+    expect(text, contains('collect your knives when no one is throwing, and then whose turn is next'));
+    expect(paper, contains('collect your pens, and then whose turn is next'));
   });
 
   testWidgets('Home → Instructions opens the instructions', (tester) async {
@@ -168,7 +176,7 @@ void main() {
     });
 
     test('the same game rules and sections as the real board', () {
-      expect(paper, contains('A game is 9 rounds of 3 throws.'));
+      expect(paper, contains('A game is 9 rounds of 3 throws for each player.'));
       expect([for (final s in instructionSections(const GameSession(), TargetModel.ikthof(), kind: InstructionTarget.paper)) s.heading],
           [for (final s in instructionSections(const GameSession(), TargetModel.ikthof())) s.heading]);
     });

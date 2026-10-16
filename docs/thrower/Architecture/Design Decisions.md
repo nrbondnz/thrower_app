@@ -372,6 +372,12 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
 - **Over** once every player's game is over; the higher total wins, equal totals are a **draw** (`Match.winner`, `Match.draw`).
 - Players are **"Player 1" and "Player 2"** for now; typed names may come with accounts. Other game lengths and history are not in this story.
 - Built so far (Task 1): the rules and the setup screen; only 1 player can be started. Two players on one target comes in Task 2, on two targets in Task 3.
+- **Task 2: two players on one target, playable.** Play's panel (`_PlayersPanel`) shows, in place of one player's round lines:
+  - **whose turn it is in large type** (`turnText`, 32 pt; Review Agent: readable from the throwing line, as for Quick draw): "Player 1's turn"; once the turn has all its throws, **"Collect your knives"** with a smaller line, "When no one is throwing. Then Player 2's turn." (`turnDetail`); the headline is kept short so the camera view keeps its room;
+  - each player's total (`playerTitle`, "Player 1: 23") and round in progress (`playerDetail`, the one-player `roundText`), the thrower's in white, the other's dimmed;
+  - at the end, **"Player 2 wins" or "A draw"** (44 pt, green), every round of each player, "Collect your knives when no one is throwing." (`matchFooter`) and **New game**.
+  - The board's marks clear at each new turn (`Match.nextThrowStartsRound`), as they did at each new round.
+  - **Safety (Review Agent §7, 2026-10-16):** the screen never names the next thrower while the knives are still to be collected; "Player 2's turn" shows only after the collection (a board visit ends once the board's region has settled, so the person has left the board). The Instructions add: throw only on your turn, once the other player has collected their knives **and stepped back**.
 
 ## Throw Detection: Before/After Comparison from a Static Camera
 

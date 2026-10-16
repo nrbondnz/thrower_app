@@ -30,7 +30,7 @@ COMPONENTS = {
         functions=[
             ('HomeScreen', 'Instructions, Play, Quick draw, Live test, Calibrate target, Scoring test target'),
             ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); Start'),
-            ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals'),
+            ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw'),
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),

@@ -42,6 +42,13 @@ void main() {
       expect(m.players.single.rounds.first.closed, isTrue);
     });
 
+    test('the next throw starts new marks once the round is complete', () {
+      var m = Match(PlayMode.solo).stuck(1, p).stuck(1, p);
+      expect(m.nextThrowStartsRound(), isFalse);
+      m = m.stuck(1, p);
+      expect((m.nextThrowStartsRound(), m.turnComplete), (true, false));
+    });
+
     test('has no winner when over', () {
       var m = Match(PlayMode.solo, rules: const GameSession(maxRounds: 1)).stuck(1, p).stuck(1, p).stuck(1, p);
       expect((m.isOver, m.winner, m.draw), (true, null, false));
@@ -125,6 +132,27 @@ void main() {
     test('equal totals are a draw', () {
       final m = fullSharedGame(Match(PlayMode.sharedTarget), 3, 3);
       expect((m.isOver, m.winner, m.draw), (true, null, true));
+    });
+
+    test('after 3 throws the turn is complete, with Player 2 next', () {
+      final m = Match(PlayMode.sharedTarget).stuck(1, p).stuck(1, p).stuck(1, p);
+      expect((m.turnComplete, m.turn, m.nextTurn), (true, 0, 1));
+      expect(m.boardVisited().turnComplete, isFalse);
+    });
+
+    test('next is Player 2 again when Player 1 has finished the game', () {
+      var m = Match(PlayMode.sharedTarget, rules: const GameSession(maxRounds: 1)).stuck(1, p).stuck(1, p).stuck(1, p);
+      m = m.boardVisited().stuck(2, p).stuck(2, p);
+      expect((m.turn, m.nextTurn), (1, 1));
+    });
+
+    test('the next throw starts new marks at the start of each turn, not within it', () {
+      var m = Match(PlayMode.sharedTarget);
+      expect(m.nextThrowStartsRound(), isTrue);
+      m = m.stuck(1, p);
+      expect(m.nextThrowStartsRound(), isFalse);
+      m = m.stuck(1, p).stuck(1, p);
+      expect(m.nextThrowStartsRound(), isTrue, reason: 'a 4th knife without collecting is the next turn');
     });
 
     test('throws after the match is over are ignored', () {
