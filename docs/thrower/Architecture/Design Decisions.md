@@ -96,12 +96,25 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 | `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw; the tap is a fraction of the upright picture). |
 | `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board, with a `QueuedCamera` between for the live camera (`queue`); `states`, `queues`; `QuickDrawThrow`), `judgeQuickDraw` (Quick draw's winner rule; `QuickDrawVerdict`), `StartSignal` (Quick draw's start signal: `StartSchedule`, `startPauses`, `StartPhase`; go on the camera's clock). |
 | `lib/sound/` | Sound | `SignalSounds` (interface: Quick draw's `beep`, `go`, `result`) and `AssetSignalSounds` (the bundled `assets/sounds/` WAVs, made by `tool/make_signal_sounds.dart`, on the `audioplayers` plugin). An edge folder like `lib/camera/`: `lib/game/` depends on the interface; tests use a fake. |
+| `lib/history/` | Game history | `GameRecord` (a finished game: when, mode, rounds, each player's round totals, the Live test recording if any; JSON, `version` 1) and `GameHistory` (interface: `load`, `add`, `delete`, `clear`) with `FileGameHistory` (one JSON file, `game_history.json`, in the app's support folder via `path_provider`). An edge folder like `lib/camera/`: the rest of the app depends on the interface; tests use a temporary folder. Since 2026-10-16 ([[story-checkpoint-game-history]]). |
 | `lib/ui/` | Screens and painters | Depends on the layers through providers. `RoundMarks` holds the Play screen's marks for the round. `CameraView` takes the camera to show as a `camera:` provider (default `cameraProvider`). `quick_draw_boards.dart` holds what both Quick draw screens share: `BoardChoosing`, `BoardsOverlay`, `BoardsPainter`, `boardLines`, `quickDrawLine`. `LiveQuickDrawScreen` runs the live duel (start signal, result panel). |
 | `lib/providers.dart` | Wiring | One place to see and override every layer. |
 
 Folders are created when their first code arrives, never empty "just in case". Navigation is plain `Navigator` until there are enough screens to justify a router.
 
 **Confirmed:** 2026-10-05.
+
+## Game History: One File on the Phone, Behind an Interface (2026-10-16)
+
+**Decision** ([[story-checkpoint-game-history]], Nigel: "yes to all"):
+- Finished games of Play are kept **on the phone**, in **one JSON file** (`game_history.json`) in the app's own **support folder** (`getApplicationSupportDirectory`: private to the app, not shown in the Files app; planned as the documents folder, changed because that one is meant for the user's own files). Behind the `GameHistory` interface, so a backend can keep them instead once there are accounts (backlog #4).
+- **Why a file:** small, readable, testable with a temporary folder, no new native code. `path_provider` was already in the app through `audioplayers`; it's now listed in `pubspec.yaml` at the same version (2.1.6), so the lock file changes only from "transitive" to "direct main". *Not chosen:* `shared_preferences` (for settings, a new plugin), a database (`sqflite` / `drift`: a new native plugin, far more than a list of games needs).
+- **The format:** `{"version": 1, "games": [...]}`; each game has `id` (when it finished, in microseconds), `finishedAt` (UTC), `mode`, `rounds`, `players` (each player's round totals) and, for a Live test game, `recording`. Totals and the winner are worked out from the rounds, never stored, so they can't disagree.
+- **Safe writes:** each save goes to `game_history.json.tmp`, then replaces the file; saves wait for each other. A file that can't be read (damaged, or from a newer version of the app) is **renamed** (`….damaged-<time>`), never deleted, and the history starts afresh; `GameHistoryException(setAside: true)` says so.
+- **Kept:** finished games only, Live test games included (marked with the recording's name), all of them (each is well under 1 KB).
+- **Privacy:** nothing is sent anywhere by the app. The file is part of the app's data, so it's in the phone's own backups (iCloud / Google, as the user has set them) and is deleted with the app.
+
+**Built so far:** Task 1 (the record and the store). Saving each finished game, and the History screen, come in Tasks 2 and 3.
 
 ## Camera: `camera` Plugin, Back Camera, No Audio
 

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'auth/auth_service.dart';
 import 'camera/live_camera.dart';
@@ -9,6 +10,7 @@ import 'camera/target_camera.dart';
 import 'game/quick_draw_targets.dart';
 import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
+import 'history/game_history.dart';
 import 'scoring/game_session.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
@@ -271,6 +273,10 @@ class GameNotifier extends Notifier<Match> {
 }
 
 final gameProvider = NotifierProvider<GameNotifier, Match>(GameNotifier.new);
+
+/// The finished games kept on the phone: a file in the app's own support
+/// folder. Tests override it with a temporary folder or a fake.
+final gameHistoryProvider = Provider<GameHistory>((ref) => FileGameHistory(getApplicationSupportDirectory));
 
 /// No auth provider is chosen yet, so this must be overridden before use.
 final authServiceProvider = Provider<AuthService>(

@@ -38,6 +38,8 @@ dependencies:
   camera: ^0.12.1
   image: ^4.10.1
   audioplayers: ^6.8.1
+  # Game history's file (already in the app via audioplayers; game-history story).
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

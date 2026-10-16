@@ -119,6 +119,9 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `gameLengthProvider` (`GameLengthNotifier`, `choices` 3 / 5 / 9, default 9): the rounds in a game, also chosen there
   - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
   - Play's two-player panel (`lib/ui/play_screen.dart`, `PlayersPanel`): `turnText` ("Player 1's turn" / "Collect your knives" / "Wait for Player 2" / "Player 2 wins" / "A draw"), `turnDetail`, `playerTitle`, `playerDetail`, `matchFooter`; `eventMessage`, `paintRoundMarks`
+- **`GameRecord`** (`lib/history/game_record.dart`) / **`GameHistory`**, **`FileGameHistory`**, **`GameHistoryException`** (`lib/history/game_history.dart`) / **`gameHistoryProvider`**
+  - `GameRecord.fromMatch(match, at:, recording:)`; `totals`, `winner`, `draw`, `liveTest`; `toJson` / `fromJson` (`version` 1, `FormatException` if unreadable)
+  - `load` (newest first) · `add` · `delete(id)` · `clear`; one file, `game_history.json`, written through a `.tmp` file, one save at a time; a damaged file is set aside (`setAside`)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
   - the screen: `BoardChoosing.addBoard` → `playTargetsProvider`; camera to 1×; `BoardMarksPainter`; `boardMessage`; `boardsStateText`
