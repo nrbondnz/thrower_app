@@ -49,7 +49,16 @@ class FileGameHistory implements GameHistory {
   /// The last write, so the next one waits for it.
   Future<void> _writing = Future.value();
 
-  Future<File> get _file async => File('${(await directory()).path}${Platform.pathSeparator}$fileName');
+  Future<File> get _file async {
+    final Directory dir;
+    try {
+      dir = await directory();
+    } catch (e) {
+      // Whatever the platform throws (no plugin, no folder): Play goes on.
+      throw GameHistoryException("couldn't find the app's folder: $e");
+    }
+    return File('${dir.path}${Platform.pathSeparator}$fileName');
+  }
 
   @override
   Future<List<GameRecord>> load() async {

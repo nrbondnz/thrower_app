@@ -11,6 +11,7 @@ import 'game/quick_draw_targets.dart';
 import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
 import 'history/game_history.dart';
+import 'history/game_record.dart';
 import 'scoring/game_session.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
@@ -210,12 +211,36 @@ class GameLengthNotifier extends Notifier<int> {
 
 final gameLengthProvider = NotifierProvider<GameLengthNotifier, int>(GameLengthNotifier.new);
 
+/// The time now, for when a game finished; tests fix it.
+final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
+/// Why the last finished game couldn't be kept in the history, or null.
+/// Play shows it; it's cleared by the next save that works.
+class HistorySaveErrorNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void set(String? message) => state = message;
+}
+
+final historySaveErrorProvider = NotifierProvider<HistorySaveErrorNotifier, String?>(HistorySaveErrorNotifier.new);
+
 /// This session's game of Play, for one or two players ([Match]), fed by
-/// each board's [ThrowEvent]s.
+/// each board's [ThrowEvent]s. A game is kept in the history
+/// ([gameHistoryProvider]) when it finishes: once, under the time it
+/// finished, saved again under that time if a knife falling out afterwards
+/// changes a score.
 class GameNotifier extends Notifier<Match> {
   /// (board, knife id from that board's watcher) → (player, round, throw) it
   /// was recorded as, for knives still in a board.
   final _knives = <(int, int), (int, int, int)>{};
+
+  /// When this game finished (null while it's on).
+  DateTime? _finishedAt;
+
+  /// The rounds last kept for this game, so an unchanged game isn't saved
+  /// again (e.g. its knives being collected after the end).
+  String? _kept;
 
   /// A new game whenever the camera (live camera ↔ a recording), the play
   /// mode or the game length changes.
@@ -225,12 +250,16 @@ class GameNotifier extends Notifier<Match> {
     final mode = ref.watch(playModeProvider);
     final rounds = ref.watch(gameLengthProvider);
     _knives.clear();
+    _finishedAt = null;
+    _kept = null;
     return Match(mode, rules: GameSession(maxRounds: rounds));
   }
 
   /// The same mode and length, from the start.
   void newGame() {
     _knives.clear();
+    _finishedAt = null;
+    _kept = null;
     state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds));
   }
 
@@ -242,6 +271,12 @@ class GameNotifier extends Notifier<Match> {
     // knives, so one falling out can't zero a real throw).
     final kind = event.outcome.kind;
     if (!state.takesThrowAt(board) && (kind == ThrowOutcomeKind.stuck || kind == ThrowOutcomeKind.bounceOut)) return;
+    final before = state;
+    _apply(kind, event, calibration, board);
+    if (state.isOver && !identical(state, before)) _keep();
+  }
+
+  void _apply(ThrowOutcomeKind kind, ThrowEvent event, TargetCalibration calibration, int board) {
     switch (kind) {
       case ThrowOutcomeKind.stuck:
         final entry = event.entry;
@@ -270,6 +305,22 @@ class GameNotifier extends Notifier<Match> {
   }
 
   void _forgetKnives(int board) => _knives.removeWhere((key, _) => key.$1 == board);
+
+  /// Keeps the finished game in the history, with the Live test recording's
+  /// name if it was played on one. A failure doesn't stop play: Play says
+  /// so ([historySaveErrorProvider]).
+  void _keep() {
+    final at = _finishedAt ??= ref.read(clockProvider)();
+    final record = GameRecord.fromMatch(state, at: at, recording: ref.read(recordingChoiceProvider)?.name);
+    final rounds = '${record.players}';
+    if (rounds == _kept) return;
+    _kept = rounds;
+    final errors = ref.read(historySaveErrorProvider.notifier);
+    ref.read(gameHistoryProvider).add(record).then(
+          (_) => errors.set(null),
+          onError: (Object e) => errors.set(e is GameHistoryException ? e.message : '$e'),
+        );
+  }
 }
 
 final gameProvider = NotifierProvider<GameNotifier, Match>(GameNotifier.new);

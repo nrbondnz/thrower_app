@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:thrower_app/camera/camera_frame.dart';
 import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/game/throw_watcher.dart';
+import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_session.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
@@ -17,6 +19,9 @@ import 'package:thrower_app/vision/target_calibration.dart';
 import 'package:thrower_app/vision/target_locator.dart';
 import 'package:thrower_app/vision/target_mapping.dart';
 import 'package:thrower_app/vision/throw_classifier.dart';
+
+import '../history/memory_game_history.dart';
+import 'game_notifier_test.dart' show calibration, event, stuckAt;
 
 /// Replays each Live test recording through the app's own path
 /// (`RecordedCamera` → `ThrowWatcher`, as Play), and checks the
@@ -183,6 +188,26 @@ void main() {
         expect(rounds.length, greaterThanOrEqualTo(2), reason: 'the recording has at least two rounds');
         expect([for (final r in shared.players[0].rounds) r.total], [for (var i = 0; i < rounds.length; i += 2) rounds[i]]);
         expect([for (final r in shared.players[1].rounds) r.total], [for (var i = 1; i < rounds.length; i += 2) rounds[i]]);
+      }, timeout: const Timeout(Duration(minutes: 5)));
+
+      // Game-history story, Task 2: a 3-round game of the recording's throws,
+      // played to the end through Play's own notifier, is kept once, under
+      // the recording's name.
+      test('a 3-round game played on it is kept in the history once, as a Live test game', () async {
+        final history = MemoryGameHistory();
+        final container = ProviderContainer(overrides: [gameHistoryProvider.overrideWithValue(history)]);
+        addTearDown(container.dispose);
+        container.read(recordingChoiceProvider.notifier).use(recording);
+        container.read(gameLengthProvider.notifier).choose(3);
+        final game = container.read(gameProvider.notifier);
+        final c = calibration();
+        for (final (i, d) in detected.indexed) {
+          game.onEvent(d.kind == ThrowOutcomeKind.stuck ? stuckAt(500, 400, i) : event(d.kind), c);
+        }
+        await pumpEventQueue();
+        expect(container.read(gameProvider).isOver, isTrue, reason: 'the recording has at least three rounds');
+        expect(history.saves, 1);
+        expect((history.games.single.rounds, history.games.single.recording), (3, recording.name));
       }, timeout: const Timeout(Duration(minutes: 5)));
 
       // Extra visits are harmless: a visit only ends a round that has throws,

@@ -141,6 +141,13 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
   Widget build(BuildContext context) {
     final targets = ref.watch(playTargetsProvider);
     final match = ref.watch(gameProvider);
+    ref.listen(historySaveErrorProvider, (_, message) {
+      if (message != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(key: Key('historySaveFailed'), content: Text("Couldn't save this game to History.")),
+        );
+      }
+    });
     final camera = ref.watch(cameraProvider).value;
     // Both boards need the whole picture: a zoom kept from calibrating one
     // target would cut them off.

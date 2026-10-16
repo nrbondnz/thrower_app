@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_session.dart';
@@ -104,6 +105,13 @@ void main() {
     await settle(tester);
     expect(find.text('Reset this game?'), findsNothing);
     expect(gameText(tester), 'Game total: 0');
+  });
+
+  testWidgets('says when a finished game could not be saved to History', (tester) async {
+    await pumpPlay(tester, 0);
+    ProviderScope.containerOf(tester.element(find.byType(PlayScreen))).read(historySaveErrorProvider.notifier).set('disk full');
+    await tester.pump();
+    expect(find.byKey(const Key('historySaveFailed')), findsOneWidget);
   });
 
   group('two players on one target', () {

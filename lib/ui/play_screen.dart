@@ -114,6 +114,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     final calibration = ref.watch(calibrationProvider);
     final match = ref.watch(gameProvider);
     final game = match.players.first;
+    ref.listen(historySaveErrorProvider, (_, message) {
+      if (message != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(key: Key('historySaveFailed'), content: Text("Couldn't save this game to History.")),
+        );
+      }
+    });
     final camera = ref.watch(cameraProvider).value;
 
     if (calibration == null || !calibration.locked) {

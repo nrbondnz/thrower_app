@@ -7,7 +7,7 @@ Finished games of Play are **kept on the phone** and can be looked back at: when
 5 (Medium–Large): storage → game wiring → a new screen (3), a new data model (`GameRecord`) (1), a dependency change (`path_provider` made direct; Review Agent) (1).
 
 ## Status
-IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
+IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Task 1 committed (`a276c91`). Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `Match` (`lib/scoring/match.dart`): each player's `GameSession` (rounds, throws, totals), `mode`, `maxRounds`, `isOver`, `winner`, `draw`. Everything a record needs is there when a game ends.
@@ -33,7 +33,7 @@ IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 ---
 
 ## Task 1: The record and the store
-- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-16); committed (`a276c91`)
 - **Work:**
   - `GameRecord` (pure Dart): when, mode, rounds, Live test or not, each player's round totals, total, winner / draw; `toJson` / `fromJson` (with a version number, so the format can change later).
   - `GameHistory` (interface): `load`, `add`, `delete`, `clear`. `FileGameHistory`: one JSON file in the app's documents folder (`path_provider`, made a direct dependency: **Review Agent**). A damaged file is set aside, not lost or crashed on.
@@ -66,9 +66,21 @@ IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - **Verdict:** OK to commit.
 
 ## Task 2: Save each finished game
+- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
 - **Work:** when a `Match` becomes over, its `GameRecord` is added, once. Live test games marked. Not for reset or unfinished games.
 - **Verify (on this PC):** a widget test plays a short game to the end and finds it saved once; Live test → Target 1, a 3-round game, is saved as "Live test".
 - **Next:** Task 3.
+- **What changed:**
+  - `lib/providers.dart`: `GameNotifier.onEvent` keeps the game (`_keep`) when an event leaves the match over: a `GameRecord.fromMatch` with the Live test recording's name (`recordingChoiceProvider`), added to `gameHistoryProvider` without waiting. **Once:** the record is made under the time the game finished (`_finishedAt`), so its `id` stays the same; an unchanged game isn't saved again (`_kept`); a last-round knife **falling out after the end** saves the same record again with the new score (replacing it, not a second game). `build` and `newGame` forget both, so a reset half-way keeps nothing. New `clockProvider` (the time now; tests fix it) and `historySaveErrorProvider` (why the last save failed, cleared by the next one that works).
+  - `lib/ui/play_screen.dart`, `lib/ui/two_target_play_screen.dart`: a snack bar, "Couldn't save this game to History.", when a save fails; play goes on (acceptance 6).
+  - `lib/history/game_history.dart`: a failure to find the app's folder (e.g. no `path_provider` plugin) becomes a `GameHistoryException`, like any other read or write failure.
+- **Verified by:** `flutter test`: 573 passed (12 new), `flutter analyze`: no issues. On a phone: nothing to see until Task 3's History screen.
+- **Checkpoint saved:** 2026-10-17
+
+### Test Report — 2026-10-17 (Task 2)
+- **New:** `test/history/keeping_games_test.dart` (9, through `GameNotifier` with a fake history and a fixed clock: nothing kept while the game is on; a finished game kept once with when it finished; throws and a visit after the end don't keep it again; a last-round knife falling out after the end updates the kept game under its first time; two games after New game; a game reset half-way not kept; a two-target game kept only when both have finished, with the winner; a Live test game kept with its recording's name; a failed save leaves play going on and the reason for Play, cleared by the next save that works). `test/history/memory_game_history.dart` (the fake). `test/ui/play_screen_test.dart`: Play shows the snack bar when a save fails. `test/game/live_replay_test.dart`: on each Live test recording (Target 1 and Target 2), the throws the app finds, played as a 3-round game through Play's notifier, are kept once under the recording's name.
+- **Results:** 573 passed, 0 failed.
+- **Notes:** no platform, permission or dependency change, so no Review Agent run; the docs for the whole story come in Task 4, as planned.
 
 ## Task 3: The History screen
 - **Work:** Home → **History**: the list (newest first), a game's rounds, delete one, **Clear history** (asks first), "No games yet", and "Couldn't load the history" if the file fails.
@@ -84,6 +96,7 @@ IN PROGRESS: Task 1 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 ## Plan Changes Log
 - **2026-10-16:** Planned. Waiting for Nigel's approval and answers to the open questions.
 - **2026-10-16:** Approved ("commit this, yes to all, start task 1"). Task 1 done; the file goes in the support folder rather than the documents folder (see Task 1).
+- **2026-10-17:** Task 2 done. Added: a game whose last-round knife falls out after the end is saved again with the new score (same record), and Play says so if a save fails.
 
 ## Notes
 - Not in this story: typed player names (with accounts, #4), statistics across games (averages, best round), sharing a result, remembering the calibration between launches (a carry-over that could use the same storage later).
