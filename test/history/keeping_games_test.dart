@@ -152,4 +152,36 @@ void main() {
     expect(container.read(gameProvider).isOver, isFalse);
     expect(history.games, isEmpty);
   });
+
+  // Score corrections story, Task 1.
+  test('a miss added by hand can finish the game, and it is kept', () async {
+    throwBulls(8);
+    game().addThrow(0);
+    await pumpEventQueue();
+    expect(history.games.single.players.single, [15, 15, 10]);
+  });
+
+  test('a correction after the end re-saves the same game, under the same time', () async {
+    throwBulls(9);
+    await pumpEventQueue();
+    now = now.add(const Duration(minutes: 2));
+    game().setScore(0, 0, 0, 1);
+    await pumpEventQueue();
+    expect((history.saves, history.games.length), (2, 1));
+    expect(history.games.single.players.single.first, 11);
+    expect(history.games.single.finishedAt, DateTime(2026, 10, 16, 14, 32));
+  });
+
+  test('a correction during the game keeps nothing yet', () async {
+    throwBulls(2);
+    game().setScore(0, 0, 0, 1);
+    await pumpEventQueue();
+    expect(history.games, isEmpty);
+  });
+
+  test('no throw is added by hand once the game is over', () async {
+    throwBulls(9);
+    game().addThrow(5);
+    expect(container.read(gameProvider).players.single.total, 45);
+  });
 }

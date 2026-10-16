@@ -12,10 +12,14 @@ enum ThrowResult {
   /// Stuck, then fell out before the knives were collected: 0 (assumed rule;
   /// see Design Decisions → Rounds and Scoring).
   fellOut,
+
+  /// Missed the board altogether, added by hand (the camera usually sees
+  /// nothing): 0. Score corrections story, Nigel 2026-10-17.
+  missed,
 }
 
 class ThrowRecord {
-  const ThrowRecord(this.result, this.score, {this.point});
+  const ThrowRecord(this.result, this.score, {this.point, this.corrected = false});
 
   final ThrowResult result;
   final int score;
@@ -24,8 +28,22 @@ class ThrowRecord {
   /// the entry was found. A stuck throw without one scores 0, shown as "?".
   final TargetPoint? point;
 
-  /// Stuck, but where it went in couldn't be found.
-  bool get unscored => result == ThrowResult.stuck && point == null;
+  /// The score was set by hand (a dispute, or a throw the camera didn't
+  /// see), not taken from where the camera saw the blade go in.
+  final bool corrected;
+
+  /// Stuck, but where it went in couldn't be found (and no one has set the
+  /// score by hand).
+  bool get unscored => result == ThrowResult.stuck && point == null && !corrected;
+
+  /// A throw added by hand with [score]: 0 is a miss, more a stuck knife the
+  /// camera didn't register.
+  factory ThrowRecord.byHand(int score) =>
+      ThrowRecord(score == 0 ? ThrowResult.missed : ThrowResult.stuck, score, corrected: true);
+
+  /// This throw with its score set by hand to [score]; what the camera saw
+  /// ([result], [point]) stays.
+  ThrowRecord withScore(int score) => ThrowRecord(result, score, point: point, corrected: true);
 }
 
 class RoundRecord {
@@ -47,6 +65,8 @@ class RoundRecord {
 /// - A board visit (someone at the board: collecting knives) closes the
 ///   current round if it has any throws.
 /// - A knife that falls out turns its throw into [ThrowResult.fellOut], 0.
+/// - Any throw's score can be set by hand ([setScore]), and a throw the
+///   camera didn't see added ([byHand], [addToRound]).
 /// - The game is over once round [maxRounds] is complete, or when it's
 ///   [finish]ed early; later throws are ignored until a new game.
 class GameSession {
@@ -112,6 +132,35 @@ class GameSession {
       _withThrow(ThrowRecord(ThrowResult.stuck, point == null ? 0 : score, point: point));
 
   GameSession bounceOut() => _withThrow(const ThrowRecord(ThrowResult.bounceOut, 0));
+
+  /// A throw the camera didn't see, added by hand, as the next throw (as a
+  /// detected one would be): 0 is a miss.
+  GameSession byHand(int score) => _withThrow(ThrowRecord.byHand(score));
+
+  /// Throw [throwIndex] of round [roundIndex] now scores [score], set by
+  /// hand. Allowed after the game is over too (a dispute at the end).
+  GameSession setScore(int roundIndex, int throwIndex, int score) {
+    final round = rounds[roundIndex];
+    final throws = [...round.throws];
+    throws[throwIndex] = throws[throwIndex].withScore(score);
+    final updated = [...rounds];
+    updated[roundIndex] = RoundRecord(throws, closed: round.closed);
+    return _withRounds(updated);
+  }
+
+  /// Whether round [roundIndex] has room for another throw: fewer than
+  /// [throwsPerRound] (the round in progress, or one collected early).
+  bool hasRoomIn(int roundIndex) => rounds[roundIndex].throws.length < throwsPerRound;
+
+  /// A throw the camera didn't see, added by hand to round [roundIndex]
+  /// (one with room: [hasRoomIn]). The round stays closed if it was.
+  GameSession addToRound(int roundIndex, int score) {
+    if (!hasRoomIn(roundIndex)) return this;
+    final round = rounds[roundIndex];
+    final updated = [...rounds];
+    updated[roundIndex] = RoundRecord([...round.throws, ThrowRecord.byHand(score)], closed: round.closed);
+    return _withRounds(updated);
+  }
 
   /// Throw [throwIndex] of round [roundIndex] fell out: it now scores 0.
   GameSession fellOut(int roundIndex, int throwIndex) {

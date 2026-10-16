@@ -236,4 +236,44 @@ void main() {
       expect(m.takesThrowAt(1), isFalse);
     });
   });
+
+  // Score corrections story, Task 1.
+  group('scores set by hand', () {
+    test("one target: a miss added by hand is the turn's player's, and counts toward the turn", () {
+      final m = Match(PlayMode.sharedTarget).stuck(4, p).stuck(4, p).byHand(0);
+      expect(rounds(m), [
+        [8],
+        [],
+      ]);
+      expect(m.turnComplete, isTrue);
+      expect(m.nextTurn, 1);
+    });
+
+    test("one target: a disputed score is changed for the player who threw it", () {
+      final m = Match(PlayMode.sharedTarget).stuck(4, p).boardVisited().stuck(2, p).setScore(1, 0, 0, 5);
+      expect(rounds(m), [
+        [4],
+        [5],
+      ]);
+    });
+
+    test("two targets: a miss added at a board is that board's player's", () {
+      final m = Match(PlayMode.twoTargets).byHand(0, board: 1);
+      expect((m.players[0].rounds.length, m.players[1].rounds.single.throws.single.result), (0, ThrowResult.missed));
+    });
+
+    test('a correction after the end can change the winner', () {
+      final m = Match(PlayMode.sharedTarget, rules: const GameSession(maxRounds: 1))
+          .stuck(4, p)
+          .stuck(4, p)
+          .stuck(4, p)
+          .boardVisited()
+          .stuck(3, p)
+          .stuck(3, p)
+          .stuck(3, p);
+      expect(m.winner, 0, reason: '12–9');
+      final changed = m.setScore(1, 0, 0, 5).setScore(1, 0, 1, 5);
+      expect((changed.isOver, changed.winner), (true, 1), reason: '12–13');
+    });
+  });
 }

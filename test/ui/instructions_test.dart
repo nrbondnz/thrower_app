@@ -69,6 +69,11 @@ void main() {
     ]);
   });
 
+  test('Finish game: ends with the rounds played; two players judged on rounds both played', () {
+    expect(text, contains('tap Finish game (it asks first): the game ends with the rounds played so far'));
+    expect(text, contains('the winner is decided on the rounds you have both played'));
+  });
+
   test('History: finished games only, where to find them, delete and clear, kept on the phone', () {
     expect(text, contains('Each game of Play is kept when it finishes. Tap History on the home screen'));
     expect(text, contains('reset or left before it finishes is not kept'));

@@ -101,6 +101,21 @@ class Match {
 
   Match bounceOut({int board = 0}) => _throw(board, (g) => g.bounceOut());
 
+  /// A throw the camera didn't see, added by hand at [board] as the next
+  /// throw (one target: the player whose turn it is, counting toward the
+  /// turn): 0 is a miss.
+  Match byHand(int score, {int board = 0}) => _throw(board, (g) => g.byHand(score));
+
+  /// [player]'s throw [throwIndex] of round [roundIndex] now scores [score],
+  /// set by hand.
+  Match setScore(int player, int roundIndex, int throwIndex, int score) =>
+      _with(player, players[player].setScore(roundIndex, throwIndex, score));
+
+  /// A throw added by hand to [player]'s earlier round [roundIndex], one
+  /// collected early ([GameSession.hasRoomIn]).
+  Match addToRound(int player, int roundIndex, int score) =>
+      _with(player, players[player].addToRound(roundIndex, score));
+
   /// [player]'s throw [throwIndex] of round [roundIndex] fell out: 0.
   Match fellOut(int player, int roundIndex, int throwIndex) =>
       _with(player, players[player].fellOut(roundIndex, throwIndex));

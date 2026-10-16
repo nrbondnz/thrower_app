@@ -19,6 +19,13 @@ GameRecord game(DateTime at, PlayMode mode, List<List<int>> players, {String? re
       recording: recording,
     );
 
+extension on GameRecord {
+  /// The same game, planned as [rounds] rounds (finished early if more
+  /// than were played).
+  GameRecord withRounds(int rounds) =>
+      GameRecord(id: id, finishedAt: finishedAt, mode: mode, rounds: rounds, players: players, recording: recording);
+}
+
 final older = game(DateTime(2026, 10, 15, 9, 5), PlayMode.solo, [
   [15, 10, 12]
 ]);
@@ -61,6 +68,21 @@ void main() {
         ], recording: 'Target 1'),
         '1 player · 3 rounds · Live test: Target 1 · Total 15'
       ),
+      // Finish game (2026-10-17): fewer rounds than planned; two players
+      // judged on equal rounds.
+      (
+        game(DateTime(2026), PlayMode.solo, [
+          [15, 12]
+        ]).withRounds(9),
+        '1 player · 2 of 9 rounds · Total 27'
+      ),
+      (
+        game(DateTime(2026), PlayMode.sharedTarget, [
+          [9, 15],
+          [3],
+        ]).withRounds(9),
+        '2 players, 1 target · 2 of 9 rounds · Player 1 wins 9–3'
+      ),
     ];
     for (final (g, expected) in cases) {
       test('a list line reads "$expected"', () => expect(summaryText(g), expected));
@@ -100,6 +122,21 @@ void main() {
     expect(find.text('Player 2: 58'), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('historyRound-1-4'))).data, 'Round 5: 9');
     expect(find.byKey(const Key('historyRound-0-0')), findsOneWidget);
+  });
+
+  testWidgets("a game finished early marks the round that didn't count", (tester) async {
+    history = MemoryGameHistory([
+      game(DateTime(2026, 10, 17, 10, 0), PlayMode.sharedTarget, [
+        [9, 15],
+        [3],
+      ]).withRounds(9),
+    ]);
+    await pumpHistory(tester);
+    await tester.tap(find.text('17 Oct, 10:00'));
+    await tester.pumpAndSettle();
+    expect(find.text('Player 1: 9'), findsOneWidget);
+    expect(find.text('Round 2: 15 (not counted)'), findsOneWidget);
+    expect(find.text('Player 1 wins 9–3'), findsOneWidget);
   });
 
   testWidgets('deleting a game removes it and goes back to the list', (tester) async {

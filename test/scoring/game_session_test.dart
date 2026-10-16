@@ -165,4 +165,63 @@ void main() {
       expect((g.isOver, g.total), (true, 0));
     });
   });
+
+  // Score corrections story, Task 1 (Nigel, 2026-10-17).
+  group('scores set by hand', () {
+    test('a disputed score is replaced; the round and game totals follow', () {
+      final g = const GameSession().stuck(4, p).stuck(3, p).setScore(0, 1, 5);
+      expect([for (final t in g.rounds.single.throws) t.score], [4, 5]);
+      expect(g.total, 9);
+    });
+
+    test('a corrected throw keeps what the camera saw, and is marked', () {
+      final t = const GameSession().stuck(4, p).setScore(0, 0, 2).rounds.single.throws.single;
+      expect((t.result, t.point, t.corrected), (ThrowResult.stuck, p, true));
+    });
+
+    test('a bounce-out can be scored, and a "?" knife gets its score', () {
+      final g = const GameSession().bounceOut().stuck(4, null).setScore(0, 0, 3).setScore(0, 1, 2);
+      expect(g.total, 5);
+      expect(g.rounds.single.throws[1].unscored, isFalse);
+    });
+
+    test('a miss added by hand is a 0 throw in the round in progress', () {
+      final g = const GameSession().stuck(4, p).byHand(0);
+      final t = g.rounds.single.throws.last;
+      expect((t.result, t.score, t.corrected), (ThrowResult.missed, 0, true));
+      expect(g.rounds.single.throws, hasLength(2));
+    });
+
+    test('a knife the camera missed, added by hand, counts toward the round', () {
+      final g = const GameSession().stuck(4, p).stuck(3, p).byHand(5);
+      expect((g.roundComplete, g.total), (true, 12));
+    });
+
+    test('adding the last throw of the last round ends the game', () {
+      final g = const GameSession(maxRounds: 1).stuck(4, p).stuck(3, p).byHand(0);
+      expect(g.isOver, isTrue);
+    });
+
+    test('a round collected early takes a throw added later, and stays collected', () {
+      final g = const GameSession().stuck(4, p).boardVisited().stuck(5, p).addToRound(0, 0);
+      expect([for (final r in g.rounds) r.throws.length], [2, 1]);
+      expect(g.rounds.first.closed, isTrue);
+    });
+
+    test('a full round takes no more throws', () {
+      final g = const GameSession().stuck(4, p).stuck(3, p).stuck(5, p);
+      expect(g.hasRoomIn(0), isFalse);
+      expect(identical(g.addToRound(0, 5), g), isTrue);
+    });
+
+    test('a corrected knife that later falls out still scores 0', () {
+      final g = const GameSession().stuck(4, p).setScore(0, 0, 5).fellOut(0, 0);
+      expect(g.total, 0);
+    });
+
+    test('a score can be set after the game is over', () {
+      final g = const GameSession(maxRounds: 1).stuck(4, p).stuck(3, p).stuck(5, p).setScore(0, 0, 1);
+      expect((g.isOver, g.total), (true, 9));
+    });
+  });
 }

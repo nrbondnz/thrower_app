@@ -263,6 +263,29 @@ class GameNotifier extends Notifier<Match> {
     state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds));
   }
 
+  /// Score corrections (Nigel, 2026-10-17): [player]'s throw [throwIndex]
+  /// of round [roundIndex] now scores [score]. A game that's over is kept
+  /// again with the new score.
+  void setScore(int player, int roundIndex, int throwIndex, int score) =>
+      _change(state.setScore(player, roundIndex, throwIndex, score));
+
+  /// A throw the camera didn't see (0: a miss), as the next throw at
+  /// [board]; it can end the game as a detected throw would.
+  void addThrow(int score, {int board = 0}) {
+    if (!state.takesThrowAt(board)) return;
+    _change(state.byHand(score, board: board));
+  }
+
+  /// A throw added to [player]'s earlier round [roundIndex], one collected
+  /// early.
+  void addToRound(int player, int roundIndex, int score) => _change(state.addToRound(player, roundIndex, score));
+
+  void _change(Match next) {
+    if (identical(next, state)) return;
+    state = next;
+    if (state.isOver) _keep();
+  }
+
   /// Finish game: ends the match now, with the rounds played so far, and
   /// keeps it in the history. Nothing happens to a game that's over or has
   /// no throws.

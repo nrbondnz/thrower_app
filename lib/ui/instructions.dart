@@ -76,6 +76,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'the app sees someone at the target and starts the next round.',
       'Collecting early ends the round with fewer throws.',
       'After round ${rules.maxRounds} the game is over and shows your final total. Tap New game to play again.',
+      'To stop sooner, tap Finish game (it asks first): the game ends with the rounds played so far, '
+          'including a round in progress, and is kept in History.',
     ]),
     // Players-and-targets story (Nigel, 2026-10-16).
     InstructionSection('Two players on one target', [
@@ -87,6 +89,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'Collecting early ends your turn with fewer throws.',
       'The game ends when both players have played round ${rules.maxRounds}. The higher total wins; '
           'equal totals are a draw.',
+      'If you tap Finish game, the winner is decided on the rounds you have both played. '
+          'A round only one of you has played is shown, but not counted.',
     ]),
     // Players-and-targets story, Task 3. The safety points are Quick draw's
     // (two people throwing at once; Review Agent §7).

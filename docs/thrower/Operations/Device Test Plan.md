@@ -77,7 +77,7 @@ Safety: "Player 2's turn", "Wait for Player 2" and "Collect your knives" follow 
 
 ## History Checks (added 2026-10-17)
 
-For [[story-checkpoint-game-history]] (finished games of Play kept on the phone; Home → History). In the same TestFlight build as the Players and Targets Checks, **1.0.0 (8) or later**. Nigel can do H0–H4 himself on the Samsung from Android Studio: no throwing, only the Live test recordings.
+For [[story-checkpoint-game-history]] (finished games of Play kept on the phone; Home → History). In the same TestFlight build as the Players and Targets Checks, **1.0.0 (8) or later**. Nigel can do H0–H7 himself on the Samsung from Android Studio: no throwing, only the Live test recordings.
 
 | Step | Do | Look for |
 |---|---|---|
@@ -87,6 +87,8 @@ For [[story-checkpoint-game-history]] (finished games of Play kept on the phone;
 | H3 | Close the app fully (swipe it away), open it again → History | The game is still there |
 | H4 | Play another (H1, or 2 players on 1 target), then: open one game and tap the **bin**; then **Clear history** → **Cancel**; then Clear history → **Clear** | The bin removes that game only; Cancel keeps the rest; Clear empties the list, "No games yet" |
 | H5 | Start a game and **Reset game** half-way, or leave Play before it ends → History | Nothing new: only finished games are kept |
+| H6 | Live test → Target 1 → Play, 1 player, **9 rounds**; after round 2's knives are collected in the footage, **Finish game** → Cancel, then Finish game → **Finish** | Cancel: play goes on. Finish: **"Game over after 2 of 9 rounds!"** (or 3, if round 3 had started: it counts) with the total; **New game**; no Finish game button. History: **"2 of 9 rounds"** |
+| H7 | Live test → Target 1 → Play, **2 players, 1 target**; Finish game during **Player 2's** first turn, or just after Player 1's second | The winner on the rounds both have played; Player 1's extra round shows **"(not counted)"**, and "Finished early: judged on 1 of 9 rounds." The same in History |
 
 Nothing in History leaves the phone; deleting the app deletes it.
 

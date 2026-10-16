@@ -133,6 +133,7 @@ class GameRecordScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final totals = game.totals;
+    final counted = game.countedTotals;
     return Scaffold(
       appBar: AppBar(
         title: Text(whenText(game.finishedAt)),
@@ -158,14 +159,17 @@ class GameRecordScreen extends ConsumerWidget {
             for (final (p, rounds) in game.players.indexed) ...[
               const SizedBox(height: 24),
               Text(
-                game.players.length > 1 ? 'Player ${p + 1}: ${totals[p]}' : 'Total: ${totals[p]}',
+                game.players.length > 1 ? 'Player ${p + 1}: ${counted[p]}' : 'Total: ${totals[p]}',
                 key: Key('historyPlayer-$p'),
                 style: theme.textTheme.titleLarge,
               ),
               for (final (r, total) in rounds.indexed)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text('Round ${r + 1}: $total', key: Key('historyRound-$p-$r')),
+                  child: Text(
+                    r < game.countedRounds ? 'Round ${r + 1}: $total' : 'Round ${r + 1}: $total (not counted)',
+                    key: Key('historyRound-$p-$r'),
+                  ),
                 ),
             ],
           ],
@@ -205,23 +209,26 @@ const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 
 String whenText(DateTime at) =>
     '${at.day} ${_months[at.month - 1]}, ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
 
-/// "2 players, 1 target · 5 rounds", with "Live test: Target 1" for a game
-/// played on a recording.
+/// "2 players, 1 target · 5 rounds" ("2 of 5 rounds" if finished early),
+/// with "Live test: Target 1" for a game played on a recording.
 String howText(GameRecord game) => [
       switch (game.mode) {
         PlayMode.solo => '1 player',
         PlayMode.sharedTarget => '2 players, 1 target',
         PlayMode.twoTargets => '2 players, 2 targets',
       },
-      '${game.rounds} rounds',
+      game.finishedEarly ? '${_played(game)} of ${game.rounds} rounds' : '${game.rounds} rounds',
       if (game.recording case final name?) 'Live test: $name',
     ].join(' · ');
 
-/// "Player 2 wins 61–58", "A draw 40–40", or one player's total.
+/// The most rounds anyone played (a finished-early game).
+int _played(GameRecord game) => game.players.map((p) => p.length).reduce((a, b) => a > b ? a : b);
+
+/// "Player 2 wins 61–58", "A draw 40–40", or one player's total. Two
+/// players are judged on equal rounds ([GameRecord.countedTotals]).
 String resultText(GameRecord game) {
-  final totals = game.totals;
-  if (totals.length == 1) return 'Total ${totals.single}';
-  final score = totals.join('–');
+  if (game.players.length == 1) return 'Total ${game.totals.single}';
+  final score = game.countedTotals.join('–');
   return game.draw ? 'A draw $score' : 'Player ${game.winner! + 1} wins $score';
 }
 

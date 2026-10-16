@@ -142,6 +142,8 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 │     replace). A knife falling out after the end re-saves the same   │
 │     record. A failed save → historySaveErrorProvider → a snack bar  │
 │     on Play; play goes on.                                          │
+│   Finish game (asks first): Match.finish → over now, a part-round   │
+│     counted; two players judged on equal rounds → kept as above.    │
 │   Home → History: HistoryScreen → load (newest first) → a game:     │
 │     GameRecordScreen (rounds, totals, Delete); Clear history asks.  │
 └─────────────────────────────────────────────────────────────────────┘

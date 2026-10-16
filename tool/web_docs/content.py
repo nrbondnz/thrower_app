@@ -304,6 +304,7 @@ COMPONENTS = {
             ('stuck · bounceOut · fellOut · boardVisited', 'the events'),
             ('awaitingNextRound · roundNumber · finishedRounds', 'what Play shows'),
             ('Match: playerAt · turn · winner · draw', 'whose throw it is, and who won'),
+            ('finish · countedRounds · countedTotals', 'Finish game: over now, a part-round counted; two players judged on equal rounds'),
             ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score; a finished game is kept in the history'),
         ],
         flows=['play', 'game-history'],
@@ -482,6 +483,7 @@ FLOWS = {
         dek='When a game of Play finishes it is kept on the phone, once. Home → History lists the games; a game shows every round.',
         body=[
             'Saving never holds up play: the record is handed to the history and Play carries on. If the save fails, Play says so in a snack bar.',
+            'Finish game ends a game early: a round in progress counts, and two players are judged on the rounds both have played. History shows "2 of 9 rounds" and marks a round that didn\'t count.',
             'Only finished games are kept. A last-round knife that falls out after the end saves the same game again with the new score, under the time it first finished.',
         ],
         steps=[
