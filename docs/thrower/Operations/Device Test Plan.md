@@ -42,7 +42,7 @@ For [[story-checkpoint-live-quick-draw]]: Nigel can't check the live camera hims
 
 | Step | Do | Look for |
 |---|---|---|
-| Q0 | Open the app | Home shows **Play** ("Rounds on one target") and **Quick draw** ("Two throwers, on a start signal"). Build number. |
+| Q0 | Open the app | Home shows **Play** ("Rounds on one target"; from build 8, "Rounds of 3 throws, 1 or 2 players") and **Quick draw** ("Two throwers, on a start signal"). Build number. |
 | Q1 | Live test → Quick draw (the recording): tap the left bull, then the right, Lock boards, Play | GO! as the footage says go; "Player 2 wins: stuck 5, 0.82 s after go" (about) |
 | Q2 | Home → **Quick draw**: tap Player 1's bull, then Player 2's, Lock boards | Both outlined and numbered, lining up with the rings (screenshot). A wrong outline: Choose boards again |
 | Q3 | **Start**, three times | 5 beeps a second apart with 5 lights, a pause that differs each time (roughly how long?), then the long, higher beep as the lights go out (no GO! on screen since 2026-10-16). Also with the **silent switch on**, and with music playing (it should go quieter, not stop). **Stand 2–4 m in front of the phone, where a thrower would be: can you hear the beeps there?** Do the lights go out at the same moment as the long beep, or noticeably before it? |
@@ -53,6 +53,27 @@ For [[story-checkpoint-live-quick-draw]]: Nigel can't check the live camera hims
 | Q8 | Later, **real knives**: two experienced throwers, in separate lanes, under the venue's rules; a **third person (the starter) taps Start from behind**, with the phone out of reach of a backswing. Nobody goes forward until both have thrown and agree it's clear, whatever the screen shows (walking to the boards in Q4–Q5 is for paper only) | The winner and scores as seen by eye |
 
 Safety: the phone stays behind the throwers, out of both lines of throw and not between the lanes; nobody goes forward until both have finished.
+
+## Players and Targets Checks (added 2026-10-16)
+
+For [[story-checkpoint-players-and-targets]] (Play for 1 or 2 players, on 1 target taking turns or on 2 targets at once): for Nigel's brother, from a TestFlight build **1.0.0 (8) or later** (Mac Handoff section 000). Record them in a message, as for Quick draw.
+
+**Setup:** M1–M2 need nothing (recordings). M3–M4: one A4 printout, the phone as in Setup above (50 cm, 45°, on a tripod). M5–M8: two printouts side by side, the phone behind, as for Quick draw. Pens in Blu Tack stand in for knives; walking up to paper is fine, **with real knives nobody goes forward while anyone is throwing**.
+
+| Step | Do | Look for |
+|---|---|---|
+| M0 | Home → **Play** | A setup screen: **1 player / 2 players**; with 2, **1 target / 2 targets**, each with a line saying what it means; **Start**. 1 player → Start plays as before |
+| M1 | Live test → Target 1 → Calibrate → **2. Play** → 2 players, 1 target → Start | Large **"Player 1's turn"**; after the first round's knives are collected in the footage, **"Player 2's turn"**, and so on; both players' totals. Readable from where a thrower would stand? |
+| M2 | Live test → **Play on two targets** (bottom of the page): tap the left bull, then the right, **Lock boards** | Player 1: a bounce-out (0); Player 2: stuck, **5**, each under its own player |
+| M3 | **Paper, 1 target, 2 players.** Calibrate, Start; press 3 pens in | After the 3rd: **"Collect your knives"**, then "When no one is throwing. Then Player 2's turn." Take the pens out: **"Player 2's turn"**. The marks clear for Player 2 |
+| M4 | Paper, 1 target: Player 1 presses 1 pen, then collects | The turn passes early: "Player 2's turn"; Player 1's round shows one throw |
+| M5 | **Two printouts, 2 targets.** Start; tap Player 1's bull, then Player 2's, Lock boards. 3 pens into board 1 | Marks on board 1 only; **"Wait for Player 2"**. Then 3 pens into board 2: **"Collect your knives"**, "Together, when no one is throwing." Take all pens out: both on round 2 |
+| M6 | 2 targets: wave a hand past board 2 only | A 0 for **Player 2 only**; Player 1's round unchanged |
+| M7 | Optional: a whole 2-player game by hand-waves (either mode) | At the end, **"Player N wins"** or **"A draw"** in large type, every round for both, **New game** |
+| M8 | 2 targets for about 10 minutes | Does the phone get hot? Does the picture stutter? |
+| M9 | Later, **real knives**, 2 targets: two experienced throwers in separate lanes, under the venue's rules, the phone behind them out of both lines of throw. **Collect together, only when both have finished**, whatever the screen shows | Scores as seen by eye, on the right player |
+
+Safety: "Player 2's turn", "Wait for Player 2" and "Collect your knives" follow the scores, not the lanes. With real knives, nobody goes forward until everyone has finished throwing and agrees it's clear.
 
 ## When Results Come Back
 

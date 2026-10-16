@@ -1,14 +1,30 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-15 evening (section 00). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-16 (section 000). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
 
 ---
 
+## 000. Handover 2026-10-16: TestFlight Build 1.0.0 (8), Players and Targets
+
+**Start here** (when Nigel wants build 8; nothing else is pending on the Mac). Section 00 below has the steps; do them with **`1.0.0+8`** in place of `+7`, and commit the bump as e.g. `Build 1.0.0+8 for TestFlight (players and targets)`.
+
+### What's in it since build 7 (all from the PC, pushed to `main`)
+- **Play for 1 or 2 players** ([[story-checkpoint-players-and-targets]]): Home → Play opens a setup screen (1 or 2 players; for 2, 1 target taking turns or 2 targets at once). Two targets: tap and lock both boards, as in Quick draw. Live test → **Play on two targets** plays the Quick draw recording that way.
+- Live Quick draw: **no GO! on screen**; the long, higher beep is the signal.
+- The recording's Quick draw: Play shows only once the boards are locked.
+- Docs: the architecture web pages (`docs/web/`).
+- **No new plugins, permissions or assets.** `flutter test`: 533 pass on the PC (`git pull`, then `flutter test` as in section 00).
+
+### Then
+Nigel sends his brother [[Device Test Plan]] → **Players and Targets Checks** (M0–M9) as well as the Quick Draw Checks (Q0–Q8, still to do). Q3 now asks about the long beep only.
+
+---
+
 ## 00. Handover 2026-10-15 (evening): TestFlight Build 1.0.0 (7) for the Live Quick Draw
 
-**Start here.** Section 0 below is the morning's handover (the recording's Quick draw on Nigel's iPhone), kept as history. This one is the latest.
+Section 0 below is the morning's handover (the recording's Quick draw on Nigel's iPhone), kept as history. Section 000 above is the latest.
 
 ### Why
 The **live** Quick draw is built (story [[story-checkpoint-live-quick-draw]], all 5 tasks), but Nigel can't test the live camera himself: **his brother tests it on his iPhone from TestFlight**. So this build goes to the **Field testers** group. Nothing else is pending on the Mac.

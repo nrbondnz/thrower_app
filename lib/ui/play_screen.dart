@@ -349,10 +349,7 @@ class PlayersPanel extends StatelessWidget {
 /// - Two targets: nothing while both are throwing; "Wait for Player 2" once
 ///   only Player 1's round is complete; "Collect your knives" once both are.
 String? turnText(Match match) {
-  if (match.isOver) {
-    final winner = match.winner;
-    return winner == null ? 'A draw' : 'Player ${winner + 1} wins';
-  }
+  if (match.isOver) return match.draw ? 'A draw' : 'Player ${match.winner! + 1} wins';
   if (match.mode == PlayMode.twoTargets) {
     final waiting = _waitingToCollect(match);
     if (waiting.every((w) => w)) return 'Collect your knives';

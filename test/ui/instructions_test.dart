@@ -45,6 +45,10 @@ void main() {
     expect(text, contains('it never means it is safe to approach'));
   });
 
+  test("says the two-player prompts only follow the scores, never that the lane is clear", () {
+    expect(text, contains('"Collect your knives" only follow the scores. They never mean the lane is clear'));
+  });
+
   test('has the sections testers need, in order', () {
     expect([for (final s in instructionSections(const GameSession(), TargetModel.ikthof())) s.heading], [
       'Setting up',

@@ -137,3 +137,8 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 - **Android: other apps' music stays turned down** from the first Start until Quick draw closes. Android's low-latency player gives no "finished" signal, so each sound keeps its duck-others audio focus until it's next stopped. Harmless; leaving Quick draw restores the music.
 - **Fixed before the first device test:** the sounds were released as soon as they were read (an auto-disposed provider nothing watched), so a real phone would have played no beeps; the screen now keeps them loaded while it's open (`live_quick_draw_screen_test` checks it).
 
+## Two Targets: One Thrower Collecting Early Ends Only Their Round
+
+**Symptom:** on Play with 2 players on 2 targets, one thrower walks up to collect while the other is still throwing; the app shows the first thrower's next round and keeps scoring the other.
+**Cause:** by design, each board is watched on its own ([[story-checkpoint-players-and-targets]], Task 3): a board visit closes only that board's round. The app sees the boards, not the lanes, so it can't stop someone walking up next to a live lane.
+**What to do:** the Instructions say to collect together, when both have finished; the screen says "Wait for Player 2" until both rounds are complete. Nothing to fix in the app; it's a safety rule for the throwers (Review Agent, Task 3).

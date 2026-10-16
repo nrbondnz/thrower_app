@@ -155,6 +155,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'Only go near the board, or the phone, when no one is throwing.',
         'The app cannot tell whether the lane is clear. "Someone is at the board" only means it saw movement there; '
             'it never means it is safe to approach.',
+        'With two players, "Player 2\'s turn", "Wait for Player 2" and "Collect your knives" only follow the scores. '
+            'They never mean the lane is clear: look before you go forward.',
         'Keep the phone and tripod out of the line of throw.',
       ],
     ]),

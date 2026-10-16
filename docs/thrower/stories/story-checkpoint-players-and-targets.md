@@ -7,7 +7,7 @@ Play (rounds of 3 throws) gets a **second screen** after Home → Play: **how ma
 6 (Large): UI → game wiring → camera crops → scoring (3), two models (one player's game, the two-player match) (1), branches by mode (1), more than 3 acceptance criteria (1).
 
 ## Status
-IN PROGRESS: Task 3 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. Task 1 committed (`a1bbd35`), Task 2 (`89aae25`). Plan approved 2026-10-16 ("yes to all, start task 1"): every open question answered as recommended.
+BUILT: all 4 tasks complete (2026-10-16); Tasks 1–3 committed (`a1bbd35`, `89aae25`, `bab4ae9`). **Waiting for the device checks** ([[Device Test Plan]] → Players and Targets Checks, M0–M9, TestFlight 1.0.0 (8) or later, Mac Handoff section 000). Archive the story once they pass, as for the live Quick draw. Plan approved 2026-10-16 ("yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `GameSession` (`lib/scoring/game_session.dart`): one player's game, 9 rounds of 3, immutable; a board visit (collecting knives) closes a round; throwing on without collecting starts the next round.
@@ -97,7 +97,7 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - Web pages: Screens → `PlayScreen`.
 
 ## Task 3: Two players, two targets
-- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-16); Nigel: "commit this and continue to task 4" (`bab4ae9`)
 - **Work:** choose and lock both boards (Quick draw's tapping); a `ThrowWatcher` per board on its own crop; each board's marks and its player's rounds; the end result. The Quick draw clip (both boards) becomes a Live test choice for this mode.
 - **Verify (on this PC):** Live test → the Quick draw clip, 2 players on 2 targets: Player 1's knife is scored on Player 1's line, Player 2's (Mark's) on Player 2's.
 - **Next:** Task 4.
@@ -135,8 +135,43 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - Web pages: a new component page, **PlayBoardsWatcher**, in the game column of the layer diagram; Screens (`TwoTargetPlayScreen`, Live test), Providers (`playTargetsProvider`), the Play flow's caption; Home's Play box now "rounds of 3, 1 or 2 players".
 
 ## Task 4: Instructions, docs, device checks, traceability
+- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
 - **Work:** the in-app Instructions (the modes, turns, lanes, collecting together); Design Decisions, Glossary, Data Flow, System Diagram, the web pages; Device Test Plan → **Players and Targets Checks** for the next TestFlight build; Review Agent §7; Traceability Agent; backlog #5 and #10 updated.
 - **Verify:** Nigel reads the instructions; the checks are ready for his brother.
+- **What changed:**
+  - **Instructions, reviewed whole** (Real board and Paper): Playing a game (players and targets on the setup screen, rounds for each player), **Two players on one target** (Task 2), **Two players on two targets** (Task 3), and in **Safety** a new point: *With two players, "Player 2's turn", "Wait for Player 2" and "Collect your knives" only follow the scores. They never mean the lane is clear: look before you go forward.*
+  - `turnText` uses `Match.draw` (it was used only by tests: the Traceability Agent's orphan check).
+  - **Device Test Plan → Players and Targets Checks** (M0–M9) for Nigel's brother, build 8 or later; Q0's Home caption noted for build 8.
+  - **Mac Handoff section 000:** TestFlight 1.0.0 (8), what's in it since build 7 (this story, no GO! on the live screen, Play only once locked on the recording, the web pages), no new plugins or permissions.
+  - **Known Issues:** *Two Targets: One Thrower Collecting Early Ends Only Their Round* (by design; a safety rule for the throwers).
+  - **Backlog:** #5 players built (history, other game lengths and typed names still to do); #10's "each board's own rounds over a whole game" and "the live camera crop" marked done.
+  - CLAUDE.md and `working-with-nigel.md` point to this story (built, device checks to come).
+- **Verified by:** `flutter test`: 533 passed (2 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-16
+
+### Test Report — 2026-10-16 (Task 4)
+- **New:** `instructions_test` "says the two-player prompts only follow the scores, never that the lane is clear"; `two_target_play_screen_test` "each board's marks are drawn on that board: a knife's entry in its crop, moved by the crop's corner" (`BoardMarksPainter`, with Flutter's `paints` matcher: the gap the traceability check found).
+- **Results:** 533 passed, 0 failed.
+
+### Traceability Report — 2026-10-16 (story complete, before the device checks)
+
+| Req | Requirement | Design reference | Implementation | Tests | Status |
+|---|---|---|---|---|---|
+| AC1 | Play opens a setup screen: 1 / 2 players; for 2, 1 / 2 targets; Start | Design Decisions → Single Player First (update 2026-10-16) | `PlaySetupScreen`, `modeDescription`, `PlayMode`, `playModeProvider` | `play_setup_screen_test` (7); `two_target_play_screen_test` 'Start with 2 players on 2 targets…'; `live_quick_draw_screen_test` 'Play opens the setup screen…' | ✅ (device: M0) |
+| AC2 | 1 player plays exactly as before | same | `PlayScreen` (one-player branch), `Match` solo → one `GameSession` | `play_screen_test` (5, unchanged), `game_notifier_test`, `play_through_test`, `live_replay_test` (both recordings), `match_test` 'one player' | ✅ |
+| AC3 | 2 players, 1 target: whose turn in large type; throws to that player; turn passes after 3 or a collection; both totals; marks clear each turn | same, Task 2 | `Match` (`turn`, `turnThrows`, `turnComplete`, `nextTurn`, `_passTurn`, `nextThrowStartsRound`), `GameNotifier.onEvent`, `PlayersPanel`, `turnText` / `turnDetail` / `playerTitle` / `playerDetail` | `match_test` 'two players on one target' (13); `play_screen_test` 'two players on one target' (3) + 'two-player text' (2); `game_notifier_test` 'one target: throws go to whoever's turn it is'; **`live_replay_test` 'as two players on one target…' (both recordings)** | ✅ (device: M1, M3, M4) |
+| AC4 | 2 players, 2 targets: both boards chosen and locked, each on its crop; each board's throws, collections and fall-outs for its player only; both boards' marks | same, Task 3 | `TwoTargetPlayScreen`, `BoardChoosing.addBoard`, `playTargetsProvider`, `PlayBoardsWatcher`, `cropToBoard`, `Match` two targets, `GameNotifier` knives by (board, id), `BoardMarksPainter` / `paintRoundMarks` | **`two_target_replay_test` (the Quick draw recording: P1 bounce-out 0, P2 stuck 5)**; `two_target_play_screen_test` (15); `game_notifier_test` 'two targets…' (3); `match_test` 'two players on two targets' (3); Quick draw's tests for the shared crop | ✅ (device: M2, M5, M6, M8) |
+| AC5 | At the end: who won or a draw, both totals, large | same | `Match.isOver` / `winner` / `draw`, `turnText` (44 pt), `playerDetail`, `matchFooter`, New game | `match_test` (winner, draw, Player 2 still throws round 9, one finishing first on two targets); `play_screen_test` 'at the end…'; `two_target_play_screen_test` 'the winner at the end' | ✅ (device: M7) |
+| AC6 | Safety: own lanes for two targets, collect together; never told to throw while someone may be at the board | Review Agent Safety Reports (Tasks 2, 3); Known Issues → Two Targets: One Thrower Collecting Early | `turnText` / `turnDetail` ("Collect your knives / When no one is throwing", "Wait for Player 2"); Instructions: Two players on one target, Two players on two targets, Safety | `instructions_test` (3 new: each section, the Safety point); the text tests above | ✅ (device: M9, real knives later) |
+| AC7 | Rules tested without a camera, and each mode's screen | — | — | `match_test` (21), the screen tests above | ✅ |
+
+**Coverage:** 7 of 7 requirements with design, code and tests. **Device checks:** all still to come (M0–M9); nothing here has run on a phone.
+
+**Backward check (code → requirement):** every new class and function traces to AC1–AC6. Found and fixed: `Match.draw` was used only by tests (now used by `turnText`); `BoardMarksPainter` had no test (added). The setup screen's "Coming soon" gating, needed only while modes were being built, was removed in Task 3.
+
+**Not covered, by design:** game history, other game lengths, typed names (backlog #5); drag-to-adjust a board (#10).
+
+**Drift noted, not fixed (out of scope):** none found.
 
 ---
 
@@ -145,6 +180,7 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - **2026-10-16:** Approved, all questions as recommended ("yes to all, start task 1"). Task 1 done.
 - **2026-10-16:** Task 1 committed; Task 2 done ("commit this and continue to task 2").
 - **2026-10-16:** Task 2 committed; Task 3 done ("commit this and continue to task 3").
+- **2026-10-16:** Task 3 committed; Task 4 done ("commit this and continue to task 4"). Story built; waiting for the device checks before archiving.
 
 ## Notes
 - Two people throwing at the same time is already allowed in Quick draw, with separate lanes (its Safety Report). Two-target Play is the same set-up, but for a whole game, including collecting.
