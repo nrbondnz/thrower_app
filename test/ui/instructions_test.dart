@@ -51,12 +51,20 @@ void main() {
       'Calibrating the target',
       'Playing a game',
       'Two players on one target',
+      'Two players on two targets',
       'Scoring',
       'Resetting',
       'Quick draw',
       'Safety',
       'Reporting problems',
     ]);
+  });
+
+  test('two players on two targets: own lanes, phone out of both lines, collect together', () {
+    expect(text, contains('Use separate lanes, each thrower at their own line'));
+    expect(text, contains('out of both lines of throw, not between the lanes'));
+    expect(text, contains('Collect your knives together, when you have both finished and no one is throwing'));
+    expect(paper, contains('It is not played on the paper target.'));
   });
 
   test('two players on one target: take turns, throw only after the other has collected', () {

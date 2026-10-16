@@ -35,6 +35,7 @@ SUB = {
     'throw-watcher': 'motion → throw events',
     'throw-classifier': 'stuck · bounce · fell out · visit',
     'quick-draw-watcher': 'both boards, every frame',
+    'play-boards-watcher': 'Play on two boards',
     'quick-draw-judge': 'first to stick wins',
     'start-signal': '5 beeps, a pause, go',
     'target-model': 'ring scores 5 … 0',
@@ -161,7 +162,7 @@ def overview_svg():
     y = 20
     # UI row
     screens = ['HomeScreen', 'PlayScreen', 'CalibrationScreen', 'LiveTestScreen', 'QuickDrawScreen', 'LiveQuickDrawScreen']
-    subs = ['Play · Quick draw · …', 'rounds on one target', 'find, adjust, lock', 'the recordings', 'the recorded duel', 'the live duel']
+    subs = ['Play · Quick draw · …', 'rounds of 3, 1 or 2 players', 'find, adjust, lock', 'the recordings', 'the recorded duel', 'the live duel']
     parts.append(lane_box(20, y, W - 40, 100, 'ui', lane_label('ui')))
     bw = (W - 40 - 32 - 5 * 12) / 6
     for i, (s, sub) in enumerate(zip(screens, subs)):
@@ -176,7 +177,7 @@ def overview_svg():
     y += 36
     cols = [
         ('camera', 20, 330, ['target-camera', 'live-camera', 'recorded-camera', 'recording-analysis-feed', 'cropped-camera', 'queued-camera']),
-        ('game', 365, 330, ['throw-watcher', 'throw-classifier', 'quick-draw-watcher', 'quick-draw-judge', 'start-signal']),
+        ('game', 365, 330, ['throw-watcher', 'throw-classifier', 'quick-draw-watcher', 'quick-draw-judge', 'start-signal', 'play-boards-watcher']),
         ('scoring', 710, 260, ['target-model', 'game-session']),
         ('auth', 985, 195, ['auth-service']),
     ]
@@ -212,7 +213,7 @@ def overview_svg():
     y += 68
     label = ('Layered architecture of Thrower App. The UI screens read every layer through Riverpod providers. Below them, the camera '
              'layer (TargetCamera and its live, recorded, cropped and queued implementations) feeds the game layer (ThrowWatcher, '
-             'ThrowTracker, QuickDrawWatcher, judgeQuickDraw, StartSignal), which scores through the scoring layer (TargetModel, '
+             'ThrowTracker, QuickDrawWatcher, judgeQuickDraw, StartSignal, PlayBoardsWatcher), which scores through the scoring layer (TargetModel, '
              'GameSession). Vision functions, pure Dart, find the rings, the tapped boards, motion and the entry point. Sound plays the '
              'start signal. Plugins: camera, audioplayers and the Flutter image codec. No backend yet.')
     return (f'<svg viewBox="0 0 {W} {y}" role="img" aria-label="{E(label)}">{DEFS}' + ''.join(parts) + '</svg>'), W

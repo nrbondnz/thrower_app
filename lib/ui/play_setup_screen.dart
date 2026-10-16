@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../scoring/match.dart';
 import 'play_screen.dart';
+import 'two_target_play_screen.dart';
 
 /// The screen after Home → Play (and Live test → Play): **how many players**,
 /// 1 or 2, and for 2, **one target** (taking turns) or **two** (throwing at
@@ -12,10 +13,6 @@ import 'play_screen.dart';
 /// if it changed.
 class PlaySetupScreen extends ConsumerStatefulWidget {
   const PlaySetupScreen({super.key});
-
-  /// The modes Play can run so far (players-and-targets story: two players
-  /// on two targets comes in Task 3).
-  static const playable = {PlayMode.solo, PlayMode.sharedTarget};
 
   @override
   ConsumerState<PlaySetupScreen> createState() => _PlaySetupScreenState();
@@ -34,15 +31,17 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
           : PlayMode.twoTargets;
 
   void _start() {
-    ref.read(playModeProvider.notifier).choose(_mode);
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PlayScreen()));
+    final mode = _mode;
+    ref.read(playModeProvider.notifier).choose(mode);
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => mode == PlayMode.twoTargets ? const TwoTargetPlayScreen() : const PlayScreen(),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mode = _mode;
-    final playable = PlaySetupScreen.playable.contains(mode);
     return Scaffold(
       appBar: AppBar(title: const Text('Play')),
       body: SafeArea(
@@ -80,13 +79,9 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
             const SizedBox(height: 24),
             FilledButton(
               key: const Key('playStart'),
-              onPressed: playable ? _start : null,
+              onPressed: _start,
               child: const Text('Start'),
             ),
-            if (!playable) ...[
-              const SizedBox(height: 8),
-              Text('Coming soon.', key: const Key('playComingSoon'), style: theme.textTheme.bodySmall),
-            ],
           ],
         ),
       ),

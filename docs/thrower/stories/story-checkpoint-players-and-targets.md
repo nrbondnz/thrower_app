@@ -7,7 +7,7 @@ Play (rounds of 3 throws) gets a **second screen** after Home → Play: **how ma
 6 (Large): UI → game wiring → camera crops → scoring (3), two models (one player's game, the two-player match) (1), branches by mode (1), more than 3 acceptance criteria (1).
 
 ## Status
-IN PROGRESS: Task 2 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. Task 1 committed (`a1bbd35`). Plan approved 2026-10-16 ("yes to all, start task 1"): every open question answered as recommended.
+IN PROGRESS: Task 3 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. Task 1 committed (`a1bbd35`), Task 2 (`89aae25`). Plan approved 2026-10-16 ("yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `GameSession` (`lib/scoring/game_session.dart`): one player's game, 9 rounds of 3, immutable; a board visit (collecting knives) closes a round; throwing on without collecting starts the next round.
@@ -64,7 +64,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - Instructions: one sentence updated; the two-player sections come with Tasks 2–4.
 
 ## Task 2: Two players, one target
-- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-16); Nigel: "commit this and continue to task 3" (`89aae25`)
 - **Work:** Play shows whose turn it is (large), both players' round lines and totals; marks clear at each turn; the end result with the winner. **Review Agent** on the wording.
 - **Verify (on this PC, no phone):** Live test → Target 1 as 2 players on 1 target: the recording's rounds go to Player 1, Player 2, Player 1, … and the totals add up to the recording's answer key split the same way.
 - **Next:** Task 3.
@@ -97,9 +97,42 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - Web pages: Screens → `PlayScreen`.
 
 ## Task 3: Two players, two targets
+- **Status:** COMPLETE (2026-10-16), awaiting Nigel's checkpoint
 - **Work:** choose and lock both boards (Quick draw's tapping); a `ThrowWatcher` per board on its own crop; each board's marks and its player's rounds; the end result. The Quick draw clip (both boards) becomes a Live test choice for this mode.
 - **Verify (on this PC):** Live test → the Quick draw clip, 2 players on 2 targets: Player 1's knife is scored on Player 1's line, Player 2's (Mark's) on Player 2's.
 - **Next:** Task 4.
+- **What changed:**
+  - `lib/game/board_crop.dart` (new): `cropToBoard`, the board-square crop that was inside `QuickDrawWatcher.start`, now shared (Quick draw's tests unchanged and passing).
+  - `lib/game/play_boards_watcher.dart` (new): `PlayBoardsWatcher` (a `ThrowWatcher` per board on its crop, at Play's usual pace, for a whole game) and `BoardThrowEvent(board, event, calibration)`.
+  - `lib/providers.dart`: `playTargetsProvider` (`PlayTargetsNotifier`, a `QuickDrawTargetsNotifier` kept for the session and reset when the camera changes).
+  - `lib/ui/quick_draw_boards.dart`: `BoardChoosing.addBoard` (Quick draw's provider by default), so Play can keep its own boards.
+  - `lib/ui/two_target_play_screen.dart` (new): `TwoTargetPlayScreen`: tap Player 1's board, Player 2's, Lock boards; camera set to 1×; each board's marks (`BoardMarksPainter`); `boardsStateText`; `PlayersPanel`; `boardMessage`; Choose boards again (keeps the scores); Reset game / New game; the Live test recording's restart button.
+  - `lib/ui/play_screen.dart`: `PlayersPanel` (public), `turnText` / `turnDetail` for two targets ("Wait for Player 2" / "Then collect your knives together."; "Collect your knives" / "Together, when no one is throwing."; nothing while both throw), both players highlighted while playing; `eventMessage` and `paintRoundMarks` pulled out to share.
+  - `lib/ui/play_setup_screen.dart`: 2 targets opens `TwoTargetPlayScreen`; every mode is playable, so the "Coming soon" gating is removed.
+  - `lib/ui/live_test_screen.dart`: **Two targets → Play on two targets** (below Quick draw): plays the Quick draw recording in this mode. (First placed above Quick draw; that pushed the Quick draw button off the bottom of the test screen and 11 Quick draw screen tests failed, so it went below.)
+  - Instructions: new section **Two players on two targets** (phone behind the throwers out of both lines of throw, not between the lanes, out of reach of a backswing; choose and lock before anyone throws; separate lanes; wait for the other player and collect together; the end). Paper: not played on paper.
+- **Verified by:** `flutter test`: 531 passed (16 new), `flutter analyze`: no issues. **The Quick draw recording through two-target Play's own path** (`two_target_replay_test`: recorded camera → `PlayBoardsWatcher` from the first frame → `GameNotifier` in two-target mode): **Player 1 (left): one throw, a bounce-out, 0; Player 2 (right, Mark): one throw, stuck, 5**, as the answer key; nothing else taken for a throw. The panel rendered in a widget test ("Wait for Player 2" with both players) and checked by eye. Not run on a phone.
+- **Files changed:** above, plus tests below.
+- **Checkpoint saved:** 2026-10-16
+
+### Test Report — 2026-10-16 (Task 3)
+- **New:** `test/game/two_target_replay_test.dart` (2: each player's one throw, as the answer key); `test/ui/two_target_play_screen_test.dart` (14: choosing in order into Play's own boards, not Quick draw's; locked shows both players and each board's state, no headline; boards kept on leaving and coming back; Choose boards again keeps the scores; camera back to 1×; Setup → 2 targets opens it; Live test → Play on two targets plays the Quick draw recording; text: no headline while both throw, wait for the other, collect together, back to none once collected, the winner, a board's message names its player, short watch states); `instructions_test` (the new section).
+- **Removed:** `play_setup_screen_test` 'two targets is not playable yet' (it is now).
+- **Results:** 531 passed, 0 failed.
+
+### Safety Report — 2026-10-16 (Task 3, Review Agent)
+- **Files reviewed:** `lib/ui/two_target_play_screen.dart`, `lib/ui/play_screen.dart` (`turnText` / `turnDetail`), `lib/ui/instructions.dart` (Two players on two targets), `lib/game/play_boards_watcher.dart`.
+- ✅ §1–5, 8: no platform, permission, plugin, secret or data change; frames stay in memory, as before.
+- ✅ §6: two `ThrowWatcher`s at Play's pace (at most every 60 ms each) on small crops, the same work as Quick draw's watching; the full-resolution copies are of the crops. To measure on a phone (Device Test Plan, Task 4).
+- ✅ §7: two people throwing at once: the Instructions repeat Quick draw's set-up (separate lanes, phone behind the throwers, out of both lines of throw, not between the lanes, out of reach of a backswing); boards chosen and locked before anyone throws; the app never prompts one thrower to collect while the other may still be throwing ("Wait for Player 2", then "Collect your knives / Together, when no one is throwing."). It still can't see the lanes, which the Safety section says.
+- ⚠️ Noted, not blocking: a board visit is seen per board. If one thrower walks up early, the app records their round as collected; the other thrower is still throwing next to them. The Instructions say to collect together; the app can't stop it.
+- **Verdict:** OK to commit.
+
+### Doc Update — 2026-10-16 (Task 3)
+- `Architecture/Design Decisions.md` → Single Player First, update: Task 3 (choosing and keeping the boards, 1×, watching, what the panel says, Live test, safety).
+- `Architecture/Glossary.md`: `PlayBoardsWatcher`, `cropToBoard`, `TwoTargetPlayScreen`, `playTargetsProvider`; the panel's two-target text.
+- `Architecture/System Diagram.md`: `playTargetsProvider` (71 characters).
+- Web pages: a new component page, **PlayBoardsWatcher**, in the game column of the layer diagram; Screens (`TwoTargetPlayScreen`, Live test), Providers (`playTargetsProvider`), the Play flow's caption; Home's Play box now "rounds of 3, 1 or 2 players".
 
 ## Task 4: Instructions, docs, device checks, traceability
 - **Work:** the in-app Instructions (the modes, turns, lanes, collecting together); Design Decisions, Glossary, Data Flow, System Diagram, the web pages; Device Test Plan → **Players and Targets Checks** for the next TestFlight build; Review Agent §7; Traceability Agent; backlog #5 and #10 updated.
@@ -111,6 +144,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-16), waiting for Nigel's checkpoint. 
 - **2026-10-16:** Planned. Waiting for Nigel's approval and answers to the open questions.
 - **2026-10-16:** Approved, all questions as recommended ("yes to all, start task 1"). Task 1 done.
 - **2026-10-16:** Task 1 committed; Task 2 done ("commit this and continue to task 2").
+- **2026-10-16:** Task 2 committed; Task 3 done ("commit this and continue to task 3").
 
 ## Notes
 - Two people throwing at the same time is already allowed in Quick draw, with separate lanes (its Safety Report). Two-target Play is the same set-up, but for a whole game, including collecting.

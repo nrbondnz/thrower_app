@@ -12,9 +12,9 @@ import '../providers.dart';
 import '../vision/ellipse.dart';
 import '../vision/target_calibration.dart';
 
-/// Choosing Quick draw's boards, shared by the live and recorded screens:
-/// tap the centre of Player 1's board, then Player 2's (each is found and
-/// outlined), then lock them.
+/// Choosing two boards, shared by the Quick draw screens and two-target
+/// Play: tap the centre of Player 1's board, then Player 2's (each is found
+/// and outlined), then lock them.
 mixin BoardChoosing<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   /// Looking for a board at the last tap.
   var searching = false;
@@ -31,12 +31,16 @@ mixin BoardChoosing<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     });
     final board = boardAt(await ref.read(tapLocatorProvider)(camera, tap));
     if (!mounted) return;
-    if (board != null) ref.read(quickDrawTargetsProvider.notifier).add(board);
+    if (board != null) addBoard(board);
     setState(() {
       searching = false;
       missed = board == null;
     });
   }
+
+  /// Keeps a found board as the next player's: Quick draw's by default;
+  /// two-target Play keeps its own ([playTargetsProvider]).
+  void addBoard(TargetCalibration board) => ref.read(quickDrawTargetsProvider.notifier).add(board);
 
   /// What to do next while choosing; [locked] once the boards are locked.
   String choosingInstruction(QuickDrawTargets targets, {required String locked}) {

@@ -10,6 +10,7 @@ import '../game/throw_watcher.dart';
 import '../providers.dart';
 import '../scoring/game_session.dart';
 import '../scoring/match.dart';
+import '../vision/ellipse.dart';
 import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
 import '../vision/throw_classifier.dart';
@@ -65,20 +66,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     final score = match.players[match.playerAt(0)].currentRound?.throws.lastOrNull?.score ?? 0;
     setState(() {
       _marks.apply(event, score: score, newRound: newRound);
-      switch (event.outcome.kind) {
-        case ThrowOutcomeKind.stuck:
-          _message = event.entry == null ? "Stuck, but couldn't see where it went in." : null;
-        case ThrowOutcomeKind.bounceOut:
-          _message = 'Bounced off: 0.';
-        case ThrowOutcomeKind.fellOut:
-          _message = 'A knife fell out: it scores 0.';
-        case ThrowOutcomeKind.boardVisit:
-          _message = null;
-        case ThrowOutcomeKind.sceneChanged:
-          _message = 'The view changed (lights? camera moved?). Re-calibrate if the rings no longer line up.';
-        case ThrowOutcomeKind.nothing:
-          break;
-      }
+      _message = eventMessage(event, previous: _message);
     });
   }
 
@@ -216,7 +204,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       style: const TextStyle(color: Colors.white70),
                     ),
                   ] else
-                    _PlayersPanel(match: match, message: _message),
+                    PlayersPanel(match: match, message: _message),
                   if (camera is RecordedCamera) ...[
                     const SizedBox(height: 12),
                     ValueListenableBuilder(
@@ -282,10 +270,22 @@ String gameText(GameSession game, {String? message}) {
   return lines.join('\n');
 }
 
-/// Two players: whose turn it is (or who won) in large type, to read from
-/// the throwing line, then each player's total and round.
-class _PlayersPanel extends StatelessWidget {
-  const _PlayersPanel({required this.match, this.message});
+/// What Play says about a board's [event], under the scores; [previous]
+/// stays when the event changes nothing.
+String? eventMessage(ThrowEvent event, {String? previous}) => switch (event.outcome.kind) {
+      ThrowOutcomeKind.stuck => event.entry == null ? "Stuck, but couldn't see where it went in." : null,
+      ThrowOutcomeKind.bounceOut => 'Bounced off: 0.',
+      ThrowOutcomeKind.fellOut => 'A knife fell out: it scores 0.',
+      ThrowOutcomeKind.boardVisit => null,
+      ThrowOutcomeKind.sceneChanged =>
+        'The view changed (lights? camera moved?). Re-calibrate if the rings no longer line up.',
+      ThrowOutcomeKind.nothing => previous,
+    };
+
+/// Two players: whose turn it is, what to do (or who won) in large type, to
+/// read from the throwing line, then each player's total and round.
+class PlayersPanel extends StatelessWidget {
+  const PlayersPanel({super.key, required this.match, this.message});
 
   final Match match;
   final String? message;
@@ -293,19 +293,21 @@ class _PlayersPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final footer = matchFooter(match, message: message);
+    final headline = turnText(match);
     final detail = turnDetail(match);
     return Column(
       children: [
-        Text(
-          turnText(match),
-          key: const Key('turnText'),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: match.isOver ? Colors.greenAccent : Colors.yellowAccent,
-            fontSize: match.isOver ? 44 : 32,
-            fontWeight: FontWeight.w900,
+        if (headline != null)
+          Text(
+            headline,
+            key: const Key('turnText'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: match.isOver ? Colors.greenAccent : Colors.yellowAccent,
+              fontSize: match.isOver ? 44 : 32,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-        ),
         if (detail != null)
           Text(detail, key: const Key('turnDetail'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.yellowAccent, fontSize: 18)),
         const SizedBox(height: 8),
@@ -333,27 +335,52 @@ class _PlayersPanel extends StatelessWidget {
     );
   }
 
-  /// The player throwing now, or the winner.
-  bool _highlighted(int player) => match.isOver ? match.winner == player : match.turn == player;
+  /// The player throwing now (both, on two targets), or the winner.
+  bool _highlighted(int player) => match.isOver
+      ? match.winner == player
+      : match.mode == PlayMode.twoTargets || match.turn == player;
 }
 
-/// Two players: the big line, kept short to read from the throwing line.
-/// "Player 1's turn"; once a turn has all its throws, "Collect your knives"
-/// (no one is told to throw while someone may be at the board); at the end,
-/// "Player 2 wins" or "A draw".
-String turnText(Match match) {
+/// Two players: the big line, kept short to read from the throwing line; at
+/// the end, "Player 2 wins" or "A draw". No one is told to throw while
+/// someone may be at a board.
+/// - One target: "Player 1's turn"; once a turn has all its throws,
+///   "Collect your knives".
+/// - Two targets: nothing while both are throwing; "Wait for Player 2" once
+///   only Player 1's round is complete; "Collect your knives" once both are.
+String? turnText(Match match) {
   if (match.isOver) {
     final winner = match.winner;
     return winner == null ? 'A draw' : 'Player ${winner + 1} wins';
+  }
+  if (match.mode == PlayMode.twoTargets) {
+    final waiting = _waitingToCollect(match);
+    if (waiting.every((w) => w)) return 'Collect your knives';
+    if (waiting.any((w) => w)) return 'Wait for Player ${waiting.indexOf(false) + 1}';
+    return null;
   }
   if (match.turnComplete) return 'Collect your knives';
   return "Player ${match.turn + 1}'s turn";
 }
 
-/// Under [turnText] when the knives are to be collected: "When no one is
-/// throwing. Then Player 2's turn."; otherwise nothing.
-String? turnDetail(Match match) =>
-    !match.isOver && match.turnComplete ? "When no one is throwing. Then Player ${match.nextTurn + 1}'s turn." : null;
+/// Under [turnText]: when to collect, and who's next. One target: "When no
+/// one is throwing. Then Player 2's turn."; two targets: "Together, when no
+/// one is throwing." or "Then collect your knives together."
+String? turnDetail(Match match) {
+  if (match.isOver) return null;
+  if (match.mode == PlayMode.twoTargets) {
+    final waiting = _waitingToCollect(match);
+    if (waiting.every((w) => w)) return 'Together, when no one is throwing.';
+    if (waiting.any((w) => w)) return 'Then collect your knives together.';
+    return null;
+  }
+  return match.turnComplete ? "When no one is throwing. Then Player ${match.nextTurn + 1}'s turn." : null;
+}
+
+/// Two targets: each player's round is complete and their knives are still
+/// to be collected (or their game is over).
+List<bool> _waitingToCollect(Match match) =>
+    [for (final g in match.players) g.roundComplete && !g.awaitingNextRound];
 
 /// "Player 1: 23", the player's game total.
 String playerTitle(Match match, int player) => 'Player ${player + 1}: ${match.players[player].total}';
@@ -399,25 +426,36 @@ class PlayOverlayPainter extends CustomPainter {
       }
       canvas.drawPath(path, ring);
     }
-    for (final (point, score) in marks.knives.values) {
-      _mark(canvas, Offset(point.x * scale, point.y * scale), '$score', Colors.yellowAccent);
-    }
-    for (var i = 0; i < marks.beside.length; i++) {
-      final p = besidePosition(calibration.outer, i, imageWidth: calibration.imageWidth, radius: radius / scale);
-      _mark(canvas, Offset(p.x * scale, p.y * scale), marks.beside[i], Colors.orangeAccent);
-    }
-  }
-
-  void _mark(Canvas canvas, Offset at, String text, Color colour) {
-    canvas.drawCircle(at, radius, Paint()..color = Colors.black);
-    canvas.drawCircle(at, radius - 2, Paint()..color = colour);
-    final label = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.bold)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    label.paint(canvas, at - Offset(label.width / 2, label.height / 2));
+    paintRoundMarks(canvas, marks, calibration, scale: scale);
   }
 
   @override
   bool shouldRepaint(PlayOverlayPainter old) => true;
+}
+
+/// [marks] for the board [calibration] (image pixels × [scale] = screen):
+/// a yellow circle with its score at each knife's entry, and the "0" marks
+/// beside the board. [offset] is added to the knives' entry points first
+/// (two targets: they're in the board's crop, the board in the picture).
+void paintRoundMarks(Canvas canvas, RoundMarks marks, TargetCalibration calibration,
+    {required double scale, Point2 offset = const Point2(0, 0)}) {
+  const radius = PlayOverlayPainter.radius;
+  for (final (point, score) in marks.knives.values) {
+    _paintMark(canvas, Offset((point.x + offset.x) * scale, (point.y + offset.y) * scale), '$score', Colors.yellowAccent);
+  }
+  for (var i = 0; i < marks.beside.length; i++) {
+    final p = besidePosition(calibration.outer, i, imageWidth: calibration.imageWidth, radius: radius / scale);
+    _paintMark(canvas, Offset(p.x * scale, p.y * scale), marks.beside[i], Colors.orangeAccent);
+  }
+}
+
+void _paintMark(Canvas canvas, Offset at, String text, Color colour) {
+  const radius = PlayOverlayPainter.radius;
+  canvas.drawCircle(at, radius, Paint()..color = Colors.black);
+  canvas.drawCircle(at, radius - 2, Paint()..color = colour);
+  final label = TextPainter(
+    text: TextSpan(text: text, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.bold)),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  label.paint(canvas, at - Offset(label.width / 2, label.height / 2));
 }

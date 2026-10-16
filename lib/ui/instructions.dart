@@ -87,6 +87,25 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'The game ends when both players have played round ${rules.maxRounds}. The higher total wins; '
           'equal totals are a draw.',
     ]),
+    // Players-and-targets story, Task 3. The safety points are Quick draw's
+    // (two people throwing at once; Review Agent §7).
+    InstructionSection('Two players on two targets', [
+      if (paper)
+        'Two targets is for two real boards side by side. It is not played on the paper target.'
+      else ...[
+        'Choose 2 players and 2 targets: a board each, side by side, both throwing at the same time.',
+        'Put the phone on its stand behind the throwers, where it sees both boards: out of both lines of throw, '
+            'not between the lanes, and out of reach of a backswing.',
+        "Before anyone throws, tap the centre of Player 1's board, then Player 2's, then Lock boards. "
+            'If an outline is wrong, tap Choose boards again.',
+        'Each board scores for its own player. Use separate lanes, each thrower at their own line, '
+            "under your venue's rules for throwing side by side.",
+        'If you finish your round first, wait: the screen says to wait for the other player. '
+            'Collect your knives together, when you have both finished and no one is throwing.',
+        'The game ends when both players have played round ${rules.maxRounds}. The higher total wins; '
+            'equal totals are a draw.',
+      ],
+    ]),
     InstructionSection('Scoring', [
       'Rings score ${ringScores.first} for the centre, then ${ringScores.sublist(1, ringScores.length - 1).join(', ')}, '
           'and ${ringScores.last} for the outer ring. Outside the rings scores 0.',

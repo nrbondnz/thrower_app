@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../camera/recorded_camera.dart';
 import '../providers.dart';
+import '../scoring/match.dart';
 import 'calibration_screen.dart';
 import 'play_setup_screen.dart';
 import 'quick_draw_screen.dart';
+import 'two_target_play_screen.dart';
 
 /// Live test: plays a recording of a real board in place of the camera,
 /// through the same calibrate → Play screens, analysed live as it plays.
@@ -73,6 +75,21 @@ class LiveTestScreen extends ConsumerWidget {
               OutlinedButton(
                 onPressed: () => open(const QuickDrawScreen()),
                 child: const Text('Quick draw'),
+              ),
+              const SizedBox(height: 32),
+              Text('Two targets', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              const Text('Play for 2 players on 2 targets, on the Quick draw recording (both boards): '
+                  "tap Player 1's board, then Player 2's, then Lock boards."),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                key: const Key('liveTestTwoTargets'),
+                onPressed: () {
+                  ref.read(recordingChoiceProvider.notifier).use(quickDrawRecording);
+                  ref.read(playModeProvider.notifier).choose(PlayMode.twoTargets);
+                  open(const TwoTargetPlayScreen());
+                },
+                child: const Text('Play on two targets'),
               ),
             ],
           ),

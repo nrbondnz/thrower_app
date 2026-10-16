@@ -17,7 +17,7 @@ LANES = {
 COMPONENTS = {
     'screens': dict(
         name='Screens', lane='ui', type='Flutter widgets',
-        files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/calibration_screen.dart',
+        files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
                'lib/ui/quick_draw_boards.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
         trigger='The user, from Home',
@@ -32,7 +32,8 @@ COMPONENTS = {
             ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); Start'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
-            ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw'),
+            ('TwoTargetPlayScreen', "two players on two targets: tap and lock both boards, each board's marks, Wait for Player 2 / Collect your knives, the winner"),
+            ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)'),
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
@@ -57,6 +58,7 @@ COMPONENTS = {
             ('gameProvider (GameNotifier)', 'onEvent(board) → Match → a GameSession per player'),
             ('targetModelProvider · ringBoundaryRadiiProvider', 'the IKTHOF rings'),
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),
+            ('playTargetsProvider', "two-target Play's boards, kept for the session"),
             ('signalSoundsProvider · startScheduleProvider', 'the beeps, and a new random pause each duel'),
             ('authServiceProvider', 'the account interface (no provider chosen yet)'),
         ],
@@ -318,6 +320,20 @@ COMPONENTS = {
         ],
         flows=['quick-draw-recording', 'live-quick-draw'],
     ),
+    'play-boards-watcher': dict(
+        name='PlayBoardsWatcher', lane='game', type='Class', files=['lib/game/play_boards_watcher.dart', 'lib/game/board_crop.dart'],
+        trigger='Two-target Play, once the boards are locked',
+        dek='Watches both boards for a whole game of Play, each on its own crop with the single-board throw detection, and reports every event with the board it came from.',
+        body=[
+            "Each board is cut out with <code>cropToBoard</code> (shared with <code>QuickDrawWatcher</code>) and watched by its own <code>ThrowWatcher</code> at Play's usual pace. Each event goes to <code>GameNotifier.onEvent(board:)</code>, so a board's throws, collections and falling-out knives count only for its own player.",
+        ],
+        functions=[
+            ('start', 'per board: cropToBoard (4 radii) + ThrowWatcher'),
+            ('events', "BoardThrowEvent(board, event, the board's calibration in its crop)"),
+            ('crops · states', "where each board's marks go · each board's watch state"),
+        ],
+        flows=['play'],
+    ),
     'quick-draw-judge': dict(
         name='judgeQuickDraw', lane='game', type='Function', files=['lib/game/quick_draw_judge.dart'],
         trigger='Once both throws are in (or time is up)',
@@ -437,8 +453,8 @@ FLOWS = {
             ('scoring', 'GameNotifier → Match → GameSession', ['entry → TargetMapping → TargetModel → score', 'bounce-out 0 · fell out → 0 · visit closes the round', '9 rounds × 3 throws, for each player'], 'game-session', None),
             ('ui', 'PlayScreen', ['score marks where the knives went in, round and game totals'], 'screens', None),
         ],
-        caption='A board visit (someone collecting knives) is recognised by size: people cover 4% of the region and up, knives up to 2.2%.',
-        files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/ui/play_screen.dart'],
+        caption='A board visit (someone collecting knives) is recognised by size: people cover 4% of the region and up, knives up to 2.2%. On two targets, PlayBoardsWatcher runs this for each board on its own crop, and each board scores for its own player.',
+        files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/ui/play_screen.dart', 'lib/game/play_boards_watcher.dart', 'lib/ui/two_target_play_screen.dart'],
     ),
     'choosing-boards': dict(
         title='Quick draw: choosing the boards by tapping', cat='flow', lane='ui',

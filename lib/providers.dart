@@ -92,6 +92,21 @@ class QuickDrawTargetsNotifier extends Notifier<QuickDrawTargets> {
 final quickDrawTargetsProvider =
     NotifierProvider.autoDispose<QuickDrawTargetsNotifier, QuickDrawTargets>(QuickDrawTargetsNotifier.new);
 
+/// Two-target Play's boards, tapped Player 1 then Player 2 and locked, as in
+/// Quick draw but kept for the session (like [calibrationProvider]), so
+/// leaving Play and coming back keeps them. They belong to the camera they
+/// were found with, so switching between the live camera and a recording
+/// starts over.
+class PlayTargetsNotifier extends QuickDrawTargetsNotifier {
+  @override
+  QuickDrawTargets build() {
+    ref.watch(recordingChoiceProvider);
+    return const QuickDrawTargets();
+  }
+}
+
+final playTargetsProvider = NotifierProvider<PlayTargetsNotifier, QuickDrawTargets>(PlayTargetsNotifier.new);
+
 /// Finds the board at a tap; tests replace it.
 final tapLocatorProvider = Provider<TapLocator>(
   (ref) => (camera, tap) => locateAtTap(camera, tap, ref.read(ringBoundaryRadiiProvider)),

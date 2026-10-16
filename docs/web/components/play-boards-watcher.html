@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlayBoardsWatcher — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--game);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Game · Component</span>
+    <h1>PlayBoardsWatcher</h1>
+    <p class="dek">Watches both boards for a whole game of Play, each on its own crop with the single-board throw detection, and reports every event with the board it came from.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Class</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/game/play_boards_watcher.dart</code><br><code>lib/game/board_crop.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Two-target Play, once the boards are locked</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>Each board is cut out with <code>cropToBoard</code> (shared with <code>QuickDrawWatcher</code>) and watched by its own <code>ThrowWatcher</code> at Play's usual pace. Each event goes to <code>GameNotifier.onEvent(board:)</code>, so a board's throws, collections and falling-out knives count only for its own player.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>start</code></dt><dd>per board: cropToBoard (4 radii) + ThrowWatcher</dd></div>
+    <div><dt><code>events</code></dt><dd>BoardThrowEvent(board, event, the board&#x27;s calibration in its crop)</dd></div>
+    <div><dt><code>crops · states</code></dt><dd>where each board&#x27;s marks go · each board&#x27;s watch state</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/play.html">
+      <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
+      <h3>A throw → a score (Play)</h3>
+      <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/game/play_boards_watcher.dart · lib/game/board_crop.dart</footer>
+</div>
+</body>
+</html>

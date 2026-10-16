@@ -37,8 +37,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500)); // The page transition.
   }
 
-  bool startEnabled(WidgetTester tester) => tester.widget<FilledButton>(find.byKey(const Key('playStart'))).onPressed != null;
-
   String description(WidgetTester tester) => tester.widget<Text>(find.byKey(const Key('playModeDescription'))).data!;
 
   testWidgets('starts on 1 player, with no target choice', (tester) async {
@@ -72,19 +70,9 @@ void main() {
   testWidgets('Start with 2 players on 1 target opens Play taking turns', (tester) async {
     await pumpSetup(tester);
     await tapSegment(tester, '2 players');
-    expect(find.text('Coming soon.'), findsNothing);
     await start(tester);
     expect(find.byType(PlayScreen), findsOneWidget);
     expect(container.read(gameProvider).mode, PlayMode.sharedTarget);
-  });
-
-  // Players-and-targets story: two players on two targets comes in Task 3.
-  testWidgets('two targets is not playable yet', (tester) async {
-    await pumpSetup(tester);
-    await tapSegment(tester, '2 players');
-    await tapSegment(tester, '2 targets');
-    expect(startEnabled(tester), isFalse);
-    expect(find.text('Coming soon.'), findsOneWidget);
   });
 
   testWidgets('opens on the last choice', (tester) async {

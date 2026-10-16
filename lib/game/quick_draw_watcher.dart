@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
-import '../camera/cropped_camera.dart';
 import '../camera/queued_camera.dart';
 import '../camera/target_camera.dart';
 import '../scoring/target_model.dart';
@@ -11,6 +9,7 @@ import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
 import '../vision/target_mapping.dart';
 import '../vision/throw_classifier.dart';
+import 'board_crop.dart';
 import 'throw_watcher.dart';
 
 /// How long before "go" Quick draw starts analysing: a knife any earlier
@@ -39,7 +38,7 @@ class QuickDrawThrow {
 }
 
 /// Watches each Quick draw board with the single-board throw detection
-/// ([ThrowWatcher]) on its own crop of the picture ([CroppedCamera]), looking
+/// ([ThrowWatcher]) on its own crop of the picture ([cropToBoard]), looking
 /// at **every** frame (timing needs it), and keeps each player's first throw
 /// (stuck or bounce-out) in [throws], in player order.
 class QuickDrawWatcher {
@@ -52,8 +51,7 @@ class QuickDrawWatcher {
   final List<TargetCalibration> boards;
   final TargetModel model;
 
-  /// Each crop's side in board radii: the watched region is 3 radii wide
-  /// (`WatchRegion.fromCalibration`), so this leaves room around it.
+  /// Each crop's side in board radii ([cropToBoard]).
   final double cropRadii;
 
   /// Keep every frame's board crops in a queue ([QueuedCamera]) and analyse
@@ -76,12 +74,7 @@ class QuickDrawWatcher {
   void start() {
     if (_watchers.isNotEmpty) return;
     for (final (player, board) in boards.indexed) {
-      final o = board.outer;
-      final side = math.min((cropRadii * (o.semiMajor + o.semiMinor) / 2).round(), math.min(board.imageWidth, board.imageHeight)) & ~1;
-      final x = math.max(0, math.min((o.cx - side / 2).round(), board.imageWidth - side));
-      final y = math.max(0, math.min((o.cy - side / 2).round(), board.imageHeight - side));
-      final crop = CroppedCamera(camera, x: x, y: y, width: side, height: side);
-      final calibration = board.within(crop.x, crop.y, crop.width, crop.height);
+      final (camera: crop, :calibration) = cropToBoard(camera, board, cropRadii: cropRadii);
       final watched = queue ? QueuedCamera(crop) : crop;
       if (watched is QueuedCamera) queues.add(watched);
       final watcher = ThrowWatcher(watched, calibration, interval: Duration.zero)..start();
