@@ -47,14 +47,18 @@ class RoundRecord {
 /// - A board visit (someone at the board: collecting knives) closes the
 ///   current round if it has any throws.
 /// - A knife that falls out turns its throw into [ThrowResult.fellOut], 0.
-/// - The game is over once round [maxRounds] is complete; later throws are
-///   ignored until a new game.
+/// - The game is over once round [maxRounds] is complete, or when it's
+///   [finish]ed early; later throws are ignored until a new game.
 class GameSession {
-  const GameSession({this.throwsPerRound = 3, this.maxRounds = 9, this.rounds = const []});
+  const GameSession({this.throwsPerRound = 3, this.maxRounds = 9, this.rounds = const [], this.finished = false});
 
   final int throwsPerRound;
   final int maxRounds;
   final List<RoundRecord> rounds;
+
+  /// Ended with Finish game, possibly before round [maxRounds] (Nigel,
+  /// 2026-10-17). A round in progress counts, with the throws made so far.
+  final bool finished;
 
   int get total => rounds.fold(0, (sum, r) => sum + r.total);
 
@@ -66,8 +70,12 @@ class GameSession {
     return r != null && (r.closed || r.throws.length >= throwsPerRound);
   }
 
-  /// The last round is complete: the game is over.
-  bool get isOver => rounds.length >= maxRounds && roundComplete;
+  /// The last round is complete, or the game was finished: it's over.
+  bool get isOver => finished || (rounds.length >= maxRounds && roundComplete);
+
+  /// Finished before its last round: fewer rounds than [maxRounds], or the
+  /// last one not complete.
+  bool get finishedEarly => finished && !(rounds.length >= maxRounds && roundComplete);
 
   /// The knives have been collected (the current round is closed) and the
   /// game goes on: the next round is under way, though it has no throws yet.
@@ -84,7 +92,11 @@ class GameSession {
       isOver || awaitingNextRound ? rounds : rounds.take(math.max(0, rounds.length - 1)).toList();
 
   GameSession _withRounds(List<RoundRecord> rounds) =>
-      GameSession(throwsPerRound: throwsPerRound, maxRounds: maxRounds, rounds: rounds);
+      GameSession(throwsPerRound: throwsPerRound, maxRounds: maxRounds, rounds: rounds, finished: finished);
+
+  /// Ends the game now, with the rounds played so far ([finished]).
+  GameSession finish() =>
+      isOver ? this : GameSession(throwsPerRound: throwsPerRound, maxRounds: maxRounds, rounds: rounds, finished: true);
 
   GameSession _withThrow(ThrowRecord t) {
     if (isOver) return this;

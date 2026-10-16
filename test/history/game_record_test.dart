@@ -88,4 +88,21 @@ void main() {
 
     test('not an object at all', () => expect(() => GameRecord.fromJson([1, 2]), throwsFormatException));
   });
+
+  // Finish game (2026-10-17): the record judges on equal rounds too.
+  test('finished early: shows fewer rounds, and the winner is on equal rounds', () {
+    var m = Match(PlayMode.sharedTarget);
+    for (final s in [3, 3, 3, 1, 1, 1, 5, 5, 5]) {
+      m = m.stuck(s, p);
+      if (m.turnComplete) m = m.boardVisited();
+    }
+    final r = GameRecord.fromMatch(m.finish(), at: at);
+    expect((r.finishedEarly, r.countedRounds), (true, 1));
+    expect([r.countedTotals, r.totals], [
+      [9, 3],
+      [24, 3],
+    ]);
+    expect(r.winner, 0);
+    expect(GameRecord.fromJson(jsonDecode(jsonEncode(r.toJson()))).winner, 0, reason: 'no format change');
+  });
 }

@@ -7,7 +7,7 @@ Finished games of Play are **kept on the phone** and can be looked back at: when
 5 (Medium–Large): storage → game wiring → a new screen (3), a new data model (`GameRecord`) (1), a dependency change (`path_provider` made direct; Review Agent) (1).
 
 ## Status
-IN PROGRESS: Tasks 1–4 complete (2026-10-17); **Tasks 5–6 (Finish game) planned, waiting for Nigel's approval.** Tasks 1–3 committed (`a276c91`, `d0054ab`, `06d608b`). **Waiting for the device checks** ([[Device Test Plan]] → History Checks, H0–H5: Nigel on the Samsung for H0–H4, and in TestFlight 1.0.0 (8) with the Players and Targets Checks). Archive the story once they pass. Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
+IN PROGRESS: Tasks 1–4 complete (2026-10-17); **Task 5 (Finish game) complete, waiting for Nigel's checkpoint**; Task 6 next. Tasks 1–4 committed (`a276c91`, `d0054ab`, `06d608b`, `22da9cc`). **Waiting for the device checks** ([[Device Test Plan]] → History Checks, H0–H5: Nigel on the Samsung for H0–H4, and in TestFlight 1.0.0 (8) with the Players and Targets Checks). Archive the story once they pass. Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `Match` (`lib/scoring/match.dart`): each player's `GameSession` (rounds, throws, totals), `mode`, `maxRounds`, `isOver`, `winner`, `draw`. Everything a record needs is there when a game ends.
@@ -150,7 +150,7 @@ IN PROGRESS: Tasks 1–4 complete (2026-10-17); **Tasks 5–6 (Finish game) plan
 - **Stale links:** none; the "9 rounds" drift from the game-length change was fixed in Task 4.
 
 ## Task 5: Finish game: the rule, and the button on Play
-- **Status:** PLANNED (2026-10-17), waiting for Nigel's approval
+- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint. Plan approved: "commit this and go".
 - **Asked for:** Nigel, 2026-10-17: "There needs to be a button 'finish game' so games can finish after fewer rounds". Answered: a round in progress **counts** (its throws so far, as collecting early does); with two players the winner is decided on **equal rounds** (the rounds both have played; an extra round is shown and kept but doesn't count).
 - **Work:**
   - `GameSession.finish()` / `finished`: `isOver` also when finished. `Match.finish()` finishes every player. `Match.countedRounds` (the fewest rounds any player has played) and the winner / draw on those rounds; a game played to the end is unchanged (both have every round).
@@ -159,6 +159,18 @@ IN PROGRESS: Tasks 1–4 complete (2026-10-17); **Tasks 5–6 (Finish game) plan
   - `GameRecord`: the winner on equal rounds too (the round lists already show how many were played: **no file format change**).
 - **Verify:** tests (finish mid-round, after Player 1's turn, on two targets, with no throws: no button). Nigel: Live test → Target 1 → Play, 9 rounds, **Finish game** after round 2 → the result, then History.
 - **Next:** Task 6.
+- **What changed:**
+  - `lib/scoring/game_session.dart`: `finished`, `finish()`, `finishedEarly`; `isOver` is also true once finished (so later throws are ignored, as at the end).
+  - `lib/scoring/match.dart`: `finish()`, `finishedEarly`, `countedRounds` (the fewest rounds any player has played), `countedTotals`; `winner` / `draw` on the counted totals (a game played to the end: every round, unchanged).
+  - `lib/history/game_record.dart`: `finishedEarly`, `countedRounds`, `countedTotals`; `winner` on equal rounds. JSON unchanged (version 1).
+  - `lib/providers.dart`: `GameNotifier.finishGame()` (nothing for a game over or with no throws), kept through `_keep`.
+  - `lib/ui/play_screen.dart`: `gameOverText` ("Game over after 2 of 9 rounds!"), `confirmFinishGame` (the shared dialog); `playerTitle` shows the counted total once over, `playerDetail` marks a round "(not counted)", `matchFooter` "Finished early: judged on 1 of 9 rounds."; **Finish game** in the app bar (greyed before the first throw, gone once over). `lib/ui/two_target_play_screen.dart`: the same button.
+- **Verified by:** `flutter test`: 605 passed (18 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-17
+
+### Test Report — 2026-10-17 (Task 5)
+- **New:** `game_session_test.dart` (4: a round in progress counts; throws after finishing ignored; a game already over unchanged; a knife falling out afterwards still 0); `match_test.dart` (6: one player; after Player 1's turn, judged on round 1 (9–3, not 24–3); equal rounds level is a draw; two targets with part-rounds, and a player with none; a full game unchanged; no throws after finishing); `game_record_test.dart` (equal rounds in the record, through JSON); `keeping_games_test.dart` (Finish game keeps once with the part-round; no throws, nothing); `play_screen_test.dart` (5: greyed before a throw; asks, Cancel; Finish → "Game over after 2 of 9 rounds! Final total: 16", New game, button gone; two players' texts and footer).
+- **Results:** 605 passed, 0 failed.
 
 ## Task 6: Finish game in History, Instructions, docs and checks
 - **Work:** History: "4 of 9 rounds" (finished early) in the list and on a game, and the rounds that don't count marked. The Instructions (Finish game, what counts, equal rounds). Design Decisions, Glossary, Data Flow, web pages; Device Test Plan H6–H7; Review Agent; traceability (a new acceptance criterion, AC8).

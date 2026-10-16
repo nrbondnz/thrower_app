@@ -132,4 +132,24 @@ void main() {
     await pumpEventQueue();
     expect(container.read(historySaveErrorProvider), isNull);
   });
+
+  // Finish game (Task 5).
+  test('Finish game keeps the game, once, with the round in progress', () async {
+    throwBulls(4);
+    game().finishGame();
+    game().finishGame();
+    await pumpEventQueue();
+    expect(history.saves, 1);
+    expect(history.games.single.players, [
+      [15, 5]
+    ]);
+    expect(container.read(gameProvider).isOver, isTrue);
+  });
+
+  test('Finish game with no throws does nothing', () async {
+    game().finishGame();
+    await pumpEventQueue();
+    expect(container.read(gameProvider).isOver, isFalse);
+    expect(history.games, isEmpty);
+  });
 }

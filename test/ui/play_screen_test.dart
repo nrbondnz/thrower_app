@@ -158,4 +158,58 @@ void main() {
       expect(matchFooter(Match(PlayMode.sharedTarget)), '');
     });
   });
+
+  // Finish game (Nigel, 2026-10-17).
+  group('Finish game', () {
+    Finder finishButton() => find.byKey(const Key('finishGame'));
+
+    testWidgets("can't be tapped before the first throw", (tester) async {
+      await pumpPlay(tester, 0);
+      expect(tester.widget<TextButton>(finishButton()).onPressed, isNull);
+    });
+
+    testWidgets('asks first; Cancel keeps playing', (tester) async {
+      await pumpPlay(tester, 4);
+      await tester.tap(finishButton());
+      await settle(tester);
+      expect(find.text('Finish the game now?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await settle(tester);
+      expect(gameText(tester), isNot(contains('Game over')));
+    });
+
+    testWidgets('Finish ends the game after the rounds played, with New game, and the button goes', (tester) async {
+      await pumpPlay(tester, 4);
+      await tester.tap(finishButton());
+      await settle(tester);
+      await tester.tap(find.byKey(const Key('finishGameConfirm')));
+      await settle(tester);
+      expect(gameText(tester), startsWith('Game over after 2 of 9 rounds! Final total: 16'));
+      expect(find.text('New game'), findsOneWidget);
+      expect(finishButton(), findsNothing);
+    });
+  });
+
+  group('finished early, two players', () {
+    Match sharedFinished() {
+      var m = Match(PlayMode.sharedTarget);
+      for (final s in [3, 3, 3, 1, 1, 1, 5, 5, 5]) {
+        m = m.stuck(s, p);
+        if (m.turnComplete) m = m.boardVisited();
+      }
+      return m.finish();
+    }
+
+    test("the winner's total is on equal rounds; an extra round is marked not counted", () {
+      final m = sharedFinished();
+      expect(turnText(m), 'Player 1 wins');
+      expect(playerTitle(m, 0), 'Player 1: 9');
+      expect(playerDetail(m, 0), 'Rounds: 9, 15 (not counted)');
+      expect(playerDetail(m, 1), 'Rounds: 3');
+    });
+
+    test('says it finished early, and on how many rounds it was judged', () {
+      expect(matchFooter(sharedFinished()), startsWith('Finished early: judged on 1 of 9 rounds.'));
+    });
+  });
 }

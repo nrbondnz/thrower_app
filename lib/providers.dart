@@ -263,6 +263,15 @@ class GameNotifier extends Notifier<Match> {
     state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds));
   }
 
+  /// Finish game: ends the match now, with the rounds played so far, and
+  /// keeps it in the history. Nothing happens to a game that's over or has
+  /// no throws.
+  void finishGame() {
+    if (state.isOver || state.isEmpty) return;
+    state = state.finish();
+    _keep();
+  }
+
   /// Applies what [board]'s watcher saw (board 0 on one target).
   /// [calibration] maps a stuck knife's entry to the target, scored by
   /// [targetModelProvider].

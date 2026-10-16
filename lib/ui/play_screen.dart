@@ -78,6 +78,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     });
   }
 
+  Future<void> _finishGame() async {
+    if (await confirmFinishGame(context) && mounted) ref.read(gameProvider.notifier).finishGame();
+  }
+
   /// Mid-game, a stray tap shouldn't wipe the scores: ask first.
   Future<void> _confirmReset() async {
     final reset = await showDialog<bool>(
@@ -154,6 +158,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
       appBar: AppBar(
         title: const Text('Play'),
         actions: [
+          if (!match.isOver)
+            TextButton(
+              key: const Key('finishGame'),
+              onPressed: match.isEmpty ? null : _finishGame,
+              child: const Text('Finish game'),
+            ),
           TextButton(
             onPressed: match.isEmpty ? null : _confirmReset,
             child: const Text('Reset game'),
@@ -262,7 +272,7 @@ String roundText(GameSession game) {
 String gameText(GameSession game, {String? message}) {
   if (game.isOver) {
     return [
-      'Game over! Final total: ${game.total}',
+      '${gameOverText(game)} Final total: ${game.total}',
       'Rounds: ${[for (final r in game.rounds) r.total].join(', ')}',
       'Collect your knives when no one is throwing.',
     ].join('\n');
@@ -276,6 +286,31 @@ String gameText(GameSession game, {String? message}) {
   ];
   return lines.join('\n');
 }
+
+/// "Game over!", or for a game finished early, "Game over after 4 of 9
+/// rounds!".
+String gameOverText(GameSession game) => game.rounds.length < game.maxRounds
+    ? 'Game over after ${game.rounds.length} of ${game.maxRounds} rounds!'
+    : 'Game over!';
+
+/// Finish game asks first: it ends the game for everyone.
+Future<bool> confirmFinishGame(BuildContext context) async =>
+    await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Finish the game now?'),
+        content: const Text('It ends with the rounds played so far and is kept in History.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+            key: const Key('finishGameConfirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Finish'),
+          ),
+        ],
+      ),
+    ) ??
+    false;
 
 /// What Play says about a board's [event], under the scores; [previous]
 /// stays when the event changes nothing.
@@ -386,21 +421,29 @@ String? turnDetail(Match match) {
 List<bool> _waitingToCollect(Match match) =>
     [for (final g in match.players) g.roundComplete && !g.awaitingNextRound];
 
-/// "Player 1: 23", the player's game total.
-String playerTitle(Match match, int player) => 'Player ${player + 1}: ${match.players[player].total}';
+/// "Player 1: 23", the player's game total; once the match is over, the
+/// total the result is judged on ([Match.countedTotals]).
+String playerTitle(Match match, int player) =>
+    'Player ${player + 1}: ${match.isOver ? match.countedTotals[player] : match.players[player].total}';
 
 /// The player's round in progress ([roundText]), or every round's total once
-/// the match is over.
+/// the match is over, a round beyond the [Match.countedRounds] marked "not
+/// counted".
 String playerDetail(Match match, int player) {
   final game = match.players[player];
-  if (match.isOver) return 'Rounds: ${[for (final r in game.rounds) r.total].join(', ')}';
-  return roundText(game);
+  if (!match.isOver) return roundText(game);
+  final rounds = [
+    for (final (i, r) in game.rounds.indexed) i < match.countedRounds ? '${r.total}' : '${r.total} (not counted)',
+  ];
+  return 'Rounds: ${rounds.join(', ')}';
 }
 
-/// Under the players: what just happened ([message]), and at the end, when
-/// to collect the knives.
+/// Under the players: what just happened ([message]), and at the end, a
+/// game finished early and when to collect the knives.
 String matchFooter(Match match, {String? message}) => [
       ?message,
+      if (match.isOver && match.finishedEarly)
+        'Finished early: judged on ${match.countedRounds} of ${match.maxRounds} rounds.',
       if (match.isOver) 'Collect your knives when no one is throwing.',
     ].join('\n');
 

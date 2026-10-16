@@ -114,6 +114,10 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
     if (_camera case final RecordedCamera camera) camera.rewind();
   }
 
+  Future<void> _finishGame() async {
+    if (await confirmFinishGame(context) && mounted) ref.read(gameProvider.notifier).finishGame();
+  }
+
   /// Mid-game, a stray tap shouldn't wipe the scores: ask first.
   Future<void> _confirmReset() async {
     final reset = await showDialog<bool>(
@@ -168,6 +172,12 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
       appBar: AppBar(
         title: const Text('Play'),
         actions: [
+          if (!match.isOver)
+            TextButton(
+              key: const Key('finishGame'),
+              onPressed: match.isEmpty ? null : _finishGame,
+              child: const Text('Finish game'),
+            ),
           TextButton(onPressed: match.isEmpty ? null : _confirmReset, child: const Text('Reset game')),
         ],
       ),

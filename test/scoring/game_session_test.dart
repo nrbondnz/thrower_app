@@ -140,4 +140,29 @@ void main() {
       expect(g.isOver, isTrue);
     });
   });
+
+  // Finish game (Nigel, 2026-10-17).
+  group('finished early', () {
+    test('a round in progress counts, with the throws made so far', () {
+      final g = const GameSession().stuck(4, p).stuck(3, p).stuck(5, p).stuck(2, p).finish();
+      expect((g.isOver, g.finishedEarly, g.total), (true, true, 14));
+      expect([for (final r in g.finishedRounds) r.total], [12, 2]);
+    });
+
+    test('throws after finishing are ignored', () {
+      final g = const GameSession().stuck(4, p).finish().stuck(5, p);
+      expect(g.total, 4);
+    });
+
+    test('a game already over is not changed, and not early', () {
+      final g = const GameSession(maxRounds: 1).stuck(4, p).stuck(3, p).stuck(5, p);
+      expect(g.finish().finished, isFalse);
+      expect(g.finishedEarly, isFalse);
+    });
+
+    test('a knife falling out after finishing still scores 0', () {
+      final g = const GameSession().stuck(4, p).finish().fellOut(0, 0);
+      expect((g.isOver, g.total), (true, 0));
+    });
+  });
 }

@@ -48,11 +48,22 @@ class GameRecord {
 
   List<int> get totals => [for (final p in players) p.fold(0, (a, b) => a + b)];
 
-  /// The winner (0 for Player 1) of a two-player game; null for one player
-  /// or a draw (as `Match.winner`).
+  /// Finished with Finish game before its last round (as far as the record
+  /// shows: fewer rounds than [rounds] for someone).
+  bool get finishedEarly => players.any((p) => p.length < rounds);
+
+  /// The rounds the result was judged on (as `Match.countedRounds`): as
+  /// many as every player played.
+  int get countedRounds => players.map((p) => p.length).reduce((a, b) => a < b ? a : b);
+
+  /// Each player's total over the [countedRounds].
+  List<int> get countedTotals => [for (final p in players) p.take(countedRounds).fold(0, (a, b) => a + b)];
+
+  /// The winner (0 for Player 1) of a two-player game, on the
+  /// [countedTotals]; null for one player or a draw (as `Match.winner`).
   int? get winner {
     if (players.length < 2) return null;
-    final t = totals;
+    final t = countedTotals;
     final best = t.reduce((a, b) => a > b ? a : b);
     return t.where((x) => x == best).length == 1 ? t.indexOf(best) : null;
   }

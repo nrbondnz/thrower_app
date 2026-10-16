@@ -30,8 +30,9 @@ enum PlayMode {
 ///   knife comes without collecting, once the turn already has all its
 ///   throws. Player 1 starts every round. A player whose game is over is
 ///   skipped.
-/// - Over once every player's game is over; the highest total wins, and
-///   equal totals are a draw.
+/// - Over once every player's game is over, or when it's [finish]ed early;
+///   the highest total over the [countedRounds] wins, and equal totals are a
+///   draw.
 class Match {
   Match(this.mode, {GameSession rules = const GameSession()})
       : players = List.unmodifiable(List.filled(mode.players, rules)),
@@ -59,11 +60,28 @@ class Match {
 
   bool get isOver => players.every((p) => p.isOver);
 
-  /// The winner (0 for Player 1) once a two-player match is over; null for
-  /// one player, a draw, or a match still on.
+  /// Ended with Finish game before every round was played.
+  bool get finishedEarly => players.any((p) => p.finishedEarly);
+
+  /// Ends the match now for every player (Finish game): a round in progress
+  /// counts with the throws made so far.
+  Match finish() => Match._(mode, List.unmodifiable([for (final p in players) p.finish()]), turn, turnThrows);
+
+  /// The rounds the result is judged on: as many as every player has played
+  /// (Nigel, 2026-10-17: finished early, two players are judged on equal
+  /// rounds). All of them for one player, or a match played to the end.
+  int get countedRounds => players.map((p) => p.rounds.length).reduce((a, b) => a < b ? a : b);
+
+  /// Each player's total over the [countedRounds].
+  List<int> get countedTotals => [
+        for (final p in players) p.rounds.take(countedRounds).fold(0, (sum, r) => sum + r.total),
+      ];
+
+  /// The winner (0 for Player 1) once a two-player match is over, on the
+  /// [countedTotals]; null for one player, a draw, or a match still on.
   int? get winner {
     if (!isOver || players.length < 2) return null;
-    final totals = [for (final p in players) p.total];
+    final totals = countedTotals;
     final best = totals.reduce((a, b) => a > b ? a : b);
     return totals.where((t) => t == best).length == 1 ? totals.indexOf(best) : null;
   }

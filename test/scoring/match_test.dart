@@ -187,4 +187,53 @@ void main() {
       expect((m.isOver, m.winner), (true, 0));
     });
   });
+
+  // Finish game (Nigel, 2026-10-17): a round in progress counts; two
+  // players are judged on equal rounds.
+  group('finished early', () {
+    test('one player: over, judged on every round played', () {
+      final m = Match(PlayMode.solo).stuck(4, p).stuck(4, p).finish();
+      expect((m.isOver, m.finishedEarly, m.countedRounds), (true, true, 1));
+      expect(m.countedTotals, [8]);
+    });
+
+    test("one target, after Player 1's turn: Player 1's extra round doesn't count", () {
+      var m = Match(PlayMode.sharedTarget);
+      for (final s in [3, 3, 3, 1, 1, 1, 5, 5, 5]) {
+        m = m.stuck(s, p);
+        if (m.turnComplete) m = m.boardVisited();
+      }
+      m = m.finish();
+      expect(rounds(m), [
+        [9, 15],
+        [3],
+      ]);
+      expect(m.countedRounds, 1);
+      expect(m.countedTotals, [9, 3]);
+      expect(m.winner, 0, reason: 'judged on round 1: 9–3, not 24–3');
+    });
+
+    test('equal rounds that are level are a draw', () {
+      final m = Match(PlayMode.sharedTarget).stuck(5, p).boardVisited().stuck(5, p).finish();
+      expect((m.draw, m.winner), (true, null));
+    });
+
+    test('two targets: both part-rounds count; a player who threw nothing makes it 0 rounds', () {
+      final m = Match(PlayMode.twoTargets).stuck(5, p, board: 0).stuck(5, p, board: 0).stuck(2, p, board: 1).finish();
+      expect((m.countedRounds, m.winner), (1, 0));
+      expect(m.countedTotals, [10, 2]);
+      final alone = Match(PlayMode.twoTargets).stuck(5, p, board: 0).finish();
+      expect((alone.countedRounds, alone.draw), (0, true));
+    });
+
+    test('a game played to the end is judged on all its rounds, not early', () {
+      final m = fullSharedGame(Match(PlayMode.sharedTarget), 4, 3);
+      expect((m.finishedEarly, m.countedRounds, m.winner), (false, 9, 0));
+    });
+
+    test('no throws are taken after finishing', () {
+      final m = Match(PlayMode.twoTargets).stuck(5, p, board: 0).finish();
+      expect(m.takesThrowAt(1), isFalse);
+    });
+  });
 }
