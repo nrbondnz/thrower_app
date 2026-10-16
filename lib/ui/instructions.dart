@@ -61,7 +61,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Calibrate again (Re-calibrate) whenever the phone or the target moves.',
     ]),
     InstructionSection('Playing a game', [
-      'Tap Play. A game is ${rules.maxRounds} rounds of $n throws.',
+      'Tap Play, choose 1 player, then Start. A game is ${rules.maxRounds} rounds of $n throws.',
       if (paper) ...[
         'A "throw" that sticks: press a pen in its Blu Tack onto the paper so it sticks out about 10 cm, then step '
             'out of the picture. The app waits for the target to settle, then shows the score in a yellow circle '
@@ -147,7 +147,7 @@ class _InstructionsScreenState extends ConsumerState<InstructionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sections = instructionSections(ref.watch(gameProvider), ref.watch(targetModelProvider), kind: _kind);
+    final sections = instructionSections(ref.watch(gameProvider).players.first, ref.watch(targetModelProvider), kind: _kind);
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Instructions')),

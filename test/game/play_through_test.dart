@@ -65,7 +65,7 @@ void main() {
     }
 
     expect(kinds, [ThrowOutcomeKind.stuck, ThrowOutcomeKind.stuck, ThrowOutcomeKind.bounceOut, ThrowOutcomeKind.boardVisit]);
-    final session = container.read(gameProvider);
+    final session = container.read(gameProvider).players.first;
     expect(session.rounds, hasLength(1));
     expect([for (final t in session.rounds.single.throws) t.score], [4, 3, 0]);
     expect([for (final t in session.rounds.single.throws) t.result],

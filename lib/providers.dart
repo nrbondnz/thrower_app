@@ -9,7 +9,7 @@ import 'camera/target_camera.dart';
 import 'game/quick_draw_targets.dart';
 import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
-import 'scoring/game_session.dart';
+import 'scoring/match.dart';
 import 'scoring/target_model.dart';
 import 'sound/signal_sounds.dart';
 import 'vision/target_calibration.dart';
@@ -166,57 +166,79 @@ class CalibrationNotifier extends Notifier<CalibrationState?> {
 
 final calibrationProvider = NotifierProvider<CalibrationNotifier, CalibrationState?>(CalibrationNotifier.new);
 
-/// The single-player game for this session, fed by [ThrowEvent]s.
-class GameNotifier extends Notifier<GameSession> {
-  /// Knife id (from the watcher) → (round, throw) it was recorded as, for
-  /// knives still in the board.
-  final _knives = <int, (int, int)>{};
-
-  /// A new game whenever the camera changes (live camera ↔ a recording).
+/// How Play is played (the setup screen after Home → Play): one player, two
+/// on one target, or two on two targets. Kept for the session, so the setup
+/// screen offers the last choice again.
+class PlayModeNotifier extends Notifier<PlayMode> {
   @override
-  GameSession build() {
+  PlayMode build() => PlayMode.solo;
+
+  void choose(PlayMode mode) => state = mode;
+}
+
+final playModeProvider = NotifierProvider<PlayModeNotifier, PlayMode>(PlayModeNotifier.new);
+
+/// This session's game of Play, for one or two players ([Match]), fed by
+/// each board's [ThrowEvent]s.
+class GameNotifier extends Notifier<Match> {
+  /// (board, knife id from that board's watcher) → (player, round, throw) it
+  /// was recorded as, for knives still in a board.
+  final _knives = <(int, int), (int, int, int)>{};
+
+  /// A new game whenever the camera (live camera ↔ a recording) or the
+  /// play mode changes.
+  @override
+  Match build() {
     ref.watch(recordingChoiceProvider);
+    final mode = ref.watch(playModeProvider);
     _knives.clear();
-    return const GameSession();
+    return Match(mode);
   }
 
   void newGame() {
     _knives.clear();
-    state = const GameSession();
+    state = Match(state.mode);
   }
 
-  /// Applies what the watcher saw. [calibration] maps a stuck knife's entry
-  /// to the target, scored by [targetModelProvider].
-  void onEvent(ThrowEvent event, TargetCalibration calibration) {
+  /// Applies what [board]'s watcher saw (board 0 on one target).
+  /// [calibration] maps a stuck knife's entry to the target, scored by
+  /// [targetModelProvider].
+  void onEvent(ThrowEvent event, TargetCalibration calibration, {int board = 0}) {
     // After the last round, new throws aren't recorded (or remembered as
     // knives, so one falling out can't zero a real throw).
     final kind = event.outcome.kind;
-    if (state.isOver && (kind == ThrowOutcomeKind.stuck || kind == ThrowOutcomeKind.bounceOut)) return;
+    if (!state.takesThrowAt(board) && (kind == ThrowOutcomeKind.stuck || kind == ThrowOutcomeKind.bounceOut)) return;
     switch (kind) {
       case ThrowOutcomeKind.stuck:
         final entry = event.entry;
         final point = entry == null ? null : TargetMapping(calibration).toTarget(entry.point);
         final score = point == null ? 0 : ref.read(targetModelProvider).scoreAt(point);
-        state = state.stuck(score, point);
+        state = state.stuck(score, point, board: board);
         if (event.knifeId case final id?) {
-          _knives[id] = (state.rounds.length - 1, state.rounds.last.throws.length - 1);
+          final player = state.playerAt(board);
+          final rounds = state.players[player].rounds;
+          _knives[(board, id)] = (player, rounds.length - 1, rounds.last.throws.length - 1);
         }
       case ThrowOutcomeKind.bounceOut:
-        state = state.bounceOut();
+        state = state.bounceOut(board: board);
       case ThrowOutcomeKind.fellOut:
-        if (_knives.remove(event.knifeId) case (final round, final index)?) state = state.fellOut(round, index);
+        if (_knives.remove((board, event.knifeId)) case (final player, final round, final index)?) {
+          state = state.fellOut(player, round, index);
+        }
       case ThrowOutcomeKind.boardVisit:
-        _knives.clear();
-        state = state.boardVisited();
+        _forgetKnives(board);
+        state = state.boardVisited(board: board);
       case ThrowOutcomeKind.sceneChanged:
-        _knives.clear();
+        _forgetKnives(board);
       case ThrowOutcomeKind.nothing:
         break;
     }
   }
+
+  void _forgetKnives(int board) => _knives.removeWhere((key, _) => key.$1 == board);
 }
 
-final gameProvider = NotifierProvider<GameNotifier, GameSession>(GameNotifier.new);
+final gameProvider = NotifierProvider<GameNotifier, Match>(GameNotifier.new);
 
 /// No auth provider is chosen yet, so this must be overridden before use.
 final authServiceProvider = Provider<AuthService>(

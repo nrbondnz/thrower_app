@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/game/throw_watcher.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_session.dart';
+import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/ui/play_screen.dart';
 import 'package:thrower_app/vision/ellipse.dart';
@@ -55,7 +56,7 @@ void main() {
   });
   tearDown(() => container.dispose());
 
-  GameSession session() => container.read(gameProvider);
+  GameSession session() => container.read(gameProvider).players.first;
 
   test('scores a stuck knife where its blade went in', () {
     game.onEvent(stuckAt(500, 400 + 200 * 0.3, 0), c); // radius 0.3 → ring 4
@@ -181,6 +182,62 @@ void main() {
     test('state lines', () {
       expect(playStateText(WatchState.blocked), 'Someone is at the board.');
       expect(playStateText(WatchState.motion), startsWith('Throw seen'));
+    });
+  });
+
+  group('two players', () {
+    /// The game notifier after choosing [mode] (choosing starts a new game).
+    GameNotifier playing(PlayMode mode) {
+      container.read(playModeProvider.notifier).choose(mode);
+      return container.read(gameProvider.notifier);
+    }
+
+    List<int> totals() => [for (final g in container.read(gameProvider).players) g.total];
+
+    test('choosing a mode starts a new game in it', () {
+      game.onEvent(stuckAt(500, 400, 0), c);
+      playing(PlayMode.twoTargets);
+      expect((container.read(gameProvider).mode, container.read(gameProvider).isEmpty), (PlayMode.twoTargets, true));
+    });
+
+    test('two targets: each board scores for its own player', () {
+      playing(PlayMode.twoTargets)
+        ..onEvent(stuckAt(500, 400, 0), c, board: 0) // 5
+        ..onEvent(stuckAt(500 + 200 * 0.5, 400, 0), c, board: 1); // 3
+      expect(totals(), [5, 3]);
+    });
+
+    test('two targets: a knife falling out zeroes only its own board\'s throw (same knife id)', () {
+      playing(PlayMode.twoTargets)
+        ..onEvent(stuckAt(500, 400, 0), c, board: 0)
+        ..onEvent(stuckAt(500, 400, 0), c, board: 1)
+        ..onEvent(event(ThrowOutcomeKind.fellOut, id: 0), c, board: 1);
+      expect(totals(), [5, 0]);
+    });
+
+    test('two targets: collecting at one board leaves the other board\'s knives remembered', () {
+      playing(PlayMode.twoTargets)
+        ..onEvent(stuckAt(500, 400, 0), c, board: 0)
+        ..onEvent(stuckAt(500, 400, 0), c, board: 1)
+        ..onEvent(event(ThrowOutcomeKind.boardVisit), c, board: 1)
+        ..onEvent(event(ThrowOutcomeKind.fellOut, id: 0), c, board: 0);
+      expect(totals(), [0, 5]);
+    });
+
+    test('one target: throws go to whoever\'s turn it is', () {
+      final g = playing(PlayMode.sharedTarget)
+        ..onEvent(stuckAt(500, 400, 0), c)
+        ..onEvent(event(ThrowOutcomeKind.boardVisit), c)
+        ..onEvent(stuckAt(500 + 200 * 0.5, 400, 1), c);
+      expect(totals(), [5, 3]);
+      // Player 2's knife falling out zeroes Player 2's throw.
+      g.onEvent(event(ThrowOutcomeKind.fellOut, id: 1), c);
+      expect(totals(), [5, 0]);
+    });
+
+    test('a new game keeps the mode', () {
+      playing(PlayMode.sharedTarget).newGame();
+      expect(container.read(gameProvider).mode, PlayMode.sharedTarget);
     });
   });
 

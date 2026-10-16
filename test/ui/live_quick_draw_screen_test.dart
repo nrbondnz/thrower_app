@@ -15,6 +15,7 @@ import 'package:thrower_app/ui/camera_view.dart';
 import 'package:thrower_app/ui/home_screen.dart';
 import 'package:thrower_app/ui/live_quick_draw_screen.dart';
 import 'package:thrower_app/ui/play_screen.dart';
+import 'package:thrower_app/ui/play_setup_screen.dart';
 import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/tapped_target_locator.dart';
 import 'package:thrower_app/vision/target_locator.dart';
@@ -95,19 +96,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Home has Play (rounds on one target) and Quick draw (two throwers) as separate buttons', (tester) async {
+  testWidgets('Home has Play (rounds of 3) and Quick draw (two throwers) as separate buttons', (tester) async {
     await pumpHome(tester, stillCamera);
     expect(find.widgetWithText(FilledButton, 'Play'), findsOneWidget);
-    expect(find.text('Rounds on one target'), findsOneWidget);
+    expect(find.text('Rounds of 3 throws, 1 or 2 players'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Quick draw'), findsOneWidget);
     expect(find.text('Two throwers, on a start signal'), findsOneWidget);
   });
 
-  testWidgets('Play still opens single-target Play', (tester) async {
+  testWidgets('Play opens the setup screen; Start with 1 player opens single-target Play', (tester) async {
     await pumpHome(tester, stillCamera);
     await tester.tap(find.widgetWithText(FilledButton, 'Play'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500)); // The page transition.
+    expect(find.byType(PlaySetupScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('playStart')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(PlayScreen), findsOneWidget);
   });
 

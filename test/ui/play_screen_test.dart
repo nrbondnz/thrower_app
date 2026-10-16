@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/providers.dart';
-import 'package:thrower_app/scoring/game_session.dart';
+import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/ui/play_screen.dart';
 
@@ -16,8 +16,8 @@ class GameWith extends GameNotifier {
   final int throws;
 
   @override
-  GameSession build() {
-    var g = const GameSession();
+  Match build() {
+    var g = Match(PlayMode.solo);
     for (var i = 0; i < throws; i++) {
       g = g.stuck(4, p);
     }

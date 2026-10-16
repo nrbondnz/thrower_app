@@ -365,6 +365,14 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
 
 **Confirmed:** 2026-10-04.
 
+**Update (2026-10-16, [[story-checkpoint-players-and-targets]]): one or two players.** Nigel: "there should be a second screen that says how many players 1 or 2. Also, 1 target(so alternating) or 2 at the same time". Home → Play (and Live test → Play) opens `PlaySetupScreen`: **Players 1 / 2**; with 2, **Targets 1 / 2**; then **Start**. The choice is a `PlayMode` (`solo`, `sharedTarget`, `twoTargets`) in `playModeProvider`, kept for the session; changing it starts a new game, the same choice keeps the game in progress.
+- `Match` (`lib/scoring/match.dart`, pure Dart, immutable) holds a `GameSession` per player, so one player's rules (rounds of 3, collecting, falling out, game over) are unchanged and shared. `GameNotifier`'s state is now a `Match`; its `onEvent` takes the **board** the event came from (0 on one target). Knives are remembered by (board, knife id), since each board's watcher numbers its own knives.
+- **One target, taking turns** (Nigel, 2026-10-16, "yes to all"): a player throws their 3 knives, they're collected, then the other player. The turn passes on a **board visit** (also early, with fewer knives), or, if the next knife comes without collecting, once the turn already has its 3 throws (that knife is the next player's). **Player 1 starts every round.** Chosen over alternating every knife: the app can't tell whose knife is whose, so a knife falling out couldn't be given to the right player. A knife falling out zeroes the throw of the player who threw it.
+- **Two targets, throwing together:** board N's throws, collections and falling-out knives belong to player N only; each player's game ends on its own, and a player whose game is over can't throw on.
+- **Over** once every player's game is over; the higher total wins, equal totals are a **draw** (`Match.winner`, `Match.draw`).
+- Players are **"Player 1" and "Player 2"** for now; typed names may come with accounts. Other game lengths and history are not in this story.
+- Built so far (Task 1): the rules and the setup screen; only 1 player can be started. Two players on one target comes in Task 2, on two targets in Task 3.
+
 ## Throw Detection: Before/After Comparison from a Static Camera
 
 **Decision (approach; details are refined in the throw-detection story):**

@@ -33,6 +33,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  quickDrawTargetsProvider       tapLocatorProvider            │  │
 │  │  liveQuickDrawCameraProvider (live Quick draw's own, 60 fps)  │  │
 │  │  signalSoundsProvider           startScheduleProvider         │  │
+│  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -132,6 +133,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │   ┌──────────────────────────────────────────────────────────────┐  │
 │   │ GameNotifier: TargetMapping → TargetModel.scoreAt → 5…0      │  │
 │   │ GameSession: 9 rounds × 3 throws; a visit closes the round   │  │
+│   │ Match: a GameSession per player, by board or by turn         │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
 │                                  ▼                                  │
 │   PlayScreen: score marks on the board (RoundMarks), totals         │

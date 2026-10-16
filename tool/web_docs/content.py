@@ -17,11 +17,11 @@ LANES = {
 COMPONENTS = {
     'screens': dict(
         name='Screens', lane='ui', type='Flutter widgets',
-        files=['lib/ui/home_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/calibration_screen.dart',
+        files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
                'lib/ui/quick_draw_boards.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
         trigger='The user, from Home',
-        dek='Home leads to Play (rounds on one target), Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.',
+        dek='Home leads to Play (rounds of 3, for 1 or 2 players), Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.',
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>.',
@@ -29,6 +29,7 @@ COMPONENTS = {
         ],
         functions=[
             ('HomeScreen', 'Instructions, Play, Quick draw, Live test, Calibrate target, Scoring test target'),
+            ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); Start'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw'),
@@ -45,14 +46,15 @@ COMPONENTS = {
         dek='The one place the layers are wired together. Each layer sits behind a provider, so a test overrides it with a fake.',
         body=[
             '<code>cameraProvider</code> is shared by Calibrate and Play, and plays a Live test recording when <code>recordingChoiceProvider</code> picks one. The live Quick draw has its own <code>liveQuickDrawCameraProvider</code>, which asks for 60 fps and is released when the screen closes. Neither camera is retried automatically.',
-            '<code>CalibrationNotifier</code> and <code>GameNotifier</code> hold the session\'s state: the locked rings, and the game\'s rounds.',
+            '<code>CalibrationNotifier</code> and <code>GameNotifier</code> hold the session\'s state: the locked rings, and the game\'s rounds (a <code>Match</code>: a game per player, for the mode chosen in <code>playModeProvider</code>).',
         ],
         functions=[
             ('cameraProvider / recordingChoiceProvider', 'the back camera, or a recording'),
             ('quickDrawCameraProvider', 'the Quick draw clip as a RecordedCamera'),
             ('liveQuickDrawCameraProvider', 'LiveCamera.open(fps: 60), auto-disposed'),
             ('calibrationProvider (CalibrationNotifier)', 'start, adjust, lock, unlock'),
-            ('gameProvider (GameNotifier)', 'onEvent → GameSession'),
+            ('playModeProvider', 'the setup screen\'s choice, kept for the session'),
+            ('gameProvider (GameNotifier)', 'onEvent(board) → Match → a GameSession per player'),
             ('targetModelProvider · ringBoundaryRadiiProvider', 'the IKTHOF rings'),
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),
             ('signalSoundsProvider · startScheduleProvider', 'the beeps, and a new random pause each duel'),
@@ -285,16 +287,18 @@ COMPONENTS = {
         flows=['scoring-a-point', 'play', 'quick-draw-recording'],
     ),
     'game-session': dict(
-        name='GameSession', lane='scoring', type='Class (pure Dart) + notifier',
-        files=['lib/scoring/game_session.dart', 'lib/providers.dart'],
+        name='GameSession and Match', lane='scoring', type='Classes (pure Dart) + notifier',
+        files=['lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/providers.dart'],
         trigger='Play, on each throw event',
-        dek='A game of 9 rounds of 3 throws. A board visit (collecting the knives) closes the round.',
+        dek='A game of 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.',
         body=[
             'A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).',
+            '<code>Match</code> holds a <code>GameSession</code> per player (2026-10-16). Two players on one target take turns: 3 knives, collect, then the other player, Player 1 starting every round. On two targets each board scores for its own player. The higher total wins; equal totals are a draw.',
         ],
         functions=[
             ('stuck · bounceOut · fellOut · boardVisited', 'the events'),
             ('awaitingNextRound · roundNumber · finishedRounds', 'what Play shows'),
+            ('Match: playerAt · turn · winner · draw', 'whose throw it is, and who won'),
             ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score'),
         ],
         flows=['play'],
@@ -421,7 +425,7 @@ FLOWS = {
     ),
     'play': dict(
         title='A throw → a score (Play)', cat='flow', lane='game',
-        dek='Rounds on one target: motion on the board becomes a throw event, the throw\'s entry point becomes a score, and collecting the knives closes the round.',
+        dek='Rounds of 3: motion on the board becomes a throw event, the throw\'s entry point becomes a score, and collecting the knives closes the round.',
         body=[
             'The motion pass is cheap (brightness at ~320 px, about 15 frames a second); full-resolution pictures and the entry search run in background isolates. Nobody needs to touch the phone while playing.',
         ],
@@ -430,11 +434,11 @@ FLOWS = {
             ('game', 'ThrowWatcher', ['frameToLuma → MotionDetector, inside the board\'s region:', 'watching → motion → settling → settled', 'keeps a full-resolution before picture'], 'throw-watcher', 'MotionEpisode'),
             ('game', 'ThrowTracker → classifyThrow', ['stuck · bounce-out · fell out · board visit'], 'throw-classifier', 'stuck'),
             ('vision', 'findKnifeEntry', ['faceOnEntry, or GeometricEntryEstimator (before, after)'], 'entry-point', 'ThrowEvent'),
-            ('scoring', 'GameNotifier → GameSession', ['entry → TargetMapping → TargetModel → score', 'bounce-out 0 · fell out → 0 · visit closes the round', '9 rounds × 3 throws'], 'game-session', None),
+            ('scoring', 'GameNotifier → Match → GameSession', ['entry → TargetMapping → TargetModel → score', 'bounce-out 0 · fell out → 0 · visit closes the round', '9 rounds × 3 throws, for each player'], 'game-session', None),
             ('ui', 'PlayScreen', ['score marks where the knives went in, round and game totals'], 'screens', None),
         ],
         caption='A board visit (someone collecting knives) is recognised by size: people cover 4% of the region and up, knives up to 2.2%.',
-        files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/ui/play_screen.dart'],
+        files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/ui/play_screen.dart'],
     ),
     'choosing-boards': dict(
         title='Quick draw: choosing the boards by tapping', cat='flow', lane='ui',

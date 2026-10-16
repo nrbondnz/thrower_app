@@ -114,6 +114,9 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`GameSession`** (`lib/scoring/game_session.dart`) / **`GameNotifier`** (`lib/providers.dart`)
   - `stuck`, `bounceOut`, `fellOut`, `boardVisited`; rounds of 3; `onEvent` maps entries to scores
   - `awaitingNextRound` (knives collected, game not over), `roundNumber` (the next round once collected), `finishedRounds` (the collected rounds); used by Play's `roundText` / `gameText`
+- **`Match`** (`lib/scoring/match.dart`) / **`PlayMode`** / **`playModeProvider`** (`lib/providers.dart`) / **`PlaySetupScreen`** (`lib/ui/play_setup_screen.dart`)
+  - `PlayMode`: `solo`, `sharedTarget` (2 players taking turns), `twoTargets` (2 players at once); chosen on the setup screen after Play
+  - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
 - **`TargetModel`** (`lib/scoring/target_model.dart`)
   - `scoreAt(point, bladeHalfWidth)` with a `LineTouchRule`
 - **Test data**: `SyntheticTarget` (flat, affine), `SyntheticScene` (3D ray tracer), `PhotoBoardTexture` (reference photo as the board face, knives removed); tools `render_camera_views`, `locate_target`, `printable_target`
@@ -133,6 +136,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 | **Upright rotation** | Clockwise rotation turning a sideways sensor frame upright: (sensor − device + 360) % 360. | `frameRotation`, `frameToRgb` |
 | **Sensor layout vs upright** | A live frame arrives as the sensor lays it out (on Android, usually sideways); upright is how the user sees it. Boards are found and tapped in the upright picture; a board crop maps its upright rectangle back into the sensor's layout and is cut there, so only the small crop is ever turned. The crop's rotation is fixed when the crop is made, at the start of each duel's watching (the phone is on a stand). | `CroppedCamera.sensorRect`, `frameToRgb`, `frameToLuma`, `ThrowWatcher` |
 | **Calibration lock** | The fitted rings fixed for the session (the camera doesn't move); taps and later throws are scored against them. | `CalibrationNotifier`, `CalibrationScreen` |
+| **Turn** | Two players on one target: one player's knives (3, or fewer if collected early), from their first throw until they're collected or the next player's knife lands. Player 1 starts every round. | `Match` |
 | **Board visit** | Someone at the board (collecting knives), not a throw: they stood there, ≥ 10% of the region changed at once, or one shape ≥ 3% of the region moved (people are 4%+, knives up to 2.2%). Ends the round. | `classifyThrow`, `ThrowTracker`, `GameSession` |
 | **Episode** | One stretch of motion in the board's region, from the first change until the board has been still for 0.3 s and looks like the board again. One throw, one bounce, or one visit to the board. | `MotionDetector`, `ThrowTracker` |
 | **Reference frame / blocked** | The board as last seen settled. Still frames that differ from it by more than 8% mean something is in front of the board (blocked), not settled. | `MotionDetector` |

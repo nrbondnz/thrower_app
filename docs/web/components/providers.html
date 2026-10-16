@@ -27,7 +27,7 @@
 
   <div class="detail-body">
     <p><code>cameraProvider</code> is shared by Calibrate and Play, and plays a Live test recording when <code>recordingChoiceProvider</code> picks one. The live Quick draw has its own <code>liveQuickDrawCameraProvider</code>, which asks for 60 fps and is released when the screen closes. Neither camera is retried automatically.</p>
-    <p><code>CalibrationNotifier</code> and <code>GameNotifier</code> hold the session's state: the locked rings, and the game's rounds.</p>
+    <p><code>CalibrationNotifier</code> and <code>GameNotifier</code> hold the session's state: the locked rings, and the game's rounds (a <code>Match</code>: a game per player, for the mode chosen in <code>playModeProvider</code>).</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -36,7 +36,8 @@
     <div><dt><code>quickDrawCameraProvider</code></dt><dd>the Quick draw clip as a RecordedCamera</dd></div>
     <div><dt><code>liveQuickDrawCameraProvider</code></dt><dd>LiveCamera.open(fps: 60), auto-disposed</dd></div>
     <div><dt><code>calibrationProvider (CalibrationNotifier)</code></dt><dd>start, adjust, lock, unlock</dd></div>
-    <div><dt><code>gameProvider (GameNotifier)</code></dt><dd>onEvent → GameSession</dd></div>
+    <div><dt><code>playModeProvider</code></dt><dd>the setup screen&#x27;s choice, kept for the session</dd></div>
+    <div><dt><code>gameProvider (GameNotifier)</code></dt><dd>onEvent(board) → Match → a GameSession per player</dd></div>
     <div><dt><code>targetModelProvider · ringBoundaryRadiiProvider</code></dt><dd>the IKTHOF rings</dd></div>
     <div><dt><code>quickDrawTargetsProvider · tapLocatorProvider</code></dt><dd>the tapped boards, and how a tap finds one</dd></div>
     <div><dt><code>signalSoundsProvider · startScheduleProvider</code></dt><dd>the beeps, and a new random pause each duel</dd></div>

@@ -57,9 +57,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _onEvent(ThrowEvent event, TargetCalibration calibration) {
     final notifier = ref.read(gameProvider.notifier);
-    final wasComplete = ref.read(gameProvider).roundComplete;
+    final wasComplete = ref.read(gameProvider).players.first.roundComplete;
     notifier.onEvent(event, calibration);
-    final score = ref.read(gameProvider).currentRound?.throws.lastOrNull?.score ?? 0;
+    final score = ref.read(gameProvider).players.first.currentRound?.throws.lastOrNull?.score ?? 0;
     setState(() {
       _marks.apply(event, score: score, newRound: wasComplete);
       switch (event.outcome.kind) {
@@ -121,7 +121,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
   @override
   Widget build(BuildContext context) {
     final calibration = ref.watch(calibrationProvider);
-    final game = ref.watch(gameProvider);
+    // One player for now: two-player Play comes in the players-and-targets
+    // story's Tasks 2 and 3.
+    final game = ref.watch(gameProvider).players.first;
     final camera = ref.watch(cameraProvider).value;
 
     if (calibration == null || !calibration.locked) {

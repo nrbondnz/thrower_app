@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../camera/recorded_camera.dart';
 import '../providers.dart';
 import 'calibration_screen.dart';
-import 'play_screen.dart';
+import 'play_setup_screen.dart';
 import 'quick_draw_screen.dart';
 
 /// Live test: plays a recording of a real board in place of the camera,
@@ -62,7 +62,7 @@ class LiveTestScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: chosen == null || !calibrated ? null : () => open(const PlayScreen()),
+                onPressed: chosen == null || !calibrated ? null : () => open(const PlaySetupScreen()),
                 child: const Text('2. Play'),
               ),
               const SizedBox(height: 32),

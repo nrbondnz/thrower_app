@@ -126,10 +126,11 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 │                       │      ThrowEvent(kind, knifeId) ◀┘ scene     │
 │                       ▼                ▼                  changed   │
 │   ┌──────────────────────────────────────────────────────────────┐  │
-│   │ GameNotifier.onEvent → GameSession                           │  │
+│   │ GameNotifier.onEvent(board) → Match → a GameSession each     │  │
 │   │  stuck: entry → TargetMapping → TargetModel → score          │  │
 │   │  bounce-out: 0 · fell out: that throw → 0                    │  │
 │   │  board visit: closes the round · 9 rounds × 3 throws         │  │
+│   │  1 or 2 players: board's own, or whoever's turn (PlayMode)   │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
 │                                  ▼                                  │
 │   PlayScreen: score circles where knives went in (RoundMarks),      │

@@ -16,12 +16,12 @@
   <header class="title-block">
     <span class="eyebrow"><span class="swatch" style="background:var(--ui);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>UI · Component</span>
     <h1>Screens</h1>
-    <p class="dek">Home leads to Play (rounds on one target), Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.</p>
+    <p class="dek">Home leads to Play (rounds of 3, for 1 or 2 players), Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.</p>
   </header>
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Flutter widgets</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/ui/home_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br></dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/ui/home_screen.dart</code><br><code>lib/ui/play_setup_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>The user, from Home</dd></div>
   </dl>
 
@@ -34,6 +34,7 @@
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
     <div><dt><code>HomeScreen</code></dt><dd>Instructions, Play, Quick draw, Live test, Calibrate target, Scoring test target</dd></div>
+    <div><dt><code>PlaySetupScreen</code></dt><dd>after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); Start</dd></div>
     <div><dt><code>PlayScreen</code></dt><dd>the camera, score marks where knives went in (RoundMarks), round and game totals</dd></div>
     <div><dt><code>CalibrationScreen</code></dt><dd>Find target, drag the rings (CalibrationEditor), Lock</dd></div>
     <div><dt><code>LiveTestScreen</code></dt><dd>the recordings: Target 1, Target 2, Quick draw</dd></div>
@@ -77,7 +78,7 @@
     </a>
   </div>
 
-  <footer class="colophon">lib/ui/home_screen.dart · lib/ui/play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart</footer>
+  <footer class="colophon">lib/ui/home_screen.dart · lib/ui/play_setup_screen.dart · lib/ui/play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart</footer>
 </div>
 </body>
 </html>

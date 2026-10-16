@@ -5,7 +5,7 @@ import 'debug_target_screen.dart';
 import 'instructions.dart';
 import 'live_quick_draw_screen.dart';
 import 'live_test_screen.dart';
-import 'play_screen.dart';
+import 'play_setup_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -28,10 +28,10 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
             // Two different games, so each says what it is (Nigel, 2026-10-15).
             FilledButton(
-              onPressed: () => open(const PlayScreen()),
+              onPressed: () => open(const PlaySetupScreen()),
               child: const Text('Play'),
             ),
-            const _Caption('Rounds on one target'),
+            const _Caption('Rounds of 3 throws, 1 or 2 players'),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => open(const LiveQuickDrawScreen()),

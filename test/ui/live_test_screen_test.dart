@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/camera/target_camera.dart';
 import 'package:thrower_app/providers.dart';
-import 'package:thrower_app/scoring/game_session.dart';
+import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/camera_view.dart';
 import 'package:thrower_app/ui/home_screen.dart';
 import 'package:thrower_app/ui/live_test_screen.dart';
@@ -66,11 +66,11 @@ void main() {
   test('switching camera starts a new calibration and a new game', () {
     final container = ProviderContainer(overrides: [calibrationProvider.overrideWith(LockedCalibration.new)]);
     addTearDown(container.dispose);
-    container.read(gameProvider.notifier).state = const GameSession().bounceOut();
+    container.read(gameProvider.notifier).state = Match(PlayMode.solo).bounceOut();
     expect(container.read(calibrationProvider), isNotNull);
 
     container.read(recordingChoiceProvider.notifier).use(liveTestRecordings[0]);
-    expect(container.read(gameProvider).rounds, isEmpty);
+    expect(container.read(gameProvider).isEmpty, isTrue);
     // The overridden notifier rebuilds too (a real one starts empty).
     expect(container.read(calibrationProvider)?.locked, isTrue);
   });
