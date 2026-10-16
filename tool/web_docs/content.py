@@ -9,6 +9,7 @@ LANES = {
     'vision':  ('Vision (pure Dart)', 'lib/vision'),
     'scoring': ('Scoring (pure Dart)', 'lib/scoring'),
     'sound':   ('Sound', 'lib/sound'),
+    'history': ('History', 'lib/history'),
     'auth':    ('Auth', 'lib/auth'),
     'native':  ('Plugins and native code', 'external'),
 }
@@ -19,16 +20,16 @@ COMPONENTS = {
         name='Screens', lane='ui', type='Flutter widgets',
         files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
-               'lib/ui/quick_draw_boards.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
+               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
         trigger='The user, from Home',
-        dek='Home leads to Play (rounds of 3, for 1 or 2 players), Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.',
+        dek='Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.',
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>.',
             'On the recording\'s Quick draw, <strong>Play</strong> shows only once the boards are locked: played unlocked, nothing would be analysed (2026-10-16).',
         ],
         functions=[
-            ('HomeScreen', 'Instructions, Play, Quick draw, Live test, Calibrate target, Scoring test target'),
+            ('HomeScreen', 'Instructions, Play, History, Quick draw, Live test, Calibrate target, Scoring test target'),
             ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; Start'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
@@ -36,10 +37,11 @@ COMPONENTS = {
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)'),
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
+            ('HistoryScreen · GameRecordScreen', 'the kept games, newest first; a game\'s rounds; Delete; Clear history (asks first)'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
         ],
-        flows=['calibration', 'play', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
+        flows=['calibration', 'play', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -60,9 +62,10 @@ COMPONENTS = {
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),
             ('playTargetsProvider', "two-target Play's boards, kept for the session"),
             ('signalSoundsProvider · startScheduleProvider', 'the beeps, and a new random pause each duel'),
+            ('gameHistoryProvider · historySaveErrorProvider · clockProvider', 'the kept games, a failed save, when a game finished'),
             ('authServiceProvider', 'the account interface (no provider chosen yet)'),
         ],
-        flows=['frame-sources', 'play', 'live-quick-draw'],
+        flows=['frame-sources', 'play', 'game-history', 'live-quick-draw'],
     ),
     'target-camera': dict(
         name='TargetCamera', lane='camera', type='Interface', files=['lib/camera/target_camera.dart', 'lib/camera/camera_frame.dart'],
@@ -292,7 +295,7 @@ COMPONENTS = {
         name='GameSession and Match', lane='scoring', type='Classes (pure Dart) + notifier',
         files=['lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/providers.dart'],
         trigger='Play, on each throw event',
-        dek='A game of 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.',
+        dek='A game of 3, 5 or 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.',
         body=[
             'A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).',
             '<code>Match</code> holds a <code>GameSession</code> per player (2026-10-16). Two players on one target take turns: 3 knives, collect, then the other player, Player 1 starting every round. On two targets each board scores for its own player. The higher total wins; equal totals are a draw.',
@@ -301,9 +304,9 @@ COMPONENTS = {
             ('stuck · bounceOut · fellOut · boardVisited', 'the events'),
             ('awaitingNextRound · roundNumber · finishedRounds', 'what Play shows'),
             ('Match: playerAt · turn · winner · draw', 'whose throw it is, and who won'),
-            ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score'),
+            ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score; a finished game is kept in the history'),
         ],
-        flows=['play'],
+        flows=['play', 'game-history'],
     ),
     'quick-draw-watcher': dict(
         name='QuickDrawWatcher', lane='game', type='Class', files=['lib/game/quick_draw_watcher.dart'],
@@ -374,6 +377,23 @@ COMPONENTS = {
         functions=[('beep · go · result', 'play a sound'), ('AssetSignalSounds', 'audioplayers, low-latency mode')],
         flows=['live-quick-draw'],
     ),
+    'game-history': dict(
+        name='GameHistory', lane='history', type='Interface + file store',
+        files=['lib/history/game_history.dart', 'lib/history/game_record.dart'],
+        trigger='A game of Play finishing; Home → History',
+        dek='Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player\'s round totals.',
+        body=[
+            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
+            '<code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app\'s own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can\'t be read is renamed, never deleted, and the history starts afresh.',
+            'Behind an interface, so a backend can keep the games instead once there are accounts (backlog #4). Nothing leaves the phone today.',
+        ],
+        functions=[
+            ('load · add · delete · clear', 'newest first; a game is replaced by its id'),
+            ('GameRecord.fromMatch · toJson · fromJson', 'a finished match as a record; format version 1'),
+            ('GameHistoryException', 'a read or write failed; setAside: a damaged file was renamed'),
+        ],
+        flows=['game-history'],
+    ),
     'auth-service': dict(
         name='AuthService', lane='auth', type='Interface only', files=['lib/auth/auth_service.dart'],
         trigger='Not used yet',
@@ -389,6 +409,7 @@ EXTERNAL = [
     ('camera plugin', 'camera 0.12.1: preview + image stream'),
     ('audioplayers', 'recording sound, signal sounds'),
     ('Flutter image codec', 'decodes the recordings\' JPEGs'),
+    ('path_provider', 'the app\'s support folder (history)'),
 ]
 
 # id: dict(title, cat ('core' | 'flow'), lane, dek, body[paras], steps[(lane, title, [lines], component_id|None, arrow_label|None)], caption, files)
@@ -450,11 +471,28 @@ FLOWS = {
             ('game', 'ThrowWatcher', ['frameToLuma → MotionDetector, inside the board\'s region:', 'watching → motion → settling → settled', 'keeps a full-resolution before picture'], 'throw-watcher', 'MotionEpisode'),
             ('game', 'ThrowTracker → classifyThrow', ['stuck · bounce-out · fell out · board visit'], 'throw-classifier', 'stuck'),
             ('vision', 'findKnifeEntry', ['faceOnEntry, or GeometricEntryEstimator (before, after)'], 'entry-point', 'ThrowEvent'),
-            ('scoring', 'GameNotifier → Match → GameSession', ['entry → TargetMapping → TargetModel → score', 'bounce-out 0 · fell out → 0 · visit closes the round', '9 rounds × 3 throws, for each player'], 'game-session', None),
+            ('scoring', 'GameNotifier → Match → GameSession', ['entry → TargetMapping → TargetModel → score', 'bounce-out 0 · fell out → 0 · visit closes the round', '3, 5 or 9 rounds × 3 throws, for each player'], 'game-session', None),
             ('ui', 'PlayScreen', ['score marks where the knives went in, round and game totals'], 'screens', None),
         ],
         caption='A board visit (someone collecting knives) is recognised by size: people cover 4% of the region and up, knives up to 2.2%. On two targets, PlayBoardsWatcher runs this for each board on its own crop, and each board scores for its own player.',
         files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/ui/play_screen.dart', 'lib/game/play_boards_watcher.dart', 'lib/ui/two_target_play_screen.dart'],
+    ),
+    'game-history': dict(
+        title='Keeping and viewing finished games', cat='flow', lane='history',
+        dek='When a game of Play finishes it is kept on the phone, once. Home → History lists the games; a game shows every round.',
+        body=[
+            'Saving never holds up play: the record is handed to the history and Play carries on. If the save fails, Play says so in a snack bar.',
+            'Only finished games are kept. A last-round knife that falls out after the end saves the same game again with the new score, under the time it first finished.',
+        ],
+        steps=[
+            ('scoring', 'GameNotifier.onEvent', ['the event that leaves the Match over', 'reset or unfinished: nothing kept'], 'game-session', '_keep, once'),
+            ('history', 'GameRecord.fromMatch', ['at: clockProvider (also its id)', 'recording: the Live test recording\'s name, if any'], 'game-history', 'gameHistoryProvider.add'),
+            ('history', 'FileGameHistory', ['game_history.json in the support folder', 'written through .tmp, one save at a time'], 'game-history', 'failed: historySaveErrorProvider → snack bar'),
+            ('ui', 'Home → HistoryScreen', ['load: newest first · "No games yet"', '"Couldn\'t load the history" + Try again'], 'screens', 'tap a game'),
+            ('ui', 'GameRecordScreen', ['the result, each player\'s total and rounds', 'Delete · Clear history (asks first)'], 'screens', None),
+        ],
+        caption='The history stays on the phone: the app sends it nowhere, and deleting the app deletes it.',
+        files=['lib/providers.dart', 'lib/history/game_record.dart', 'lib/history/game_history.dart', 'lib/ui/history_screen.dart'],
     ),
     'choosing-boards': dict(
         title='Quick draw: choosing the boards by tapping', cat='flow', lane='ui',
@@ -513,13 +551,14 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
     'scoring-a-point': 'A pixel measured against the board\'s own painted edges, placed on the ideal rings, scored 5 to 0.',
     'calibration': 'Find the rings once in a background isolate, drag to adjust, lock for the session.',
     'play': 'Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.',
+    'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
     'choosing-boards': 'Tap Player 1\'s board, then Player 2\'s: a fraction of the picture, a window search, the rings.',
     'quick-draw-recording': 'The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.',
     'live-quick-draw': 'The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.',
@@ -536,7 +575,7 @@ NOTES = [
         'The motion pass stays on the UI thread: brightness only, at ~320 px.',
     ]),
     ('On the phone only', [
-        'No backend yet and no network calls: camera frames never leave the phone.',
+        'No backend yet and no network calls: camera frames never leave the phone, and nor does the game history (one file in the app\'s own folder).',
         'The camera records no sound today. Recording and sharing (backlog #11) would change that, and needs the Review Agent.',
     ]),
 ]

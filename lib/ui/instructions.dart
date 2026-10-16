@@ -117,6 +117,14 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',
     ]),
+    // Game-history story (Nigel, 2026-10-16).
+    const InstructionSection('History', [
+      'Each game of Play is kept when it finishes. Tap History on the home screen to see them, newest first, '
+          'and tap a game to see every round. Games played on a Live test recording are marked Live test.',
+      'A game that is reset or left before it finishes is not kept.',
+      'To remove a game, open it and tap the bin. Clear history removes them all; it asks first.',
+      'The history stays on this phone: the app sends it nowhere. Deleting the app deletes it.',
+    ]),
     // Quick draw (story-checkpoint-quick-draw). The safety points come from the
     // Review Agent's Safety Report on it (§7, two people throwing at once).
     InstructionSection('Quick draw', [

@@ -7,7 +7,7 @@ Finished games of Play are **kept on the phone** and can be looked back at: when
 5 (Medium–Large): storage → game wiring → a new screen (3), a new data model (`GameRecord`) (1), a dependency change (`path_provider` made direct; Review Agent) (1).
 
 ## Status
-IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Tasks 1–2 committed (`a276c91`, `d0054ab`). Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
+IN PROGRESS: Tasks 1–4 complete (2026-10-17); **Tasks 5–6 (Finish game) planned, waiting for Nigel's approval.** Tasks 1–3 committed (`a276c91`, `d0054ab`, `06d608b`). **Waiting for the device checks** ([[Device Test Plan]] → History Checks, H0–H5: Nigel on the Samsung for H0–H4, and in TestFlight 1.0.0 (8) with the Players and Targets Checks). Archive the story once they pass. Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `Match` (`lib/scoring/match.dart`): each player's `GameSession` (rounds, throws, totals), `mode`, `maxRounds`, `isOver`, `winner`, `draw`. Everything a record needs is there when a game ends.
@@ -84,7 +84,7 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ## Task 3: The History screen
 - **Work:** Home → **History**: the list (newest first), a game's rounds, delete one, **Clear history** (asks first), "No games yet", and "Couldn't load the history" if the file fails.
-- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-17); Nigel: "commit this and continue to task 4" (`06d608b`)
 - **Verify:** Nigel opens History on his Samsung after a Live test game (no throwing needed).
 - **Next:** Task 4.
 - **What changed:**
@@ -100,7 +100,69 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ## Task 4: Instructions, docs, device checks, traceability
 - **Work:** the in-app Instructions (History, what's kept and where); Design Decisions, Glossary, Data Flow, System Diagram, web pages; Device Test Plan checks for the next TestFlight build; Review Agent; Traceability Agent; backlog #5.
+- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
 - **Verify:** Nigel reads the instructions; the checks are ready.
+- **What changed:**
+  - `lib/ui/instructions.dart`: a **History** section after Resetting (kept when a game finishes; Home → History, newest first, tap for every round; Live test games marked; reset or unfinished games not kept; the bin, and Clear history which asks first; stays on this phone, sent nowhere, deleted with the app). Same text for the paper target.
+  - Docs: [[Design Decisions]] → Game History (when a game is kept, the History screen; `lib/ui/` row); [[Glossary]] (`_keep`, `clockProvider`, `historySaveErrorProvider`, `HistoryScreen` / `GameRecordScreen` and their text functions; concept **Kept game**); [[Data Flow]] (Play: keeping the game, viewing it); [[System Diagram]] (HistoryScreen, the history providers, a HISTORY box, `path_provider` under native code).
+  - Web pages (`tool/web_docs/content.py`, `build.py`, `docs/web/assets/styles.css`; rebuilt): a **History** lane (its own colour and clock icon) with a **GameHistory** component page, a **Keeping and viewing finished games** flow page, History on the Screens and Providers pages, `path_provider` among the plugins.
+  - [[Device Test Plan]] → **History Checks** (H0–H5); [[Mac Handoff]] section 000: build 8 now also carries game lengths and history (no Podfile change).
+  - **Drift fixed on the way:** "9 rounds" in both diagrams, the Play flow and the GameSession page now say 3, 5 or 9 (stale since game lengths, 2026-10-16).
+- **Verified by:** `flutter test`: 587 passed (1 new), `flutter analyze`: no issues; `python tool/web_docs/build.py`: index + 8 flows + 25 components.
+- **Checkpoint saved:** 2026-10-17
+
+### Test Report — 2026-10-17 (Task 4)
+- **New:** `test/ui/instructions_test.dart`: 'History: finished games only, where to find them, delete and clear, kept on the phone'; the section-order test now has **History** after Resetting (the paper target's sections still match the real board's).
+- **Results:** 587 passed, 0 failed.
+
+### Doc Update Log — 2026-10-17 (Tasks 2–4)
+- **Updated:** `Architecture/Design Decisions.md`, `Architecture/Glossary.md`, `Architecture/Data Flow.md`, `Architecture/System Diagram.md`, `Operations/Device Test Plan.md`, `Operations/Mac Handoff.md`, `stories/backlog.md` (#5), `CLAUDE.md` and `docs/working-with-nigel.md` (project overview).
+- **Created:** `docs/web/components/game-history.html`, `docs/web/flows/game-history.html` (generated).
+- **Not changed:** the interactive Thrower Field Test page (as for the M and Q checks, the H checks live in the Device Test Plan and come back in a message).
+- **Drift noted, not fixed:** the System Diagram's UI tree doesn't show `PlaySetupScreen` or `TwoTargetPlayScreen` (players-and-targets story).
+
+### Safety Report — 2026-10-17 (Tasks 2–4, Review Agent)
+- **Files reviewed:** `lib/providers.dart` (`_keep`), `lib/ui/history_screen.dart`, `lib/ui/home_screen.dart`, both Play screens, `lib/ui/instructions.dart`; `pubspec.yaml`, `AndroidManifest.xml`, `Info.plist` unchanged since Task 1's report.
+- ✅ §1 Permissions: none added; the history is in the app's own folder.
+- ✅ §2 Parity: Dart only; the same on iOS and Android.
+- ✅ §3 Debug/release: no debug-only paths; Live test games are kept like any other, marked with the recording's name (and go with the Live test recordings when backlog #6 removes them from release builds).
+- ✅ §4 Secrets: none.
+- ✅ §5 Privacy: dates and scores only, no images or names; nothing sent anywhere; the Instructions say so ("stays on this phone… Deleting the app deletes it"). The file is in the phone's own backups (noted in Task 1); no change to the store privacy answers.
+- ✅ §6 Size and performance: saving runs without waiting, after the game ends; the History list loads one small file when opened.
+- ✅ §7 Physical safety: History is reached from Home, not from Play, so nothing prompts anyone to the phone or the board during a game; the "Couldn't save" snack bar needs no action.
+- ✅ §8 Rollback: no stored data migrated; Delete removes one game without asking (one game, on purpose), Clear history asks first.
+- **Verdict:** OK to commit.
+
+### Traceability Report — 2026-10-17 (story complete, device checks to come)
+
+| Requirement | Design Reference | Implementation | Test | Status |
+|---|---|---|---|---|
+| AC1: a finished game is saved: when, mode, rounds, each player's rounds and total, the winner or a draw; Live test games marked | Design Decisions → Game History | `GameRecord.fromMatch`, `totals`, `winner`, `draw`; `GameNotifier._keep` (`recordingChoiceProvider`) | `game_record_test.dart`; `keeping_games_test.dart` ('a finished game is kept…', 'a two-player game is kept when both have finished…', 'a Live test game…'); `live_replay_test.dart` ('a 3-round game played on it is kept…') | ✅ Covered (device: H1) |
+| AC2: survives closing and reopening the app | Game History → one file, safe writes | `FileGameHistory` (`game_history.json`, support folder) | `game_history_test.dart` ('found again by a new history on the same folder') | ✅ Covered (device: H3) |
+| AC3: Home → History, newest first; a game shows every round of each player | Game History → The History screen | `HomeScreen`, `HistoryScreen`, `GameRecordScreen`, `whenText`, `summaryText` | `history_screen_test.dart` (list order, line texts, a game's rounds); `widget_test.dart` ('home screen opens the History') | ✅ Covered (device: H1–H2) |
+| AC4: delete one game; Clear history removes all, after asking | The History screen | `GameRecordScreen._delete`, `_HistoryScreenState._clear` | `history_screen_test.dart` (delete; Clear → Cancel; Clear → Clear) | ✅ Covered (device: H4) |
+| AC5: unfinished games not saved; a finished game saved once | When a game is kept | `GameNotifier.onEvent` → `_keep` (`_finishedAt`, `_kept`; reset in `build` / `newGame`) | `keeping_games_test.dart` (nothing while on; reset half-way; throws after the end; knife falling out after the end; two games after New game) | ✅ Covered (device: H5) |
+| AC6: a file that can't be read or written doesn't stop Play; History says it couldn't load | Safe writes; When a game is kept | `GameHistoryException`, `historySaveErrorProvider` + Play's snack bar, `HistoryScreen` error + Try again | `game_history_test.dart` (damaged, newer version, unwritable folder); `keeping_games_test.dart` ('if it can't be saved…'); `play_screen_test.dart` ('says when a finished game could not be saved'); `history_screen_test.dart` ('couldn't load… tries again') | ✅ Covered |
+| AC7: nothing leaves the phone; no new permission | Game History → Privacy | no network code; app support folder | Review Agent (Tasks 1 and 4); `instructions_test.dart` (History: 'stays on this phone') | ✅ Covered (by review) |
+
+- **Coverage:** 7 of 7 requirements with design, code and tests; device checks H0–H5 to come.
+- **Backward:** every new symbol traces to an AC. **Minor:** `GameRecord.liveTest` is used only by tests (the screens read `recording` for the name); harmless, keep for the History filter or statistics that may come later, or drop it then.
+- **Stale links:** none; the "9 rounds" drift from the game-length change was fixed in Task 4.
+
+## Task 5: Finish game: the rule, and the button on Play
+- **Status:** PLANNED (2026-10-17), waiting for Nigel's approval
+- **Asked for:** Nigel, 2026-10-17: "There needs to be a button 'finish game' so games can finish after fewer rounds". Answered: a round in progress **counts** (its throws so far, as collecting early does); with two players the winner is decided on **equal rounds** (the rounds both have played; an extra round is shown and kept but doesn't count).
+- **Work:**
+  - `GameSession.finish()` / `finished`: `isOver` also when finished. `Match.finish()` finishes every player. `Match.countedRounds` (the fewest rounds any player has played) and the winner / draw on those rounds; a game played to the end is unchanged (both have every round).
+  - `GameNotifier.finishGame()`: finishes the match and keeps it in the history (Task 2's `_keep`, once).
+  - Both Play screens: **Finish game** beside Reset game, while a game with throws is on. It asks first ("Finish the game now? It ends with the rounds played so far and is kept in History."). Game over then says "Game over after 4 of 9 rounds", and with two players, the result on the counted rounds, an extra round marked "not counted".
+  - `GameRecord`: the winner on equal rounds too (the round lists already show how many were played: **no file format change**).
+- **Verify:** tests (finish mid-round, after Player 1's turn, on two targets, with no throws: no button). Nigel: Live test → Target 1 → Play, 9 rounds, **Finish game** after round 2 → the result, then History.
+- **Next:** Task 6.
+
+## Task 6: Finish game in History, Instructions, docs and checks
+- **Work:** History: "4 of 9 rounds" (finished early) in the list and on a game, and the rounds that don't count marked. The Instructions (Finish game, what counts, equal rounds). Design Decisions, Glossary, Data Flow, web pages; Device Test Plan H6–H7; Review Agent; traceability (a new acceptance criterion, AC8).
+- **Verify:** Nigel reads the Instructions; the checks are ready.
 
 ---
 
@@ -109,6 +171,8 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 - **2026-10-16:** Approved ("commit this, yes to all, start task 1"). Task 1 done; the file goes in the support folder rather than the documents folder (see Task 1).
 - **2026-10-17:** Task 2 done. Added: a game whose last-round knife falls out after the end is saved again with the new score (same record), and Play says so if a save fails.
 - **2026-10-17:** Task 3 done. Delete one game asks nothing (only Clear history asks, as planned).
+- **2026-10-17:** Task 4 done; story BUILT, waiting for H0–H5. History ships in TestFlight build 8 with players and targets.
+- **2026-10-17:** Scope change (Nigel): a **Finish game** button, so a game can end after fewer rounds. Planned as Tasks 5–6; the story goes back to IN PROGRESS. Answered: a round in progress counts; two players are judged on equal rounds.
 
 ## Notes
 - Not in this story: typed player names (with accounts, #4), statistics across games (averages, best round), sharing a result, remembering the calibration between launches (a carry-over that could use the same storage later).

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameHistory — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--history);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>History · Component</span>
+    <h1>GameHistory</h1>
+    <p class="dek">Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player&#x27;s round totals.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Interface + file store</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/history/game_history.dart</code><br><code>lib/history/game_record.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>A game of Play finishing; Home → History</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals and, for a Live test game, the recording's name. Totals and the winner are worked out from the rounds, never stored.</p>
+    <p><code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app's own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can't be read is renamed, never deleted, and the history starts afresh.</p>
+    <p>Behind an interface, so a backend can keep the games instead once there are accounts (backlog #4). Nothing leaves the phone today.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>load · add · delete · clear</code></dt><dd>newest first; a game is replaced by its id</dd></div>
+    <div><dt><code>GameRecord.fromMatch · toJson · fromJson</code></dt><dd>a finished match as a record; format version 1</dd></div>
+    <div><dt><code>GameHistoryException</code></dt><dd>a read or write failed; setAside: a damaged file was renamed</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/game-history.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Keeping and viewing finished games</h3>
+      <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/history/game_history.dart · lib/history/game_record.dart</footer>
+</div>
+</body>
+</html>

@@ -129,12 +129,21 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 │   │ GameNotifier.onEvent(board) → Match → a GameSession each     │  │
 │   │  stuck: entry → TargetMapping → TargetModel → score          │  │
 │   │  bounce-out: 0 · fell out: that throw → 0                    │  │
-│   │  board visit: closes the round · 9 rounds × 3 throws         │  │
+│   │  board visit: closes the round · 3, 5 or 9 rounds × 3 throws │  │
 │   │  1 or 2 players: board's own, or whoever's turn (PlayMode)   │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
 │                                  ▼                                  │
 │   PlayScreen: score circles where knives went in (RoundMarks),      │
 │   "0" beside the board for bounce-outs, round and game totals       │
+│                                                                     │
+│   When the match is over (GameNotifier._keep, once per game):       │
+│     GameRecord.fromMatch(at: clockProvider, recording: Live test    │
+│     name) → gameHistoryProvider.add → game_history.json (.tmp, then │
+│     replace). A knife falling out after the end re-saves the same   │
+│     record. A failed save → historySaveErrorProvider → a snack bar  │
+│     on Play; play goes on.                                          │
+│   Home → History: HistoryScreen → load (newest first) → a game:     │
+│     GameRecordScreen (rounds, totals, Delete); Clear history asks.  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 

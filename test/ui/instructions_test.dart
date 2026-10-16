@@ -62,10 +62,18 @@ void main() {
       'Two players on two targets',
       'Scoring',
       'Resetting',
+      'History',
       'Quick draw',
       'Safety',
       'Reporting problems',
     ]);
+  });
+
+  test('History: finished games only, where to find them, delete and clear, kept on the phone', () {
+    expect(text, contains('Each game of Play is kept when it finishes. Tap History on the home screen'));
+    expect(text, contains('reset or left before it finishes is not kept'));
+    expect(text, contains('Clear history removes them all; it asks first.'));
+    expect(text, contains('The history stays on this phone: the app sends it nowhere.'));
   });
 
   test('two players on two targets: own lanes, phone out of both lines, collect together', () {

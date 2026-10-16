@@ -42,6 +42,7 @@
     <div><dt><code>quickDrawTargetsProvider · tapLocatorProvider</code></dt><dd>the tapped boards, and how a tap finds one</dd></div>
     <div><dt><code>playTargetsProvider</code></dt><dd>two-target Play&#x27;s boards, kept for the session</dd></div>
     <div><dt><code>signalSoundsProvider · startScheduleProvider</code></dt><dd>the beeps, and a new random pause each duel</dd></div>
+    <div><dt><code>gameHistoryProvider · historySaveErrorProvider · clockProvider</code></dt><dd>the kept games, a failed save, when a game finished</dd></div>
     <div><dt><code>authServiceProvider</code></dt><dd>the account interface (no provider chosen yet)</dd></div>
   </dl>
 
@@ -57,6 +58,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>A throw → a score (Play)</h3>
       <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/game-history.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Keeping and viewing finished games</h3>
+      <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/live-quick-draw.html">

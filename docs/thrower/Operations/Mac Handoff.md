@@ -15,10 +15,12 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - Live Quick draw: **no GO! on screen**; the long, higher beep is the signal.
 - The recording's Quick draw: Play shows only once the boards are locked.
 - Docs: the architecture web pages (`docs/web/`).
-- **No new plugins, permissions or assets.** `flutter test`: 533 pass on the PC (`git pull`, then `flutter test` as in section 00).
+- **Game length** (2026-10-16): 3, 5 or 9 rounds on the setup screen.
+- **Game history** (2026-10-17, [[story-checkpoint-game-history]]): finished games of Play are kept on the phone; Home → **History**. `path_provider` is now listed in `pubspec.yaml`, but it was already in the app through `audioplayers` at the same version (2.1.6), so **no Podfile or native change**: `pod install` should report nothing new.
+- **No new plugins, permissions or assets.** `flutter test`: 587 pass on the PC (`git pull`, then `flutter test` as in section 00).
 
 ### Then
-Nigel sends his brother [[Device Test Plan]] → **Players and Targets Checks** (M0–M9) as well as the Quick Draw Checks (Q0–Q8, still to do). Q3 now asks about the long beep only.
+Nigel sends his brother [[Device Test Plan]] → **Players and Targets Checks** (M0–M9) and **History Checks** (H0–H5), as well as the Quick Draw Checks (Q0–Q8, still to do). Q3 now asks about the long beep only.
 
 ---
 

@@ -122,6 +122,11 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`GameRecord`** (`lib/history/game_record.dart`) / **`GameHistory`**, **`FileGameHistory`**, **`GameHistoryException`** (`lib/history/game_history.dart`) / **`gameHistoryProvider`**
   - `GameRecord.fromMatch(match, at:, recording:)`; `totals`, `winner`, `draw`, `liveTest`; `toJson` / `fromJson` (`version` 1, `FormatException` if unreadable)
   - `load` (newest first) · `add` · `delete(id)` · `clear`; one file, `game_history.json`, written through a `.tmp` file, one save at a time; a damaged file is set aside (`setAside`)
+  - kept by `GameNotifier.onEvent` → `_keep` when the match is over: once (`_finishedAt`, `_kept`), re-saved if a knife falls out after the end; `clockProvider` (the finish time), `historySaveErrorProvider` (a failed save; Play's snack bar)
+- **`HistoryScreen`** / **`GameRecordScreen`** (`lib/ui/history_screen.dart`)
+  - `HistoryScreen`: `load` → the list, newest first; "No games yet"; "Couldn't load the history" + Try again; **Clear history** (asks first) → `clear`
+  - `GameRecordScreen`: `howText`, `resultText`, each player's rounds and total; **Delete** → `delete(id)`, back to the list
+  - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
   - the screen: `BoardChoosing.addBoard` → `playTargetsProvider`; camera to 1×; `BoardMarksPainter`; `boardMessage`; `boardsStateText`
@@ -167,3 +172,4 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 | **Ducking** | Turning other apps' audio down while ours plays, rather than stopping it. | `AssetRecordingSound.audioContext`, `AssetSignalSounds` |
 | **Outward direction** | Which way "out of the board" points in the picture: from the outer ring's ellipse centre towards the bull's centre (a tilted circle's centre appears shifted towards the far side). The handle lies that way; the entry is the other end. | `outwardDirection`, `GeometricEntryEstimator` |
 | **Ray tracing (test renders)** | Colouring each pixel by following a ray from the camera into a 3D scene; gives photo-like test images with exact answers. | `SyntheticScene` |
+| **Kept game (game history)** | A finished game of Play saved on the phone: when it finished, how it was played (mode, rounds), each player's round totals, and the Live test recording if it was played on one. Only finished games are kept, once each; totals and the winner are worked out from the rounds. | `GameRecord`, `GameNotifier`, `FileGameHistory`, `HistoryScreen` |

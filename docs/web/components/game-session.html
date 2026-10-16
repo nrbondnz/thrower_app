@@ -16,7 +16,7 @@
   <header class="title-block">
     <span class="eyebrow"><span class="swatch" style="background:var(--scoring);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Scoring (pure Dart) · Component</span>
     <h1>GameSession and Match</h1>
-    <p class="dek">A game of 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.</p>
+    <p class="dek">A game of 3, 5 or 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.</p>
   </header>
 
   <dl class="facts-strip">
@@ -35,7 +35,7 @@
     <div><dt><code>stuck · bounceOut · fellOut · boardVisited</code></dt><dd>the events</dd></div>
     <div><dt><code>awaitingNextRound · roundNumber · finishedRounds</code></dt><dd>what Play shows</dd></div>
     <div><dt><code>Match: playerAt · turn · winner · draw</code></dt><dd>whose throw it is, and who won</dd></div>
-    <div><dt><code>GameNotifier.onEvent</code></dt><dd>entry → TargetMapping → TargetModel → score</dd></div>
+    <div><dt><code>GameNotifier.onEvent</code></dt><dd>entry → TargetMapping → TargetModel → score; a finished game is kept in the history</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -44,6 +44,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>A throw → a score (Play)</h3>
       <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/game-history.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Keeping and viewing finished games</h3>
+      <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
       <span class="more">Open →</span>
     </a>
   </div>

@@ -39,7 +39,8 @@ SUB = {
     'quick-draw-judge': 'first to stick wins',
     'start-signal': '5 beeps, a pause, go',
     'target-model': 'ring scores 5 … 0',
-    'game-session': '9 rounds × 3 throws',
+    'game-session': '3, 5 or 9 rounds × 3 throws',
+    'game-history': 'finished games, one JSON file',
     'auth-service': 'interface only',
     'ring-locator': 'rings → ellipses',
     'tapped-target-locator': 'the board at a tap',
@@ -93,6 +94,7 @@ GLYPH = {
     'vision': '<path d="M1.8,10 Q10,2.5 18.2,10 Q10,17.5 1.8,10 Z"/><circle cx="10" cy="10" r="2.6"/>',
     'scoring': '<circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="4.5"/><circle cx="10" cy="10" r="1.4" fill="#fff"/>',
     'sound': '<path d="M3,8 H6.5 L11,4 V16 L6.5,12 H3 Z"/><path d="M13.5,7 A4,4 0 0 1 13.5,13 M15.5,5 A7,7 0 0 1 15.5,15"/>',
+    'history': '<circle cx="10" cy="10" r="7.5"/><path d="M10,5.5 V10 L13,12"/>',
     'auth': '<rect x="4.5" y="9" width="11" height="8.5" rx="1.5"/><path d="M7,9 V6.5 A3,3 0 0 1 13,6.5 V9"/>',
     'external': '<rect x="5" y="5" width="10" height="10" rx="1.5"/><path d="M8,2 V5 M12,2 V5 M8,15 V18 M12,15 V18 M2,8 H5 M2,12 H5 M15,8 H18 M15,12 H18"/>',
 }
@@ -200,13 +202,15 @@ def overview_svg():
     for i, cid in enumerate(vis):
         parts.append(node(36 + i * (bw + 12), y + 36, bw, 48, 'vision', COMPONENTS[cid]['name'], SUB[cid], f'components/{cid}.html', title_size=11, tip=COMPONENTS[cid]['dek']))
     y += 120
-    parts.append(lane_box(20, y, 330, 100, 'sound', lane_label('sound')))
+    parts.append(lane_box(20, y, 330, 156, 'sound', lane_label('sound')))
     parts.append(node(34, y + 36, 302, 48, 'sound', 'SignalSounds', SUB['signal-sounds'], 'components/signal-sounds.html', tip=COMPONENTS['signal-sounds']['dek']))
-    parts.append(lane_box(365, y, W - 385, 100, 'external', lane_label('native')))
-    ew = (W - 385 - 28 - 2 * 12) / 3
+    parts.append(lane_box(365, y, 330, 156, 'history', lane_label('history')))
+    parts.append(node(379, y + 36, 302, 48, 'history', 'GameHistory', SUB['game-history'], 'components/game-history.html', tip=COMPONENTS['game-history']['dek']))
+    parts.append(lane_box(710, y, W - 730, 156, 'external', lane_label('native')))
+    ew = (W - 730 - 28 - 12) / 2
     for i, (t, s) in enumerate(EXTERNAL):
-        parts.append(node(379 + i * (ew + 12), y + 36, ew, 48, 'external', t, s, dashed=True))
-    y += 100
+        parts.append(node(724 + (i % 2) * (ew + 12), y + 36 + (i // 2) * 56, ew, 48, 'external', t, s, dashed=True))
+    y += 156
     parts.append(arrow(W / 2, y + 2, W / 2, y + 34, 'deferred: no network calls today', W / 2 + 10))
     y += 36
     parts.append(node(W / 2 - 190, y, 380, 48, 'external', 'Backend + accounts: not chosen', 'backlog #4', dashed=True))
@@ -215,7 +219,7 @@ def overview_svg():
              'layer (TargetCamera and its live, recorded, cropped and queued implementations) feeds the game layer (ThrowWatcher, '
              'ThrowTracker, QuickDrawWatcher, judgeQuickDraw, StartSignal, PlayBoardsWatcher), which scores through the scoring layer (TargetModel, '
              'GameSession). Vision functions, pure Dart, find the rings, the tapped boards, motion and the entry point. Sound plays the '
-             'start signal. Plugins: camera, audioplayers and the Flutter image codec. No backend yet.')
+             'start signal. History keeps finished games in a file on the phone. Plugins: camera, audioplayers, path_provider and the Flutter image codec. No backend yet.')
     return (f'<svg viewBox="0 0 {W} {y}" role="img" aria-label="{E(label)}">{DEFS}' + ''.join(parts) + '</svg>'), W
 
 

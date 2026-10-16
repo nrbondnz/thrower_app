@@ -10,6 +10,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  ┌───────────────────────────────────────────────────────────────┐  │
 │  │                        UI  (lib/ui)                           │  │
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
+│  │              ├─ HistoryScreen ── GameRecordScreen             │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
 │  │              │    Start → _Lights · go beep · _Result (large) │  │
@@ -35,6 +36,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  signalSoundsProvider           startScheduleProvider         │  │
 │  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │
 │  │  playTargetsProvider (two-target Play's boards, session-long) │  │
+│  │  gameHistoryProvider (kept games) · historySaveErrorProvider  │  │
+│  │  clockProvider (when a game finished)                         │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -47,8 +50,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ ├Recorded-  │  │  ├ThrowTracker  │─▶│ scoreAt    │ │interface │  │
 │  │ │ Camera    │  │  └classifyThrow │  │GameSession │ │only, no  │  │
 │  │ │ ├FramePack│  │ findTarget      │  │ rounds of 3│ │provider  │  │
-│  │ │ └Recording│  │ QuickDrawTargets│  │ 9 rounds   │ │yet       │  │
-│  │ │  Sound    │  │ QuickDrawWatcher│  │            │ │          │  │
+│  │ │ └Recording│  │ QuickDrawTargets│  │ 3, 5 or 9  │ │yet       │  │
+│  │ │  Sound    │  │ QuickDrawWatcher│  │ rounds     │ │          │  │
 │  │ ├Recording- │  │  └ThrowWatcher×2│  │            │ │          │  │
 │  │ │ Analysis- │  │ judgeQuickDraw  │  │            │ │          │  │
 │  │ │ Feed      │  │  go, false start│  │            │ │          │  │
@@ -82,12 +85,20 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │    made by tool/make_signal_sounds.dart); signalSoundsProvider │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
+│  ┌─────────────────────── HISTORY (lib/history) ──────────────────┐ │
+│  │ GameHistory (interface) ◀── GameNotifier (a finished game),    │ │
+│  │   HistoryScreen (list, delete, clear)                          │ │
+│  │  └FileGameHistory: game_history.json in the app's support      │ │
+│  │    folder; GameRecord (when, mode, rounds, round totals)       │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
 │  ┌───────────────────────── NATIVE CODE ──────────────────────────┐ │
 │  │ camera (LiveCamera: back camera, image stream, no audio;       │ │
 │  │   Quick draw asks for 60 fps)                                  │ │
 │  │ audioplayers (RecordingSound: Live test clip; SignalSounds:    │ │
 │  │   Quick draw beeps and chime, low latency; play only)          │ │
 │  │ Flutter engine image codec (decodeFrameNatively), not a plugin │ │
+│  │ path_provider (FileGameHistory: the app's support folder)      │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
           │

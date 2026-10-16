@@ -75,6 +75,21 @@ For [[story-checkpoint-players-and-targets]] (Play for 1 or 2 players, on 1 targ
 
 Safety: "Player 2's turn", "Wait for Player 2" and "Collect your knives" follow the scores, not the lanes. With real knives, nobody goes forward until everyone has finished throwing and agrees it's clear.
 
+## History Checks (added 2026-10-17)
+
+For [[story-checkpoint-game-history]] (finished games of Play kept on the phone; Home → History). In the same TestFlight build as the Players and Targets Checks, **1.0.0 (8) or later**. Nigel can do H0–H4 himself on the Samsung from Android Studio: no throwing, only the Live test recordings.
+
+| Step | Do | Look for |
+|---|---|---|
+| H0 | Home → **History** (before any game) | **"No games yet"**; no Clear history button |
+| H1 | Live test → **Target 1** → Calibrate → **2. Play** → 1 player, **3 rounds** → Start; let the recording play past its third round (about the first minute and a half). Back to Home → **History** | One game: today's date and time, then **"1 player · 3 rounds · Live test: Target 1 · Total …"**, the same total Play showed at the end |
+| H2 | Tap the game | Every round's score, the same as Play showed, and the total |
+| H3 | Close the app fully (swipe it away), open it again → History | The game is still there |
+| H4 | Play another (H1, or 2 players on 1 target), then: open one game and tap the **bin**; then **Clear history** → **Cancel**; then Clear history → **Clear** | The bin removes that game only; Cancel keeps the rest; Clear empties the list, "No games yet" |
+| H5 | Start a game and **Reset game** half-way, or leave Play before it ends → History | Nothing new: only finished games are kept |
+
+Nothing in History leaves the phone; deleting the app deletes it.
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.
