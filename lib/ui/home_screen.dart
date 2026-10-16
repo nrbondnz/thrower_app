@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'calibration_screen.dart';
 import 'debug_target_screen.dart';
+import 'history_screen.dart';
 import 'instructions.dart';
 import 'live_quick_draw_screen.dart';
 import 'live_test_screen.dart';
@@ -32,6 +33,12 @@ class HomeScreen extends StatelessWidget {
               child: const Text('Play'),
             ),
             const _Caption('Rounds of 3 throws, 1 or 2 players'),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => open(const HistoryScreen()),
+              child: const Text('History'),
+            ),
+            const _Caption('Finished games of Play'),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => open(const LiveQuickDrawScreen()),

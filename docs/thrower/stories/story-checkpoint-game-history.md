@@ -7,7 +7,7 @@ Finished games of Play are **kept on the phone** and can be looked back at: when
 5 (Medium–Large): storage → game wiring → a new screen (3), a new data model (`GameRecord`) (1), a dependency change (`path_provider` made direct; Review Agent) (1).
 
 ## Status
-IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Task 1 committed (`a276c91`). Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
+IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Tasks 1–2 committed (`a276c91`, `d0054ab`). Plan approved 2026-10-16 ("commit this, yes to all, start task 1"): every open question answered as recommended.
 
 ## What Exists (checked 2026-10-16)
 - `Match` (`lib/scoring/match.dart`): each player's `GameSession` (rounds, throws, totals), `mode`, `maxRounds`, `isOver`, `winner`, `draw`. Everything a record needs is there when a game ends.
@@ -66,7 +66,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 - **Verdict:** OK to commit.
 
 ## Task 2: Save each finished game
-- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-17); Nigel: "commit this and continue to task 3" (`d0054ab`)
 - **Work:** when a `Match` becomes over, its `GameRecord` is added, once. Live test games marked. Not for reset or unfinished games.
 - **Verify (on this PC):** a widget test plays a short game to the end and finds it saved once; Live test → Target 1, a 3-round game, is saved as "Live test".
 - **Next:** Task 3.
@@ -84,8 +84,19 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ## Task 3: The History screen
 - **Work:** Home → **History**: the list (newest first), a game's rounds, delete one, **Clear history** (asks first), "No games yet", and "Couldn't load the history" if the file fails.
+- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
 - **Verify:** Nigel opens History on his Samsung after a Live test game (no throwing needed).
 - **Next:** Task 4.
+- **What changed:**
+  - `lib/ui/history_screen.dart` (new): `HistoryScreen` loads `gameHistoryProvider` when opened: a list, newest first (`whenText`: "16 Oct, 14:32"; `summaryText`: "2 players, 1 target · 5 rounds · Player 1 wins 61–58", "· Live test: Target 1" for a recording); "No games yet"; "Couldn't load the history" with the reason and **Try again**; **Clear history** in the app bar (only when there are games) asks first ("Clear history?", Cancel / Clear). `GameRecordScreen`: how it was played, the result, each player's total and every round; **Delete** (bin icon, no question asked: one game, on purpose) goes back to the list, which reloads. A failed delete or clear says so in a snack bar.
+  - `lib/ui/home_screen.dart`: an outlined **History** button under Play, captioned "Finished games of Play".
+- **Verified by:** `flutter test`: 586 passed (13 new), `flutter analyze`: no issues. **On the Samsung:** Home → Live test → Target 1 → Play a 3-round game to the end (about the first minute and a half), back to Home → History.
+- **Checkpoint saved:** 2026-10-17
+
+### Test Report — 2026-10-17 (Task 3)
+- **New:** `test/ui/history_screen_test.dart` (12: the date text; four list lines, as a table (one player, two players with a winner, a draw on two targets, a Live test game); the list newest first; "No games yet" with no Clear history; a load failure with its reason, then Try again; a game's rounds, totals and winner; Delete goes back to a shorter list; Clear history's Cancel keeps all; Clear confirmed empties it). `test/widget_test.dart`: Home opens History.
+- **Found and fixed by the tests:** `_reload`'s `setState` returned the reload's future (a Flutter assertion).
+- **Results:** 586 passed, 0 failed.
 
 ## Task 4: Instructions, docs, device checks, traceability
 - **Work:** the in-app Instructions (History, what's kept and where); Design Decisions, Glossary, Data Flow, System Diagram, web pages; Device Test Plan checks for the next TestFlight build; Review Agent; Traceability Agent; backlog #5.
@@ -97,6 +108,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 - **2026-10-16:** Planned. Waiting for Nigel's approval and answers to the open questions.
 - **2026-10-16:** Approved ("commit this, yes to all, start task 1"). Task 1 done; the file goes in the support folder rather than the documents folder (see Task 1).
 - **2026-10-17:** Task 2 done. Added: a game whose last-round knife falls out after the end is saved again with the new score (same record), and Play says so if a save fails.
+- **2026-10-17:** Task 3 done. Delete one game asks nothing (only Clear history asks, as planned).
 
 ## Notes
 - Not in this story: typed player names (with accounts, #4), statistics across games (averages, best round), sharing a result, remembering the calibration between launches (a carry-over that could use the same storage later).
