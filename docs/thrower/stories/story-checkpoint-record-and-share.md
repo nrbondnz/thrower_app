@@ -29,7 +29,7 @@ PAUSED before starting (2026-10-15). Nigel: "I need to get my brother to test be
 
 ## Acceptance Criteria
 1. Quick draw records each duel from **Start** to the result, with sound, while still timing every frame. Play records the game.
-2. After a duel, **Share** opens the share sheet with a video showing the boards' outlines, the lights and **GO!**, each thrower's time and score as their knife lands, and the result.
+2. After a duel, **Share** opens the share sheet with a video showing the boards' outlines, the lights going out at go, each thrower's time and score as their knife lands, and the result.
 3. In Play, any throw can be shared as a **short clip**: its score appears as the knife lands, with the round so far.
 4. If the microphone is refused, the video has no sound and everything else works. If the camera can't record (an old phone), scoring still works and **Share** isn't offered.
 5. Recordings stay in the app's own storage until shared, and are deleted when the screen closes.

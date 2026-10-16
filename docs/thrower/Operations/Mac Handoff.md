@@ -14,7 +14,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 The **live** Quick draw is built (story [[story-checkpoint-live-quick-draw]], all 5 tasks), but Nigel can't test the live camera himself: **his brother tests it on his iPhone from TestFlight**. So this build goes to the **Field testers** group. Nothing else is pending on the Mac.
 
 ### What's in it (all from the PC, pushed to `main`)
-- **Home → Quick draw** (new button; **Play** is still rounds on one target): the live camera full screen; tap Player 1's bull, then Player 2's, **Lock boards**; a starter taps **Start**: 5 beeps with 5 lights, a random 1.0–3.0 s pause, the long "go" beep, **GO!**; both boards analysed on every frame from 1 s before go (60 fps asked for); the result in large type with a chime ("Player 2 wins", each time after go and score); **Next duel**, **Stop**, **Choose boards again** (renamed from "Start again").
+- **Home → Quick draw** (new button; **Play** is still rounds on one target): the live camera full screen; tap Player 1's bull, then Player 2's, **Lock boards**; a starter taps **Start**: 5 beeps with 5 lights, a random 1.0–3.0 s pause, the long, higher "go" beep as the lights go out (no GO! on screen since 2026-10-16: build 7 still shows it); both boards analysed on every frame from 1 s before go (60 fps asked for); the result in large type with a chime ("Player 2 wins", each time after go and score); **Next duel**, **Stop**, **Choose boards again** (renamed from "Start again").
 - Backlog #12: Play shows the next round as soon as the knives are collected.
 - **No new plugins or permissions.** `pubspec.yaml` adds only the asset folder `assets/sounds/` (three WAVs, ~60 KB, from `tool/make_signal_sounds.dart`); `audioplayers` was already there, so **`ios/Podfile.lock` shouldn't change** (if it does, look before committing). The camera now asks for 60 fps (`LiveCamera.open(fps: 60)`), a Dart-side setting.
 - `flutter test`: **471 pass** on the PC.
@@ -29,7 +29,7 @@ The **live** Quick draw is built (story [[story-checkpoint-live-quick-draw]], al
 
 ### Worth knowing
 - **A TestFlight build is a release build:** no frames/s label or debug line, so the checklist only asks what he can see: do the two times differ, can the beeps be heard at the throwing line, is the result readable from 4 m, does the phone get hot over 10 duels, and does it say "Some frames were skipped" on a result.
-- **Sound on iOS:** the first beep may start a little late (iOS has no low-latency player mode); "go" is timed when the go beep is asked to play, so both throwers' times include the same delay. Q3 asks whether GO! and the beep line up.
+- **Sound on iOS:** the first beep may start a little late (iOS has no low-latency player mode); "go" is timed when the go beep is asked to play, so both throwers' times include the same delay. Q3 asks whether the lights going out and the beep line up.
 - **Not for the App Store yet:** the Live test recordings (~87 MB, people in the footage): [[backlog]] #6.
 
 ### Next (either machine)

@@ -133,7 +133,7 @@
 ## Live Quick Draw: Sound Notes
 
 From the Review Agent's Safety Report on the start signal ([[story-checkpoint-live-quick-draw]], 2026-10-15):
-- **The go beep sounds a little after "go" is timed.** `goAt` is taken as the go beep is asked to play; the phone's sound start delay (tens of ms, more for the very first sound on iOS, where the low-latency mode does nothing) comes after it. It's the same for both throwers, so the winner is fair, but the times shown include it, and a throw that anticipates the beep by less than that delay still counts. Device Test Plan Q3 asks whether GO! and the beep line up.
+- **The go beep sounds a little after "go" is timed.** `goAt` is taken as the go beep is asked to play; the phone's sound start delay (tens of ms, more for the very first sound on iOS, where the low-latency mode does nothing) comes after it. It's the same for both throwers, so the winner is fair, but the times shown include it, and a throw that anticipates the beep by less than that delay still counts. Device Test Plan Q3 asks whether the lights going out and the beep line up.
 - **Android: other apps' music stays turned down** from the first Start until Quick draw closes. Android's low-latency player gives no "finished" signal, so each sound keeps its duck-others audio focus until it's next stopped. Harmless; leaving Quick draw restores the music.
 - **Fixed before the first device test:** the sounds were released as soon as they were read (an auto-disposed provider nothing watched), so a real phone would have played no beeps; the screen now keeps them loaded while it's open (`live_quick_draw_screen_test` checks it).
 

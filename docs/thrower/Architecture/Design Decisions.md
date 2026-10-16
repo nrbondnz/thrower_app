@@ -571,7 +571,7 @@ The misses aren't resolution or compression: the right board fails as often on t
 
 ## Quick Draw: the Start Signal (2026-10-15)
 
-**Decision (Nigel and Mark, 2026-10-14; the pause, Nigel, 2026-10-15):** the live Quick draw starts **like Formula 1**: **5 short beeps a second apart**, each lighting one of 5 lights, then a **random pause**, then a **long "go" beep** as the lights go out and **GO!** shows. The pause is **one of 1.0, 1.2, 1.4 … 3.0 s**, picked at random each time, so the throwers can't time go. Nigel: *"choose any 0.2 of a second between 1 and 3 seconds"*. Task 3 of [[story-checkpoint-live-quick-draw]].
+**Decision (Nigel and Mark, 2026-10-14; the pause, Nigel, 2026-10-15):** the live Quick draw starts **like Formula 1**: **5 short beeps a second apart**, each lighting one of 5 lights, then a **random pause**, then a **long, higher "go" beep** as the lights go out. **Nothing is shown for go:** the beep is the signal (Nigel, 2026-10-16: "no need for a go on the screen just a long beep(higher frequency)"). The pause is **one of 1.0, 1.2, 1.4 … 3.0 s**, picked at random each time, so the throwers can't time go. Nigel: *"choose any 0.2 of a second between 1 and 3 seconds"*. Task 3 of [[story-checkpoint-live-quick-draw]].
 
 **The sounds:** three small bundled WAVs in `assets/sounds/` (mono, 16-bit, 22.05 kHz; ~61 KB together; listed in `pubspec.yaml` assets), **made by a tool**, like the printable target: `tool/make_signal_sounds.dart` (see [[Common Tasks#Remake the Quick Draw Sounds]]).
 - `beep.wav`: each countdown beep, 1 kHz, 0.2 s.
@@ -603,7 +603,7 @@ Each tone fades in and out over 5 ms so it doesn't click. Generated rather than 
 1. Tap both boards, **Lock boards** (Quick Draw: the Live Screen). The line says "Boards locked. Throwers ready? Tap Start: 5 beeps, then go on the long beep."
 2. **Start** (big): the start signal (Quick Draw: the Start Signal). During the countdown, **5 lights** (`_Lights`, red as each beep sounds), "Wait for the long beep…" and **Stop** (cancels; the boards stay).
 3. **From go − 1 s** the boards are watched: `QuickDrawWatcher(queue: true)` on both (every frame, in order, report late: Quick Draw: the Live Camera — 60 fps, Crops and a Queue). **Watching no longer starts at Lock** (Task 2 did, for its debug check): nothing is queued while the throwers get ready, which settles the Task 2 Safety Report's memory point.
-4. **Go:** the lights go out, the go beep, **GO!** (96 pt, green) for **0.7 s** (`goShown`), "Watching…". Each board's line under it (`boardLines`, timed from `goAt`).
+4. **Go:** the lights go out with the go beep (1.5 kHz, 0.8 s, against the countdown's 1 kHz, 0.2 s), "Watching…". No GO! on screen (Nigel, 2026-10-16; it was 96 pt for 0.7 s until then). Each board's line under it (`boardLines`, timed from `goAt`).
 5. **The result** (`_checkResult`, every 250 ms): once **both throws are in**, or **4 s after go** (`resultWindow`) **once analysis has caught up** (every queue empty), so a thrower who doesn't throw doesn't hang the duel and a slow phone isn't cut off. Then `judgeQuickDraw(throws, goAt)` (the same rule as the recording: Quick Draw: Go, False Starts and the Winner), the **chime** (`result.wav`) and the result panel.
 6. **Next duel** (big): keeps the boards, ready for Start; collect the knives first. **Choose boards again** forgets the boards too.
 
@@ -613,7 +613,7 @@ Each tone fades in and out over 5 ms so it doesn't click. Generated rather than 
 
 **False starts:** a knife between go − 1 s and go is a false start (impact before go). One thrown earlier is already in the board when watching starts, so it isn't timed: an obvious false start the throwers can see for themselves.
 
-**Checked by** `test/ui/live_quick_draw_screen_test.dart` (Start lights the 5 lights a second apart with a beep each; at go the lights go out, GO! and the go beep, watched from 1 s before; with no throws, after the window, "No winner" in large type (≥ 48 pt) with the chime; Next duel keeps the boards; Stop cancels the countdown) and `test/game/quick_draw_live_path_test.dart` (judged from go on the frames' clock: Player 2 wins, ~0.82 s after go).
+**Checked by** `test/ui/live_quick_draw_screen_test.dart` (Start lights the 5 lights a second apart with a beep each; at go the lights go out and the go beep sounds, with no GO! on screen, watched from 1 s before; with no throws, after the window, "No winner" in large type (≥ 48 pt) with the chime; Next duel keeps the boards; Stop cancels the countdown) and `test/game/quick_draw_live_path_test.dart` (judged from go on the frames' clock: Player 2 wins, ~0.82 s after go).
 
 **Confirmed:** 2026-10-15 (built; Nigel's device check pending: [[Device Test Plan]] → Quick Draw Checks).
 

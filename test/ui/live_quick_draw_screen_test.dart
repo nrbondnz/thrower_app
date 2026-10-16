@@ -167,7 +167,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('at go: the lights go out, GO! and the go beep; both boards are watched from 1 s before', (tester) async {
+    testWidgets('at go: the lights go out and the go beep sounds, with nothing else on screen; both boards are watched from 1 s before', (tester) async {
       await pumpHome(tester, clockCamera);
       await lockBoth(tester);
       await tester.tap(find.byKey(const Key('quickDrawStart')));
@@ -178,11 +178,9 @@ void main() {
       expect(find.byKey(const Key('quickDrawWatchDebug')), findsOneWidget, reason: 'watching from 4.5 s');
       await wait(tester, const Duration(seconds: 1));
       expect(find.byKey(const Key('quickDrawLights')), findsNothing);
-      expect(find.byKey(const Key('quickDrawGo')), findsOneWidget);
+      expect(find.text('GO!'), findsNothing, reason: 'the long beep is the signal (Nigel, 2026-10-16)');
       expect(sounds.played.last, 'go');
       expect(instruction(tester), 'Watching…');
-      await wait(tester, const Duration(seconds: 1));
-      expect(find.byKey(const Key('quickDrawGo')), findsNothing);
       await wait(tester, const Duration(seconds: 5)); // Past the result window.
     });
 

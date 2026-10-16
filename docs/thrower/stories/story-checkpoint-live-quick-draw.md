@@ -27,7 +27,7 @@ BUILT, all 5 tasks (2026-10-15). Waiting for the device check by Nigel's brother
 ## Acceptance Criteria
 1. Home has **Play** (rounds on one target) and **Quick draw** (two throwers) as separate buttons, each saying what it is.
 2. Quick draw opens the live camera full screen; tapping Player 1's board, then Player 2's, outlines and numbers them; Lock boards.
-3. Start: 5 beeps, a random pause, a long "go" beep, with **GO!** on screen; heard with the silent switch on.
+3. Start: 5 beeps, a random pause, a long, higher "go" beep as the lights go out (no GO! on screen: Nigel, 2026-10-16); heard with the silent switch on.
 4. Every camera frame from 1 s before go is analysed, in order (the result may come late); each knife is timed from go and judged stuck (with its score) or bounced; a knife before go is a false start.
 5. The result is shown **large enough to read from the throwing line** (about 4 m), with the winner and each player's time and score.
 6. **Next duel** (tapped once the knives are collected) keeps the boards locked. (Reworded 2026-10-15 to match what was built: a tap, not detecting the collection.)
@@ -177,6 +177,7 @@ BUILT, all 5 tasks (2026-10-15). Waiting for the device check by Nigel's brother
 
 ## Plan Changes Log
 
+- **2026-10-16:** **No GO! on screen** at go (Nigel: "no need for a go on the screen just a long beep(higher frequency)"): the long, higher go beep and the lights going out are the signal. Removed `goShown` and the GO! text from `LiveQuickDrawScreen`; the instructions no longer mention it; Device Test Plan Q3 now asks whether the lights go out with the beep. TestFlight build 7 still shows GO!.
 - **2026-10-16:** Live test → Quick draw (the recording): **Play now shows only once the boards are locked.** Nigel pressed Play before locking on the iPhone; the clip played with no analysis and no result, which looked broken (`quick_draw_screen.dart`; test: 'Play shows only once the boards are locked').
 - **2026-10-15:** Nigel can't check the live camera (it needs his brother's iPhone): Tasks 2–4 continue assuming the check passes; the checks are in [[Device Test Plan]] → Quick Draw Checks. Tasks 3 and 4 built together.
 - **2026-10-15:** Task 4: the result comes once both throws are in, or 4 s after go (once analysis has caught up), so a thrower who doesn't throw doesn't hang the duel. **Next duel** is a tap (collect the knives first) rather than waiting to see both boards visited.

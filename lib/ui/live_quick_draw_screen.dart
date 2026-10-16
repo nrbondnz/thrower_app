@@ -20,8 +20,9 @@ import 'quick_draw_boards.dart';
 /// 1. The camera fills the screen (system bars hidden); tap the centre of
 ///    Player 1's board, then Player 2's, and **Lock boards**.
 /// 2. **Start**: 5 beeps a second apart, each lighting one of 5 lights, a
-///    random pause of 1.0–3.0 s, then a long "go" beep, the lights go out and
-///    **GO!** shows ([StartSignal]).
+///    random pause of 1.0–3.0 s, then a long, higher "go" beep and the lights
+///    go out ([StartSignal]). Nothing else shows at go: the beep is the
+///    signal (Nigel, 2026-10-16).
 /// 3. From 1 s before go, both boards are analysed on every frame
 ///    ([QuickDrawWatcher], queued: a slow phone falls behind and reports
 ///    late, never skips). Each knife is timed from go and judged stuck (with
@@ -44,9 +45,6 @@ class LiveQuickDrawScreen extends ConsumerStatefulWidget {
   /// is: nobody should have to walk to the phone to end a duel.
   static const resultLimit = Duration(seconds: 15);
 
-  /// How long GO! stays on screen.
-  static const goShown = Duration(milliseconds: 700);
-
   @override
   ConsumerState<LiveQuickDrawScreen> createState() => _LiveQuickDrawScreenState();
 }
@@ -59,8 +57,6 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
   /// Frames dropped from the queues during the duel (past their memory cap).
   var _dropped = 0;
   Timer? _resultCheck;
-  Timer? _goOff;
-  var _showGo = false;
 
   @override
   void initState() {
@@ -91,10 +87,6 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
       },
       onGo: (goAt) {
         if (!mounted) return;
-        setState(() => _showGo = true);
-        _goOff = Timer(LiveQuickDrawScreen.goShown, () {
-          if (mounted) setState(() => _showGo = false);
-        });
         _resultCheck = Timer.periodic(const Duration(milliseconds: 250), (_) => _checkResult(camera));
       },
     )..addListener(() {
@@ -135,14 +127,12 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
   /// Stops any start signal, watching and result.
   void _endDuel() {
     _resultCheck?.cancel();
-    _goOff?.cancel();
     _signal?.dispose();
     _watcher?.dispose();
     _signal = null;
     _watcher = null;
     _verdict = null;
     _dropped = 0;
-    _showGo = false;
   }
 
   /// Next duel: same boards, ready to Start.
@@ -190,16 +180,6 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
             ),
           ),
           if (signal != null && signal.phase == StartPhase.countdown) _Lights(lit: signal.lit),
-          if (_showGo)
-            const IgnorePointer(
-              child: Center(
-                child: Text(
-                  'GO!',
-                  key: Key('quickDrawGo'),
-                  style: TextStyle(color: Colors.greenAccent, fontSize: 96, fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 12)]),
-                ),
-              ),
-            ),
           if (verdict != null) QuickDrawResultPanel(verdict: verdict, framesSkipped: _dropped > 0),
           SafeArea(
             child: Stack(

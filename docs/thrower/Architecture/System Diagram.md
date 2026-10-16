@@ -12,7 +12,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
-│  │              │    Start → _Lights · GO! · _Result (large)     │  │
+│  │              │    Start → _Lights · go beep · _Result (large) │  │
 │  │              ├─ CalibrationScreen ── CalibrationEditor        │  │
 │  │              ├─ LiveTestScreen ─┬─ CalibrationScreen, Play    │  │
 │  │              │                  └─ QuickDrawScreen            │  │

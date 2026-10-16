@@ -101,7 +101,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'A third person, the starter, standing behind the throwers, taps Start. Throwers do not start their own '
             'duel: be at your line, ready, before Start is tapped.',
         'Five beeps, a light coming on with each, then a pause that changes every time, then the long beep: '
-            'that is go. GO! shows on the screen. Check the beeps can be heard at the throwing lines.',
+            'that is go. Check the beeps can be heard at the throwing lines.',
         'The first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start). '
             'Both on the same frame is a draw. Times are measured from go to the knife reaching the board.',
         'The result shows in large type with a chime, a moment after the throws: read it from where you stand. '

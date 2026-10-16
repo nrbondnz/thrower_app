@@ -302,7 +302,7 @@ Once the boards are locked, **Start** runs a duel (Tasks 3–4 of [[story-checkp
 │                                  │ onGo, at go                      │
 │                                  ▼                                  │
 │   ┌──────────────────────────────────────────────────────────────┐  │
-│   │ go beep (SignalSounds.go), lights out, GO! for 0.7 s;        │  │
+│   │ go beep (SignalSounds.go), lights out (no GO! on screen);    │  │
 │   │ goAt = camera.now: the clock the frames are stamped with     │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
 │                                  │ each throw timed from goAt       │
