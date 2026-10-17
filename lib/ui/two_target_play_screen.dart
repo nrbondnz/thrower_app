@@ -306,7 +306,7 @@ String? boardMessage(int board, ThrowEvent event) {
 /// changing a score: [board]'s picture shifted.
 String boardMovedMessage(int board) =>
     "The phone may have moved (Player ${board + 1}'s board). If the rings no longer line up, "
-    'choose the boards again.';
+    'choose the boards again when no one is throwing.';
 
 /// Each board's watch state, short: "Player 1: ready · Player 2: throw seen".
 String boardsStateText(List<WatchState> states) => [

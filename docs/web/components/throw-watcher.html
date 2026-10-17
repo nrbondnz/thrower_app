@@ -35,6 +35,7 @@
     <div><dt><code>per frame</code></dt><dd>frameToLuma → MotionDetector.add; keep a before picture</dd></div>
     <div><dt><code>per episode</code></dt><dd>ThrowTracker.onEpisode; if stuck, the next frame is the after → findKnifeEntry</dd></div>
     <div><dt><code>events</code></dt><dd>a stream of ThrowEvent</dd></div>
+    <div><dt><code>pause · resume · moves</code></dt><dd>score corrections: frames ignored, then afresh; did the phone move?</dd></div>
     <div><dt><code>state</code></dt><dd>watching, motion, settling, settled</dd></div>
   </dl>
 
@@ -44,6 +45,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>A throw → a score (Play)</h3>
       <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/score-correction.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
+      <h3>Changing a score (without jogging the camera)</h3>
+      <p>Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn&#x27;t move.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/quick-draw-recording.html">

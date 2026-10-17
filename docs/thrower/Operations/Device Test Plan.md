@@ -92,6 +92,21 @@ For [[story-checkpoint-game-history]] (finished games of Play kept on the phone;
 
 Nothing in History leaves the phone; deleting the app deletes it.
 
+## Score Corrections Checks (added 2026-10-17)
+
+For [[story-checkpoint-score-corrections]] (tap a score to change it, or an empty slot to add a throw the camera missed). Nigel can do C0–C4 on the Samsung with the Live test; C5–C6 need the live camera and the A4 printout. **Only go to the phone when no one is throwing.**
+
+| Step | Do | Look for |
+|---|---|---|
+| C0 | Live test → Target 1 → Play, 1 player | Under the totals, three big score slots (– – –) |
+| C1 | When the first knife scores, tap its slot → choose a different score | The popup shows 0–5 with the current score outlined; the slot, the circle on the picture (light blue) and the totals all change |
+| C2 | Tap the next empty slot (–) → **0** | A light-blue 0 beside the board; the round has one more throw; Cancel instead changes nothing |
+| C3 | After round 1's knives are collected: **Rounds** → Round 1 → change a throw → Done | Round 1's total and the game total change |
+| C4 | 2 players, 1 target: during Player 1's turn | Player 2's empty slots can't be tapped; Player 1's can |
+| C5 | Live camera, paper target, locked: open a score, tap the phone lightly, close it | No message; play goes on |
+| C6 | Open a score, knock or turn the stand a little, close it | **"The phone may have moved…"**; the green rings no longer on the board; calibrate again |
+| C7 | Later, real knives: a thrower misses the board altogether | Add it as 0 from the empty slot, when no one is throwing |
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

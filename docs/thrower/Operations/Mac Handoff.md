@@ -16,11 +16,11 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - The recording's Quick draw: Play shows only once the boards are locked.
 - Docs: the architecture web pages (`docs/web/`).
 - **Game length** (2026-10-16): 3, 5 or 9 rounds on the setup screen.
-- **Game history** (2026-10-17, [[story-checkpoint-game-history]]): finished games of Play are kept on the phone; Home → **History**. **Finish game** on Play ends a game after fewer rounds. `path_provider` is now listed in `pubspec.yaml`, but it was already in the app through `audioplayers` at the same version (2.1.6), so **no Podfile or native change**: `pod install` should report nothing new.
-- **No new plugins, permissions or assets.** `flutter test`: 609 pass on the PC (`git pull`, then `flutter test` as in section 00).
+- **Game history** (2026-10-17, [[story-checkpoint-game-history]]): finished games of Play are kept on the phone; Home → **History**. **Finish game** on Play ends a game after fewer rounds. **Score corrections** ([[story-checkpoint-score-corrections]]): tap a score on Play for a 0–5 popup, or an empty slot to add a missed throw; afterwards the app checks the phone didn't move. `path_provider` is now listed in `pubspec.yaml`, but it was already in the app through `audioplayers` at the same version (2.1.6), so **no Podfile or native change**: `pod install` should report nothing new.
+- **No new plugins, permissions or assets.** `flutter test`: 667 pass on the PC (`git pull`, then `flutter test` as in section 00).
 
 ### Then
-Nigel sends his brother [[Device Test Plan]] → **Players and Targets Checks** (M0–M9) and **History Checks** (H0–H7), as well as the Quick Draw Checks (Q0–Q8, still to do). Q3 now asks about the long beep only.
+Nigel sends his brother [[Device Test Plan]] → **Players and Targets Checks** (M0–M9) and **History Checks** (H0–H7) and **Score Corrections Checks** (C0–C7), as well as the Quick Draw Checks (Q0–Q8, still to do). Q3 now asks about the long beep only.
 
 ---
 

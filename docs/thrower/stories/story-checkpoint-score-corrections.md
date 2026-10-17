@@ -7,7 +7,7 @@ Any throw's score in the game being played can be **changed by hand**, and a thr
 6 (Large): scoring → game wiring → UI → vision (the moved-camera check) (4 layers), a data change (`ThrowRecord`, `Match`) (1), physical safety: someone at the phone mid-game (Review Agent §7) (1).
 
 ## Status
-IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Tasks 1–2 committed (`ae4313b`, `facc3ef`). Plan approved 2026-10-17 ("commit this and go"); questions answered as recommended (below).
+BUILT: all 4 tasks complete (2026-10-17); Tasks 1–3 committed (`ae4313b`, `facc3ef`, `d35f5b1`). **Waiting for the device checks** ([[Device Test Plan]] → Score Corrections Checks, C0–C7: Nigel on the Samsung for C0–C4; C5–C6 need the live camera; also in TestFlight 1.0.0 (8)). Archive the story once they pass.
 
 ## Answered (2026-10-17)
 1. **Which scores:** any round of the game being played. The round in progress shows each throw as a big tappable score below the picture; tapping an earlier round's total opens its throws. (Not History: it keeps only round totals.)
@@ -62,7 +62,7 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ### Task 3: Did the phone move? The check after a correction
 - **Work:** after the popup closes, compare the next settled frame with the picture from before it opened, over the board and its surroundings: a whole-picture shift means the phone moved ("The phone may have moved: re-calibrate"); a knife-sized change does not. Measured on renders with the camera nudged by small amounts (`SyntheticScene`) and on the Live test footage, so the threshold has a reason.
-- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-17); Nigel: "commit this and continue to task 4" (`d35f5b1`)
 - **Verify:** fixture tests (nudged vs not); Nigel taps the phone lightly on its stand, then knocks it.
 - **Next:** Task 4.
 - **What changed:**
@@ -80,12 +80,51 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ### Task 4: Instructions, docs, device checks, traceability
 - **Work:** the in-app Instructions (when to touch the phone; misses; disputes); **Review Agent §7** (someone at the phone mid-game, beside the lanes); Design Decisions, Glossary, Data Flow, System Diagram, web pages; Device Test Plan checks; Traceability Agent; backlog.
+- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
 - **Verify:** Nigel reads the instructions; the checks are ready.
+- **What changed:**
+  - `lib/ui/instructions.dart`: a **Changing a score** section after Scoring (tap a score, 0 to 5, light blue with ✎; a knife that misses: the next empty slot, 0; one the app missed: its score; earlier rounds: Rounds; **go to the phone only when no one is throwing, tap lightly; nothing thrown while a score is open is scored**; if the phone may have moved, check the rings, calibrate again / choose the boards again); in Safety: "Changing a score means going to the phone: only when no one is throwing, and with two targets only when both have finished. Leave the phone where it is; never move it closer to reach it." Paper target: "pen", "paper".
+  - **Review Agent fix:** the phone-moved messages now end "…when no one is throwing" (`phoneMovedMessage`, `boardMovedMessage`): they send someone to the phone.
+  - **Review Agent checklist** (`docs/agents/review-agent/review-agent.md` §7): a new item, "Does a control invite someone to the phone during a game?", as its directive 4 asks for a new kind of risk.
+  - Docs: [[Design Decisions]] → Score Corrections; [[Glossary]] (the components and functions; concepts **Score set by hand**, **Camera shift**); [[Data Flow]]; [[System Diagram]] (`ScoreCorrections`, `cameraShift`); web pages (a **Changing a score** flow; the Screens, ThrowWatcher, MotionDetector and GameSession pages; rebuilt: 9 flows); [[Device Test Plan]] → Score Corrections Checks C0–C7; [[Mac Handoff]] section 000; backlog #14; `CLAUDE.md`, `working-with-nigel.md`.
+- **Verified by:** `flutter test`: 667 passed (3 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-17
+
+### Test Report — 2026-10-17 (Task 4)
+- **New:** `instructions_test.dart` (2: how to change a score and add a miss, with the paper wording; going to the phone only when no one is throwing, tapping lightly, nothing scored meanwhile, the moved message, never moving the phone closer); `two_target_play_screen_test.dart` (the moved message names the board and says when). **Updated:** the section order (Changing a score after Scoring); `play_screen_test.dart` (the message says when).
+- **Results:** 667 passed, 0 failed.
+
+### Safety Report — 2026-10-17 (whole story, Review Agent)
+- **Files reviewed:** `lib/ui/score_corrections.dart`, both Play screens, `lib/ui/instructions.dart`, `lib/game/throw_watcher.dart`, `lib/vision/camera_move.dart`; `pubspec.yaml`, `AndroidManifest.xml`, `Info.plist` unchanged.
+- ✅ §1–§2: no permission, plugin or platform change; Dart only, both platforms alike.
+- ✅ §3: no debug-only paths.
+- ✅ §4–§5: nothing new is stored or sent; corrected scores reach History only as round totals, as before.
+- ✅ §6: the phone-moved check is one `bestShift` over the board (±8 px, every 2nd pixel at ~320 px), once per popup; pausing saves work.
+- ⚠️→✅ **§7 Physical safety (the main risk):** this is the first control that brings someone **to the phone during a game**. With one target the phone is about 2 m from the board, 45° to one side: going to it means walking beside the lane, part-way down it. With two targets it's behind the throwers, near a backswing. Mitigations: the slots are passive (nothing ever says "tap now" or calls anyone to the phone); the Instructions say only when no one is throwing (two targets: both finished), tap lightly, never move the phone closer; nothing thrown while a popup is open is scored, so there's no reason to throw while someone is at the phone. **Flagged and fixed:** "The phone may have moved… calibrate again" sent someone to the phone without saying when; it now ends "when no one is throwing". **Residual:** the app can't see whether anyone is throwing; it relies on the players, as for collecting knives. Added to the §7 checklist for future features.
+- ✅ §8: no stored format change; rolls back cleanly.
+- **Verdict:** OK to commit (the flagged item is fixed).
+
+### Traceability Report — 2026-10-17 (story complete, device checks to come)
+
+| Requirement | Design Reference | Implementation | Test | Status |
+|---|---|---|---|---|
+| AC1: tap a throw's score (this round or an earlier one) → 0–5 + Cancel; totals follow | Design Decisions → Score Corrections | `ScoreCorrections`, `showScorePicker`, `scoreChoices`, `_RoundList`, `_RoundEditor`; `GameSession.setScore`, `Match.setScore`, `GameNotifier.setScore` | `score_corrections_test.dart` (change; Cancel; Rounds → round → change); `game_session_test.dart`, `match_test.dart` ('scores set by hand') | ✅ Covered (device: C1, C3) |
+| AC2: an empty slot adds a throw (0 a miss); one target: the turn's player, counting toward the turn | Score Corrections | `ThrowRecord.byHand`, `ThrowResult.missed`, `GameSession.byHand` / `addToRound`, `Match.byHand` / `nextThrowerAt`, `GameNotifier.addThrow` / `addToRound` | `score_corrections_test.dart` (adds a miss; only the first slot; not the other player's mid-turn); `match_test.dart` (the turn's player, completes the turn); `game_session_test.dart` | ✅ Covered (device: C2, C4) |
+| AC3: a corrected finished game is kept with the new scores, once; the last throw added ends the game | Score Corrections; Game History | `GameNotifier._change` → `_keep` | `keeping_games_test.dart` (a miss finishes the game; a correction after the end re-saves the same record and time) | ✅ Covered |
+| AC4: nothing is scored while a popup is open; watching resumes after | Score Corrections → without jogging | `ThrowWatcher.pause` / `resume`, `MotionDetector.restart`, `PlayBoardsWatcher.pause` / `resume`, `CorrectionHost` | `throw_watcher_pause_test.dart` (paused over the throw; mid-throw; ready again); `motion_detector_test.dart` (restart); `score_corrections_test.dart` (pause and resume around every popup) | ✅ Covered |
+| AC5: after a correction, a moved phone is reported; a light tap is not | Score Corrections → 2 px | `cameraShift`, `phoneMovedShift`, `ThrowWatcher.moves`, `phoneMovedMessage`, `boardMovedMessage` | `camera_move_test.dart` (13); `throw_watcher_pause_test.dart` (moved 3 px; not moved; 1 px; no pause) | ✅ Covered (device: C5, C6) |
+| AC6: Instructions: only when no one is throwing; tap lightly; out of the line of throw; re-calibrate if told | Score Corrections → Safety | `instructionSections` → Changing a score, Safety | `instructions_test.dart` (2) | ✅ Covered (and the Safety Report) |
+| AC7: corrected throws are marked; a corrected knife that falls out scores 0 | Score Corrections | `_Slot` (light blue, ✎), `markColour`, `RoundMarks` (`ThrowSlot`), `paintRoundMarks(match:)` | `score_corrections_test.dart` ('1✎'); `play_screen_test.dart` (light blue); `round_marks_test.dart`; `game_session_test.dart` (falls out → 0) | ✅ Covered |
+
+- **Coverage:** 7 of 7 with design, code and tests; device checks C0–C7 to come.
+- **Backward:** every new symbol traces to an AC. `Match.throwAt` / `lastThrowAt` serve the marks (AC7) and adding by hand (AC2).
+- **Stale links:** none. The marks beside the board now show the throw's real score (a stuck knife without an entry still shows 0, as before).
 
 ---
 
 ## Plan Changes Log
 - **2026-10-17:** Planned from Nigel's request; three questions answered as recommended.
+- **2026-10-17:** All 4 tasks done; story BUILT, waiting for C0–C7. Review Agent: the phone-moved messages now say "when no one is throwing".
 
 ## Notes
 - **Safety:** this is the first feature that invites someone to the phone during a game. The phone is beside the lane (Play: 2 m from the board, 45° to one side; two targets: behind the throwers), so the Instructions must say only when no one is throwing, and the Review Agent checks the wording (§7).

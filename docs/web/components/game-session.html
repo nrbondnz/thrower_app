@@ -37,6 +37,7 @@
     <div><dt><code>Match: playerAt · turn · winner · draw</code></dt><dd>whose throw it is, and who won</dd></div>
     <div><dt><code>finish · countedRounds · countedTotals</code></dt><dd>Finish game: over now, a part-round counted; two players judged on equal rounds</dd></div>
     <div><dt><code>GameNotifier.onEvent</code></dt><dd>entry → TargetMapping → TargetModel → score; a finished game is kept in the history</dd></div>
+    <div><dt><code>setScore · byHand · addToRound</code></dt><dd>a score set by hand (corrected), a missed throw added (0)</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -45,6 +46,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>A throw → a score (Play)</h3>
       <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/score-correction.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
+      <h3>Changing a score (without jogging the camera)</h3>
+      <p>Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn&#x27;t move.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/game-history.html">

@@ -146,6 +146,11 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 │     counted; two players judged on equal rounds → kept as above.    │
 │   Home → History: HistoryScreen → load (newest first) → a game:     │
 │     GameRecordScreen (rounds, totals, Delete); Clear history asks.  │
+│   Tap a score (ScoreCorrections): watching paused → 0–5 popup →     │
+│     GameNotifier.setScore / addThrow (empty slot; 0 = a miss) →     │
+│     marks read the Match → resume: MotionDetector.restart; 0.5 s    │
+│     later cameraShift vs the picture before ≥ 2 px → "The phone     │
+│     may have moved…". A game over is kept again with the change.    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 

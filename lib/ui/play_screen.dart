@@ -311,7 +311,7 @@ String gameText(GameSession game, {String? message}) {
 /// What Play says when the phone moved while someone was changing a score
 /// ([ThrowWatcher.moves]).
 const phoneMovedMessage = 'The phone may have moved. If the green rings no longer line up with the board, '
-    'calibrate again.';
+    'calibrate again when no one is throwing.';
 
 /// "Game over!", or for a game finished early, "Game over after 4 of 9
 /// rounds!".

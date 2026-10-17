@@ -118,6 +118,19 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'A bounce-out or a miss scores 0. A $knife that sticks and then falls out before it is collected scores 0.',
       'If the app saw a $knife stick but not where it went in, the throw shows "?" and scores 0.',
     ]),
+    // Score corrections story (Nigel, 2026-10-17). Going to the phone mid-game:
+    // Review Agent §7.
+    InstructionSection('Changing a score', [
+      'Each throw of the round shows as a score under the picture. If a score is wrong, tap it and choose the right '
+          'one, 0 to 5. A changed score shows in light blue with ✎, on the picture too.',
+      'A $knife that misses the ${paper ? 'paper' : 'board'} altogether is usually not seen. Tap the next empty '
+          'slot (–) and choose 0. If a $knife stuck and the app missed it, choose its score instead.',
+      'For an earlier round, tap Rounds, then the round.',
+      'Go to the phone only when no one is throwing, and tap lightly: a knock moves the picture. '
+          'While a score is open nothing is watched, so nothing thrown then is scored.',
+      'If the app says the phone may have moved, check the green rings still line up with the board. If not, '
+          'calibrate again (on two targets, choose the boards again).',
+    ]),
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',
     ]),
@@ -171,6 +184,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'With two players, "Player 2\'s turn", "Wait for Player 2" and "Collect your knives" only follow the scores. '
             'They never mean the lane is clear: look before you go forward.',
         'Keep the phone and tripod out of the line of throw.',
+        'Changing a score means going to the phone: only when no one is throwing, and with two targets only when '
+            'both have finished. Leave the phone where it is; never move it closer to reach it.',
       ],
     ]),
     const InstructionSection('Reporting problems', [

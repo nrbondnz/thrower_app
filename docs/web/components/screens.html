@@ -21,7 +21,7 @@
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Flutter widgets</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/ui/home_screen.dart</code><br><code>lib/ui/play_setup_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/two_target_play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/history_screen.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br></dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/ui/home_screen.dart</code><br><code>lib/ui/play_setup_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/two_target_play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/history_screen.dart</code><br><code>lib/ui/score_corrections.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>The user, from Home</dd></div>
   </dl>
 
@@ -41,6 +41,7 @@
     <div><dt><code>LiveTestScreen</code></dt><dd>the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)</dd></div>
     <div><dt><code>QuickDrawScreen</code></dt><dd>the recorded duel: tap boards, Lock, Play, GO!, each board&#x27;s time and the winner</dd></div>
     <div><dt><code>LiveQuickDrawScreen</code></dt><dd>the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type</dd></div>
+    <div><dt><code>ScoreCorrections</code></dt><dd>under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile</dd></div>
     <div><dt><code>HistoryScreen · GameRecordScreen</code></dt><dd>the kept games, newest first; a game&#x27;s rounds; Delete; Clear history (asks first)</dd></div>
     <div><dt><code>InstructionsScreen</code></dt><dd>setup, play and the safety points (instructions.dart)</dd></div>
     <div><dt><code>DebugTargetScreen</code></dt><dd>Scoring test target: tap a drawn target to see the score</dd></div>
@@ -58,6 +59,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>A throw → a score (Play)</h3>
       <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/score-correction.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
+      <h3>Changing a score (without jogging the camera)</h3>
+      <p>Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn&#x27;t move.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/game-history.html">
@@ -86,7 +93,7 @@
     </a>
   </div>
 
-  <footer class="colophon">lib/ui/home_screen.dart · lib/ui/play_setup_screen.dart · lib/ui/play_screen.dart · lib/ui/two_target_play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/history_screen.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart</footer>
+  <footer class="colophon">lib/ui/home_screen.dart · lib/ui/play_setup_screen.dart · lib/ui/play_screen.dart · lib/ui/two_target_play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/history_screen.dart · lib/ui/score_corrections.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart</footer>
 </div>
 </body>
 </html>

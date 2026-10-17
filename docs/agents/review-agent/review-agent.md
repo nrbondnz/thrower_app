@@ -66,6 +66,7 @@ The Review Agent runs through every check every time. No shortcuts. No "this loo
 - [ ] Does any instruction or default setting encourage placing the phone (or the user) **in the line of throw**?
 - [ ] Does the flow ever prompt the user to approach the board while others may be throwing (e.g. "tap the target to calibrate" on a phone mounted next to it)?
 - [ ] Is the app clear that it can't tell whether the lane is clear? It must never imply that it is safe to approach.
+- [ ] Does a control invite someone **to the phone during a game** (e.g. changing a score)? The phone sits beside the lane, or behind two throwers: the instructions must say only when no one is throwing, and never to move the phone closer to reach it. (Added 2026-10-17, score corrections.)
 
 ### 8. Identity and Rollback
 

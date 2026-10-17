@@ -12,6 +12,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
 │  │              ├─ HistoryScreen ── GameRecordScreen             │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
+│  │              │    └ ScoreCorrections (tap a score: 0–5 popup) │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
 │  │              │    Start → _Lights · go beep · _Result (large) │  │
 │  │              ├─ CalibrationScreen ── CalibrationEditor        │  │
@@ -77,6 +78,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │                 │  TargetCalibration ─▶ TargetMapping ─▶ point    │ │
 │                 │  findNewObject · faceOnEntry ·                  │ │
 │                 │    GeometricEntryEstimator          (the knife) │ │
+│                 │  cameraShift (did the phone move? 2 px)         │ │
 │                 └─────────────────────────────────────────────────┘ │
 │                                                                     │
 │  ┌──────────────────────── SOUND (lib/sound) ─────────────────────┐ │

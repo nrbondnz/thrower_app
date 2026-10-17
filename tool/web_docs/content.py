@@ -20,7 +20,7 @@ COMPONENTS = {
         name='Screens', lane='ui', type='Flutter widgets',
         files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
-               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
+               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
         trigger='The user, from Home',
         dek='Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.',
         body=[
@@ -37,11 +37,12 @@ COMPONENTS = {
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)'),
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
+            ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile'),
             ('HistoryScreen · GameRecordScreen', 'the kept games, newest first; a game\'s rounds; Delete; Clear history (asks first)'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
         ],
-        flows=['calibration', 'play', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
+        flows=['calibration', 'play', 'score-correction', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -173,9 +174,10 @@ COMPONENTS = {
             ('per frame', 'frameToLuma → MotionDetector.add; keep a before picture'),
             ('per episode', 'ThrowTracker.onEpisode; if stuck, the next frame is the after → findKnifeEntry'),
             ('events', 'a stream of ThrowEvent'),
+            ('pause · resume · moves', 'score corrections: frames ignored, then afresh; did the phone move?'),
             ('state', 'watching, motion, settling, settled'),
         ],
-        flows=['play', 'quick-draw-recording', 'live-quick-draw'],
+        flows=['play', 'score-correction', 'quick-draw-recording', 'live-quick-draw'],
     ),
     'motion-detector': dict(
         name='MotionDetector', lane='vision', type='Class', files=['lib/vision/motion_detector.dart', 'lib/vision/luma_image.dart'],
@@ -188,6 +190,7 @@ COMPONENTS = {
         functions=[
             ('add(frame)', 'changed share vs the previous frame → state'),
             ('MotionEpisode', 'peak, change from before, before/after frames, impact'),
+            ('restart', 'after a pause: the next frame is the new reference'),
         ],
         flows=['play', 'quick-draw-recording'],
     ),
@@ -306,8 +309,9 @@ COMPONENTS = {
             ('Match: playerAt · turn · winner · draw', 'whose throw it is, and who won'),
             ('finish · countedRounds · countedTotals', 'Finish game: over now, a part-round counted; two players judged on equal rounds'),
             ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score; a finished game is kept in the history'),
+            ('setScore · byHand · addToRound', 'a score set by hand (corrected), a missed throw added (0)'),
         ],
-        flows=['play', 'game-history'],
+        flows=['play', 'score-correction', 'game-history'],
     ),
     'quick-draw-watcher': dict(
         name='QuickDrawWatcher', lane='game', type='Class', files=['lib/game/quick_draw_watcher.dart'],
@@ -478,6 +482,23 @@ FLOWS = {
         caption='A board visit (someone collecting knives) is recognised by size: people cover 4% of the region and up, knives up to 2.2%. On two targets, PlayBoardsWatcher runs this for each board on its own crop, and each board scores for its own player.',
         files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/ui/play_screen.dart', 'lib/game/play_boards_watcher.dart', 'lib/ui/two_target_play_screen.dart'],
     ),
+    'score-correction': dict(
+        title='Changing a score (without jogging the camera)', cat='flow', lane='ui',
+        dek='Tap a score under the picture for a 0–5 popup, or an empty slot to add a throw the camera missed. Watching pauses meanwhile; afterwards the app checks the phone didn\'t move.',
+        body=[
+            'This is the first control that brings someone to the phone during a game, beside the lane. The Instructions say: only when no one is throwing, tap lightly, and never move the phone closer to reach it.',
+            'The marks on the picture remember which throw they are, not their score, so a changed score shows there at once, in light blue.',
+        ],
+        steps=[
+            ('ui', 'ScoreCorrections', ['tap a score, an empty slot (–), or Rounds'], 'screens', 'pauseWatching'),
+            ('game', 'ThrowWatcher.pause', ['frames ignored; the picture before kept', 'the knives in the board remembered'], 'throw-watcher', '0–5 popup'),
+            ('scoring', 'GameNotifier.setScore / addThrow', ['corrected: the camera\'s result kept, the new score', 'an empty slot: 0 = missed, 1–5 = stuck'], 'game-session', 'resumeWatching'),
+            ('game', 'ThrowWatcher.resume', ['MotionDetector.restart: the next frame is the reference', '0.5 s later, on a still frame: cameraShift'], 'throw-watcher', '≥ 2 px'),
+            ('ui', 'Play\'s message', ['"The phone may have moved. If the green rings', 'no longer line up, calibrate again when no one is throwing."'], 'screens', None),
+        ],
+        caption='2 px at ~320 px: still footage shifts by up to 1 px, a harmless nudge by 1.4 px; on a typical board 2 px is a sixth to a quarter of a ring.',
+        files=['lib/ui/score_corrections.dart', 'lib/game/throw_watcher.dart', 'lib/vision/camera_move.dart', 'lib/scoring/game_session.dart'],
+    ),
     'game-history': dict(
         title='Keeping and viewing finished games', cat='flow', lane='history',
         dek='When a game of Play finishes it is kept on the phone, once. Home → History lists the games; a game shows every round.',
@@ -553,13 +574,14 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-correction', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
     'scoring-a-point': 'A pixel measured against the board\'s own painted edges, placed on the ideal rings, scored 5 to 0.',
     'calibration': 'Find the rings once in a background isolate, drag to adjust, lock for the session.',
     'play': 'Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.',
+    'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
     'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
     'choosing-boards': 'Tap Player 1\'s board, then Player 2\'s: a fraction of the picture, a window search, the rings.',
     'quick-draw-recording': 'The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.',

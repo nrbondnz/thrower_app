@@ -61,6 +61,7 @@ void main() {
       'Two players on one target',
       'Two players on two targets',
       'Scoring',
+      'Changing a score',
       'Resetting',
       'History',
       'Quick draw',
@@ -72,6 +73,21 @@ void main() {
   test('Finish game: ends with the rounds played; two players judged on rounds both played', () {
     expect(text, contains('tap Finish game (it asks first): the game ends with the rounds played so far'));
     expect(text, contains('the winner is decided on the rounds you have both played'));
+  });
+
+  test('Changing a score: tap a score, 0 to 5; a miss is an empty slot and 0; earlier rounds', () {
+    expect(text, contains('If a score is wrong, tap it and choose the right one, 0 to 5.'));
+    expect(text, contains('A knife that misses the board altogether is usually not seen. Tap the next empty slot'));
+    expect(text, contains('tap Rounds, then the round'));
+    expect(paper, contains('A pen that misses the paper altogether'));
+  });
+
+  test('Changing a score: only when no one is throwing, tap lightly, nothing scored meanwhile, re-calibrate if moved', () {
+    expect(text, contains('Go to the phone only when no one is throwing, and tap lightly'));
+    expect(text, contains('While a score is open nothing is watched'));
+    expect(text, contains('If the app says the phone may have moved'));
+    expect(text, contains('Changing a score means going to the phone: only when no one is throwing'));
+    expect(text, contains('never move it closer to reach it'));
   });
 
   test('History: finished games only, where to find them, delete and clear, kept on the phone', () {

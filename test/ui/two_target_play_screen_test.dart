@@ -207,6 +207,11 @@ void main() {
       );
     });
 
+    test('the phone-moved message names the board, and says when to choose the boards again', () {
+      expect(boardMovedMessage(1), contains("Player 2's board"));
+      expect(boardMovedMessage(1), contains('choose the boards again when no one is throwing'));
+    });
+
     test('watch states, short', () {
       expect(boardsStateText([WatchState.motion, WatchState.blocked]), 'Player 1: throw seen · Player 2: someone at the board');
     });
