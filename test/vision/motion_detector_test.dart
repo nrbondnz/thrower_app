@@ -208,4 +208,23 @@ void main() {
       expect(f.run(override: frames), hasLength(1));
     });
   });
+
+  // Score corrections story, Task 2: after a pause, watching starts afresh.
+  test('restart drops an episode under way: the still frames after it finish nothing', () {
+    final f = Fixture('throw-stick-ring4');
+    final detector = MotionDetector(f.region);
+    var i = 0;
+    for (; detector.state != WatchState.motion; i++) {
+      detector.add(f.frames[i], Duration(microseconds: (i * 1e6 / f.fps).round()));
+    }
+    detector.restart();
+    expect(detector.state, WatchState.watching);
+    // The last frame again and again, for a second: without the restart it
+    // would settle into an episode.
+    final last = f.frames[f.frames.length - 1];
+    for (var j = 0; j < f.fps; j++, i++) {
+      final update = detector.add(last, Duration(microseconds: (i * 1e6 / f.fps).round()));
+      expect(update.finished, isNull, reason: 'frame $j after the restart');
+    }
+  });
 }

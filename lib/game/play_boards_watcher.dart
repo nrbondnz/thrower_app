@@ -58,6 +58,20 @@ class PlayBoardsWatcher {
     }
   }
 
+  /// Pauses every board's watcher ([ThrowWatcher.pause]).
+  void pause() {
+    for (final w in _watchers) {
+      w.pause();
+    }
+  }
+
+  /// Resumes every board's watcher ([ThrowWatcher.resume]).
+  void resume() {
+    for (final w in _watchers) {
+      w.resume();
+    }
+  }
+
   Future<void> dispose() async {
     for (final s in _subscriptions) {
       await s.cancel();

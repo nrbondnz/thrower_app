@@ -6,6 +6,7 @@ import 'package:thrower_app/scoring/game_session.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/ui/play_screen.dart';
+import 'package:thrower_app/ui/score_corrections.dart';
 
 import 'system_bars_test.dart' show LockedCalibration, pumpWithNavBar;
 
@@ -211,5 +212,22 @@ void main() {
     test('says it finished early, and on how many rounds it was judged', () {
       expect(matchFooter(sharedFinished()), startsWith('Finished early: judged on 1 of 9 rounds.'));
     });
+  });
+
+  // Score corrections story, Task 2.
+  testWidgets("Play shows the round's scores as slots to tap, under the totals", (tester) async {
+    await pumpPlay(tester, 2);
+    expect(find.byType(ScoreCorrections), findsOneWidget);
+  });
+
+  testWidgets('two players taking turns: a row of slots each', (tester) async {
+    await pumpShared(tester, 4);
+    expect(find.byType(ScoreCorrections), findsNWidgets(2));
+  });
+
+  test('a score set by hand is marked light blue on the picture; others keep their colour', () {
+    const t = ThrowRecord(ThrowResult.stuck, 4, point: p);
+    expect(markColour(t, Colors.yellowAccent), Colors.yellowAccent);
+    expect(markColour(t.withScore(2), Colors.yellowAccent), Colors.lightBlueAccent);
   });
 }

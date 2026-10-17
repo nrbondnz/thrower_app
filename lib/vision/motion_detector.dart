@@ -252,6 +252,18 @@ class MotionDetector {
 
   WatchState get state => _state;
 
+  /// Starts afresh from the next frame, as if it were the first: any
+  /// episode under way is dropped, and that frame becomes the reference.
+  /// The learned noise is kept. Used after watching was paused (score
+  /// corrections: a hand at the phone isn't a throw).
+  void restart() {
+    _previous = null;
+    _state = WatchState.watching;
+    _startFrame = _start = _stillSince = _impact = _impactFrame = null;
+    _peak = _peakShape = _peakArea = 0;
+    _wasBlocked = false;
+  }
+
   /// The current changed-pixel threshold (brightness levels).
   int get threshold => math.max(minThreshold, (noiseFactor * _noise).round());
 

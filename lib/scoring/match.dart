@@ -20,6 +20,10 @@ enum PlayMode {
   final int targets;
 }
 
+/// Where a throw is in a [Match]: the player, the round and the throw
+/// (each from 0).
+typedef ThrowSlot = ({int player, int round, int index});
+
 /// A game of Play for one or two players: a [GameSession] each (players in
 /// order, Player 1 first). Immutable; every change returns a new match.
 ///
@@ -100,6 +104,24 @@ class Match {
   Match stuck(int score, TargetPoint? point, {int board = 0}) => _throw(board, (g) => g.stuck(score, point));
 
   Match bounceOut({int board = 0}) => _throw(board, (g) => g.bounceOut());
+
+  /// The throw at [slot], or null if there's none there.
+  ThrowRecord? throwAt(ThrowSlot slot) =>
+      players[slot.player].rounds.elementAtOrNull(slot.round)?.throws.elementAtOrNull(slot.index);
+
+  /// Where the last throw at [board] went: in its player's last round (one
+  /// target: the player whose turn it is). Null before any.
+  ThrowSlot? lastThrowAt(int board) {
+    final player = playerAt(board);
+    final rounds = players[player].rounds;
+    if (rounds.isEmpty) return null;
+    return (player: player, round: rounds.length - 1, index: rounds.last.throws.length - 1);
+  }
+
+  /// Who the next throw at [board] counts for: the board's own player on two
+  /// targets; on one target, whoever's turn it is, or the next player once
+  /// this turn has all its throws.
+  int nextThrowerAt(int board) => mode == PlayMode.twoTargets ? board : (turnComplete ? nextTurn : turn);
 
   /// A throw the camera didn't see, added by hand at [board] as the next
   /// throw (one target: the player whose turn it is, counting toward the

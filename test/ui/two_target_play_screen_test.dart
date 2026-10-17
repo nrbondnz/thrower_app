@@ -194,12 +194,13 @@ void main() {
       marks[1].apply(
         const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.stuck), episode,
             knifeId: 0, entry: EntryEstimate(point: Point2(5, 7), axis: Point2(1, 0), knifePixels: 100)),
-        score: 4,
+        slot: (player: 1, round: 0, index: 0),
         newRound: true,
       );
       final boards = [boardAtCentre(100, 300), boardAtCentre(400, 300)];
       // The picture painted at half its 720 px width: scale 0.5.
-      final painter = BoardMarksPainter(boards, marks, offsets: const [Point2(0, 0), Point2(300, 200)]);
+      final match = Match(PlayMode.twoTargets).stuck(4, p, board: 1);
+      final painter = BoardMarksPainter(boards, marks, match: match, offsets: const [Point2(0, 0), Point2(300, 200)]);
       expect(
         (Canvas canvas) => painter.paint(canvas, const Size(360, 640)),
         paints..circle(x: (300 + 5) * 0.5, y: (200 + 7) * 0.5, radius: PlayOverlayPainter.radius),

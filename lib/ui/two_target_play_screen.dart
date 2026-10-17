@@ -9,6 +9,7 @@ import '../game/play_boards_watcher.dart';
 import '../game/quick_draw_targets.dart';
 import '../game/throw_watcher.dart';
 import '../providers.dart';
+import '../scoring/match.dart';
 import '../vision/ellipse.dart';
 import '../vision/motion_detector.dart';
 import '../vision/target_calibration.dart';
@@ -17,6 +18,7 @@ import 'camera_view.dart';
 import 'play_screen.dart';
 import 'quick_draw_boards.dart';
 import 'round_marks.dart';
+import 'score_corrections.dart';
 
 /// Play for two players on two targets, throwing at the same time (Home →
 /// Play → 2 players, 2 targets; players-and-targets story, Task 3).
@@ -39,7 +41,7 @@ class TwoTargetPlayScreen extends ConsumerStatefulWidget {
   ConsumerState<TwoTargetPlayScreen> createState() => _TwoTargetPlayScreenState();
 }
 
-class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with BoardChoosing {
+class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with BoardChoosing implements CorrectionHost {
   PlayBoardsWatcher? _watcher;
   StreamSubscription<BoardThrowEvent>? _events;
   TargetCamera? _camera;
@@ -76,11 +78,12 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
 
   void _onEvent(BoardThrowEvent e) {
     final board = e.board, event = e.event;
-    final newRound = ref.read(gameProvider).nextThrowStartsRound(board: board);
+    final before = ref.read(gameProvider);
+    final newRound = before.nextThrowStartsRound(board: board);
     ref.read(gameProvider.notifier).onEvent(event, e.calibration, board: board);
-    final score = ref.read(gameProvider).players[board].currentRound?.throws.lastOrNull?.score ?? 0;
+    final match = ref.read(gameProvider);
     setState(() {
-      _marks[board].apply(event, score: score, newRound: newRound);
+      _marks[board].apply(event, slot: identical(match, before) ? null : match.lastThrowAt(board), newRound: newRound);
       if (event.outcome.kind != ThrowOutcomeKind.nothing) _message = boardMessage(board, event);
     });
   }
@@ -94,6 +97,16 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
       _message = null;
     });
   }
+
+  @override
+  void pauseWatching() => _watcher?.pause();
+
+  @override
+  void resumeWatching() => _watcher?.resume();
+
+  @override
+  void addedByHand(int board, ThrowSlot slot, {required bool newRound}) =>
+      setState(() => _marks[board].addByHand(slot, newRound: newRound));
 
   /// Live test: play the recording again from the start, with a new game.
   void _replay(RecordedCamera camera) {
@@ -200,6 +213,7 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                         painter: BoardMarksPainter(
                           targets.boards,
                           _marks,
+                          match: match,
                           offsets: [for (final c in watcher.crops) Point2(c.x.toDouble(), c.y.toDouble())],
                         ),
                       ),
@@ -228,6 +242,10 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                       ),
                     const SizedBox(height: 8),
                     PlayersPanel(match: match, message: _message),
+                    const SizedBox(height: 8),
+                    for (var p = 0; p < match.players.length; p++)
+                      ScoreCorrections(host: this, player: p, board: p, label: 'P${p + 1}'),
+                    const SizedBox(height: 8),
                   ],
                   Wrap(
                     alignment: WrapAlignment.center,
@@ -294,16 +312,17 @@ String boardsStateText(List<WatchState> states) => [
 /// knives' entry points are in each board's crop, so [offsets] (the crops'
 /// top-left corners) place them in the picture.
 class BoardMarksPainter extends CustomPainter {
-  BoardMarksPainter(this.boards, this.marks, {required this.offsets});
+  BoardMarksPainter(this.boards, this.marks, {required this.match, required this.offsets});
 
   final List<TargetCalibration> boards;
   final List<RoundMarks> marks;
+  final Match match;
   final List<Point2> offsets;
 
   @override
   void paint(Canvas canvas, Size size) {
     for (var i = 0; i < boards.length && i < marks.length && i < offsets.length; i++) {
-      paintRoundMarks(canvas, marks[i], boards[i], scale: size.width / boards[i].imageWidth, offset: offsets[i]);
+      paintRoundMarks(canvas, marks[i], boards[i], match: match, scale: size.width / boards[i].imageWidth, offset: offsets[i]);
     }
   }
 

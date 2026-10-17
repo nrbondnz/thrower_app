@@ -75,6 +75,23 @@ class ThrowWatcher {
 
   void start() => _frames ??= camera.frames().listen(_onFrame);
 
+  var _paused = false;
+
+  /// Frames are ignored until [resume] (score corrections: while someone is
+  /// at the phone). The knives in the board are still remembered.
+  void pause() => _paused = true;
+
+  /// Watches again, starting afresh from the next frame (the motion
+  /// reference and the full-resolution before picture are taken again).
+  void resume() {
+    if (!_paused) return;
+    _paused = false;
+    _detector.restart();
+    _lastProcessed = null;
+    _fullBeforeAt = null;
+    state.value = WatchState.watching;
+  }
+
   /// Stops watching. [state] isn't disposed: a widget may still be listening
   /// until its next rebuild, and it holds no resources.
   Future<void> dispose() async {
@@ -84,6 +101,7 @@ class ThrowWatcher {
   }
 
   void _onFrame(CameraFrame frame) {
+    if (_paused) return;
     final pending = _awaitingAfter;
     if (pending != null && !_capturing) {
       _awaitingAfter = null;

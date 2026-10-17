@@ -17,6 +17,7 @@ import '../vision/throw_classifier.dart';
 import 'calibration_screen.dart';
 import 'camera_view.dart';
 import 'round_marks.dart';
+import 'score_corrections.dart';
 
 /// Play on one target: the locked target in the live picture; each throw is
 /// detected and scored, with a yellow circle showing its score where each
@@ -31,7 +32,7 @@ class PlayScreen extends ConsumerStatefulWidget {
   ConsumerState<PlayScreen> createState() => _PlayScreenState();
 }
 
-class _PlayScreenState extends ConsumerState<PlayScreen> {
+class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHost {
   ThrowWatcher? _watcher;
   StreamSubscription<ThrowEvent>? _events;
   TargetCamera? _camera;
@@ -52,6 +53,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
     if (camera is RecordedCamera) WidgetsBinding.instance.addPostFrameCallback((_) => camera.restart());
   }
 
+  @override
+  void pauseWatching() => _watcher?.pause();
+
+  @override
+  void resumeWatching() => _watcher?.resume();
+
+  @override
+  void addedByHand(int board, ThrowSlot slot, {required bool newRound}) =>
+      setState(() => _marks.addByHand(slot, newRound: newRound));
+
   /// Live test: play the recording again from the start, with a new game.
   void _replay(RecordedCamera camera) {
     _newGame();
@@ -60,12 +71,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
 
   void _onEvent(ThrowEvent event, TargetCalibration calibration) {
     final notifier = ref.read(gameProvider.notifier);
-    final newRound = ref.read(gameProvider).nextThrowStartsRound();
+    final before = ref.read(gameProvider);
+    final newRound = before.nextThrowStartsRound();
     notifier.onEvent(event, calibration);
     final match = ref.read(gameProvider);
-    final score = match.players[match.playerAt(0)].currentRound?.throws.lastOrNull?.score ?? 0;
     setState(() {
-      _marks.apply(event, score: score, newRound: newRound);
+      _marks.apply(event, slot: identical(match, before) ? null : match.lastThrowAt(0), newRound: newRound);
       _message = eventMessage(event, previous: _message);
     });
   }
@@ -185,6 +196,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       calibration.calibration,
                       scale: constraints.maxWidth / calibration.calibration.imageWidth,
                       marks: _marks,
+                      match: match,
                     ),
                   ),
                 ),
@@ -220,8 +232,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white70),
                     ),
-                  ] else
+                    const SizedBox(height: 8),
+                    ScoreCorrections(host: this, player: 0, board: 0),
+                  ] else ...[
                     PlayersPanel(match: match, message: _message),
+                    const SizedBox(height: 8),
+                    for (var p = 0; p < match.players.length; p++)
+                      ScoreCorrections(host: this, player: p, board: 0, label: 'P${p + 1}'),
+                  ],
                   if (camera is RecordedCamera) ...[
                     const SizedBox(height: 12),
                     ValueListenableBuilder(
@@ -448,13 +466,14 @@ String matchFooter(Match match, {String? message}) => [
     ].join('\n');
 
 /// The locked rings (green), a yellow circle with its score at each knife's
-/// entry, and the "0" marks beside the board.
+/// entry, and the marks beside the board; scores from [match].
 class PlayOverlayPainter extends CustomPainter {
-  PlayOverlayPainter(this.calibration, {required this.scale, required this.marks});
+  PlayOverlayPainter(this.calibration, {required this.scale, required this.marks, required this.match});
 
   final TargetCalibration calibration;
   final double scale;
   final RoundMarks marks;
+  final Match match;
 
   /// Mark radius in screen pixels.
   static const radius = 11.0;
@@ -473,7 +492,7 @@ class PlayOverlayPainter extends CustomPainter {
       }
       canvas.drawPath(path, ring);
     }
-    paintRoundMarks(canvas, marks, calibration, scale: scale);
+    paintRoundMarks(canvas, marks, calibration, match: match, scale: scale);
   }
 
   @override
@@ -481,20 +500,27 @@ class PlayOverlayPainter extends CustomPainter {
 }
 
 /// [marks] for the board [calibration] (image pixels × [scale] = screen):
-/// a yellow circle with its score at each knife's entry, and the "0" marks
-/// beside the board. [offset] is added to the knives' entry points first
-/// (two targets: they're in the board's crop, the board in the picture).
+/// a yellow circle with its score at each knife's entry, and orange marks
+/// beside the board; a score changed by hand is light blue. Scores come
+/// from [match]. [offset] is added to the knives' entry points first (two
+/// targets: they're in the board's crop, the board in the picture).
 void paintRoundMarks(Canvas canvas, RoundMarks marks, TargetCalibration calibration,
-    {required double scale, Point2 offset = const Point2(0, 0)}) {
+    {required Match match, required double scale, Point2 offset = const Point2(0, 0)}) {
   const radius = PlayOverlayPainter.radius;
-  for (final (point, score) in marks.knives.values) {
-    _paintMark(canvas, Offset((point.x + offset.x) * scale, (point.y + offset.y) * scale), '$score', Colors.yellowAccent);
+  for (final (point, slot) in marks.knives.values) {
+    final t = match.throwAt(slot);
+    _paintMark(canvas, Offset((point.x + offset.x) * scale, (point.y + offset.y) * scale), '${t?.score ?? 0}',
+        markColour(t, Colors.yellowAccent));
   }
   for (var i = 0; i < marks.beside.length; i++) {
+    final t = match.throwAt(marks.beside[i]);
     final p = besidePosition(calibration.outer, i, imageWidth: calibration.imageWidth, radius: radius / scale);
-    _paintMark(canvas, Offset(p.x * scale, p.y * scale), marks.beside[i], Colors.orangeAccent);
+    _paintMark(canvas, Offset(p.x * scale, p.y * scale), '${t?.score ?? 0}', markColour(t, Colors.orangeAccent));
   }
 }
+
+/// A mark's colour: [usual], or light blue for a score set by hand.
+Color markColour(ThrowRecord? t, Color usual) => (t?.corrected ?? false) ? Colors.lightBlueAccent : usual;
 
 void _paintMark(Canvas canvas, Offset at, String text, Color colour) {
   const radius = PlayOverlayPainter.radius;
