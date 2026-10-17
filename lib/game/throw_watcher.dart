@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../camera/camera_frame.dart';
 import '../camera/target_camera.dart';
+import '../vision/camera_move.dart';
 import '../vision/entry_point.dart';
 import '../vision/frame_to_rgb.dart';
 import '../vision/luma_image.dart';
@@ -77,19 +78,55 @@ class ThrowWatcher {
 
   var _paused = false;
 
+  /// The last picture analysed, and the one from just before a pause, to
+  /// check afterwards whether the phone moved.
+  LumaImage? _lastLuma;
+  LumaImage? _beforePause;
+
+  /// When watching resumed, once a frame has come (for [moveCheckDelay]).
+  Duration? _resumedAt;
+
+  /// How long after resuming the phone-moved check waits: a tripod tapped
+  /// lightly wobbles for a moment, then settles where it was.
+  static const moveCheckDelay = Duration(milliseconds: 500);
+
+  final _moves = StreamController<double>.broadcast();
+
+  /// After a pause, the shift (pixels at ~320 px) if the phone moved
+  /// ([phoneMovedShift] or more): the rings may no longer line up.
+  Stream<double> get moves => _moves.stream;
+
   /// Frames are ignored until [resume] (score corrections: while someone is
   /// at the phone). The knives in the board are still remembered.
-  void pause() => _paused = true;
+  void pause() {
+    if (_paused) return;
+    _paused = true;
+    _beforePause = _lastLuma;
+  }
 
   /// Watches again, starting afresh from the next frame (the motion
-  /// reference and the full-resolution before picture are taken again).
+  /// reference and the full-resolution before picture are taken again);
+  /// then, once the board is still, checks the phone didn't move.
   void resume() {
     if (!_paused) return;
     _paused = false;
     _detector.restart();
     _lastProcessed = null;
     _fullBeforeAt = null;
+    _resumedAt = null;
     state.value = WatchState.watching;
+  }
+
+  /// The phone-moved check, on a still frame [moveCheckDelay] after resuming.
+  void _checkMove(LumaImage luma, Duration time, WatchState state) {
+    final before = _beforePause;
+    if (before == null) return;
+    final resumed = _resumedAt ??= time;
+    if (time - resumed < moveCheckDelay || state != WatchState.watching) return;
+    _beforePause = null;
+    if (before.width != luma.width || before.height != luma.height) return;
+    final shift = cameraShift(before, luma, _detector.region);
+    if (shift >= phoneMovedShift && !_moves.isClosed) _moves.add(shift);
   }
 
   /// Stops watching. [state] isn't disposed: a widget may still be listening
@@ -98,6 +135,7 @@ class ThrowWatcher {
     await _frames?.cancel();
     _frames = null;
     await _events.close();
+    await _moves.close();
   }
 
   void _onFrame(CameraFrame frame) {
@@ -116,6 +154,8 @@ class ThrowWatcher {
     final update = _detector.add(luma, frame.timestamp);
     _debug.onUpdate(update, _detector.threshold);
     state.value = update.state;
+    _lastLuma = luma;
+    _checkMove(luma, frame.timestamp, update.state);
 
     final keptAt = _fullBeforeAt;
     if (update.state == WatchState.watching &&

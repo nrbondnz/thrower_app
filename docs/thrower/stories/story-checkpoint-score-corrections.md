@@ -7,7 +7,7 @@ Any throw's score in the game being played can be **changed by hand**, and a thr
 6 (Large): scoring → game wiring → UI → vision (the moved-camera check) (4 layers), a data change (`ThrowRecord`, `Match`) (1), physical safety: someone at the phone mid-game (Review Agent §7) (1).
 
 ## Status
-IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Task 1 committed (`ae4313b`). Plan approved 2026-10-17 ("commit this and go"); questions answered as recommended (below).
+IN PROGRESS: Task 3 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. Tasks 1–2 committed (`ae4313b`, `facc3ef`). Plan approved 2026-10-17 ("commit this and go"); questions answered as recommended (below).
 
 ## Answered (2026-10-17)
 1. **Which scores:** any round of the game being played. The round in progress shows each throw as a big tappable score below the picture; tapping an earlier round's total opens its throws. (Not History: it keeps only round totals.)
@@ -44,7 +44,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ### Task 2: Tappable scores and the 0–5 popup on Play
 - **Work:** both Play screens: the round in progress as 3 big score slots below the picture (both players' on two targets); earlier rounds' totals tappable → that round's throws; the popup (0–5 as large buttons, Cancel); watching paused while it's open (`ThrowWatcher` stopped and restarted, so the reference picture is taken afresh); corrected scores marked (e.g. a ✎ or a different colour) on the slots and on the picture's score circles.
-- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-17); Nigel: "commit this and continue to task 3" (`facc3ef`)
 - **Verify:** widget tests. Nigel: Live test → Target 1 → Play: change a score, add a miss, and watch the totals.
 - **Next:** Task 3.
 - **What changed:**
@@ -62,8 +62,21 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-17), waiting for Nigel's checkpoint. 
 
 ### Task 3: Did the phone move? The check after a correction
 - **Work:** after the popup closes, compare the next settled frame with the picture from before it opened, over the board and its surroundings: a whole-picture shift means the phone moved ("The phone may have moved: re-calibrate"); a knife-sized change does not. Measured on renders with the camera nudged by small amounts (`SyntheticScene`) and on the Live test footage, so the threshold has a reason.
+- **Status:** COMPLETE (2026-10-17), awaiting Nigel's checkpoint
 - **Verify:** fixture tests (nudged vs not); Nigel taps the phone lightly on its stand, then knocks it.
 - **Next:** Task 4.
+- **What changed:**
+  - `lib/vision/camera_move.dart` (new): `cameraShift(before, after, region)` (the shift that best lines the two pictures up over the board, `bestShift` up to ±8 px, at the watchers' ~320 px); `phoneMovedShift` = **2 px**; `phoneMoved`.
+  - **Why 2 px (measured 2026-10-17):** still frames of the Live test footage shift by up to 1 px (compression); Nigel's sofa-arm nudge of 2026-10-09, 1.4 px (the motion detector already treats it as harmless); a knife sticking, a bounce-out and someone collecting the knives (renders), 0. On boards of 40–65 px radius at 320 px, 2 px is 0.03–0.05 of the radius: a sixth to a quarter of a ring's width, enough to score a knife near a line in the next ring. A bigger jump than the search reads as 8 px (still a move).
+  - `ThrowWatcher`: `pause` keeps the last picture; after `resume`, the first still frame at least `moveCheckDelay` (0.5 s: a tapped tripod wobbles, then settles) is compared; a move is reported on `moves` (the shift). Only after a pause: ordinary play is unchanged. `PlayBoardsWatcher.moves` gives the board.
+  - Play: `phoneMovedMessage` ("The phone may have moved. If the green rings no longer line up with the board, calibrate again."); two targets: `boardMovedMessage(board)` ("…(Player 2's board)… choose the boards again."), in the usual message line.
+  - **Not done:** re-locating the rings automatically. The app says so and the user decides, as for "the view changed".
+- **Verified by:** `flutter test`: 664 passed (18 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-17
+
+### Test Report — 2026-10-17 (Task 3)
+- **New:** `test/vision/camera_move_test.dart` (13: the same picture, 0; shifts (1,0) and (1,1) not moved, (2,0), (0,−2), (3,1), (6,0) moved; a jump beyond the search reads 8; a knife, a bounce-out and a retrieval (first vs last frame) not a move; Nigel's nudge 1.41 px, not a move; the Live test footage still for a second, ≤ 1 px); `test/game/throw_watcher_pause_test.dart` (4: through a real `ThrowWatcher`: moved 3 px after a pause, reported once; not moved; a 1 px wobble; no check without a pause); `play_screen_test.dart` (the message).
+- **Results:** 664 passed, 0 failed.
 
 ### Task 4: Instructions, docs, device checks, traceability
 - **Work:** the in-app Instructions (when to touch the phone; misses; disputes); **Review Agent §7** (someone at the phone mid-game, beside the lanes); Design Decisions, Glossary, Data Flow, System Diagram, web pages; Device Test Plan checks; Traceability Agent; backlog.

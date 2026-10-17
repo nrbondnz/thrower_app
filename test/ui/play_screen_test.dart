@@ -230,4 +230,10 @@ void main() {
     expect(markColour(t, Colors.yellowAccent), Colors.yellowAccent);
     expect(markColour(t.withScore(2), Colors.yellowAccent), Colors.lightBlueAccent);
   });
+
+  // Score corrections story, Task 3.
+  test('the phone-moved message says to check the rings and calibrate again', () {
+    expect(phoneMovedMessage, contains('The phone may have moved'));
+    expect(phoneMovedMessage, contains('calibrate again'));
+  });
 }

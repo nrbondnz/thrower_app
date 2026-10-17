@@ -35,6 +35,7 @@ class PlayScreen extends ConsumerStatefulWidget {
 class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHost {
   ThrowWatcher? _watcher;
   StreamSubscription<ThrowEvent>? _events;
+  StreamSubscription<double>? _moves;
   TargetCamera? _camera;
   TargetCalibration? _calibration;
 
@@ -49,6 +50,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
     _calibration = calibration;
     _watcher = ThrowWatcher(camera, calibration)..start();
     _events = _watcher!.events.listen((event) => _onEvent(event, calibration));
+    _moves = _watcher!.moves.listen((_) => setState(() => _message = phoneMovedMessage));
     // A Live test recording waits on its first frame until play starts.
     if (camera is RecordedCamera) WidgetsBinding.instance.addPostFrameCallback((_) => camera.restart());
   }
@@ -111,6 +113,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
 
   void _stopWatcher() {
     _events?.cancel();
+    _moves?.cancel();
     _watcher?.dispose();
     _watcher = null;
   }
@@ -304,6 +307,11 @@ String gameText(GameSession game, {String? message}) {
   ];
   return lines.join('\n');
 }
+
+/// What Play says when the phone moved while someone was changing a score
+/// ([ThrowWatcher.moves]).
+const phoneMovedMessage = 'The phone may have moved. If the green rings no longer line up with the board, '
+    'calibrate again.';
 
 /// "Game over!", or for a game finished early, "Game over after 4 of 9
 /// rounds!".

@@ -44,6 +44,7 @@ class TwoTargetPlayScreen extends ConsumerStatefulWidget {
 class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with BoardChoosing implements CorrectionHost {
   PlayBoardsWatcher? _watcher;
   StreamSubscription<BoardThrowEvent>? _events;
+  StreamSubscription<int>? _moves;
   TargetCamera? _camera;
   QuickDrawTargets? _watched;
 
@@ -64,12 +65,15 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
     _watched = targets;
     _watcher = PlayBoardsWatcher(camera, targets.boards)..start();
     _events = _watcher!.events.listen(_onEvent);
+    _moves = _watcher!.moves.listen((board) => setState(() => _message = boardMovedMessage(board)));
     // A Live test recording waits on its first frame until play starts.
     if (camera is RecordedCamera) WidgetsBinding.instance.addPostFrameCallback((_) => camera.restart());
   }
 
   void _stopWatcher() {
     _events?.cancel();
+    _moves?.cancel();
+    _moves = null;
     _watcher?.dispose();
     _events = null;
     _watcher = null;
@@ -297,6 +301,12 @@ String? boardMessage(int board, ThrowEvent event) {
   final message = eventMessage(event);
   return message == null ? null : 'Player ${board + 1}: $message';
 }
+
+/// What two-target Play says when the phone moved while someone was
+/// changing a score: [board]'s picture shifted.
+String boardMovedMessage(int board) =>
+    "The phone may have moved (Player ${board + 1}'s board). If the rings no longer line up, "
+    'choose the boards again.';
 
 /// Each board's watch state, short: "Player 1: ready · Player 2: throw seen".
 String boardsStateText(List<WatchState> states) => [

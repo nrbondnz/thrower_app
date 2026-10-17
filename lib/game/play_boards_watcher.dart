@@ -38,9 +38,14 @@ class PlayBoardsWatcher {
   final crops = <CroppedCamera>[];
   final _watchers = <ThrowWatcher>[];
   final _subscriptions = <StreamSubscription<ThrowEvent>>[];
+  final _moveSubscriptions = <StreamSubscription<double>>[];
   final _events = StreamController<BoardThrowEvent>.broadcast();
+  final _moves = StreamController<int>.broadcast();
 
   Stream<BoardThrowEvent> get events => _events.stream;
+
+  /// After a pause, each board whose picture moved ([ThrowWatcher.moves]).
+  Stream<int> get moves => _moves.stream;
 
   /// Each board's watch state (watching, motion, …), in player order.
   List<ValueListenable<WatchState>> get states => [for (final w in _watchers) w.state];
@@ -54,6 +59,9 @@ class PlayBoardsWatcher {
       _watchers.add(watcher);
       _subscriptions.add(watcher.events.listen((event) {
         if (!_events.isClosed) _events.add(BoardThrowEvent(board, event, calibration));
+      }));
+      _moveSubscriptions.add(watcher.moves.listen((_) {
+        if (!_moves.isClosed) _moves.add(board);
       }));
     }
   }
@@ -76,9 +84,13 @@ class PlayBoardsWatcher {
     for (final s in _subscriptions) {
       await s.cancel();
     }
+    for (final s in _moveSubscriptions) {
+      await s.cancel();
+    }
     for (final w in _watchers) {
       await w.dispose();
     }
     await _events.close();
+    await _moves.close();
   }
 }

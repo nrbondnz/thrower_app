@@ -8,6 +8,7 @@ import 'package:thrower_app/vision/motion_detector.dart';
 import 'package:thrower_app/vision/throw_classifier.dart';
 
 import '../camera/cropped_camera_test.dart' show PushCamera;
+import '../vision/camera_nudge_test.dart' show shifted;
 import '../vision/motion_detector_test.dart' show Fixture;
 
 /// Score corrections story, Task 2: watching pauses while a score popup is
@@ -72,5 +73,51 @@ void main() {
     watcher.resume();
     expect(watcher.state.value, WatchState.watching);
     await watcher.dispose();
+  });
+
+  // Task 3: after a pause, did the phone move?
+  group('the phone-moved check after a pause', () {
+    final still = Fixture('throw-stick-ring4');
+
+    /// A second of the still board, a pause, then a second of it moved by
+    /// ([dx], [dy]); [paused]: whether watching was paused in between.
+    Future<List<double>> moves(int dx, int dy, {bool paused = true}) async {
+      final camera = PushCamera();
+      final watcher = ThrowWatcher(camera, still.calibration, interval: Duration.zero)..start();
+      final found = <double>[];
+      final sub = watcher.moves.listen(found.add);
+      var t = 0;
+      Future<void> push(LumaImage luma, int n) async {
+        for (var i = 0; i < n; i++, t++) {
+          camera.controller.add(frameOf(luma, Duration(microseconds: (t * 1e6 / 15).round())));
+          await pumpEventQueue();
+        }
+      }
+
+      await push(still.frames.first, 15);
+      if (paused) watcher.pause();
+      await push(still.frames.first, 3); // ignored while paused
+      if (paused) watcher.resume();
+      await push(shifted(still.frames.first, dx, dy), 15);
+      await sub.cancel();
+      await watcher.dispose();
+      return found;
+    }
+
+    test('moved by 3 px: reported once', () async {
+      expect(await moves(3, 0), [3.0]);
+    });
+
+    test('not moved: nothing', () async {
+      expect(await moves(0, 0), isEmpty);
+    });
+
+    test('a 1 px wobble: nothing', () async {
+      expect(await moves(1, 0), isEmpty);
+    });
+
+    test('only checked after a pause', () async {
+      expect(await moves(3, 0, paused: false), isEmpty);
+    });
   });
 }
