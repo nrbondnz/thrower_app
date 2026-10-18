@@ -74,6 +74,7 @@
   3. **The account isn't set up for App Store Connect:** no two-factor authentication, or a child/managed Apple ID. Fix: turn on two-factor authentication at account.apple.com.
   4. **The invitation is stale.** Fix: Nigel resends it from *Users and Access*.
 - **Way round it:** use an **external** tester with a **public TestFlight link**. He needs no App Store Connect sign-in, only Apple's TestFlight app. The catch is that each version's first build needs Beta App Review, usually under a day. See [[Common Tasks]] → Ship a Build to TestFlight.
+- **2026-10-19: still failing, so switched to external.** The invitation had **expired** (about 5 days after it was sent) and was resent. Then, in a private window, the link took him to Apple's **Data & Privacy** account page, not the invitation. Done instead: TestFlight → External Testing → group **External testers**, with him added by **email** (not a public link). Build 8 was **submitted to Beta App Review** with the Test Information (description, contact, sign-in not required) and a What to Test note. Once Apple approves, he gets a TestFlight email; he only needs the TestFlight app. **For each later build:** add it to External testers too. Builds of the same version often skip review, but a new version number needs review again.
 
 ## Compressed Video: Whole-Picture "Pulses"
 
