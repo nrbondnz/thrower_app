@@ -43,6 +43,8 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Consequence:** Accounts depend on an auth provider, which is a backend choice. Until that's chosen, account and session handling sit behind an app-side interface (`AuthService`) so the provider can be plugged in later without touching the UI or scoring code.
 
+**How accounts grow** (2026-10-18): in stages, from friends kept on the phone with no sign-in (stage 1, next) to friends who sign in, join a session the host's phone runs, and own their throws and videos. See [[Accounts Roadmap]]. The backend is still chosen at stage 2.
+
 **Confirmed:** 2026-10-04.
 
 ## Source Control: GitHub

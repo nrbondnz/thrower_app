@@ -21,5 +21,6 @@ Obsidian knowledge base for **Thrower App**. Open `docs/thrower/` as a vault. Or
 - [[System Diagram]] · [[Data Flow]] · [[Glossary]]
 - **Architecture web pages:** `docs/web/index.html` (open in a browser): the layer diagram with a page per component and per flow, like WhereWillWeVisit's. Rebuilt with `python tool/web_docs/build.py` (Common Tasks → Update the Architecture Web Pages)
 - [[backlog]]: what's next
+- [[Accounts Roadmap]]: how accounts grow towards a game centre, in stages
 - [[story-checkpoint-setting-up-throwing-app]]: project setup (archived)
 - `../working-with-nigel.md`: how to work on this project
