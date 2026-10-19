@@ -7,7 +7,7 @@ Quick draw follows the rules Nigel's brother plays to (Nigel, 2026-10-19): **"Th
 4 (Large): rules (pure Dart) → the live Quick draw screen → instructions (3 layers), and branches: the score tie-break, extra rounds, finishing early (1).
 
 ## Status
-IN PROGRESS: Task 2 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Plan approved ("commit this and start task 1", `df1e1d5`); Task 1 committed (`d6809c0`).
+BUILT: all 3 tasks complete (2026-10-19); Tasks 1–2 committed (`d6809c0`, `0c25782`). **Waiting for the device checks** ([[Device Test Plan]] → Quick Draw Match Checks, QM0–QM6: Nigel's brother, on TestFlight 1.0.0 (9); [[Mac Handoff]] section 0000). Archive the story once they pass.
 
 ## Research (2026-10-19)
 - **KATTA UK** (knifethrowing.co.uk; its *Guide to different Targets*, from the club files on ebthrowers.co.uk) uses the **European target face**: a 50 cm circle of 5 concentric rings, **10 / 20 / 30 / 40 / 50 cm** across, scoring **5 / 4 / 3 / 2 / 1**. The guide says it is "practically the same" as the IKTHOF target (octagons of the same sizes, about 1% larger). The European rules (eurothrowers.org) say "The best ring that is cut will be counted", which is the **higher** score on a line. A throw counts only if the tip **sticks**.
@@ -81,7 +81,7 @@ IN PROGRESS: Task 2 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Pla
   - The recorded Quick draw shows the round rule's result (its single round).
 - **Verify:** widget tests: three rounds to a winner; an extra round when level; Finish match. **Nigel:** Live test → Quick draw shows the new round result. The live match needs the camera: device checks for Nigel's brother (Task 3).
 - **Next:** Task 3.
-- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-19); Nigel: "commit this and continue to task 3" (`0c25782`)
 - **What changed:**
   - `lib/ui/live_quick_draw_screen.dart`: the screen keeps a `QuickDrawMatch` (`_match`); each result adds the round's winner (a round ended with Stop doesn't count).
     - **Buttons:** after a round, **Next round**, or **Extra round** when level after three (`quickDrawNextRound`), plus **Finish match** (`quickDrawFinishMatch`; also between rounds, never before the first). `confirmFinishMatch` asks: "Finish the match now? It ends on the rounds won so far; if they are level, it is a draw." At the end, **New match** (`quickDrawNewMatch`): no rounds won, boards kept. Start is hidden once the match is over.
@@ -131,11 +131,66 @@ IN PROGRESS: Task 2 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Pla
   - The Review Agent (§7: more rounds means more trips to collect knives; the instructions still say collect together, when both have thrown).
   - The Traceability Agent's report.
 - **Verify:** Nigel reads the Instructions; `flutter test`; the checks are ready for the brother.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/ui/instructions.dart`:
+    - **Quick draw:** "A match is three rounds…" (the round rule with the score tie-break); "All three rounds are thrown, even when one thrower has already won two… extra rounds… until one is won"; "To end a match early, the starter taps Finish match…"; the result "with the match so far… No one needs to go to the phone during a round"; "Between rounds, collect your knives together; then the starter taps Next round."
+    - **Scoring:** "This is KATTA scoring (the UK's Knife Axe and Tomahawk Throwing Association), the same as on the European and IKTHOF competition targets."
+  - Docs:
+    - [[Device Test Plan]] → **Quick Draw Match Checks** (QM0–QM6), and Q6 (Next round from build 9)
+    - [[Mac Handoff]] → section **0000** (build 1.0.0 (9): what's in it, add it to External testers)
+    - [[Glossary]] (concepts **Quick draw match**, **KATTA scoring**; Line-touch rule names KATTA)
+    - [[Design Decisions]] (Instructions update)
+    - [[Common Tasks]] (button names)
+    - web pages: the `judgeQuickDraw and QuickDrawMatch` component, both Quick draw flows (rebuilt)
+    - backlog #9; `CLAUDE.md` and `working-with-nigel.md` (project overview, and the Accounts Roadmap)
+- **Verified by:** `flutter test`: 704 passed (3 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 3)
+- **New:** `instructions_test.dart` (3: the match and the round rule with the tie-break; all three thrown, extra rounds, Finish match by the starter; KATTA named).
+- **Updated:** the Quick draw rule and result wording; "then the starter taps Next round."
+- **Results:** 704 passed, 0 failed.
+- **Note:** `dart format` (the installed formatter's style) reflows untouched code around an edit. Tasks 1–2 committed some of that reflow in `quick_draw_judge.dart`, `target_model.dart`, `live_quick_draw_screen.dart` and their tests (layout only, no behaviour). In Task 3 it was undone, so `instructions.dart` and its test change only where edited.
+
+#### Safety Report — 2026-10-19 (whole story, Review Agent)
+- **Files reviewed:** `lib/ui/live_quick_draw_screen.dart`, `lib/ui/instructions.dart`, `lib/game/quick_draw_judge.dart`, `lib/scoring/quick_draw_match.dart`. `pubspec.yaml`, `AndroidManifest.xml` and `Info.plist` are unchanged.
+- ✅ §1–§2: no permission, plugin or platform change; Dart only, both platforms alike.
+- ✅ §3: no debug-only paths added (the debug watch line is unchanged).
+- ✅ §4–§5: nothing stored or sent; the match lives only on the screen.
+- ✅ §6: no new processing: one judgement a round, as before.
+- ⚠️→✅ **§7 Physical safety:**
+  - **More rounds mean more trips to the boards.** The Instructions say: collect the knives **together** between rounds, then **the starter** taps Next round.
+  - The existing points stay: go never means the lanes are clear, nobody goes forward until both have finished and agree, and throwers be at their line before Start.
+  - **Nothing on screen calls anyone forward:** Next round only readies Start; Start still needs the starter.
+  - **Next round and Finish match are tapped by the starter, who already stands at the phone behind the throwers,** so no one walks to the phone during a round. The Instructions name the starter for both.
+  - **Readability:** at the end of a round, the panel now carries the round, the winner, both lines and the match. On an upright phone it may scale down to fit, so it could be less readable from 4 m. QM5 asks him. If it is, the fix is to show the match line in place of the per-player lines, not to send anyone to the phone.
+  - **Residual:** extra rounds can lengthen a session (heat: Q7 already asks).
+- ✅ §8: no stored data or identity change; rolls back cleanly.
+- **Verdict:** OK to commit. QM5 is the open question.
+
+#### Traceability Report — 2026-10-19 (story complete, device checks to come)
+
+| Requirement | Design Reference | Implementation | Test | Status |
+|---|---|---|---|---|
+| AC1: a round's rule: first to stick; bounce-out and false start lose; same frame → higher score; same or unknown score → drawn; none stuck → drawn | Design Decisions → Quick Draw: Go, False Starts and the Winner (update 2026-10-19) | `judgeQuickDraw` (`byScore`), `verdictText`, `QuickDrawResultPanel.headline` | `quick_draw_judge_test.dart` (table, incl. 4 same-frame cases; "wins on score"); `live_quick_draw_screen_test.dart` ('a win on score says so', 'a draw') | ✅ Covered (device: QM0, QM6) |
+| AC2: the live Quick draw is a three-round match; the round and match score shown; Next round keeps the boards | Quick Draw: the Live Duel (update 2026-10-19) | `QuickDrawMatch`, `LiveQuickDrawScreen._match` / `_nextRound`, `roundLabel`, `matchText`, `_line` | `quick_draw_match_test.dart`; `live_quick_draw_screen_test.dart` (the round and match; Next round's line) | ✅ Covered (device: QM0–QM1) |
+| AC3: more rounds won wins; level after three → extra rounds until one is won; all three thrown at 2–0 | as AC2 | `QuickDrawMatch.isOver` / `isExtraRound` / `winner`; the Extra round button | `quick_draw_match_test.dart` (2–0 not over; drawn extra rounds go on); `live_quick_draw_screen_test.dart` ('level after three rounds: an extra round') | ✅ Covered (device: QM2–QM3) |
+| AC4: Finish match after any round, asking; decided on rounds so far, level a draw; New match | as AC2 | `QuickDrawMatch.finish`, `confirmFinishMatch`, `_finishMatch`, `_newMatch` | `quick_draw_match_test.dart` (finishing early ×5); `live_quick_draw_screen_test.dart` (Finish asks; between rounds; Cancel; New match) | ✅ Covered (device: QM4) |
+| AC5: the match result in large type, readable from the throwing line, with the chime | Quick Draw: the Live Duel; Review Agent 2026-10-15 | `QuickDrawResultPanel` (44 pt green match line; fits by scaling); `SignalSounds.result` on each round | `live_quick_draw_screen_test.dart` ('the match result, large and green' ≥ 40 pt; fits upright and sideways; the chime on a result) | ✅ Covered (device: QM5, the open question) |
+| AC6: KATTA named; scores unchanged | Design Decisions → Throwing Sport (update 2026-10-19) | `TargetModel.katta`; Instructions → Scoring | `target_model_test.dart` (unchanged cases, renamed); `instructions_test.dart` ('names KATTA scoring') | ✅ Covered |
+| AC7: the Instructions explain the match; safety points kept | Design Decisions → In-app Instructions (update) | `instructionSections` → Quick draw | `instructions_test.dart` (3 new; the earlier safety tests still pass) | ✅ Covered (and the Safety Report) |
+
+- **Coverage:** 7 of 7 have design, code and tests; device checks QM0–QM6 are to come.
+- **Backward:** every new symbol traces to an AC. `QuickDrawMatch.leader` and `scoreText` serve `matchText` (AC2). `byScore` serves AC1's wording.
+- **Decisions taken without asking** (listed under the plan) are covered by tests. Nigel hasn't questioned them; they stay open to change.
+- **Stale links:** the recorded Quick draw (`QuickDrawScreen`) is one round, by design (one duel in the clip); its Q1 result is unchanged. [[Data Flow]] still calls the panel `_Result` (drift, logged in Task 2).
 
 ---
 
 ## Plan Changes Log
 - **2026-10-19:** Planned from the brother's feedback (via Nigel); three questions answered (all three rounds with Finish match; extra rounds when level; this story before accounts).
+- **2026-10-19:** All 3 tasks done; story BUILT, waiting for QM0–QM6 in build 9. Task 2 found the longest result panel overflowed an upright phone; it now wraps and scales to fit.
 
 ## Notes
 - Duel Cup sources: https://www.eurothrowers.org/duel-cup, https://www.eurothrowers.org/european-knife-and-axe-throwing-rules; KATTA UK: https://www.knifethrowing.co.uk/ (target guide: ebthrowers.co.uk club files, "Katta Guide to different Targets").

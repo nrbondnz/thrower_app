@@ -132,12 +132,28 @@ void main() {
     });
   });
 
+  test('names KATTA scoring', () {
+    expect(text, contains("This is KATTA scoring (the UK's Knife Axe and Tomahawk Throwing Association)"));
+  });
+
   group('Quick draw (real board)', () {
     test('how to choose the boards and play, with the button names on the screen', () {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
       expect(text, contains('tap Choose boards again'));
       expect(text, contains('Tap Quick draw on the home screen.'));
-      expect(text, contains('then tap Next round.'));
+      expect(text, contains('then the starter taps Next round.'));
+    });
+
+    // The match (Nigel's brother, 2026-10-19; story-checkpoint-quick-draw-match).
+    test('a match of three rounds: the round rule with the score tie-break', () {
+      expect(text, contains('A match is three rounds. In each round the first knife to stick wins.'));
+      expect(text, contains('If both stick on the same frame, the higher score wins; the same score is a drawn round.'));
+    });
+
+    test('all three rounds are thrown; level means extra rounds; Finish match ends it early', () {
+      expect(text, contains('All three rounds are thrown, even when one thrower has already won two.'));
+      expect(text, contains('extra rounds are thrown, one at a time, until one is won'));
+      expect(text, contains('the starter taps Finish match: it ends on the rounds won so far, and level is a draw'));
     });
 
     // The Safety Report on the live Quick draw (Tasks 3–5, 2026-10-15).
@@ -163,7 +179,7 @@ void main() {
     });
 
     test('the winning rule: first to stick; bounce-out and false start lose', () {
-      expect(text, contains('The first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start).'));
+      expect(text, contains('In each round the first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start).'));
     });
 
     // The Safety Report on Quick draw (Task 1 of story-checkpoint-quick-draw).
@@ -179,7 +195,7 @@ void main() {
 
     test('boards are chosen before anyone throws; no one goes to the phone after that', () {
       expect(text, contains('Choose and lock the boards before anyone throws.'));
-      expect(text, contains('read it from where you stand. No one needs to go to the phone during a duel.'));
+      expect(text, contains('read it from where you stand. No one needs to go to the phone during a round.'));
     });
 
     test('the phone out of both lines of throw and not between the lanes', () {

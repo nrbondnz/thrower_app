@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>judgeQuickDraw — Thrower App</title>
+<title>judgeQuickDraw and QuickDrawMatch — Thrower App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -15,18 +15,19 @@
 
   <header class="title-block">
     <span class="eyebrow"><span class="swatch" style="background:var(--game);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Game · Component</span>
-    <h1>judgeQuickDraw</h1>
-    <p class="dek">The winner rule: the first knife to stick wins. A bounce-out or a false start loses; the same frame is a draw; if nobody sticks, there&#x27;s no winner.</p>
+    <h1>judgeQuickDraw and QuickDrawMatch</h1>
+    <p class="dek">A round&#x27;s winner: the first knife to stick. A bounce-out or a false start loses; on the same frame the higher score wins, the same score is a draw; if nobody sticks, there&#x27;s no winner. The live Quick draw is a match of three rounds.</p>
   </header>
 
   <dl class="facts-strip">
-    <div><dt>Type</dt><dd>Function</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/game/quick_draw_judge.dart</code><br></dd></div>
+    <div><dt>Type</dt><dd>Function + class (pure Dart)</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/game/quick_draw_judge.dart</code><br><code>lib/scoring/quick_draw_match.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>Once both throws are in (or time is up)</dd></div>
   </dl>
 
   <div class="detail-body">
     <p>Each throw is timed from go to its impact. A knife that reaches its board before go is a false start, however fast.</p>
+    <p><code>QuickDrawMatch</code> (2026-10-19, the rules of Nigel's brother; the European Duel Cup format) keeps each round's winner: all three rounds are thrown, the player with more rounds won wins, extra rounds settle a level match, and Finish match ends it early (level: a draw). It sits in the scoring layer and takes only a round's winner, so it doesn't depend on the game layer.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -34,6 +35,7 @@
     <div><dt><code>judgeQuickDraw(throws, go)</code></dt><dd>→ QuickDrawVerdict(players, winner, draw)</dd></div>
     <div><dt><code>JudgedThrow</code></dt><dd>none / falseStart / bounced / stuck; afterGo; score</dd></div>
     <div><dt><code>judgedText · verdictText</code></dt><dd>&quot;0.82 s · 5&quot; · &quot;Player 2 wins: stuck 5, 0.82 s after go.&quot;</dd></div>
+    <div><dt><code>QuickDrawMatch: add · finish · wins · isExtraRound · winner · draw</code></dt><dd>the three-round match</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -52,7 +54,7 @@
     </a>
   </div>
 
-  <footer class="colophon">lib/game/quick_draw_judge.dart</footer>
+  <footer class="colophon">lib/game/quick_draw_judge.dart · lib/scoring/quick_draw_match.dart</footer>
 </div>
 </body>
 </html>

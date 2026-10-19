@@ -48,7 +48,7 @@ For [[story-checkpoint-live-quick-draw]]: Nigel can't check the live camera hims
 | Q3 | **Start**, three times | 5 beeps a second apart with 5 lights, a pause that differs each time (roughly how long?), then the long, higher beep as the lights go out (no GO! on screen since 2026-10-16). Also with the **silent switch on**, and with music playing (it should go quieter, not stop). **Stand 2–4 m in front of the phone, where a thrower would be: can you hear the beeps there?** Do the lights go out at the same moment as the long beep, or noticeably before it? |
 | Q4 | **Paper only.** Start; right after the long beep, press a pen onto board 2, then a moment later wave a hand past board 1 | The result in large type: **Player 2 wins**, board 1 "bounced". Readable from 4 m? Times plausible (under a second or two)? How long after the throws did it appear? |
 | Q5 | **Paper only.** Start; press a pen onto board 1 during the pause, before the long beep | Board 1: **false start** |
-| Q6 | Start, then **Stop** during the beeps, and once after the long beep; later **Next duel** after a result | Stop: back to Start, no more beeps. Next duel: the boards stay locked |
+| Q6 | Start, then **Stop** during the beeps, and once after the long beep; later **Next duel** after a result (from build 9: **Next round**) | Stop: back to Start, no more beeps. Next duel / Next round: the boards stay locked |
 | Q7 | Ten duels in a row (about 10 minutes) | Does the phone get hot? Does the picture stutter? Does the result take longer each time? |
 | Q8 | Later, **real knives**: two experienced throwers, in separate lanes, under the venue's rules; a **third person (the starter) taps Start from behind**, with the phone out of reach of a backswing. Nobody goes forward until both have thrown and agree it's clear, whatever the screen shows (walking to the boards in Q4–Q5 is for paper only) | The winner and scores as seen by eye |
 
@@ -106,6 +106,20 @@ For [[story-checkpoint-score-corrections]] (tap a score to change it, or an empt
 | C5 | Live camera, paper target, locked: open a score, tap the phone lightly, close it | No message; play goes on |
 | C6 | Open a score, knock or turn the stand a little, close it | **"The phone may have moved…"**; the green rings no longer on the board; calibrate again |
 | C7 | Later, real knives: a thrower misses the board altogether | Add it as 0 from the empty slot, when no one is throwing |
+
+## Quick Draw Match Checks (added 2026-10-19)
+
+For [[story-checkpoint-quick-draw-match]] (from build 9): the live Quick draw as a **match of three rounds** (the rules from Nigel's brother: the first to stick wins a round, a bounce-out loses, the same frame → the higher score, the same score → a drawn round; level after three → extra rounds). On **paper** (pens pressed on by hand, as in Q4–Q5) unless it says real knives.
+
+| Step | Do | Look for |
+|---|---|---|
+| QM0 | Home → Quick draw, lock both boards, **Start**; press a pen onto board 1 after the long beep | The result: **"Round 1 of 3"**, "Player 1 wins", each player's line, and **"Player 1 leads 1–0"**. Buttons: **Next round** and **Finish match** |
+| QM1 | Next round | Start, and the line "Round 2 of 3 (Player 1 leads 1–0). Throwers ready? …"; the boards stay locked |
+| QM2 | Round 2: board 1 again (2–0), then round 3 | Round 3 is still played at 2–0. After it: **"Player 1 wins the match 3–0"** (or 2–1) in large green type, and **New match** |
+| QM3 | New match; play three rounds so it ends level (e.g. 1–1 and a round with no throws) | After round 3: **Extra round**; the line says "Extra round (Level 1–1)…"; the first extra round won ends the match |
+| QM4 | New match; after one round, **Finish match** → Cancel, then Finish match → Finish | Cancel: the match goes on. Finish: the match result straight away (level is "Match drawn") |
+| QM5 | Is the result panel readable from the throwing line (about 4 m), held the way he uses the phone (upright or sideways)? | Round, winner and match line readable; nothing cut off |
+| QM6 | Later, **real knives**, as Q8: two experienced throwers, separate lanes, the starter behind them taps Start and Next round | Each round's winner as seen by eye; knives collected together between rounds; nobody goes to the phone during a round |
 
 ## When Results Come Back
 

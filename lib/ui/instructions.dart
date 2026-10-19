@@ -117,6 +117,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'A $knife touching the line between two rings scores the $lineRing ring.',
       'A bounce-out or a miss scores 0. A $knife that sticks and then falls out before it is collected scores 0.',
       'If the app saw a $knife stick but not where it went in, the throw shows "?" and scores 0.',
+      "This is KATTA scoring (the UK's Knife Axe and Tomahawk Throwing Association), the same as on the European "
+          'and IKTHOF competition targets.',
     ]),
     // Score corrections story (Nigel, 2026-10-17). Going to the phone mid-game:
     // Review Agent §7.
@@ -159,11 +161,15 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
             'duel: be at your line, ready, before Start is tapped.',
         'Five beeps, a light coming on with each, then a pause that changes every time, then the long beep: '
             'that is go. Check the beeps can be heard at the throwing lines.',
-        'The first knife to stick wins. A bounce-out loses, and so does a knife before go (a false start). '
-            'Both on the same frame is a draw. Times are measured from go to the knife reaching the board.',
-        'The result shows in large type with a chime, a moment after the throws: read it from where you stand. '
-            'No one needs to go to the phone during a duel.',
-        'Collect your knives together, then tap Next round. The boards stay locked.',
+        'A match is three rounds. In each round the first knife to stick wins. A bounce-out loses, and so does a '
+            'knife before go (a false start). If both stick on the same frame, the higher score wins; the same score '
+            'is a drawn round. Times are measured from go to the knife reaching the board.',
+        'All three rounds are thrown, even when one thrower has already won two. Whoever wins more rounds wins the '
+            'match. If it is level after three, extra rounds are thrown, one at a time, until one is won.',
+        'To end a match early, the starter taps Finish match: it ends on the rounds won so far, and level is a draw.',
+        "Each round's result shows in large type with a chime, a moment after the throws, with the match so far: "
+            'read it from where you stand. No one needs to go to the phone during a round.',
+        'Between rounds, collect your knives together; then the starter taps Next round. The boards stay locked.',
         "Quick draw is for experienced throwers only, under your venue's rules for throwing side by side. "
             'Use separate lanes, each thrower at their own line.',
         'Go only means start. It never means the lanes are clear, and neither do the chime and the result: '

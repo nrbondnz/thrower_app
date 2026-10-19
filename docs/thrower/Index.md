@@ -7,6 +7,7 @@ Obsidian knowledge base for **Thrower App**. Open `docs/thrower/` as a vault. Or
 | Folder | What's Inside |
 |--------|---------------|
 | [[Architecture Index\|Architecture]] | Design decisions, system diagram, data flow |
+| `requirements/` | [[Requirements Index]]: what the app should do, by area (setup, play, Game Centre), with what exists today and open questions |
 | `stories/` | Story checkpoint files (active), [[backlog]]; `stories/archive/` for completed ones |
 | `Operations/` | [[Common Tasks]], [[Device Test Plan]], [[Mac Handoff]] (state + App Store setup for Claude on the Mac) |
 | `Troubleshooting/` | [[Known Issues]] |
