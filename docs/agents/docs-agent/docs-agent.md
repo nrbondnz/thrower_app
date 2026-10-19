@@ -46,6 +46,20 @@ If, while updating docs, it looks like a file should be deleted (e.g. it documen
 
 ## Responsibilities
 
+### 0. The Chain: Requirements → Architecture → Design Decisions
+
+Nigel, 2026-10-19: *"Requirements feed architecture and architecture feeds lower level design decisions."* The vault has three levels, and each change is kept aligned through all of them:
+
+1. **Requirements** (`docs/thrower/requirements/`, [[Requirements Index]]): what the app should do, by area. One page per requirement, each saying what's wanted, what exists today and the open questions, with a status (✅ 🟡 🗺️ 💭).
+2. **Architecture** ([[Architecture Index]]: [[System Diagram]], [[Data Flow]], [[Glossary]], the web pages; and the plans that carry requirements into the build: [[Accounts Roadmap]], the stories): which components meet each requirement, and how they fit together.
+3. **Design decisions** ([[Design Decisions]]): the lower-level choices made within that architecture (thresholds, formats, rules, the options not chosen and why).
+
+After every task:
+- **Downward:** each requirement page touched by the work links to the stories and design decisions that meet it, and its status and "What Exists Today" are current.
+- **Upward:** each new or changed design decision names the requirement it serves (a `[[link]]` to the requirement page).
+- **Across:** the architecture pages (components, data flow, the system diagram, the web pages) show any new component or flow, linked both ways.
+- A requirement with no design behind it, or a decision with no requirement above it, is logged as a drift item, as the Traceability Agent does for code.
+
 ### 1. Architecture Diagrams and Notes
 
 Update any diagram or prose description that is now inaccurate:

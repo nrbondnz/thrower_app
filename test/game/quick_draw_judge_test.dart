@@ -76,4 +76,12 @@ void main() {
       );
     });
   });
+
+  // Named-players story (2026-10-19).
+  test('the result line uses the players\' names, Player N without one', () {
+    expect(verdictText(judgeQuickDraw([bounced(850), stuck(817)], go), names: ['Jo', 'Sam']),
+        'Sam wins: stuck 5, 0.82 s after go. Jo bounced out.');
+    expect(verdictText(judgeQuickDraw([bounced(850), stuck(817)], go), names: ['Jo', null]),
+        'Player 2 wins: stuck 5, 0.82 s after go. Jo bounced out.');
+  });
 }

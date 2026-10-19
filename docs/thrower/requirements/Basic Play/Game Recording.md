@@ -11,7 +11,7 @@ Part of [[Requirements Index]] → Basic play. **Status:** 🟡 Partly built
 Games are recorded: the scores, and video of the throws.
 
 ## What Exists Today
-- **Scores: built.** Every finished game of Play is kept **on the phone** (one JSON file in the app's private folder): when, the mode, the length, and each player's round totals; Home → **History** lists them, a game opens to every round, and games can be deleted ([[story-checkpoint-game-history]]; device checks H0–H7 to come). Nothing is sent anywhere.
+- **Scores: built.** Every finished game of Play is kept **on the phone** (one JSON file in the app's private folder): when, the mode, the length, each player's round totals and, since 2026-10-19, the players' names ([[Player Names]]); Home → **History** lists them, a game opens to every round, and games can be deleted ([[story-checkpoint-game-history]]; device checks H0–H7 to come). Nothing is sent anywhere.
 - Quick draw matches aren't kept yet.
 - **Video: planned, paused.** [[story-checkpoint-record-and-share]] (backlog #11): both modes recorded, Play as a short clip per throw, the scoring overlays (rings, scores, times, the winner) drawn on when sharing; sound from the microphone (a new permission). Paused until the live Quick draw's device check is done.
 

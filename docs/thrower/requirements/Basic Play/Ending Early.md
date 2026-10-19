@@ -21,4 +21,4 @@ A game (or competition) can be ended before all its rounds are played.
 ## Related
 - [[Number of Rounds]]
 - [[Game Recording]]
-- [[Design Decisions]] → Game History
+- [[Design Decisions]] → Game History (Finish game); Quick Draw: the Live Duel and the Result (Finish match)

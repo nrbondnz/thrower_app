@@ -14,9 +14,9 @@
   <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
 
   <header class="title-block">
-    <span class="eyebrow"><span class="swatch" style="background:var(--history);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>History · Component</span>
+    <span class="eyebrow"><span class="swatch" style="background:var(--history);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>History and settings · Component</span>
     <h1>GameHistory</h1>
-    <p class="dek">Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player&#x27;s round totals.</p>
+    <p class="dek">Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player&#x27;s round totals and names.</p>
   </header>
 
   <dl class="facts-strip">
@@ -26,7 +26,7 @@
   </dl>
 
   <div class="detail-body">
-    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals and, for a Live test game, the recording's name. Totals and the winner are worked out from the rounds, never stored.</p>
+    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals, the players' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2) and, for a Live test game, the recording's name. Totals and the winner are worked out from the rounds, never stored.</p>
     <p><code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app's own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can't be read is renamed, never deleted, and the history starts afresh.</p>
     <p>Behind an interface, so a backend can keep the games instead once there are accounts (backlog #4). Nothing leaves the phone today.</p>
   </div>
@@ -34,7 +34,8 @@
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
     <div><dt><code>load · add · delete · clear</code></dt><dd>newest first; a game is replaced by its id</dd></div>
-    <div><dt><code>GameRecord.fromMatch · toJson · fromJson</code></dt><dd>a finished match as a record; format version 1</dd></div>
+    <div><dt><code>GameRecord.fromMatch · toJson · fromJson</code></dt><dd>a finished match as a record, with its names; format version 2 (version 1 still reads)</dd></div>
+    <div><dt><code>GameRecord.nameOf</code></dt><dd>a player&#x27;s name, or Player N</dd></div>
     <div><dt><code>GameHistoryException</code></dt><dd>a read or write failed; setAside: a damaged file was renamed</dd></div>
   </dl>
 
@@ -44,6 +45,12 @@
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Keeping and viewing finished games</h3>
       <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/player-names.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Player names: into the game, History and Quick draw</h3>
+      <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
       <span class="more">Open →</span>
     </a>
   </div>

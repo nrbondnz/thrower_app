@@ -11,6 +11,7 @@ import '../game/quick_draw_targets.dart';
 import '../game/quick_draw_watcher.dart';
 import '../game/start_signal.dart';
 import '../providers.dart';
+import '../scoring/match.dart';
 import '../scoring/quick_draw_match.dart';
 import 'camera_view.dart';
 import 'quick_draw_boards.dart';
@@ -176,7 +177,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
       const ready = 'Throwers ready? Tap Start: 5 beeps, then go on the long beep.';
       final m = _match;
       if (targets.locked && m.results.isNotEmpty) {
-        return '${roundLabel(m.roundNumber, m.rounds)} (${matchText(m)}). $ready';
+        return '${roundLabel(m.roundNumber, m.rounds)} (${matchText(m, playerNames)}). $ready';
       }
       return choosingInstruction(targets, locked: 'Boards locked. $ready');
     }
@@ -212,7 +213,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
           ),
           if (signal != null && signal.phase == StartPhase.countdown) _Lights(lit: signal.lit),
           if (verdict != null || match.isOver)
-            QuickDrawResultPanel(verdict: verdict, match: match, framesSkipped: _dropped > 0),
+            QuickDrawResultPanel(verdict: verdict, match: match, names: playerNames, framesSkipped: _dropped > 0),
           SafeArea(
             child: Stack(
               children: [
@@ -244,6 +245,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
                         spacing: 12,
                         runSpacing: 8,
                         children: [
+                          if (!duelOn) const NamesButton(),
                           if (targets.boards.isNotEmpty)
                             OutlinedButton(
                               key: const Key('quickDrawStartAgain'),
@@ -365,14 +367,15 @@ String roundLabel(int round, int rounds) => round <= rounds ? 'Round $round of $
 
 /// The match so far, or its result: "Player 2 leads 1–0", "Level 1–1";
 /// "Player 2 wins the match 2–1", "Match drawn 1–1" (the leader's wins
-/// first).
-String matchText(QuickDrawMatch m) {
+/// first). Players by [names] ("Player N" without one).
+String matchText(QuickDrawMatch m, [List<String> names = const []]) {
+  String name(int p) => names.elementAtOrNull(p) ?? playerNumber(p);
   String ahead(int p) => '${m.wins[p]}–${m.wins[1 - p]}';
   if (m.isOver) {
-    return m.draw ? 'Match drawn ${m.scoreText}' : 'Player ${m.winner! + 1} wins the match ${ahead(m.winner!)}';
+    return m.draw ? 'Match drawn ${m.scoreText}' : '${name(m.winner!)} wins the match ${ahead(m.winner!)}';
   }
   final leader = m.leader;
-  return leader == null ? 'Level ${m.scoreText}' : 'Player ${leader + 1} leads ${ahead(leader)}';
+  return leader == null ? 'Level ${m.scoreText}' : '${name(leader)} leads ${ahead(leader)}';
 }
 
 /// Asks before ending a Quick draw match early.
@@ -401,15 +404,25 @@ Future<bool> confirmFinishMatch(BuildContext context) async =>
 /// (otherwise only debug builds would show it). With no [verdict] (a match
 /// finished between rounds), only the match result.
 class QuickDrawResultPanel extends StatelessWidget {
-  const QuickDrawResultPanel({super.key, this.verdict, required this.match, this.framesSkipped = false});
+  const QuickDrawResultPanel({
+    super.key,
+    this.verdict,
+    required this.match,
+    this.names = const [],
+    this.framesSkipped = false,
+  });
 
   final QuickDrawVerdict? verdict;
   final QuickDrawMatch match;
+
+  /// The players' names, Player 1 first ("Player N" without one).
+  final List<String> names;
   final bool framesSkipped;
 
-  /// "Player 2 wins", "Player 2 wins on score", "A draw" or "No winner".
-  static String headline(QuickDrawVerdict v) => switch (v.winner) {
-    final w? => v.byScore ? 'Player ${w + 1} wins on score' : 'Player ${w + 1} wins',
+  /// "Player 2 wins" (by [names]: "Sam wins"), "… wins on score", "A draw"
+  /// or "No winner".
+  static String headline(QuickDrawVerdict v, [List<String> names = const []]) => switch (v.winner) {
+    final w? => '${names.elementAtOrNull(w) ?? playerNumber(w)} wins${v.byScore ? ' on score' : ''}',
     null => v.draw ? 'A draw' : 'No winner',
   };
 
@@ -448,7 +461,7 @@ class QuickDrawResultPanel extends StatelessWidget {
               style: const TextStyle(color: Colors.white70, fontSize: 24),
             ),
             Text(
-              headline(verdict),
+              headline(verdict, names),
               key: const Key('quickDrawHeadline'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.greenAccent, fontSize: 52, fontWeight: FontWeight.w900),
@@ -467,7 +480,7 @@ class QuickDrawResultPanel extends StatelessWidget {
             const SizedBox(height: 12),
           ],
           Text(
-            matchText(match),
+            matchText(match, names),
             key: const Key('quickDrawMatch'),
             textAlign: TextAlign.center,
             style: TextStyle(

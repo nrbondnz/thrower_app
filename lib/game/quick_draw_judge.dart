@@ -1,3 +1,4 @@
+import '../scoring/match.dart';
 import 'quick_draw_watcher.dart';
 
 /// How one player's Quick draw went.
@@ -95,9 +96,10 @@ String judgedText(JudgedThrow p) => switch (p.result) {
 };
 
 /// The result line, e.g. "Player 2 wins: stuck 5, 0.82 s after go. Player 1
-/// bounced."; "wins on score" when both stuck on the same frame.
-String verdictText(QuickDrawVerdict v) {
-  String player(int i) => 'Player ${i + 1}';
+/// bounced."; "wins on score" when both stuck on the same frame. Players by
+/// [names] (named-players story, 2026-10-19), "Player N" without one.
+String verdictText(QuickDrawVerdict v, {List<String?> names = const []}) {
+  String player(int i) => names.elementAtOrNull(i) ?? playerNumber(i);
   String what(int i) {
     final p = v.players[i];
     return switch (p.result) {

@@ -9,7 +9,7 @@ LANES = {
     'vision':  ('Vision (pure Dart)', 'lib/vision'),
     'scoring': ('Scoring (pure Dart)', 'lib/scoring'),
     'sound':   ('Sound', 'lib/sound'),
-    'history': ('History', 'lib/history'),
+    'history': ('History and settings', 'lib/history · lib/settings'),
     'auth':    ('Auth', 'lib/auth'),
     'native':  ('Plugins and native code', 'external'),
 }
@@ -26,11 +26,12 @@ COMPONENTS = {
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>.',
+            'Players can be named (2026-10-19): on the setup screen, or with <strong>Names</strong> on Quick draw before Start. A blank seat is Player 1 / Player 2. Play, History and Quick draw all show the names; Quick draw\'s per-player result lines keep "1:" / "2:", matching the board numbers on the picture.',
             'On the recording\'s Quick draw, <strong>Play</strong> shows only once the boards are locked: played unlocked, nothing would be analysed (2026-10-16).',
         ],
         functions=[
             ('HomeScreen', 'Instructions, Play, History, Quick draw, Live test, Calibrate target, Scoring test target'),
-            ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; Start'),
+            ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; a name per player (optional, filled with the last ones); Start'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('TwoTargetPlayScreen', "two players on two targets: tap and lock both boards, each board's marks, Wait for Player 2 / Collect your knives, the winner"),
@@ -38,11 +39,13 @@ COMPONENTS = {
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
             ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile'),
-            ('HistoryScreen · GameRecordScreen', 'the kept games, newest first; a game\'s rounds; Delete; Clear history (asks first)'),
+            ('HistoryScreen · GameRecordScreen', 'the kept games, newest first, by name (resultText); a game\'s rounds; Delete; Clear history (asks first)'),
+            ('NamesButton · editPlayerNames', 'Quick draw\'s Names, before Start: a field per player, the same names as Play; Save or Cancel'),
+            ('BoardChoosing.playerNames', 'the names for the board texts ("Tap the centre of Jo\'s board"), Player N without'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
         ],
-        flows=['calibration', 'play', 'score-correction', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
+        flows=['calibration', 'play', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -59,14 +62,15 @@ COMPONENTS = {
             ('calibrationProvider (CalibrationNotifier)', 'start, adjust, lock, unlock'),
             ('playModeProvider · gameLengthProvider', 'the setup screen\'s choices, kept for the session'),
             ('gameProvider (GameNotifier)', 'onEvent(board) → Match → a GameSession per player'),
-            ('targetModelProvider · ringBoundaryRadiiProvider', 'the IKTHOF rings'),
+            ('targetModelProvider · ringBoundaryRadiiProvider', 'the KATTA rings (TargetModel.katta)'),
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),
             ('playTargetsProvider', "two-target Play's boards, kept for the session"),
             ('signalSoundsProvider · startScheduleProvider', 'the beeps, and a new random pause each duel'),
             ('gameHistoryProvider · historySaveErrorProvider · clockProvider', 'the kept games, a failed save, when a game finished'),
+            ('playerNamesProvider (PlayerNamesNotifier) · playerNamesStoreProvider', 'the players\' names: loaded at start; set cleans and saves them; GameNotifier renames the game in place'),
             ('authServiceProvider', 'the account interface (no provider chosen yet)'),
         ],
-        flows=['frame-sources', 'play', 'game-history', 'live-quick-draw'],
+        flows=['frame-sources', 'play', 'game-history', 'player-names', 'live-quick-draw'],
     ),
     'target-camera': dict(
         name='TargetCamera', lane='camera', type='Interface', files=['lib/camera/target_camera.dart', 'lib/camera/camera_frame.dart'],
@@ -287,9 +291,9 @@ COMPONENTS = {
     'target-model': dict(
         name='TargetModel', lane='scoring', type='Class (pure Dart)', files=['lib/scoring/target_model.dart'],
         trigger='Every score',
-        dek='The board\'s rings and their scores: 5 for the inner ring down to 1 for the outer, 0 outside (IKTHOF).',
+        dek='The board\'s rings and their scores: 5 for the inner ring down to 1 for the outer, 0 outside (KATTA, the same rings as IKTHOF).',
         body=[
-            'The line-touch rule decides a blade exactly on a line: the higher ring (IKTHOF, used today) or the lower (WATL). Per-sport rules are backlog #3.',
+            'The line-touch rule decides a blade exactly on a line: the higher ring (KATTA and IKTHOF, used today) or the lower (WATL). Per-sport rules are backlog #3.',
         ],
         functions=[('scoreAt(point, bladeHalfWidth)', 'the ring score, with a LineTouchRule'), ('TargetModel.katta()', 'ideal radii 0.2 / 0.4 / 0.6 / 0.8 / 1.0')],
         flows=['scoring-a-point', 'play', 'quick-draw-recording'],
@@ -307,11 +311,12 @@ COMPONENTS = {
             ('stuck · bounceOut · fellOut · boardVisited', 'the events'),
             ('awaitingNextRound · roundNumber · finishedRounds', 'what Play shows'),
             ('Match: playerAt · turn · winner · draw', 'whose throw it is, and who won'),
+            ('Match: names · nameOf · withNames', 'the players\' names ("Player N" if blank; cleanName, 16 characters); renamed without restarting'),
             ('finish · countedRounds · countedTotals', 'Finish game: over now, a part-round counted; two players judged on equal rounds'),
             ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score; a finished game is kept in the history'),
             ('setScore · byHand · addToRound', 'a score set by hand (corrected), a missed throw added (0)'),
         ],
-        flows=['play', 'score-correction', 'game-history'],
+        flows=['play', 'score-correction', 'game-history', 'player-names'],
     ),
     'quick-draw-watcher': dict(
         name='QuickDrawWatcher', lane='game', type='Class', files=['lib/game/quick_draw_watcher.dart'],
@@ -354,10 +359,10 @@ COMPONENTS = {
         functions=[
             ('judgeQuickDraw(throws, go)', '→ QuickDrawVerdict(players, winner, draw)'),
             ('JudgedThrow', 'none / falseStart / bounced / stuck; afterGo; score'),
-            ('judgedText · verdictText', '"0.82 s · 5" · "Player 2 wins: stuck 5, 0.82 s after go."'),
+            ('judgedText · verdictText(v, names:)', '"0.82 s · 5" · "Player 2 wins: stuck 5, 0.82 s after go." (by name: "Sam wins: …")'),
             ('QuickDrawMatch: add · finish · wins · isExtraRound · winner · draw', 'the three-round match'),
         ],
-        flows=['quick-draw-recording', 'live-quick-draw'],
+        flows=['quick-draw-recording', 'live-quick-draw', 'player-names'],
     ),
     'start-signal': dict(
         name='StartSignal', lane='game', type='ChangeNotifier', files=['lib/game/start_signal.dart'],
@@ -389,18 +394,35 @@ COMPONENTS = {
         name='GameHistory', lane='history', type='Interface + file store',
         files=['lib/history/game_history.dart', 'lib/history/game_record.dart'],
         trigger='A game of Play finishing; Home → History',
-        dek='Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player\'s round totals.',
+        dek='Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player\'s round totals and names.',
         body=[
-            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
+            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals, the players\' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2) and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
             '<code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app\'s own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can\'t be read is renamed, never deleted, and the history starts afresh.',
             'Behind an interface, so a backend can keep the games instead once there are accounts (backlog #4). Nothing leaves the phone today.',
         ],
         functions=[
             ('load · add · delete · clear', 'newest first; a game is replaced by its id'),
-            ('GameRecord.fromMatch · toJson · fromJson', 'a finished match as a record; format version 1'),
+            ('GameRecord.fromMatch · toJson · fromJson', 'a finished match as a record, with its names; format version 2 (version 1 still reads)'),
+            ('GameRecord.nameOf', 'a player\'s name, or Player N'),
             ('GameHistoryException', 'a read or write failed; setAside: a damaged file was renamed'),
         ],
-        flows=['game-history'],
+        flows=['game-history', 'player-names'],
+    ),
+    'player-names-store': dict(
+        name='PlayerNamesStore', lane='history', type='Interface + file store',
+        files=['lib/settings/player_names_store.dart', 'lib/providers.dart'],
+        trigger='App start (load); a name set on the setup screen or with Quick draw\'s Names (save)',
+        dek='The players\' names last used, kept on the phone so the setup screen fills them in next time.',
+        body=[
+            'A name is a label on a seat for one game (stage 1 of the Accounts Roadmap): no player list, no history of their own. Friends with their own accounts come later.',
+            '<code>FilePlayerNamesStore</code> keeps them in <code>player_names.json</code> in the app\'s own support folder, beside the history, written through a <code>.tmp</code> file, one save at a time. A file that can\'t be read gives blank names; a failed save is ignored. They\'re a convenience: nothing else depends on them.',
+            'It lives in its own edge folder, <code>lib/settings/</code>, because names aren\'t history. Nothing leaves the phone.',
+        ],
+        functions=[
+            ('load · save', 'the names, one per seat (null for blank); load never throws'),
+            ('playerNamesProvider (PlayerNamesNotifier)', 'two seats, blank at first, then the kept names (unless set already); set → cleanName → save'),
+        ],
+        flows=['player-names'],
     ),
     'auth-service': dict(
         name='AuthService', lane='auth', type='Interface only', files=['lib/auth/auth_service.dart'],
@@ -417,7 +439,7 @@ EXTERNAL = [
     ('camera plugin', 'camera 0.12.1: preview + image stream'),
     ('audioplayers', 'recording sound, signal sounds'),
     ('Flutter image codec', 'decodes the recordings\' JPEGs'),
-    ('path_provider', 'the app\'s support folder (history)'),
+    ('path_provider', 'the app\'s support folder (history, names)'),
 ]
 
 # id: dict(title, cat ('core' | 'flow'), lane, dek, body[paras], steps[(lane, title, [lines], component_id|None, arrow_label|None)], caption, files)
@@ -520,9 +542,26 @@ FLOWS = {
         caption='The history stays on the phone: the app sends it nowhere, and deleting the app deletes it.',
         files=['lib/providers.dart', 'lib/history/game_record.dart', 'lib/history/game_history.dart', 'lib/ui/history_screen.dart'],
     ),
+    'player-names': dict(
+        title='Player names: into the game, History and Quick draw', cat='flow', lane='history',
+        dek='Players can be named on Play\'s setup screen, or with Names on Quick draw. The last names used are kept on the phone; the game carries them, so Play and History show the same names.',
+        body=[
+            'A name is a label on a seat for one game (2026-10-19). A blank seat is Player 1 / Player 2. Renaming during a game keeps the scores; New game keeps the names.',
+            'Quick draw has no game of Play behind it, so its screens read the names straight from <code>playerNamesProvider</code>, through <code>BoardChoosing.playerNames</code>.',
+        ],
+        steps=[
+            ('ui', 'PlaySetupScreen · Quick draw\'s Names', ['a field per player, filled with the kept names', 'Start, or Save in the Names dialog (editPlayerNames)'], 'screens', 'playerNamesProvider.set'),
+            ('wiring', 'PlayerNamesNotifier.set', ['cleanName: trimmed, 16 characters, blank = none'], 'providers', 'save'),
+            ('history', 'FilePlayerNamesStore', ['player_names.json in the support folder', 'read back at the next start'], 'player-names-store', 'the names'),
+            ('scoring', 'GameNotifier → Match.withNames', ['each new game named; a change renames it in place', 'nameOf(i): the name, or Player i+1'], 'game-session', 'Match'),
+            ('ui', 'Play · History · Quick draw', ['"Jo\'s turn", "Sam wins 10–12" (GameRecord version 2)', '"Tap the centre of Jo\'s board", "Sam wins the match 2–1"'], 'screens', None),
+        ],
+        caption='Names stay on the phone: nothing is sent anywhere, and deleting the app deletes them.',
+        files=['lib/ui/play_setup_screen.dart', 'lib/ui/quick_draw_boards.dart', 'lib/settings/player_names_store.dart', 'lib/scoring/match.dart', 'lib/history/game_record.dart', 'lib/ui/live_quick_draw_screen.dart'],
+    ),
     'choosing-boards': dict(
         title='Quick draw: choosing the boards by tapping', cat='flow', lane='ui',
-        dek='Tap the centre of Player 1\'s board, then Player 2\'s, then Lock boards. Both Quick draw screens do it the same way.',
+        dek='Tap the centre of Player 1\'s board, then Player 2\'s (by name, if the players are named), then Lock boards. Both Quick draw screens do it the same way.',
         body=[
             'There may be more boards in the picture than players, so the user picks them. Finding boards automatically missed board 2 on half the frames of the duel clip.',
         ],
@@ -569,7 +608,7 @@ FLOWS = {
             ('game', 'QuickDrawWatcher(queue: true)', ['ThrowWatcher per board, every frame'], 'quick-draw-watcher', 'onGo, at go'),
             ('sound', 'go beep (long, higher) · lights out', ['nothing shown for go: the beep is the signal', 'goAt = camera.now: the clock frames are stamped with'], 'signal-sounds', 'each throw timed from goAt'),
             ('game', 'judgeQuickDraw(throws, goAt)', ['both throws in, or 4 s after go with the queues caught up', '(15 s at the latest)'], 'quick-draw-judge', 'QuickDrawVerdict'),
-            ('ui', 'Result panel + chime', ['"Player 2 wins" (52 pt), each player\'s line (34 pt)', 'the match: three rounds (QuickDrawMatch), extra rounds if level', 'Next round keeps the boards · Finish match · New match'], 'screens', None),
+            ('ui', 'Result panel + chime', ['"Player 2 wins" or "Sam wins" (52 pt), each player\'s line (34 pt)', 'the match: three rounds (QuickDrawMatch), extra rounds if level', 'Next round keeps the boards · Finish match · New match'], 'screens', None),
         ],
         caption='Untested on a phone so far: 60 fps, heat over ten duels, beep latency and reading the result from 4 m (Device Test Plan → Quick Draw Checks).',
         files=['lib/ui/live_quick_draw_screen.dart', 'lib/game/start_signal.dart', 'lib/camera/queued_camera.dart', 'lib/sound/signal_sounds.dart'],
@@ -577,7 +616,7 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'score-correction', 'game-history', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
@@ -586,6 +625,7 @@ CARD_TEXT = {
     'play': 'Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.',
     'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
     'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
+    'player-names': 'A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.',
     'choosing-boards': 'Tap Player 1\'s board, then Player 2\'s: a fraction of the picture, a window search, the rings.',
     'quick-draw-recording': 'The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.',
     'live-quick-draw': 'The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.',
@@ -602,7 +642,7 @@ NOTES = [
         'The motion pass stays on the UI thread: brightness only, at ~320 px.',
     ]),
     ('On the phone only', [
-        'No backend yet and no network calls: camera frames never leave the phone, and nor does the game history (one file in the app\'s own folder).',
+        'No backend yet and no network calls: camera frames never leave the phone, and nor do the game history and the player names (files in the app\'s own folder).',
         'The camera records no sound today. Recording and sharing (backlog #11) would change that, and needs the Review Agent.',
     ]),
 ]

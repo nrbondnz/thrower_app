@@ -41,6 +41,7 @@ SUB = {
     'target-model': 'ring scores 5 … 0',
     'game-session': '3, 5 or 9 rounds × 3 throws',
     'game-history': 'finished games, one JSON file',
+    'player-names-store': 'the names last used',
     'auth-service': 'interface only',
     'ring-locator': 'rings → ellipses',
     'tapped-target-locator': 'the board at a tap',
@@ -206,6 +207,7 @@ def overview_svg():
     parts.append(node(34, y + 36, 302, 48, 'sound', 'SignalSounds', SUB['signal-sounds'], 'components/signal-sounds.html', tip=COMPONENTS['signal-sounds']['dek']))
     parts.append(lane_box(365, y, 330, 156, 'history', lane_label('history')))
     parts.append(node(379, y + 36, 302, 48, 'history', 'GameHistory', SUB['game-history'], 'components/game-history.html', tip=COMPONENTS['game-history']['dek']))
+    parts.append(node(379, y + 94, 302, 48, 'history', 'PlayerNamesStore', SUB['player-names-store'], 'components/player-names-store.html', tip=COMPONENTS['player-names-store']['dek']))
     parts.append(lane_box(710, y, W - 730, 156, 'external', lane_label('native')))
     ew = (W - 730 - 28 - 12) / 2
     for i, (t, s) in enumerate(EXTERNAL):

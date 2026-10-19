@@ -10,7 +10,7 @@ Players can be given names in place of "Player 1" and "Player 2": "Mark wins", n
 - more than 3 acceptance criteria (1).
 
 ## Status
-IN PROGRESS: Task 2 of 4 complete (2026-10-19), awaiting Nigel's checkpoint (Task 1 not yet committed: Nigel said "continue"). Plan approved ("commit this and start task 1", `52173fc`).
+IN PROGRESS: Task 3 of 4 complete (2026-10-19), awaiting Nigel's checkpoint. Tasks 1–2 committed (`9802369`). Plan approved ("commit this and start task 1", `52173fc`).
 
 ## Answered (2026-10-19)
 1. **Remembering:** the **last names used, kept on the phone**: the setup screen fills them in, even after the app is closed. Change them by typing. No list to manage.
@@ -52,7 +52,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-19), awaiting Nigel's checkpoint (Tas
 
   Nothing to see on the phone yet.
 - **Next:** Task 2.
-- **Status:** COMPLETE (2026-10-19); Nigel: "ok, continue" (not yet committed)
+- **Status:** COMPLETE (2026-10-19); committed with Task 2 (`9802369`)
 - **What changed:**
   - `lib/scoring/match.dart`: `maxNameLength` (16), `cleanName`, `playerNumber`; `Match.names`, `nameOf`, `withNames`, a `names:` argument (cleaned, one per player); every change keeps the names.
   - `lib/history/game_record.dart`: **version 2**: `names` (written only when someone has one), `nameOf`; version 1 reads with no names; names that aren't one per player are a `FormatException`.
@@ -94,7 +94,7 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-19), awaiting Nigel's checkpoint (Tas
 
   **Nigel:** Live test → Play, 2 players, type two names, play, and check History.
 - **Next:** Task 3.
-- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-19); Nigel: "commit this and carry on" (`9802369`)
 - **What changed:**
   - `lib/ui/play_setup_screen.dart`: "Name(s) (optional)", a field per player (`playName0`, `playName1`; hint "Player N"; at most 16 characters; words capitalised), filled with the kept names unless one has been typed; Start sets them.
   - `lib/ui/play_screen.dart`: `turnText`, `turnDetail` and `playerTitle` use `Match.nameOf`; the correction rows' labels come from `rowLabel`.
@@ -127,6 +127,54 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-19), awaiting Nigel's checkpoint (Tas
     - the recorded Quick draw too.
 - **Verify:** widget tests (the board instruction, the round and match result with names, blank → Player 1). **Nigel:** Live test → Quick draw with names.
 - **Next:** Task 4.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/ui/quick_draw_boards.dart`:
+    - `BoardChoosing.playerNames`: the names from `playerNamesProvider`, "Player N" without. Shared with two-target Play, so it also says "Tap the centre of Jo's board".
+    - `choosingInstruction` uses the names.
+    - **`NamesButton`** and `editPlayerNames`: a dialog (`_NamesDialog`) with a field for each player, the same names as Play. Save keeps them; Cancel changes nothing.
+  - `lib/game/quick_draw_judge.dart`: `verdictText(v, names:)`.
+  - `lib/ui/live_quick_draw_screen.dart`:
+    - `matchText(m, names)`, `QuickDrawResultPanel(names:)` (headline "Sam wins…", the match line "Sam leads 2–0");
+    - **Names** shown whenever no round is under way.
+    - The per-player lines keep "1:" / "2:", matching the board numbers drawn on the picture.
+  - `lib/ui/quick_draw_screen.dart` (the recording): the result line by name; Names before Play.
+  - **Bug found by the tests and fixed:** the dialog's fields were disposed while its closing animation still used them. The dialog now owns them.
+- **Verified by:** `flutter test`: 748 passed (5 new), `flutter analyze`: no issues. **Nigel:** Live test → Quick draw: **Names**, type two, Save; "Tap the centre of Jo's board"; Play; the result by name.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 3)
+- **New:**
+  - `quick_draw_judge_test.dart` (1): the result line by name, Player N without.
+  - `live_quick_draw_screen_test.dart` (4): the boards asked for by name; Names changes them, the same as Play's; Cancel leaves them; the panel names the winner and the match.
+  - The duel test also checks that Names is hidden once Start is tapped.
+- **Results:** 748 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 3)
+Kept along the chain: requirement → architecture → design decisions (Docs Agent §0).
+- **Files updated:**
+  - **Requirements:**
+    - [[Player Names]]: status ✅ built for named players (device checks to come; friends stage 3); "What Exists Today" rewritten, links to this story, [[Design Decisions]] → Named Players, [[Data Flow]], [[Glossary]].
+    - [[Requirements Index]]: Player Names 🗺️ → ✅.
+    - [[One Target]], [[Two Targets]], [[Round Play]], [[Game Type]], [[Game Recording]]: the names noted where players are named (and History keeps them); One Target and Two Targets now link down to [[Design Decisions]].
+    - [[Scoring Rules]], [[Number of Rounds]], [[Ending Early]]: links down to the 2026-10-17/19 decisions (Score Corrections, KATTA, the Quick draw match, Finish match).
+  - **Architecture:**
+    - [[System Diagram]]: `PlaySetupScreen` (names); `playerNames` · `NamesButton` → `editPlayerNames` in `quick_draw_boards`; `playerNamesProvider` / `playerNamesStoreProvider`; `Match.names` / `nameOf` / `withNames` in the Play flow; `GameRecord` v2 (names); a new **SETTINGS (lib/settings)** box (`PlayerNamesStore`, `FilePlayerNamesStore`); `path_provider` serves both.
+    - [[Data Flow]]: new section **Player Names: Into the Game, History and Quick Draw** (store → `set` → `GameNotifier` / `Match.withNames` → Play, History, Quick draw).
+    - [[Glossary]]: Task 3 entries: `BoardChoosing.playerNames`, `NamesButton` / `editPlayerNames` (`_NamesDialog` owns its fields), `verdictText(…, names:)`, `matchText(m, names)`, `QuickDrawResultPanel(…, names:)`; **Named player** concept links up to [[Player Names]].
+    - [[Accounts Roadmap]]: stage 1 marked built (Tasks 1–3, device checks to come) in the stage table, the Stage 1 section (open questions answered) and the Changes Log.
+    - Web pages: `tool/web_docs/content.py` (the History lane is now "History and settings · lib/history · lib/settings"; new component **PlayerNamesStore**; new flow **Player names: into the game, History and Quick draw**, with a card; names in Screens, Providers, GameSession and Match, judgeQuickDraw, GameHistory, choosing boards, live Quick draw, `path_provider`); `tool/web_docs/build.py` (the PlayerNamesStore box on the overview, under GameHistory). `python tool/web_docs/build.py`: index + 10 flows + 26 components.
+  - **Design decisions** ([[Design Decisions]]):
+    - Named Players: **Requirement:** [[Player Names]] and the roadmap's Stage 1 linked; **Quick draw (Task 3)** added: no `Match`, so the shared `BoardChoosing.playerNames` getter; texts take names as an argument (`verdictText`, `matchText`, `QuickDrawResultPanel`); the per-player lines keep "1:/2:" to match the board numbers; the Names dialog (Save / Cancel, shown only when no round is under way); the disposed-controller bug, fixed by the dialog owning its fields.
+    - Code Layout: `lib/history/` is format version 2 with names; `quick_draw_boards.dart` lists `playerNames`, `NamesButton` / `editPlayerNames`.
+    - Single Player First ("Player 1 and Player 2 for now"), Quick Draw: Choosing the Boards, the live duel's panel: notes that players can now be named.
+    - Requirement links added up from: Score Corrections ([[Scoring Rules]], [[Round Play]]), Game History ([[Game Recording]], [[Ending Early]]), KATTA ([[Scoring Rules]]), the Quick draw match updates ([[Game Type]], [[Number of Rounds]], [[Ending Early]]), one or two players ([[Game Type]], [[One Target]], [[Two Targets]]).
+- **Files created:** none in the vault; `docs/web/components/player-names-store.html`, `docs/web/flows/player-names.html` (generated).
+- **Chain audit (drift):**
+  - Requirement pages with no design decision behind them: [[Remote Play]], [[Results Sharing]] (only the [[Accounts Roadmap]] stages 4–5), [[Rankings]], [[Competitions and Prizes]] (ideas), [[Subscriptions]] (only the roadmap's open decision and "payments deferred"); [[Game Recording]]'s video half ([[story-checkpoint-record-and-share]], paused, no decision section). Expected for 🗺️ / 💭 items: their design comes when they're planned.
+  - Decision with no requirement page above it: the **in-app Instructions** updates (Rounds and Scoring → "In-app Instructions", incl. the 2026-10-19 Quick draw match update). No requirement page covers instructions or safety wording; suggest a Basic Setup/Basic Play page for "Instructions and safety", or accept as cross-cutting.
+  - Unrelated drift seen: [[System Diagram]]'s rule "Plugins stay in the camera and sound layers" omits `path_provider` (history and settings); the web pages' `TargetModel` text still says "IKTHOF" (now `TargetModel.katta()`); `targetModelProvider` described as "the IKTHOF rings".
+- **Left for Task 4:** `lib/ui/instructions.dart` (naming players), [[Device Test Plan]] checks, [[Mac Handoff]], the backlog.
 
 ### Task 4: Instructions, docs, device checks, traceability
 - **Setup:** Task 3.
@@ -147,3 +195,4 @@ IN PROGRESS: Task 2 of 4 complete (2026-10-19), awaiting Nigel's checkpoint (Tas
 
 ## Notes
 - Friends (other app users, linked accounts, throws recorded on their own app) are stage 3 of the [[Accounts Roadmap]]. A seat will then be a named player **or** a friend, so `Match.names` should stay a label, not become an identity.
+- **Drift fixed after the Docs Agent's report (2026-10-19):** the web pages' `TargetModel` text now says KATTA; [[System Diagram]]'s plugin rule names `path_provider` behind `GameHistory` and `PlayerNamesStore`.

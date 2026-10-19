@@ -11,7 +11,7 @@ Part of [[Requirements Index]] → Basic play → [[Round Play]]. **Status:** �
 Two players, a target each, throwing at the same time, seen by one phone.
 
 ## What Exists Today
-- The phone stands behind the throwers and sees both boards. Tap each board's centre (Player 1, then Player 2) and lock them; each board is watched on its own crop of the picture and **scores for its own player**.
+- The phone stands behind the throwers and sees both boards. Tap each board's centre (Player 1, then Player 2; by name if named: [[Player Names]]) and lock them; each board is watched on its own crop of the picture and **scores for its own player**.
 - Both throw their round; knives are collected **together**, when both have finished. A player who finishes first is told to wait.
 - Built 2026-10-16 ([[story-checkpoint-players-and-targets]] Task 3; device checks M0–M9 to come). Quick draw uses the same two-board setup.
 
@@ -23,3 +23,4 @@ Two players, a target each, throwing at the same time, seen by one phone.
 - [[One Target]]
 - [[Game Type]]
 - [[backlog]] #10
+- [[Design Decisions]] → Single Player First (Task 3: two players on two targets); Quick Draw: Choosing the Boards by Tapping

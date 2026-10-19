@@ -24,6 +24,7 @@ import 'package:thrower_app/vision/target_locator.dart';
 import '../camera/recorded_camera_test.dart' show greyPack;
 import '../game/quick_draw_targets_test.dart' show boardAtCentre;
 import '../game/start_signal_test.dart' show FakeSignalSounds;
+import '../settings/player_names_test.dart' show MemoryPlayerNamesStore;
 
 void main() {
   late List<Point2> taps;
@@ -67,10 +68,15 @@ void main() {
 
   /// The app from Home, with the live Quick draw's camera replaced by [camera]
   /// (a recording stands in: tests have no camera).
-  Future<void> pumpHome(WidgetTester tester, Future<TargetCamera> Function() camera) async {
+  Future<void> pumpHome(
+    WidgetTester tester,
+    Future<TargetCamera> Function() camera, {
+    List<String?> names = const [],
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          playerNamesStoreProvider.overrideWithValue(MemoryPlayerNamesStore(names)),
           liveQuickDrawCameraProvider.overrideWith((ref) => camera()),
           // Play's camera never starts in a test.
           cameraProvider.overrideWith((ref) => Completer<TargetCamera>().future),
@@ -190,6 +196,7 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('quickDrawLight0On')), findsOneWidget);
       expect(find.byKey(const Key('quickDrawLight1Off')), findsOneWidget);
+      expect(find.byKey(const Key('quickDrawNames')), findsNothing, reason: 'names are changed before Start');
       await wait(tester, const Duration(seconds: 4));
       expect(find.byKey(const Key('quickDrawLight4On')), findsOneWidget);
       expect(sounds.played, ['beep', 'beep', 'beep', 'beep', 'beep']);
@@ -480,9 +487,65 @@ void main() {
       expect(tester.widget<Text>(find.byKey(const Key('quickDrawMatch'))).data, 'Player 2 wins the match 2–1');
     });
 
+    // Named-players story (2026-10-19).
+    testWidgets('names the winner and the match by name', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuickDrawResultPanel(
+              verdict: judgeQuickDraw([at(850, stuck: false), at(817)], go),
+              match: const QuickDrawMatch(results: [1, 1]),
+              names: const ['Jo', 'Sam'],
+            ),
+          ),
+        ),
+      );
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawHeadline'))).data, 'Sam wins');
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawMatch'))).data, 'Sam leads 2–0');
+    });
+
     testWidgets('says so when frames were skipped (release builds have no debug line)', (tester) async {
       await show(tester, judgeQuickDraw([at(850), at(817)], go), skipped: true);
       expect(find.text('Some frames were skipped: times may be less exact.'), findsOneWidget);
+    });
+  });
+
+  // Named-players story (Nigel, 2026-10-19): Quick draw uses Play's names.
+  group('names', () {
+    Future<void> openQuickDraw(WidgetTester tester, {List<String?> names = const []}) async {
+      await pumpHome(tester, stillCamera, names: names);
+      await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('choosing the boards asks for each player by name', (tester) async {
+      await openQuickDraw(tester, names: ['Jo', 'Sam']);
+      expect(instruction(tester), "Tap the centre of Jo's board.");
+      await tapPicture(tester, 0.25, 0.5);
+      expect(instruction(tester), "Tap the centre of Sam's board.");
+    });
+
+    testWidgets('Names changes them, the same names as Play', (tester) async {
+      await openQuickDraw(tester);
+      expect(instruction(tester), "Tap the centre of Player 1's board.");
+      await tester.tap(find.byKey(const Key('quickDrawNames')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('quickDrawName0')), 'Jo');
+      await tester.tap(find.byKey(const Key('quickDrawNamesSave')));
+      await tester.pumpAndSettle();
+      expect(instruction(tester), "Tap the centre of Jo's board.");
+      final container = ProviderScope.containerOf(tester.element(find.byType(LiveQuickDrawScreen)));
+      expect(container.read(playerNamesProvider), ['Jo', null]);
+    });
+
+    testWidgets('Cancel leaves the names as they were', (tester) async {
+      await openQuickDraw(tester, names: ['Jo']);
+      await tester.tap(find.byKey(const Key('quickDrawNames')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('quickDrawName0')), 'Kim');
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(instruction(tester), "Tap the centre of Jo's board.");
     });
   });
 }

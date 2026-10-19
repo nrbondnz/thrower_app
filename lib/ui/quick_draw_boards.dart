@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../camera/target_camera.dart';
@@ -9,6 +10,7 @@ import '../game/quick_draw_judge.dart';
 import '../game/quick_draw_targets.dart';
 import '../game/quick_draw_watcher.dart';
 import '../providers.dart';
+import '../scoring/match.dart';
 import '../vision/ellipse.dart';
 import '../vision/target_calibration.dart';
 
@@ -42,14 +44,22 @@ mixin BoardChoosing<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   /// two-target Play keeps its own ([playTargetsProvider]).
   void addBoard(TargetCalibration board) => ref.read(quickDrawTargetsProvider.notifier).add(board);
 
+  /// The players, by name ([playerNamesProvider]; "Player N" without one).
+  /// Call while building: the screen follows the names.
+  List<String> get playerNames {
+    final names = ref.watch(playerNamesProvider);
+    return [for (var i = 0; i < PlayerNamesNotifier.seats; i++) names[i] ?? playerNumber(i)];
+  }
+
   /// What to do next while choosing; [locked] once the boards are locked.
+  /// Call while building.
   String choosingInstruction(QuickDrawTargets targets, {required String locked}) {
-    final next = targets.boards.length + 1;
-    if (searching) return "Looking for Player $next's board…";
+    final next = playerNames[math.min(targets.boards.length, PlayerNamesNotifier.seats - 1)];
+    if (searching) return "Looking for $next's board…";
     if (targets.locked) return locked;
     if (targets.complete) return 'Both boards found: lock them, or choose them again.';
     final again = missed ? 'No board found there. ' : '';
-    return "${again}Tap the centre of Player $next's board.";
+    return "${again}Tap the centre of $next's board.";
   }
 }
 
@@ -186,4 +196,78 @@ class BoardsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(BoardsPainter old) => old.targets != targets || !listEquals(old.results, results);
+}
+
+/// Quick draw's **Names** button (named-players story, 2026-10-19): the two
+/// throwers' names, the same as Play's ([playerNamesProvider]), changed in a
+/// dialog before Start.
+class NamesButton extends ConsumerWidget {
+  const NamesButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => OutlinedButton(
+        key: const Key('quickDrawNames'),
+        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.black54),
+        onPressed: () => editPlayerNames(context, ref),
+        child: const Text('Names'),
+      );
+}
+
+/// Asks for both players' names, filled with the current ones; Save keeps
+/// them (blank is "Player N"), Cancel changes nothing.
+Future<void> editPlayerNames(BuildContext context, WidgetRef ref) async {
+  final names = await showDialog<List<String>>(
+    context: context,
+    builder: (context) => _NamesDialog(ref.read(playerNamesProvider)),
+  );
+  if (names != null) ref.read(playerNamesProvider.notifier).set(names);
+}
+
+/// The Names dialog; it owns its fields, so they outlive its closing
+/// animation.
+class _NamesDialog extends StatefulWidget {
+  const _NamesDialog(this.names);
+
+  final List<String?> names;
+
+  @override
+  State<_NamesDialog> createState() => _NamesDialogState();
+}
+
+class _NamesDialogState extends State<_NamesDialog> {
+  late final _fields = [for (final n in widget.names) TextEditingController(text: n ?? '')];
+
+  @override
+  void dispose() {
+    for (final c in _fields) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Names'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (i, c) in _fields.indexed)
+              TextField(
+                key: Key('quickDrawName$i'),
+                controller: c,
+                decoration: InputDecoration(labelText: playerNumber(i), hintText: playerNumber(i)),
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [LengthLimitingTextInputFormatter(maxNameLength)],
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          TextButton(
+            key: const Key('quickDrawNamesSave'),
+            onPressed: () => Navigator.of(context).pop([for (final c in _fields) c.text]),
+            child: const Text('Save'),
+          ),
+        ],
+      );
 }

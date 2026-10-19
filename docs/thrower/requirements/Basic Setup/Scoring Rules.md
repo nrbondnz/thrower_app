@@ -19,10 +19,11 @@ The app scores each throw by the rules throwers use: **KATTA**, which is prevale
 
 ## Open Questions
 - Other bodies' rules (WATL's lower-ring rule and killshots, IATF): not wanted for now (backlog #3, 2026-10-18).
+- **Choosing the scoring system** (Nigel, 2026-10-19, for the future): other systems selectable, perhaps **by location**: US players would possibly use IKTHOF. A setting, or a default from the phone's region? Rankings then compare players on the same system ([[Rankings]]). Backlog #3.
 - Axes: once knives work 100% (backlog #7).
 - For rankings: are corrected scores allowed in ranked games? (See [[Rankings]].)
 
 ## Related
-- [[Design Decisions]] → Throwing Sport; Score Against the Painted Rings
+- [[Design Decisions]] → Throwing Sport (KATTA); Score Against the Painted Rings; Score Corrections; Quick Draw: Go, False Starts and the Winner
 - [[Glossary]] → KATTA scoring, Line-touch rule
 - [[backlog]] #3 (line-touch variants), #7 (axes)

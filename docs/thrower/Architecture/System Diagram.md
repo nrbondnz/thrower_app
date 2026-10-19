@@ -11,6 +11,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │                        UI  (lib/ui)                           │  │
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
 │  │              ├─ HistoryScreen ── GameRecordScreen             │  │
+│  │              ├─ PlaySetupScreen (players, rounds, names)      │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
 │  │              │    └ ScoreCorrections (tap a score: 0–5 popup) │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
@@ -23,6 +24,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  quick_draw_boards (shared by both Quick draw screens):       │  │
 │  │    BoardChoosing (tap → find → outline) · BoardsOverlay       │  │
 │  │    ── BoardsPainter · boardLines · quickDrawLine              │  │
+│  │    playerNames (Play's names) · NamesButton ─▶                │  │
+│  │      editPlayerNames (Names dialog, before Start)             │  │
 │  └───────────────────────────────┬───────────────────────────────┘  │
 │                                  │ ref.watch / ref.read             │
 │                                  ▼                                  │
@@ -39,6 +42,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  playTargetsProvider (two-target Play's boards, session-long) │  │
 │  │  gameHistoryProvider (kept games) · historySaveErrorProvider  │  │
 │  │  clockProvider (when a game finished)                         │  │
+│  │  playerNamesProvider (PlayerNamesNotifier: the names,         │  │
+│  │    saved on change) ◀── playerNamesStoreProvider              │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -91,7 +96,15 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ GameHistory (interface) ◀── GameNotifier (a finished game),    │ │
 │  │   HistoryScreen (list, delete, clear)                          │ │
 │  │  └FileGameHistory: game_history.json in the app's support      │ │
-│  │    folder; GameRecord (when, mode, rounds, round totals)       │ │
+│  │    folder; GameRecord v2 (when, mode, rounds, round totals,    │ │
+│  │    names)                                                      │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌────────────────────── SETTINGS (lib/settings) ─────────────────┐ │
+│  │ PlayerNamesStore (interface: load, save) ◀──                   │ │
+│  │   playerNamesProvider (loads at start, saves on change)        │ │
+│  │  └FilePlayerNamesStore: player_names.json in the app's         │ │
+│  │    support folder: the names last used (blank if unreadable)   │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
 │  ┌───────────────────────── NATIVE CODE ──────────────────────────┐ │
@@ -100,7 +113,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ audioplayers (RecordingSound: Live test clip; SignalSounds:    │ │
 │  │   Quick draw beeps and chime, low latency; play only)          │ │
 │  │ Flutter engine image codec (decodeFrameNatively), not a plugin │ │
-│  │ path_provider (FileGameHistory: the app's support folder)      │ │
+│  │ path_provider (FileGameHistory, FilePlayerNamesStore: the      │ │
+│  │   app's support folder)                                        │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
           │
@@ -148,6 +162,8 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │   │ GameNotifier: TargetMapping → TargetModel.scoreAt → 5…0      │  │
 │   │ GameSession: 9 rounds × 3 throws; a visit closes the round   │  │
 │   │ Match: a GameSession per player, by board or by turn         │  │
+│   │ Match.names / nameOf: the players' names ("Player N" if      │  │
+│   │   blank); renamed in place (withNames) when they change      │  │
 │   └──────────────────────────────┬───────────────────────────────┘  │
 │                                  ▼                                  │
 │   PlayScreen: score marks on the board (RoundMarks), totals         │
@@ -198,7 +214,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 **Rules:**
 - `lib/vision` and `lib/scoring` have **no Flutter imports**. They run in background isolates and in tests on a PC.
 - Vision depends on the camera layer's **data** types (`CameraFrame`) only, never on a plugin.
-- Plugins stay in the camera and sound layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`), so tests feed recorded frames and fake sound.
+- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`), so tests feed recorded frames, fake sound and temporary folders.
 - Heavy work (frame conversion, ring finding, the entry search) runs off the UI thread via `compute`, using top-level functions and plain data. See [[Known Issues]] → Isolate Fails.
 
 See [[Data Flow]] for one frame's path to a score, and [[Glossary]] for the component → function tree and terms.

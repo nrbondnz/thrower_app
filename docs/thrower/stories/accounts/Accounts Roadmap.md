@@ -38,7 +38,7 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 | Stage | What it adds | Backend | Story |
 |---|---|---|---|
-| **1. Named players** | Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names | None | Next: to be planned |
+| **1. Named players** | Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names | None | **Built** 2026-10-19 (Tasks 1–3; device checks to come): [[story-checkpoint-named-players]] |
 | **2. The app user's account** | The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone | Sign-in, storage, payments | — |
 | **3. Friends** | Another app user **links their account** to this app user and becomes a **friend**; a seat can be a friend; their throws on the host's phone are **recorded on their own app** | Friends, shared records | — |
 | **4. Join a live session** | The host's phone runs a session; friends join from their own phones; live scores, turns and corrections on each thrower's phone | Live sync (server or local Wi-Fi) | — |
@@ -53,11 +53,11 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 - **Data model:** the game's players carry an optional name (`Match` / `GameNotifier`); `GameRecord` **version 2** stores each player's name. Version 1 files still read, with no names.
 - **No player list, no history by player, no IDs:** a name is a label for one game.
 - **No backend, nothing leaves the phone.**
-- **Open questions** (to settle when planning the story):
-  - Remember recent names, so they can be picked rather than typed each time? (A convenience list, not players with histories.)
-  - The app user's own seat: "Me", or their name, by default?
-  - More than 2 players on one target?
-  - Names in Quick draw too?
+- **Built** 2026-10-19 ([[story-checkpoint-named-players]] Tasks 1–3; Task 4, the Instructions, device checks and traceability, to come). Requirement: [[Player Names]]; design: [[Design Decisions]] → Named Players.
+  - Names on the setup screen, Play, two-target Play, the score-correction rows and History; `GameRecord` version 2.
+  - The **last names used are kept on the phone** (`player_names.json`, `lib/settings/`) and filled in next time: no list to manage.
+  - **Quick draw** uses the same names, changed with **Names** before Start.
+- **Open questions, answered 2026-10-19** (in the story): the last names are remembered (not a list); a blank seat is "Player N"; still 1 or 2 players (more players taking turns is its own story); Quick draw uses the names too. Still open: the app user's own seat ("Me", or their name, by default?), once there's an account (stage 2).
 
 ### Stage 2: The App User's Account
 
@@ -142,5 +142,6 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 ## Changes Log
 
+- **2026-10-19:** Stage 1 (named players) built, Tasks 1–3 of [[story-checkpoint-named-players]]; device checks to come.
 - **2026-10-19:** Nigel's model of app users, named players and friends added; signing in not a gate for scoring (proposed). Stage 1 simplified to **Named players** (a name on a seat, no player list, history or IDs); friends link their accounts and get their throws on their own app (stage 3).
 - **2026-10-18:** Written from Nigel's description of the destination (friends on one phone first; ultimately a game centre where friends sign in, join the host's session, and share their own throw videos). Nigel: stage 1 first.

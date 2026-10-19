@@ -68,7 +68,9 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
   /// got.
   String _progress(RecordedCamera camera, RecordingAnalysisFeed feed, List<QuickDrawThrow?> throws) {
     final done = feed.analysed.value >= camera.pack.frameCount - 1;
-    if (throws.every((t) => t != null) || done) return verdictText(judgeQuickDraw(throws, camera.recording.go!));
+    if (throws.every((t) => t != null) || done) {
+      return verdictText(judgeQuickDraw(throws, camera.recording.go!), names: playerNames);
+    }
     final behind = camera.position.value - feed.timeOf(math.max(feed.first, feed.analysed.value));
     if (camera.position.value < feed.timeOf(feed.first)) return 'Watching…';
     if (behind > const Duration(milliseconds: 200)) {
@@ -161,6 +163,7 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                           spacing: 12,
                           runSpacing: 8,
                           children: [
+                            if (_watcher == null) const NamesButton(),
                             if (targets.boards.isNotEmpty)
                               OutlinedButton(
                                 key: const Key('quickDrawStartAgain'),

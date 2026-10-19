@@ -34,7 +34,7 @@
   <dl class="functions">
     <div><dt><code>judgeQuickDraw(throws, go)</code></dt><dd>→ QuickDrawVerdict(players, winner, draw)</dd></div>
     <div><dt><code>JudgedThrow</code></dt><dd>none / falseStart / bounced / stuck; afterGo; score</dd></div>
-    <div><dt><code>judgedText · verdictText</code></dt><dd>&quot;0.82 s · 5&quot; · &quot;Player 2 wins: stuck 5, 0.82 s after go.&quot;</dd></div>
+    <div><dt><code>judgedText · verdictText(v, names:)</code></dt><dd>&quot;0.82 s · 5&quot; · &quot;Player 2 wins: stuck 5, 0.82 s after go.&quot; (by name: &quot;Sam wins: …&quot;)</dd></div>
     <div><dt><code>QuickDrawMatch: add · finish · wins · isExtraRound · winner · draw</code></dt><dd>the three-round match</dd></div>
   </dl>
 
@@ -50,6 +50,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>Live Quick draw: start signal to result</h3>
       <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/player-names.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Player names: into the game, History and Quick draw</h3>
+      <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
       <span class="more">Open →</span>
     </a>
   </div>

@@ -20,6 +20,6 @@ The players choose how long a game is.
 - For rankings, which lengths count (see [[Rankings]])?
 
 ## Related
-- [[Design Decisions]] → Rounds and Scoring
+- [[Design Decisions]] → Rounds and Scoring; Quick Draw: Go, False Starts and the Winner (the match)
 - [[Game Type]]
 - [[Ending Early]]

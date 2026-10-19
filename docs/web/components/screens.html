@@ -28,13 +28,14 @@
   <div class="detail-body">
     <p>Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.</p>
     <p><code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>.</p>
+    <p>Players can be named (2026-10-19): on the setup screen, or with <strong>Names</strong> on Quick draw before Start. A blank seat is Player 1 / Player 2. Play, History and Quick draw all show the names; Quick draw's per-player result lines keep "1:" / "2:", matching the board numbers on the picture.</p>
     <p>On the recording's Quick draw, <strong>Play</strong> shows only once the boards are locked: played unlocked, nothing would be analysed (2026-10-16).</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
     <div><dt><code>HomeScreen</code></dt><dd>Instructions, Play, History, Quick draw, Live test, Calibrate target, Scoring test target</dd></div>
-    <div><dt><code>PlaySetupScreen</code></dt><dd>after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; Start</dd></div>
+    <div><dt><code>PlaySetupScreen</code></dt><dd>after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; a name per player (optional, filled with the last ones); Start</dd></div>
     <div><dt><code>PlayScreen</code></dt><dd>the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner</dd></div>
     <div><dt><code>CalibrationScreen</code></dt><dd>Find target, drag the rings (CalibrationEditor), Lock</dd></div>
     <div><dt><code>TwoTargetPlayScreen</code></dt><dd>two players on two targets: tap and lock both boards, each board&#x27;s marks, Wait for Player 2 / Collect your knives, the winner</dd></div>
@@ -42,7 +43,9 @@
     <div><dt><code>QuickDrawScreen</code></dt><dd>the recorded duel: tap boards, Lock, Play, GO!, each board&#x27;s time and the winner</dd></div>
     <div><dt><code>LiveQuickDrawScreen</code></dt><dd>the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type</dd></div>
     <div><dt><code>ScoreCorrections</code></dt><dd>under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile</dd></div>
-    <div><dt><code>HistoryScreen · GameRecordScreen</code></dt><dd>the kept games, newest first; a game&#x27;s rounds; Delete; Clear history (asks first)</dd></div>
+    <div><dt><code>HistoryScreen · GameRecordScreen</code></dt><dd>the kept games, newest first, by name (resultText); a game&#x27;s rounds; Delete; Clear history (asks first)</dd></div>
+    <div><dt><code>NamesButton · editPlayerNames</code></dt><dd>Quick draw&#x27;s Names, before Start: a field per player, the same names as Play; Save or Cancel</dd></div>
+    <div><dt><code>BoardChoosing.playerNames</code></dt><dd>the names for the board texts (&quot;Tap the centre of Jo&#x27;s board&quot;), Player N without</dd></div>
     <div><dt><code>InstructionsScreen</code></dt><dd>setup, play and the safety points (instructions.dart)</dd></div>
     <div><dt><code>DebugTargetScreen</code></dt><dd>Scoring test target: tap a drawn target to see the score</dd></div>
   </dl>
@@ -71,6 +74,12 @@
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Keeping and viewing finished games</h3>
       <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/player-names.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Player names: into the game, History and Quick draw</h3>
+      <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/choosing-boards.html">

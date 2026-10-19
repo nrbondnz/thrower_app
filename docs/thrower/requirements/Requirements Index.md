@@ -11,7 +11,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 **Status key:** ✅ built (device checks to come where noted) · 🟡 partly built · 🗺️ planned, not built · 💭 idea, to be thought through
 
 ## Basic Setup
-- [[Player Names|Setting up player names]] 🗺️
+- [[Player Names|Setting up player names]] ✅ (named players; friends with accounts planned)
 - [[Scoring Rules|Rules of scoring]] ✅ (KATTA)
 - [[Number of Rounds|Setting number of rounds]] ✅
 - [[Game Type|Setting game type (scoring or quick draw)]] ✅

@@ -38,11 +38,12 @@
     <div><dt><code>calibrationProvider (CalibrationNotifier)</code></dt><dd>start, adjust, lock, unlock</dd></div>
     <div><dt><code>playModeProvider · gameLengthProvider</code></dt><dd>the setup screen&#x27;s choices, kept for the session</dd></div>
     <div><dt><code>gameProvider (GameNotifier)</code></dt><dd>onEvent(board) → Match → a GameSession per player</dd></div>
-    <div><dt><code>targetModelProvider · ringBoundaryRadiiProvider</code></dt><dd>the IKTHOF rings</dd></div>
+    <div><dt><code>targetModelProvider · ringBoundaryRadiiProvider</code></dt><dd>the KATTA rings (TargetModel.katta)</dd></div>
     <div><dt><code>quickDrawTargetsProvider · tapLocatorProvider</code></dt><dd>the tapped boards, and how a tap finds one</dd></div>
     <div><dt><code>playTargetsProvider</code></dt><dd>two-target Play&#x27;s boards, kept for the session</dd></div>
     <div><dt><code>signalSoundsProvider · startScheduleProvider</code></dt><dd>the beeps, and a new random pause each duel</dd></div>
     <div><dt><code>gameHistoryProvider · historySaveErrorProvider · clockProvider</code></dt><dd>the kept games, a failed save, when a game finished</dd></div>
+    <div><dt><code>playerNamesProvider (PlayerNamesNotifier) · playerNamesStoreProvider</code></dt><dd>the players&#x27; names: loaded at start; set cleans and saves them; GameNotifier renames the game in place</dd></div>
     <div><dt><code>authServiceProvider</code></dt><dd>the account interface (no provider chosen yet)</dd></div>
   </dl>
 
@@ -64,6 +65,12 @@
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Keeping and viewing finished games</h3>
       <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/player-names.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Player names: into the game, History and Quick draw</h3>
+      <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/live-quick-draw.html">

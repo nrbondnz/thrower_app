@@ -339,6 +339,50 @@ Once the boards are locked, **Start** runs a duel (Tasks 3–4 of [[story-checkp
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## Player Names: Into the Game, History and Quick Draw
+
+A name is a label on a seat (stage 1 of the [[Accounts Roadmap]]; requirement [[Player Names]]; why in [[Design Decisions]] → Named Players). The last names used are kept on the phone (`lib/settings/`) and fill in the setup screen; the game (`Match`) carries them, so Play, History and the kept record read the same names. Quick draw has no `Match`: it reads the names straight from `playerNamesProvider` ([[story-checkpoint-named-players]] Tasks 1–3).
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│    PLAYER NAMES: THE SETUP SCREEN → THE GAME, HISTORY, QUICK DRAW   │
+│                                                                     │
+│   App start: playerNamesProvider (PlayerNamesNotifier) →            │
+│   PlayerNamesStore.load → player_names.json (blank if none or       │
+│   unreadable; names set before it loads win)                        │
+│          │                                                          │
+│          ▼                                                          │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ Setup screen (PlaySetupScreen): a field per player, filled   │  │
+│   │ with the kept names; Start → playerNamesProvider.set         │  │
+│   │ Quick draw: Names (NamesButton → editPlayerNames) → set      │  │
+│   │ set: cleanName (trimmed, 16 characters, blank = none) →      │  │
+│   │ save (FilePlayerNamesStore: .tmp, then replace; a failed     │  │
+│   │ save is ignored)                                             │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │ the names (one per seat, or null)│
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ GameNotifier: each new game gets the names; a change         │  │
+│   │ renames the game in place (Match.withNames), scores kept;    │  │
+│   │ New game keeps them. Match.nameOf(i): the name, or           │  │
+│   │ "Player i+1" (playerNumber)                                  │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │                                  │
+│                                  ▼                                  │
+│   Play / two-target Play: turnText, turnDetail, playerTitle,        │
+│     boardMessage, boardsStateText, rowLabel ("Jo's turn")           │
+│   History: GameRecord.fromMatch keeps match.names (version 2)       │
+│     → resultText ("Sam wins 10–12"), GameRecordScreen headings      │
+│   Quick draw (the names from playerNamesProvider, not a Match):     │
+│     BoardChoosing.playerNames → choosingInstruction ("Tap the       │
+│     centre of Jo's board"), verdictText(names:), matchText(m,       │
+│     names), QuickDrawResultPanel(names:); board lines keep 1: / 2:  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+Nothing here leaves the phone.
+
 ## Coordinate Spaces
 
 | Space | Where | Notes |
