@@ -40,6 +40,9 @@ dependencies:
   audioplayers: ^6.8.1
   # Game history's file (already in the app via audioplayers; game-history story).
   path_provider: ^2.1.6
+  # Accounts (stage 2, AWS Amplify, as WhereWillWeVisit): sign-in via Cognito.
+  amplify_flutter: ^2.16.0
+  amplify_auth_cognito: ^2.16.0
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +72,9 @@ flutter:
     - assets/live/
     # Quick draw's start signal and result chime (~60 KB; tool/make_signal_sounds.dart).
     - assets/sounds/
+    # The deployed backend's settings (amplify_outputs.json), generated per
+    # branch and not committed; without it the app runs signed out.
+    - assets/config/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

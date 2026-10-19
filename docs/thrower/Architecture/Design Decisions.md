@@ -45,9 +45,26 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Backend decided (Nigel, 2026-10-19): AWS Amplify, always** (`docs/dont-ask-again.md`). Amplify Gen 2, following WhereWillWeVisit (`where_in_nz_v3`), which already has accounts: Cognito sign-in (email, Google, Sign in with Apple), the app's user ID is the Cognito `sub`, AppSync resolvers check the caller owns the data, and Apple purchases are verified server-side. It comes in at stage 2 of the [[Accounts Roadmap]]; `AuthService` stays the app's interface to it.
 
-**How accounts grow** (2026-10-18): in stages, from friends kept on the phone with no sign-in (stage 1, next) to friends who sign in, join a session the host's phone runs, and own their throws and videos. See [[Accounts Roadmap]]. The backend is still chosen at stage 2.
+**How accounts grow** (2026-10-18): in stages, from friends kept on the phone with no sign-in (stage 1, next) to friends who sign in, join a session the host's phone runs, and own their throws and videos. See [[Accounts Roadmap]]. The backend comes in at stage 2.
 
-**Confirmed:** 2026-10-04.
+**Built (Task 1, 2026-10-19; [[story-checkpoint-app-user-accounts]]):** the backend is in the repo and the app can connect to it. Nothing is visible yet: no Account screen until Task 2.
+
+**Requirement:** [[Player Names]] (names follow the user), [[Game Recording]] (history kept safe), [[Subscriptions]] (accounts come before payments). **Plan:** [[Accounts Roadmap]] → Stage 2.
+
+- **The backend: Amplify Gen 2 in the repo.** `amplify/backend.ts` (`defineBackend({auth})`) and `amplify/auth/resource.ts` (`defineAuth`: a Cognito user pool, **email sign-in** for now). Laid out as WhereWillWeVisit's. Data models (history, names, owner rules) come in Task 4.
+- **Deployed by Amplify Hosting from GitHub**, not from the PC (Nigel, 2026-10-19). Nigel connects the repo in the Amplify console; `amplify.yml` runs `npx ampx pipeline-deploy` for the branch being built. No local sandbox. *Why:* the deploy is the same every time, and nothing on the PC holds AWS credentials for it.
+- **Two environments: `main` = production, `dev` = development** (Nigel, 2026-10-19), as WhereWillWeVisit (which has four). *Why:* sign-in and data changes can be tried on `dev` without touching real users' accounts.
+- **Region: London, `eu-west-2`** (Nigel, 2026-10-19), in place of WhereWillWeVisit's `ap-southeast-2`.
+- **Sign-up emails: Cognito's own email until SES** has production access in London. Cognito's sender has a low daily limit, enough for testing ([[Known Issues]]).
+- **Email first; Google and Sign in with Apple in Task 3.** Their client secrets must be set in the Amplify console (`secret(...)`, kept in SSM, never in git) before the backend names them, or the deploy fails. Apple requires Sign in with Apple once Google is offered.
+- **The settings ship as an optional asset**: `assets/config/amplify_outputs.json`, generated per branch and **gitignored** ([[Common Tasks]] → Connect the App to the Amplify Backend). `loadAmplifyOutputs` reads it; null if the build has none. *Why not WhereWillWeVisit's way:* there, the settings are a generated Dart file (`lib/amplify_outputs.dart`) the code imports, so a fresh clone doesn't compile until it's generated. As an asset, any clone builds and runs, signed out. One file per branch also avoids WhereWillWeVisit's `amplify_outputs` conflicts across branches.
+- **`authServiceProvider` is `Provider<AuthService?>`: null means no accounts.** `main` calls `connectAccounts` and overrides the provider only when Amplify is configured. Null is never a gate: everything that works today works signed out (scoring, Quick draw, History). It used to throw "not chosen yet".
+- **The user ID is the Cognito `sub`** (`AppUser.id` = Amplify's `userId`), never the email or a hash of it. *Why:* WhereWillWeVisit's "known incident": Sign in with Apple's relay email isn't stable, and a second account was created silently. Starting with the `sub` avoids a migration later. The display name is the email.
+- **`AmplifyAuthService implements AuthService`** (`lib/auth/amplify_accounts.dart`): it follows the Hub's `signedIn`, `signedOut`, `sessionExpired` and `userDeleted` events. The rest of the app still sees only `AuthService`.
+- **`web_public/` is the hosting frontend.** The app is a phone app, so Amplify Hosting serves only a small public site: a holding page now, and the **privacy policy** the stores need (Task 5).
+- **Android declares `INTERNET`.** Flutter adds it to debug builds only, and the Amplify plugins don't, so a release build couldn't sign in without it ([[Known Issues]]).
+
+**Confirmed:** 2026-10-04 (accounts needed); 2026-10-19 (AWS Amplify, and Task 1's choices above).
 
 ## Source Control: GitHub
 
@@ -55,7 +72,7 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Repo:** `thrower_app`, **private**.
 
-**Branch model:** `main` only for now. Add a dev/prod split when there's a backend or release pipeline that needs one.
+**Branch model:** `main` only for now. Add a dev/prod split when there's a backend or release pipeline that needs one. **Update (2026-10-19):** the backend exists (AWS Amplify, above), so `main` is production and a `dev` branch is for development. `dev` is created when Nigel connects the Amplify app; it doesn't exist yet.
 
 **Confirmed:** 2026-10-04.
 
@@ -95,7 +112,7 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 | Folder | Layer | Rule |
 |---|---|---|
 | `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
-| `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. No provider until the backend is chosen; `authServiceProvider` throws until overridden. |
+| `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. `amplify_accounts.dart`: `loadAmplifyOutputs` (the `assets/config/amplify_outputs.json` settings, or null), `connectAccounts` (configures Amplify; null if it can't) and `AmplifyAuthService` (Cognito sign-in; `AppUser.id` is the Cognito `sub`). An edge folder like `lib/camera/`: the rest of the app depends on the interface. `authServiceProvider` is null when the build isn't connected (signed out). Since 2026-10-19 ([[story-checkpoint-app-user-accounts]]). The backend itself is in `amplify/` (TypeScript, outside `lib/`). |
 | `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`, `now`: the clock its frames are stamped with), with two implementations: `LiveCamera` (the `camera` plugin's back camera; `open(fps:)`) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `Recording.go`). `RecordingAnalysisFeed` (every frame of a recording, in order, timed by its place in the clip, for analysis; Quick draw). `CroppedCamera` (a part of another camera's picture as a camera of its own, cut in the sensor's layout; Quick draw, one per board; `compactFrame`). `QueuedCamera` (every frame of a crop, kept and handed on in order, falling behind rather than skipping; 75 MB cap; the live Quick draw). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
 | `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw; the tap is a fraction of the upright picture). |
 | `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board, with a `QueuedCamera` between for the live camera (`queue`); `states`, `queues`; `QuickDrawThrow`), `judgeQuickDraw` (Quick draw's winner rule; `QuickDrawVerdict`), `StartSignal` (Quick draw's start signal: `StartSchedule`, `startPauses`, `StartPhase`; go on the camera's clock). |

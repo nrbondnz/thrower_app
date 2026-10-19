@@ -143,3 +143,21 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 **Symptom:** on Play with 2 players on 2 targets, one thrower walks up to collect while the other is still throwing; the app shows the first thrower's next round and keeps scoring the other.
 **Cause:** by design, each board is watched on its own ([[story-checkpoint-players-and-targets]], Task 3): a board visit closes only that board's round. The app sees the boards, not the lanes, so it can't stop someone walking up next to a live lane.
 **What to do:** the Instructions say to collect together, when both have finished; the screen says "Wait for Player 2" until both rounds are complete. Nothing to fix in the app; it's a safety rule for the throwers (Review Agent, Task 3).
+
+## Amplify's Android Plugins Apply the Kotlin Gradle Plugin (2026-10-19)
+
+**Symptom:** `flutter build apk` warns: "Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): amplify_analytics_pinpoint, amplify_auth_cognito, amplify_db_common, amplify_secure_storage. Future versions of Flutter will fail to build…".
+**Cause:** Amplify Flutter 2.16 (the newest at the time) still applies KGP. Flutter 3.47 only warns about it.
+**Fix:** none needed yet. Before upgrading Flutter, check the Amplify Flutter changelog for "Built-in Kotlin" support and upgrade it first. `amplify_analytics_pinpoint` comes in with `amplify_flutter`, but the app never adds the analytics plugin, so nothing is collected.
+
+## Release Builds Need INTERNET in the App's Manifest (2026-10-19)
+
+**Symptom (avoided):** sign-in would work in debug builds and fail in release ones.
+**Cause:** Flutter adds `android.permission.INTERNET` to the debug and profile manifests only, and the Amplify plugins don't declare it.
+**Fix:** `android/app/src/main/AndroidManifest.xml` declares it (accounts story, Task 1).
+
+## Cognito's Own Email Limits Sign-Up Codes (London) (2026-10-19)
+
+**Situation:** the auth uses Cognito's built-in email for confirmation codes (about 50 a day), not SES. WhereWillWeVisit's SES is out of the sandbox only in `ap-southeast-2`; Thrower is in **London**.
+**Before launch:** set up SES in `eu-west-2` and request production access (WhereWillWeVisit's Known Issues: "SES Account in Sandbox Blocks Real Users From Confirming Sign-Up"), then point Cognito at it.
+

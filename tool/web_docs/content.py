@@ -69,7 +69,7 @@ COMPONENTS = {
             ('signalSoundsProvider · startScheduleProvider', 'the beeps, and a new random pause each duel'),
             ('gameHistoryProvider · historySaveErrorProvider · clockProvider', 'the kept games, a failed save, when a game finished'),
             ('playerNamesProvider (PlayerNamesNotifier) · playerNamesStoreProvider', 'the players\' names: loaded at start; set cleans and saves them; GameNotifier renames the game in place'),
-            ('authServiceProvider', 'the account interface (no provider chosen yet)'),
+            ('authServiceProvider', 'the app\'s accounts (AmplifyAuthService), or null when the build has no backend settings: signed out'),
         ],
         flows=['frame-sources', 'play', 'game-history', 'player-names', 'live-quick-draw'],
     ),
@@ -426,11 +426,21 @@ COMPONENTS = {
         flows=['player-names'],
     ),
     'auth-service': dict(
-        name='AuthService', lane='auth', type='Interface only', files=['lib/auth/auth_service.dart'],
-        trigger='Not used yet',
-        dek='Accounts are needed, but the backend and sign-in provider aren\'t chosen yet (backlog #4). This interface keeps the place for them.',
-        body=['No network calls are made today: everything, including camera frames, stays on the phone.'],
-        functions=[],
+        name='AuthService', lane='auth', type='Interface + Amplify sign-in',
+        files=['lib/auth/auth_service.dart', 'lib/auth/amplify_accounts.dart', 'lib/main.dart', 'amplify/backend.ts', 'amplify/auth/resource.ts', 'amplify.yml'],
+        trigger='App start (main: connectAccounts, if the build has the backend\'s settings)',
+        dek='The app\'s sign-in, behind an interface. Since stage 2 of the Accounts Roadmap (2026-10-19) it\'s AWS Amplify: Cognito, email sign-in, in London (eu-west-2). Signing in is never needed to score.',
+        body=[
+            'At start, <code>main</code> reads the deployed backend\'s settings from the asset <code>assets/config/amplify_outputs.json</code> (<code>loadAmplifyOutputs</code>; gitignored, one per branch). With them, <code>connectAccounts</code> adds the Cognito plugin, configures Amplify and returns an <code>AmplifyAuthService</code>, which overrides <code>authServiceProvider</code>. Without them, or if Amplify can\'t be configured, the provider is null and the app runs signed out, as it always has.',
+            '<code>AmplifyAuthService</code> follows the Hub\'s sign-in events (signed in, signed out, session expired, user deleted). The user\'s ID is the Cognito <code>sub</code>, never the email; the display name is the email.',
+            'The backend lives in the repo (<code>amplify/</code>, Amplify Gen 2: <code>defineAuth</code> with email sign-in; Google and Sign in with Apple come in Task 3). Amplify Hosting deploys it from GitHub (<code>amplify.yml</code>: <code>ampx pipeline-deploy</code>): <code>main</code> is production, <code>dev</code> development. Its only web page is <code>web_public/</code>, later home to the privacy policy.',
+            'Nothing leaves the phone unless the build has the settings and the user signs in (their email and password, to Cognito). No Account screen yet (Task 2).',
+        ],
+        functions=[
+            ('loadAmplifyOutputs(bundle)', 'the backend\'s settings, or null if the build has none'),
+            ('connectAccounts(outputs)', 'adds AmplifyAuthCognito and configures Amplify; null without settings or on failure'),
+            ('AmplifyAuthService: currentUser · authStateChanges · signOut', 'the signed-in AppUser (id = the Cognito sub), from the Hub\'s events'),
+        ],
         flows=[],
     ),
 }
@@ -441,6 +451,7 @@ EXTERNAL = [
     ('audioplayers', 'recording sound, signal sounds'),
     ('Flutter image codec', 'decodes the recordings\' JPEGs'),
     ('path_provider', 'the app\'s support folder (history, names)'),
+    ('amplify_flutter · amplify_auth_cognito', 'sign-in to Cognito (AWS, eu-west-2)'),
 ]
 
 # id: dict(title, cat ('core' | 'flow'), lane, dek, body[paras], steps[(lane, title, [lines], component_id|None, arrow_label|None)], caption, files)
@@ -645,7 +656,7 @@ NOTES = [
         'The motion pass stays on the UI thread: brightness only, at ~320 px.',
     ]),
     ('On the phone only', [
-        'No backend yet and no network calls: camera frames never leave the phone, and nor do the game history and the player names (files in the app\'s own folder).',
+        'Camera frames never leave the phone, and nor do the game history and the player names (files in the app\'s own folder). The only network calls are sign-in to the accounts backend (AWS Amplify, stage 2), and only when the build has its settings and the user signs in.',
         'The camera records no sound today. Recording and sharing (backlog #11) would change that, and needs the Review Agent.',
     ]),
 ]

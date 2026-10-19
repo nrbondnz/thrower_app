@@ -158,3 +158,27 @@ adb -s "<device id>" shell pm clear-permission-flags nz.nrbond.thrower android.p
 ```
 
 Revoking kills the running app, so relaunch it afterwards.
+
+## Connect the App to the Amplify Backend (Accounts, Stage 2)
+
+The backend is in this repo (`amplify/`, Gen 2; [[story-checkpoint-app-user-accounts]]), and **Amplify Hosting deploys it** from GitHub (Nigel, 2026-10-19). Nothing is deployed from the PC. The app **runs signed out** until a build has the deployed backend's settings.
+
+**One-time, in the AWS console (Nigel):**
+1. Region **Europe (London) `eu-west-2`** (Nigel, 2026-10-19), account 445567075330 (as WhereWillWeVisit).
+2. **AWS Amplify → Create new app → GitHub → `nrbondnz/thrower_app`**, branch **`main`** (production). Amplify reads `amplify.yml`: it deploys `amplify/` with `ampx pipeline-deploy` and serves `web_public/` (a holding page; the privacy policy later).
+3. **Service role:** one with the `AmplifyBackendDeployFullAccess` policy, as WhereWillWeVisit's.
+4. Note the **App ID** (the `d…` id in the app's URL) in [[Mac Handoff]].
+5. **The dev environment:** a `dev` git branch (Claude creates and pushes it when asked), then in Amplify **Add branch → `dev`**.
+
+**On each machine that builds the app (PC and Mac), after each backend change:**
+```bash
+npx ampx generate outputs --app-id <APP_ID> --branch main --out-dir assets/config
+```
+- Use `--branch dev` to point a test build at the dev backend.
+- It writes `assets/config/amplify_outputs.json`. The file is **gitignored**: each branch has its own Cognito pool, and a committed copy goes stale, as WhereWillWeVisit found.
+- It needs AWS credentials (the default profile) and `npm install` once.
+- Then **rebuild** the app: the file is bundled at build time, so hot reload won't pick it up.
+- Without the file, `loadAmplifyOutputs` finds nothing, `connectAccounts` returns null, and the app runs signed out.
+
+**Checking the backend code on the PC:** `npm run typecheck` (TypeScript only; it deploys nothing).
+

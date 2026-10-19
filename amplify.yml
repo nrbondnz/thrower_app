@@ -1,0 +1,28 @@
+version: 1
+# Amplify Hosting build for Thrower App (stage 2 accounts). The backend
+# (amplify/) is deployed for the branch being built: main = production,
+# dev = development. The app itself is a phone app built on the PC/Mac, so the
+# only "frontend" is a small public site (web_public/: a holding page, and the
+# privacy policy the stores need from Task 5).
+# Keep explanatory comments OUT of "- |" blocks: Amplify silently skips a block
+# whose first line starts with '#' (WhereWillWeVisit, 2026-09-26).
+backend:
+  phases:
+    build:
+      commands:
+        - node --version
+        - npm ci --cache .npm --prefer-offline
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "No web build; serving web_public/"
+  artifacts:
+    baseDirectory: web_public
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - .npm/**/*
+      - node_modules/**/*

@@ -6,9 +6,10 @@ class AppUser {
   final String? displayName;
 }
 
-/// Accounts are required, but the backend and auth provider are not chosen yet
-/// (see Design Decisions → User Accounts Required). UI and game code depend on
-/// this interface only, so a provider can be plugged in later.
+/// The app's sign-in, independent of the backend (AWS Amplify since stage 2:
+/// `AmplifyAuthService`; Design Decisions → User Accounts Required). UI and
+/// game code depend on this interface only; tests use a fake. Signing in is
+/// never needed to score.
 abstract interface class AuthService {
   AppUser? get currentUser;
 

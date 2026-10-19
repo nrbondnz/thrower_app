@@ -16,23 +16,33 @@
   <header class="title-block">
     <span class="eyebrow"><span class="swatch" style="background:var(--auth);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Auth · Component</span>
     <h1>AuthService</h1>
-    <p class="dek">Accounts are needed, but the backend and sign-in provider aren&#x27;t chosen yet (backlog #4). This interface keeps the place for them.</p>
+    <p class="dek">The app&#x27;s sign-in, behind an interface. Since stage 2 of the Accounts Roadmap (2026-10-19) it&#x27;s AWS Amplify: Cognito, email sign-in, in London (eu-west-2). Signing in is never needed to score.</p>
   </header>
 
   <dl class="facts-strip">
-    <div><dt>Type</dt><dd>Interface only</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/auth/auth_service.dart</code><br></dd></div>
-    <div><dt>Used when</dt><dd>Not used yet</dd></div>
+    <div><dt>Type</dt><dd>Interface + Amplify sign-in</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/auth/auth_service.dart</code><br><code>lib/auth/amplify_accounts.dart</code><br><code>lib/main.dart</code><br><code>amplify/backend.ts</code><br><code>amplify/auth/resource.ts</code><br><code>amplify.yml</code><br></dd></div>
+    <div><dt>Used when</dt><dd>App start (main: connectAccounts, if the build has the backend&#x27;s settings)</dd></div>
   </dl>
 
   <div class="detail-body">
-    <p>No network calls are made today: everything, including camera frames, stays on the phone.</p>
+    <p>At start, <code>main</code> reads the deployed backend's settings from the asset <code>assets/config/amplify_outputs.json</code> (<code>loadAmplifyOutputs</code>; gitignored, one per branch). With them, <code>connectAccounts</code> adds the Cognito plugin, configures Amplify and returns an <code>AmplifyAuthService</code>, which overrides <code>authServiceProvider</code>. Without them, or if Amplify can't be configured, the provider is null and the app runs signed out, as it always has.</p>
+    <p><code>AmplifyAuthService</code> follows the Hub's sign-in events (signed in, signed out, session expired, user deleted). The user's ID is the Cognito <code>sub</code>, never the email; the display name is the email.</p>
+    <p>The backend lives in the repo (<code>amplify/</code>, Amplify Gen 2: <code>defineAuth</code> with email sign-in; Google and Sign in with Apple come in Task 3). Amplify Hosting deploys it from GitHub (<code>amplify.yml</code>: <code>ampx pipeline-deploy</code>): <code>main</code> is production, <code>dev</code> development. Its only web page is <code>web_public/</code>, later home to the privacy policy.</p>
+    <p>Nothing leaves the phone unless the build has the settings and the user signs in (their email and password, to Cognito). No Account screen yet (Task 2).</p>
   </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>loadAmplifyOutputs(bundle)</code></dt><dd>the backend&#x27;s settings, or null if the build has none</dd></div>
+    <div><dt><code>connectAccounts(outputs)</code></dt><dd>adds AmplifyAuthCognito and configures Amplify; null without settings or on failure</dd></div>
+    <div><dt><code>AmplifyAuthService: currentUser · authStateChanges · signOut</code></dt><dd>the signed-in AppUser (id = the Cognito sub), from the Hub&#x27;s events</dd></div>
+  </dl>
 
   <h2 class="section-heading">Used in</h2>
   <p class="detail-body">No flow yet.</p>
 
-  <footer class="colophon">lib/auth/auth_service.dart</footer>
+  <footer class="colophon">lib/auth/auth_service.dart · lib/auth/amplify_accounts.dart · lib/main.dart · amplify/backend.ts · amplify/auth/resource.ts · amplify.yml</footer>
 </div>
 </body>
 </html>

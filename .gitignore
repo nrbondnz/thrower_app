@@ -54,3 +54,11 @@ __pycache__/
 
 # Obsidian: per-user window state (changes whenever a note is opened)
 docs/.obsidian/workspace.json
+
+# Amplify backend (stage 2 accounts): Node modules, local build state, and the
+# generated outputs (one per branch: regenerate, never commit; see Common Tasks)
+node_modules/
+.npm/
+.amplify/
+amplify_outputs.json
+assets/config/amplify_outputs.json

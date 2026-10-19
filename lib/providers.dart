@@ -409,7 +409,8 @@ final gameProvider = NotifierProvider<GameNotifier, Match>(GameNotifier.new);
 /// folder. Tests override it with a temporary folder or a fake.
 final gameHistoryProvider = Provider<GameHistory>((ref) => FileGameHistory(getApplicationSupportDirectory));
 
-/// No auth provider is chosen yet, so this must be overridden before use.
-final authServiceProvider = Provider<AuthService>(
-  (ref) => throw UnimplementedError('Auth provider not chosen yet (backend deferred)'),
-);
+/// The app's accounts (AWS Amplify, stage 2 of the Accounts Roadmap), or null
+/// when this build isn't connected to a backend: the app then runs signed
+/// out, as it always has. `main` overrides it once Amplify is configured
+/// (`connectAccounts`).
+final authServiceProvider = Provider<AuthService?>((ref) => null);
