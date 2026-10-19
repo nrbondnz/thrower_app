@@ -20,13 +20,14 @@ Players can be named, not just "Player 1" and "Player 2" (Nigel, 2026-10-19): **
   - **History** keeps the names each game was played with (`GameRecord` version 2); games kept before show Player 1 / Player 2.
   - **Quick draw** uses the same names (choosing the boards, the round result, the match), changeable with **Names** before Start. The per-player result lines keep "1:" / "2:", matching the board numbers on the picture.
   - **The in-app Instructions explain it** (Task 4): *Playing a game* says how to name players before Start (up to 16 letters, blank is Player 1 / Player 2) and that the last names are kept on this phone and sent nowhere; *Quick draw* says to tap **Names**. See [[Instructions and Safety]].
-- **Friends** (other app users, linked accounts): not built. `AuthService` exists as an interface only (`lib/auth/`); no sign-in yet.
+- **Friends** (other app users, linked accounts): not built (stage 3).
+- **The app user's account** (stage 2, [[story-checkpoint-app-user-accounts]]): in progress. Task 1 (2026-10-19) built the AWS Amplify backend (Cognito, email sign-in, London) and connected the app (`AmplifyAuthService` behind `AuthService`), with nothing visible yet. Backing up the names comes in Task 4. Why: [[Design Decisions]] → User Accounts Required.
 
 ## Open Questions
 - Answered 2026-10-19 ([[story-checkpoint-named-players]]): the last names are kept on the phone and filled in; a blank seat is Player 1 / Player 2; still 1 or 2 players (more players is its own story); Quick draw uses the same names.
 
 ## Related
-- [[Accounts Roadmap]] → Stage 1 (named players: built) and Stage 3 (friends)
+- [[Accounts Roadmap]] → Stage 1 (named players: built), Stage 2 (the app user's account: in progress) and Stage 3 (friends)
 - [[Design Decisions]] → Named Players
 - [[Data Flow]] → Player Names: Into the Game, History and Quick Draw
 - [[Glossary]] → Named player

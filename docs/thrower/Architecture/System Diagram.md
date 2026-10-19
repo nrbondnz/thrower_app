@@ -1,6 +1,6 @@
 # System Diagram
 
-Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]] → User Accounts Required). The layers each depend only on the ones below them. The UI reaches every layer through Riverpod providers (`lib/providers.dart`), so tests can swap any layer for a fake. Drawn in the same box style as WhereWillWeVisit's System Diagram (2026-10-14).
+Thrower App runs on the phone. The only part that reaches a backend is sign-in (AWS Amplify, stage 2 of the [[Accounts Roadmap]]), and only when the build has the backend's settings and the user signs in; see [[Design Decisions]] → User Accounts Required. The layers each depend only on the ones below them. The UI reaches every layer through Riverpod providers (`lib/providers.dart`), so tests can swap any layer for a fake. Drawn in the same box style as WhereWillWeVisit's System Diagram (2026-10-14).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -54,19 +54,19 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ lib/camera  │  │    lib/game     │  │lib/scoring │ │ lib/auth │  │
 │  │             │  │                 │  │ pure Dart  │ │          │  │
 │  │TargetCamera │  │ ThrowWatcher    │  │            │ │AuthServ- │  │
-│  │ ├LiveCamera │─▶│  ├MotionDetector│  │TargetModel │ │ice:      │  │
+│  │ ├LiveCamera │─▶│  ├MotionDetector│  │TargetModel │ │ice: the  │  │
 │  │ ├Recorded-  │  │  ├ThrowTracker  │─▶│ scoreAt    │ │interface │  │
-│  │ │ Camera    │  │  └classifyThrow │  │GameSession │ │only, no  │  │
-│  │ │ ├FramePack│  │ findTarget      │  │ rounds of 3│ │provider  │  │
-│  │ │ └Recording│  │ QuickDrawTargets│  │ 3, 5 or 9  │ │yet       │  │
-│  │ │  Sound    │  │ QuickDrawWatcher│  │ rounds     │ │          │  │
-│  │ ├Recording- │  │  └ThrowWatcher×2│  │            │ │          │  │
-│  │ │ Analysis- │  │ judgeQuickDraw  │  │            │ │          │  │
-│  │ │ Feed      │  │  go, false start│  │            │ │          │  │
-│  │ ├Cropped-   │  │  → winner       │  │            │ │          │  │
-│  │ │ Camera    │  │ StartSignal     │  │            │ │          │  │
-│  │ │           │  │  beeps, lights, │  │            │ │          │  │
-│  │ │           │  │  goAt = now     │  │            │ │          │  │
+│  │ │ Camera    │  │  └classifyThrow │  │GameSession │ │ └Amplify-│  │
+│  │ │ ├FramePack│  │ findTarget      │  │ rounds of 3│ │  AuthSer-│  │
+│  │ │ └Recording│  │ QuickDrawTargets│  │ 3, 5 or 9  │ │  vice:   │  │
+│  │ │  Sound    │  │ QuickDrawWatcher│  │ rounds     │ │  Cognito │  │
+│  │ ├Recording- │  │  └ThrowWatcher×2│  │            │ │  sign-in;│  │
+│  │ │ Analysis- │  │ judgeQuickDraw  │  │            │ │  id = sub│  │
+│  │ │ Feed      │  │  go, false start│  │            │ │null: no  │  │
+│  │ ├Cropped-   │  │  → winner       │  │            │ │settings, │  │
+│  │ │ Camera    │  │ StartSignal     │  │            │ │signed out│  │
+│  │ │           │  │  beeps, lights, │  │            │ │connect-  │  │
+│  │ │           │  │  goAt = now     │  │            │ │Accounts  │  │
 │  │ │           │  └────────┬────────┘  └────────────┘ └──────────┘  │
 │  │ └Queued-    │           │                  ▲                     │
 │  │  Camera     │           │                  │                     │
@@ -117,14 +117,26 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │ Flutter engine image codec (decodeFrameNatively), not a plugin │ │
 │  │ path_provider (FileGameHistory, FilePlayerNamesStore: the      │ │
 │  │   app's support folder)                                        │ │
+│  │ amplify_flutter, amplify_auth_cognito (AmplifyAuthService:     │ │
+│  │   Cognito sign-in; configured only if the settings exist)      │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
-          │
-          ▼   (deferred: no network calls today)
-┌─────────────────────────────────────┐
-│   Backend + accounts: not chosen    │
-│   (backlog #4)                      │
-└─────────────────────────────────────┘
+          │  AmplifyAuthService → Cognito (sign-in only; only if the
+          ▼  build has the settings and the user signs in)
+┌─────────────────────────────────────────────────────────────────────┐
+│            BACKEND  (AWS Amplify Gen 2, London eu-west-2)           │
+│                                                                     │
+│  amplify/backend.ts ── defineBackend({auth})                        │
+│  amplify/auth/resource.ts ── defineAuth: Cognito user pool,         │
+│    email sign-in (Google, Sign in with Apple: Task 3)               │
+│  Data models (history, player names; owner rules): Task 4           │
+│                                                                     │
+│  Deployed by Amplify Hosting from GitHub (amplify.yml:              │
+│    ampx pipeline-deploy): main = production, dev = development      │
+│  Hosting frontend: web_public/ (holding page; the privacy policy)   │
+│  Its settings: amplify_outputs.json, one per branch, copied to      │
+│    assets/config/ in the app (gitignored)                           │
+└─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     CALIBRATION FLOW (once per session)             │
@@ -216,7 +228,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 **Rules:**
 - `lib/vision` and `lib/scoring` have **no Flutter imports**. They run in background isolates and in tests on a PC.
 - Vision depends on the camera layer's **data** types (`CameraFrame`) only, never on a plugin.
-- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`), so tests feed recorded frames, fake sound and temporary folders.
+- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`; Amplify behind `AuthService`), so tests feed recorded frames, fake sound and temporary folders.
 - Heavy work (frame conversion, ring finding, the entry search) runs off the UI thread via `compute`, using top-level functions and plain data. See [[Known Issues]] → Isolate Fails.
 
 See [[Data Flow]] for one frame's path to a score, and [[Glossary]] for the component → function tree and terms.

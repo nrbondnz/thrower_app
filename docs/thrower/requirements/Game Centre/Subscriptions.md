@@ -15,7 +15,8 @@ The app is paid for by **subscription** (Nigel, 2026-10-19):
 
 ## What Exists Today
 - Nothing yet. Payments are **deferred** ([[Design Decisions]] → User Accounts Required; Backend and Payments Deferred).
-- Everything is free and works on the phone alone. No accounts yet ([[Accounts Roadmap]]: stage 2 is the owner's account).
+- Everything is free and works on the phone alone.
+- **Accounts: in progress** (stage 2 of the [[Accounts Roadmap]], [[story-checkpoint-app-user-accounts]]). Task 1 (2026-10-19) built the AWS Amplify backend (Cognito, email sign-in, London) and connected the app, with nothing visible yet. Subscriptions are **not in that story**: they come with the Game Centre (stage 6). Signing in is never needed to score.
 
 ## Proposed Shape (Claude's thoughts, 2026-10-19, to confirm)
 

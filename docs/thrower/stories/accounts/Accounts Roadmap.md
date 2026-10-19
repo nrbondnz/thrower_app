@@ -39,7 +39,7 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 | Stage | What it adds | Backend | Story |
 |---|---|---|---|
 | **1. Named players** | Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names | None | **Built** 2026-10-19 (Tasks 1–4; device checks to come): [[story-checkpoint-named-players]] |
-| **2. The app user's account** | The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone | AWS Amplify: sign-in, storage, payments | Planned 2026-10-19: [[story-checkpoint-app-user-accounts]] (waiting for Nigel's answers) |
+| **2. The app user's account** | The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone | AWS Amplify (London, `eu-west-2`): sign-in, storage, payments | **In progress** (Task 1 built 2026-10-19): [[story-checkpoint-app-user-accounts]] |
 | **3. Friends** | Another app user **links their account** to this app user and becomes a **friend**; a seat can be a friend; their throws on the host's phone are **recorded on their own app** | Friends, shared records | — |
 | **4. Join a live session** | The host's phone runs a session; friends join from their own phones; live scores, turns and corrections on each thrower's phone | Live sync (server or local Wi-Fi) | — |
 | **5. Throws on video, owned by the thrower** | The host records each throw (#11); each friend's clips are delivered to them to keep or share | Clip delivery | Builds on #11 |
@@ -63,7 +63,8 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 **Goal:** the app user signs in (when they want what an account gives, not to score), and their history is safe if the phone is lost or replaced.
 
-- **Sign-in:** the chosen provider behind `AuthService`, which already exists (`lib/auth/`; `authServiceProvider` throws until overridden).
+- **Status: in progress, Task 1 built** (2026-10-19, [[story-checkpoint-app-user-accounts]]): the Amplify Gen 2 backend in the repo (`amplify/`: Cognito, email sign-in), deployed by Amplify Hosting from GitHub (`amplify.yml`; `main` = production, `dev` = development), in **London (`eu-west-2`)**. The app connects when the build has the backend's settings (`assets/config/amplify_outputs.json`) and otherwise runs signed out. Nothing visible yet. Why: [[Design Decisions]] → User Accounts Required.
+- **Sign-in:** `AmplifyAuthService` behind `AuthService` (`lib/auth/`); `authServiceProvider` is null when there are no accounts (signed out).
 - **Backup and restore:** `GameHistory` gets a backend implementation, or a sync layer over the file ones.
   - **Offline-first:** venues often have poor signal, so the phone stays the source of truth and syncs when it can.
 - **The backend is AWS Amplify** (Nigel, 2026-10-19: "stage two will always be AWS Amplify"), Gen 2, with **WhereWillWeVisit (`where_in_nz_v3`) as the guide**, which has accounts implemented. What to carry over:
@@ -72,8 +73,8 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
   - **Ownership checks on the server:** resolvers run under `userPools` auth and take the caller's `sub` from the verified identity, never from what the app sends (its "CR-03").
   - **Account deletion** inside the app (its `account_deletion_flow.dart`): required by both stores.
   - **Subscriptions:** Apple purchases verified server-side, with Apple's server notifications (its `verifyAppleTransaction` and `appleServerNotifications` functions); Google Play's equivalent for Android. Its Stripe flow is for web payments and doesn't apply to in-app digital subscriptions.
-  - **Local development:** the Amplify Gen 2 sandbox (`npx ampx sandbox`); deploys with `ampx pipeline-deploy`.
-- Revisit CI/CD (A8) and the branch model (a dev/prod split) at the same time.
+  - **Local development:** the Amplify Gen 2 sandbox (`npx ampx sandbox`); deploys with `ampx pipeline-deploy`. **Thrower differs** (Nigel, 2026-10-19): no sandbox from the PC; Amplify Hosting deploys each branch from GitHub.
+- The branch model is now a dev/prod split (`main` = production, `dev` = development; decided 2026-10-19). CI/CD (A8) beyond Amplify's own build: still to revisit.
 - **Store rules:**
   - Sign in with Apple is required on iOS if any other social sign-in is offered.
   - **Account deletion inside the app** is required on both stores.
@@ -149,6 +150,7 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 ## Changes Log
 
+- **2026-10-19:** Stage 2 in progress: Task 1 of [[story-checkpoint-app-user-accounts]] built (the Amplify backend, email sign-in, the app connected; London `eu-west-2`; `main` and `dev` branches; deployed from GitHub).
 - **2026-10-19:** Stage 1 (named players) built, Tasks 1–4 of [[story-checkpoint-named-players]]; device checks to come.
 - **2026-10-19:** Nigel's model of app users, named players and friends added; signing in not a gate for scoring (proposed). Stage 1 simplified to **Named players** (a name on a seat, no player list, history or IDs); friends link their accounts and get their throws on their own app (stage 3).
 - **2026-10-19:** Backend decided: **AWS Amplify**, always, with WhereWillWeVisit (`where_in_nz_v3`) as the guide (stage 2).

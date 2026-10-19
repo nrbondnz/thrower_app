@@ -161,3 +161,9 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 **Situation:** the auth uses Cognito's built-in email for confirmation codes (about 50 a day), not SES. WhereWillWeVisit's SES is out of the sandbox only in `ap-southeast-2`; Thrower is in **London**.
 **Before launch:** set up SES in `eu-west-2` and request production access (WhereWillWeVisit's Known Issues: "SES Account in Sandbox Blocks Real Users From Confirming Sign-Up"), then point Cognito at it.
 
+
+## Amplify Build: `npm ci` Says the Lock File Is Out of Sync (2026-10-19)
+
+**Symptom:** the first Amplify Hosting build (job 2, commit `21813f1`) failed in the backend phase: "`npm ci` can only install packages when your package.json and package-lock.json … are in sync … Missing: @aws-cdk/toolkit-lib@1.19.0 from lock file" (and about 40 more).
+**Cause:** `package-lock.json` was made on the PC with **Node 24 / npm 11**; Amplify's build image runs **Node 22 / npm 10**, which resolves the Amplify backend's dependency tree differently and rejects the npm 11 lock file.
+**Fix:** make the lock file with npm 10: `npx -y npm@10 install --package-lock-only`, check with `npx -y npm@10 ci --dry-run`, and commit it. Do the same whenever `package.json` changes. (WhereWillWeVisit avoids it by running `npm install` in its build, at the cost of reproducible installs.)

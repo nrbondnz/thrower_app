@@ -149,6 +149,16 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `add(winner)` (null: a drawn round), `finish()`; `results`, `wins`, `leader`, `roundNumber`, `isExtraRound`, `isOver`, `winner`, `draw`, `scoreText`
 - **`TargetModel`** (`lib/scoring/target_model.dart`)
   - `scoreAt(point, bladeHalfWidth)` with a `LineTouchRule`
+- **`AuthService`** (`lib/auth/auth_service.dart`): the app's sign-in interface (`currentUser`, `authStateChanges`, `signOut`; `AppUser`: `id`, `displayName`) / **`authServiceProvider`** (`Provider<AuthService?>`: null = signed out, no accounts in this build) ([[story-checkpoint-app-user-accounts]])
+  - **`AmplifyAuthService`** (`lib/auth/amplify_accounts.dart`): Cognito sign-in through Amplify
+    - `start`: `getCurrentUser` (a session kept from last time), then the Hub's `signedIn` (look again), `signedOut` / `sessionExpired` / `userDeleted` (null)
+    - `AppUser.id` = the Cognito `sub` (`userId`); `displayName` = the email (`fetchUserAttributes`), else the username
+    - `signOut`; `dispose`
+  - **`loadAmplifyOutputs(bundle)`**: reads `amplifyOutputsAsset` (`assets/config/amplify_outputs.json`); null if the build has none, or it's empty
+  - **`connectAccounts(outputs)`**: `Amplify.addPlugin(AmplifyAuthCognito())`, `Amplify.configure`, then an `AmplifyAuthService`; null without outputs or if configuring fails. Called by `main`, which overrides `authServiceProvider` with it
+- **Backend** (`amplify/`, TypeScript, Amplify Gen 2; deployed by Amplify Hosting via `amplify.yml`)
+  - `backend.ts`: `defineBackend({auth})`
+  - `auth/resource.ts`: `auth` = `defineAuth` (email sign-in; Google and Sign in with Apple in Task 3)
 - **Test data**: `SyntheticTarget` (flat, affine), `SyntheticScene` (3D ray tracer), `PhotoBoardTexture` (reference photo as the board face, knives removed); tools `render_camera_views`, `locate_target`, `printable_target`
 
 ## Concepts
@@ -197,3 +207,6 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 | **Finished early / counted rounds** | A game ended with Finish game before its last round. A round in progress counts with the throws made so far; with two players the result is judged on the counted rounds, as many as both have played, and a round beyond them is shown but not counted. | `GameSession`, `Match`, `GameRecord`, `PlayersPanel`, `HistoryScreen` |
 | **Score set by hand (corrected throw)** | A throw whose score a player changed (a dispute) or a throw added because the camera didn't see it: 0 is a miss (`missed`), 1–5 a stuck knife. It keeps what the camera saw; only the score is the player's. | `ThrowRecord`, `GameSession`, `Match`, `ScoreCorrections`, `paintRoundMarks` |
 | **Camera shift (phone moved)** | How far the whole picture moved between two frames over the board, found as the shift that best lines them up. A knife or a person changes part of the picture and gives no shift; a jogged phone moves all of it. 2 px or more at ~320 px means the locked rings may no longer line up. | `cameraShift`, `ThrowWatcher.moves`, `PlayBoardsWatcher` |
+| **Amplify outputs (backend settings)** | The file Amplify generates for one deployed backend branch (`amplify_outputs.json`): the Cognito user pool's IDs, the region, the endpoints. Not secret, but different per branch (`main`, `dev`), so it's gitignored and copied into the app as an optional asset. A build without it runs signed out. | `loadAmplifyOutputs`, `connectAccounts`, `main` |
+| **Signed out (no accounts)** | No accounts: `authServiceProvider` is null (the build has no backend settings, or Amplify couldn't be configured). Signed out: connected, but `currentUser` is null (nobody has signed in). Everything that scores, plays and keeps history works the same; an account only adds what it gives (backup, friends, later the Game Centre). Requirement: [[Subscriptions]] (never a gate to score). | `authServiceProvider`, `AmplifyAuthService` |
+| **Cognito sub (user ID)** | The unique, permanent ID Cognito gives each user (Amplify's `userId`). The app's user ID (`AppUser.id`), never the email or a hash of it: Sign in with Apple's relay email can change, which made a second account in WhereWillWeVisit. | `AmplifyAuthService`, `AppUser` |

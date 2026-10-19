@@ -389,6 +389,44 @@ A name is a label on a seat (stage 1 of the [[Accounts Roadmap]]; requirement [[
 
 Nothing here leaves the phone.
 
+## App Start: Accounts (If the Build Has Them)
+
+Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Task 1; why in [[Design Decisions]] → User Accounts Required). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. There's no Account screen yet (Task 2), so nothing calls sign-in today.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│            APP START: ACCOUNTS (ONLY IF THE BUILD HAS THEM)         │
+│                                                                     │
+│   main: WidgetsFlutterBinding.ensureInitialized                     │
+│          │                                                          │
+│          ▼                                                          │
+│   loadAmplifyOutputs(rootBundle): the asset                         │
+│   assets/config/amplify_outputs.json (gitignored, one per branch)   │
+│          │                                                          │
+│          ├── none, or empty ──▶ null                                │
+│          ▼                                                          │
+│   connectAccounts(outputs): Amplify.addPlugin(AmplifyAuthCognito),  │
+│   Amplify.configure(outputs) (local: no network call)               │
+│          │                                                          │
+│          ├── null outputs, or configure fails ──▶ null              │
+│          ▼                                                          │
+│   AmplifyAuthService..start(): getCurrentUser (a session kept       │
+│   from last time), then the Hub's signedIn / signedOut /            │
+│   sessionExpired / userDeleted → AppUser(id: Cognito sub,           │
+│   displayName: email) or null → authStateChanges                    │
+│          │                                                          │
+│          ▼                                                          │
+│   runApp(ProviderScope(overrides: authServiceProvider →             │
+│   the AmplifyAuthService, only if connected))                       │
+│                                                                     │
+│   authServiceProvider null = signed out: the app runs as it         │
+│   always has. Nothing reads it to gate scoring, Quick draw or       │
+│   History.                                                          │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+Nothing leaves the phone unless the build has the settings and the user signs in: then their email and password go to Cognito (AWS, London `eu-west-2`).
+
 ## Coordinate Spaces
 
 | Space | Where | Notes |

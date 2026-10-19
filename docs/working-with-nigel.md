@@ -29,14 +29,14 @@ Full agent definitions, triggers and output formats are in `docs/agents/`.
 
 - **What it is:** the user sets a phone on a static mount pointed at a wooden board and throws **knives or axes** at it. The board has 5 painted rings in alternating colours (IKTHOF layout), scoring 5 for the inner ring down to 1 for the outer. The app registers the score of each throw. The phone sits off to the side, out of the line of throw, so the app has to find the target. AI is used for the visual and timing tasks.
 - **Platforms:** iOS and Android only.
-- **Accounts:** needed. **Backend and payments:** deferred.
+- **Accounts:** needed, never to score. **Backend:** AWS Amplify (decided 2026-10-19; accounts in progress, stage 2). **Payments:** deferred.
 - **Source control:** GitHub (not yet set up).
-- **Flutter app** (`thrower_app`): SDK `^3.13.5`, Riverpod; layers `lib/scoring/` (pure Dart), `lib/camera/`, `lib/auth/` (interface), `lib/ui/`; wiring in `lib/providers.dart`. Repo: private `github.com/nrbondnz/thrower_app`, `main` only.
-- Details and rationale: [[Design Decisions]]. Paused: [[story-checkpoint-entry-point]] (waiting for closer footage); last: [[story-checkpoint-quick-draw]] (a two-thrower duel on a recording, timed from "go", archived); built, device checks to come: [[story-checkpoint-players-and-targets]] (Play for 1 or 2 players, 1 or 2 targets) and [[story-checkpoint-game-history]] (finished games kept on the phone, Home → History) and [[story-checkpoint-score-corrections]] (tap a score to change it, or add a missed throw) and [[story-checkpoint-quick-draw-match]] (the live Quick draw as three rounds, the score breaking a tie; KATTA scoring) and [[story-checkpoint-named-players]] (a name for each player, kept on the phone, used by Play, History and Quick draw; 2026-10-19) and [[story-checkpoint-adjust-boards]] (drag each of two boards' outlines into place; Adjust boards after locking; 2026-10-19); accounts planned in stages in [[Accounts Roadmap]] (stage 1, named players, built; stage 2 next); requirements by area in `docs/thrower/requirements/` ([[Requirements Index]]); upcoming work in [[backlog]]. How-tos: [[Common Tasks]]; gotchas: [[Known Issues]].
+- **Flutter app** (`thrower_app`): SDK `^3.13.5`, Riverpod; layers `lib/scoring/` (pure Dart), `lib/camera/`, `lib/auth/` (`AuthService`; `AmplifyAuthService`), `lib/ui/`; wiring in `lib/providers.dart`. Backend: AWS Amplify Gen 2 in `amplify/` (Cognito, London `eu-west-2`). Repo: private `github.com/nrbondnz/thrower_app`, `main` = production (`dev` to come).
+- Details and rationale: [[Design Decisions]]. In progress: [[story-checkpoint-app-user-accounts]] (sign-in and backup on AWS Amplify; Task 1 built). Paused: [[story-checkpoint-entry-point]] (waiting for closer footage); last: [[story-checkpoint-quick-draw]] (a two-thrower duel on a recording, timed from "go", archived); built, device checks to come: [[story-checkpoint-players-and-targets]] (Play for 1 or 2 players, 1 or 2 targets) and [[story-checkpoint-game-history]] (finished games kept on the phone, Home → History) and [[story-checkpoint-score-corrections]] (tap a score to change it, or add a missed throw) and [[story-checkpoint-quick-draw-match]] (the live Quick draw as three rounds, the score breaking a tie; KATTA scoring) and [[story-checkpoint-named-players]] (a name for each player, kept on the phone, used by Play, History and Quick draw; 2026-10-19) and [[story-checkpoint-adjust-boards]] (drag each of two boards' outlines into place; Adjust boards after locking; 2026-10-19); accounts planned in stages in [[Accounts Roadmap]] (stage 1, named players, built; stage 2 next); requirements by area in `docs/thrower/requirements/` ([[Requirements Index]]); upcoming work in [[backlog]]. How-tos: [[Common Tasks]]; gotchas: [[Known Issues]].
 
 ## Commit / Deploy Rules
 
-Carried over from WhereWillWeVisit. Revisit once there's a backend and a pipeline.
+Carried over from WhereWillWeVisit. The backend now exists (AWS Amplify, 2026-10-19): `amplify/` and `amplify.yml` are config, committed after the Review Agent passes.
 
 | Change Type | Commit? | Notes |
 |-------------|---------|-------|
@@ -46,7 +46,7 @@ Carried over from WhereWillWeVisit. Revisit once there's a backend and a pipelin
 | Docs / markdown | **NO**: leave unstaged | Avoids unnecessary CI/build triggers |
 | `.claude/` (settings, memory, CLAUDE.md) | **YES** | So other developers can load Claude context quickly |
 
-**Branches:** `main` only, on the private GitHub repo `thrower_app` (decided 2026-10-04). No dev/prod split until there's a backend or release pipeline. **Hosting and deploy flow:** not yet decided (no backend yet).
+**Branches:** on the private GitHub repo `thrower_app`. `main` is **production**; a **`dev`** branch is for development (decided 2026-10-19, now there's a backend). `dev` is created when Nigel connects the Amplify app; it doesn't exist yet, so work stays on `main` until then. **Hosting and deploy flow:** Amplify Hosting deploys the backend (`amplify/`) from GitHub for each connected branch (`amplify.yml`: `ampx pipeline-deploy`), and serves `web_public/`. No sandbox from the PC. See [[Common Tasks]] → Connect the App to the Amplify Backend.
 
 ## Working Patterns Nigel Prefers
 
