@@ -58,6 +58,14 @@ The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explain
 **Why:** each app's consent screens and sign-in sheets name that app; users get separate Apple IDs per app; rotating or revoking one app's credentials never breaks the other; and the apps can change teams, projects or regions independently.
 **Confirmed:** 2026-10-20 (Nigel: "all new, so document in that way").
 
+## Run whole stories, committing per task
+**Settled answer:** Once a story's plan is approved, run it end to end. Commit and push each task when it's done (tests pass, analyze is clean, the Review Agent is OK where needed), then carry straight on to the next task. Stop only when blocked (secrets, console work, a device check that has to come first) or when a decision is genuinely Nigel's. This overrides "leave Dart unstaged until Nigel says commit" for an approved story. Nigel reviews the commits and the device checks afterwards.
+- **Speed:** during a task, run only the affected tests; run the full suite once at the end of each task, before committing.
+- **Docs Agent:** once per story (or per few tasks), not after every task. Each task's own checkpoint record is still written as it goes.
+- **Builds:** Android builds and deploys run in the background.
+**Why:** most of the elapsed time was waiting (full test runs, a Docs Agent per task, a stop at every task boundary), not coding. Nigel also uses `/fast`.
+**Confirmed:** 2026-10-20 (Nigel: "yes, run whole stories and commit per task").
+
 ---
 
 *Add new entries above this line as they come up. Keep each entry to a few lines — link to `working-with-nigel.md` or another doc for full detail rather than duplicating it here.*

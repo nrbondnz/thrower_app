@@ -55,6 +55,7 @@ Carried over from WhereWillWeVisit. The backend now exists (AWS Amplify, 2026-10
 ## Working Patterns Nigel Prefers
 
 ### 1. Dart/Flutter Changes
+- **Within an approved story (2026-10-20):** commit and push per task and carry on; stop only when blocked or for a decision (`dont-ask-again.md` → Run whole stories, committing per task). The rules below apply outside a story.
 - **Do NOT commit.** Leave unstaged so Nigel can hot-reload and test locally.
 - Only commit after Nigel says "commit this" or "looks good, commit it."
 
