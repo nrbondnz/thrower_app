@@ -14,15 +14,27 @@ The Story Agent is the conductor of large pieces of work. It plans the sequence,
 
 A story is considered "big", and therefore subject to Story Agent decomposition, if it scores 2 or more on this complexity checklist:
 
-| Complexity Factor | Weight | Example |
-|-------------------|--------|---------|
-| Crosses multiple architectural layers (UI → camera → vision → scoring → backend) | 1 per layer | Flutter UI → camera stream → `ThrowDetector` → `TargetModel` = 4 |
-| Touches multiple data models | 1 per model | Session, Throw, Player = 3 |
-| Has conditional branches or state-dependent behaviour | 1 per major branch | "Stuck → score it; nothing new → bounce-out (0); board cleared → new round" = 1 |
-| Requires an external integration or third-party package with native code | 1 | Camera plugin, ML runtime, auth provider |
-| Involves platform, permission or infrastructure changes | 1 | Camera permission, `Info.plist`, Gradle, a backend |
-| Has more than 3 distinct acceptance criteria | 1 | "Find rings, ignore bark edge, allow manual adjust, lock" = 4 |
-| Requires migration or affects existing data | 1 | Changing how saved sessions are stored |
+- **Crosses multiple architectural layers (UI → camera → vision → scoring → backend)**
+  - **Weight:** 1 per layer
+  - **Example:** Flutter UI → camera stream → `ThrowDetector` → `TargetModel` = 4
+- **Touches multiple data models**
+  - **Weight:** 1 per model
+  - **Example:** Session, Throw, Player = 3
+- **Has conditional branches or state-dependent behaviour**
+  - **Weight:** 1 per major branch
+  - **Example:** "Stuck → score it; nothing new → bounce-out (0); board cleared → new round" = 1
+- **Requires an external integration or third-party package with native code**
+  - **Weight:** 1
+  - **Example:** Camera plugin, ML runtime, auth provider
+- **Involves platform, permission or infrastructure changes**
+  - **Weight:** 1
+  - **Example:** Camera permission, `Info.plist`, Gradle, a backend
+- **Has more than 3 distinct acceptance criteria**
+  - **Weight:** 1
+  - **Example:** "Find rings, ignore bark edge, allow manual adjust, lock" = 4
+- **Requires migration or affects existing data**
+  - **Weight:** 1
+  - **Example:** Changing how saved sessions are stored
 
 **Scoring:**
 - **0–1:** Small task. No Story Agent needed. Just build it.

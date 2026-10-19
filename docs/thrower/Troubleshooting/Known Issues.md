@@ -180,3 +180,9 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 - attached it to app `d1yhmpx84pdvnh` (`aws amplify update-app --iam-service-role-arn …`);
 - ran `npx cdk bootstrap aws://445567075330/eu-west-2`;
 - retried the build (job 4).
+
+## Amplify Build: "Failed to retrieve backend secret" (2026-10-20)
+
+**Symptom:** job 6 (commit `5b52497`, accounts Tasks 3–5) failed in the auth stack: `Custom::AmplifySecretFetcherResource … Received response status [FAILED] … Failed to retrieve backend secret`. CloudFormation rolled back (`UPDATE_ROLLBACK_COMPLETE`), so the deployed backend (email sign-in, Task 1–2) was untouched.
+**Cause:** `amplify/auth/resource.ts` reads six secrets (`secret('GOOGLE_CLIENT_ID')` …) that don't exist yet for app `d1yhmpx84pdvnh` (none under `/amplify/shared/d1yhmpx84pdvnh/`).
+**Fix:** set the six secrets ([[Cloud Config Setup]] → The Six Sign-In Secrets), then **Redeploy** the latest build in the Amplify console (or push again). Until then every build of `main` fails the same way; docs-only commits can carry `[skip-cd]` in the message so Amplify doesn't build them.

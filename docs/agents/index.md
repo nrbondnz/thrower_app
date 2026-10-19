@@ -8,13 +8,21 @@ Each agent has a specific responsibility, a defined trigger condition, and a doc
 
 ## Agent Registry
 
-| Agent | Purpose | Trigger |
-|-------|---------|---------|
-| [Story Agent](story-agent/story-agent.md) | Breaks large stories into sequential, demonstrable tasks with human checkpoints between each step | User says "build me X" where X is a multi-step feature |
-| [Docs Agent](docs-agent/docs-agent.md) | Updates Obsidian architecture docs after every non-trivial code change | Every non-trivial code change (feature, vision pipeline, scoring rules, data model, platform config) |
-| [Test Agent](test-agent/test-agent.md) | Writes or updates unit, widget, and integration tests | Every code change |
-| [Traceability Agent](traceability-agent/traceability-agent.md) | Maintains requirement-to-code traceability and flags uncovered areas | Every story or architectural change |
-| ["Be Careful" Review Agent](review-agent/review-agent.md) | Safety audit for permissions, platform config, secrets, privacy, app size and physical safety | Before committing any `AndroidManifest.xml`, `Info.plist`, Gradle/Xcode, `pubspec.yaml` plugin or signing change |
+- **[Story Agent](story-agent/story-agent.md)**
+  - **Purpose:** Breaks large stories into sequential, demonstrable tasks with human checkpoints between each step
+  - **Trigger:** User says "build me X" where X is a multi-step feature
+- **[Docs Agent](docs-agent/docs-agent.md)**
+  - **Purpose:** Updates Obsidian architecture docs after every non-trivial code change
+  - **Trigger:** Every non-trivial code change (feature, vision pipeline, scoring rules, data model, platform config)
+- **[Test Agent](test-agent/test-agent.md)**
+  - **Purpose:** Writes or updates unit, widget, and integration tests
+  - **Trigger:** Every code change
+- **[Traceability Agent](traceability-agent/traceability-agent.md)**
+  - **Purpose:** Maintains requirement-to-code traceability and flags uncovered areas
+  - **Trigger:** Every story or architectural change
+- **["Be Careful" Review Agent](review-agent/review-agent.md)**
+  - **Purpose:** Safety audit for permissions, platform config, secrets, privacy, app size and physical safety
+  - **Trigger:** Before committing any `AndroidManifest.xml`, `Info.plist`, Gradle/Xcode, `pubspec.yaml` plugin or signing change
 
 ## How Agents Are Used
 

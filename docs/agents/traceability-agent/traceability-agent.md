@@ -54,12 +54,26 @@ Maintain a **Traceability Matrix**: a living document that maps requirements to 
 
 **Example Traceability Matrix:**
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|-------------|------------------|----------------|------|--------|
-| Score a point: 5 for the inner ring down to 1, 0 outside | `Design Decisions.md` → Throwing Sport | `TargetModel.scoreAt` | `target_model_test.dart` | ✅ Covered |
-| A throw that doesn't stick scores 0 | `Design Decisions.md` → Throw Detection | `ThrowDetector` (bounce-out branch) | *Not found* | ⚠️ Test pending |
-| Find the rings, ignoring the bark edge | `Design Decisions.md` → Throwing Sport | `EllipseFinder` | `ellipse_finder_test.dart` (fixture) | ✅ Covered |
-| Ring-colour threshold of 0.35 | *Not found* | `EllipseFinder` | *Not found* | ❌ Gap: magic number with no documented reason |
+- **Score a point: 5 for the inner ring down to 1, 0 outside**
+  - **Design Reference:** `Design Decisions.md` → Throwing Sport
+  - **Implementation:** `TargetModel.scoreAt`
+  - **Test:** `target_model_test.dart`
+  - **Status:** ✅ Covered
+- **A throw that doesn't stick scores 0**
+  - **Design Reference:** `Design Decisions.md` → Throw Detection
+  - **Implementation:** `ThrowDetector` (bounce-out branch)
+  - **Test:** *Not found*
+  - **Status:** ⚠️ Test pending
+- **Find the rings, ignoring the bark edge**
+  - **Design Reference:** `Design Decisions.md` → Throwing Sport
+  - **Implementation:** `EllipseFinder`
+  - **Test:** `ellipse_finder_test.dart` (fixture)
+  - **Status:** ✅ Covered
+- **Ring-colour threshold of 0.35**
+  - **Design Reference:** *Not found*
+  - **Implementation:** `EllipseFinder`
+  - **Test:** *Not found*
+  - **Status:** ❌ Gap: magic number with no documented reason
 
 ## Output Format
 

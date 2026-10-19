@@ -48,6 +48,11 @@ The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explain
 **Why:** Nigel's standing choice across his projects; one stack he knows and can reuse.
 **Confirmed:** 2026-10-19.
 
+## Docs read in Obsidian: no long text in tables
+**Settled answer:** Nigel reads the docs in Obsidian, which doesn't wrap long table cells (a wide table runs off the page and is cut off). Keep table cells short (a name, a value, a status); put steps, explanations and long values in headed sections with bullets or numbered lists. The Docs Agent protocol has it as directive 5.
+**Why:** found 2026-10-20 on the Thrower App's Cloud Config Setup page ("cut off at a certain width and does not even loop to the next line"); every existing wide table in both projects' docs was converted to lists the same day.
+**Confirmed:** 2026-10-20.
+
 ---
 
 *Add new entries above this line as they come up. Keep each entry to a few lines — link to `working-with-nigel.md` or another doc for full detail rather than duplicating it here.*

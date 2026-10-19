@@ -14,14 +14,18 @@ Before asking a clarifying question, check [`dont-ask-again.md`](dont-ask-again.
 
 The agents are part of the delivery pipeline, not optional extras. The human architect does not trigger them manually; the IDE AI spawns them automatically based on the nature of the work.
 
-| If the work involves... | Spawn these agents |
-|------------------------|-------------------|
-| Any code change | Test Agent |
-| Any non-trivial code change (new feature, API change, schema change) | Docs Agent + Test Agent |
-| Platform, permission or config changes (`AndroidManifest.xml`, `Info.plist`, Gradle/Xcode, native plugins in `pubspec.yaml`, signing, secrets) | "Be Careful" Review Agent + Docs Agent + Test Agent |
-| A multi-step feature or large story | Story Agent (orchestrates all other agents per task) |
-| Story completion or requirement audit | Traceability Agent |
-| An operational/tooling issue or third-party bug is found, even with no code change | Docs Agent (record it in Known Issues / Common Tasks immediately) |
+- **Any code change**
+  - **Spawn these agents:** Test Agent
+- **Any non-trivial code change (new feature, API change, schema change)**
+  - **Spawn these agents:** Docs Agent + Test Agent
+- **Platform, permission or config changes (`AndroidManifest.xml`, `Info.plist`, Gradle/Xcode, native plugins in `pubspec.yaml`, signing, secrets)**
+  - **Spawn these agents:** "Be Careful" Review Agent + Docs Agent + Test Agent
+- **A multi-step feature or large story**
+  - **Spawn these agents:** Story Agent (orchestrates all other agents per task)
+- **Story completion or requirement audit**
+  - **Spawn these agents:** Traceability Agent
+- **An operational/tooling issue or third-party bug is found, even with no code change**
+  - **Spawn these agents:** Docs Agent (record it in Known Issues / Common Tasks immediately)
 
 Full agent definitions, triggers and output formats are in `docs/agents/`.
 
