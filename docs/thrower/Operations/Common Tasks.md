@@ -183,3 +183,50 @@ AWS_REGION=eu-west-2 npx ampx generate outputs --app-id d1yhmpx84pdvnh --branch 
 
 **Checking the backend code on the PC:** `npm run typecheck` (TypeScript only; it deploys nothing).
 
+## Set Up Google and Sign in with Apple (Accounts Task 3)
+
+Code: `amplify/auth/resource.ts` (`externalProviders`, six `secret(...)`s, return link `throwerapp://callback/`), `amplify/backend.ts` (each branch's sign-in domain), the Android intent filter and the iOS URL type for `throwerapp`. Modelled on WhereWillWeVisit (its docs: Infrastructure → AWS Resources → "Cognito Hosted UI Domain & OAuth"), but with Thrower's **own** Google client and Apple Services ID, so the consent screens say Thrower.
+
+**Each branch's sign-in domain** (set in `backend.ts`, London):
+
+| Branch | Domain | Redirect / return URL to register |
+|---|---|---|
+| `main` | `throwerapp.auth.eu-west-2.amazoncognito.com` | `https://throwerapp.auth.eu-west-2.amazoncognito.com/oauth2/idpresponse` |
+| `dev` | `throwerapp-dev.auth.eu-west-2.amazoncognito.com` | `https://throwerapp-dev.auth.eu-west-2.amazoncognito.com/oauth2/idpresponse` |
+
+**1. Google (Nigel, Google Cloud console):**
+1. A project for Thrower (or WhereWillWeVisit's, but a **new** client). Go to **APIs & Services → OAuth consent screen**: External; app name **Thrower**; support email; the scopes `email`, `profile`, `openid`.
+2. **Credentials → Create credentials → OAuth client ID → Web application**, named e.g. "Thrower Cognito".
+3. **Authorized redirect URIs:** both URLs from the table.
+4. Keep the **Client ID** and **Client secret** for step 3.
+
+**2. Sign in with Apple (Nigel, developer.apple.com, team QCQ64RLD77):**
+1. **Identifiers → App IDs → `nz.nrbond.thrower`**: tick **Sign in with Apple**.
+2. **Identifiers → Services IDs → +**: e.g. **`nz.nrbond.thrower.signin`** (this, not the App ID, is Cognito's client ID). Tick Sign in with Apple, then **Configure**:
+   - primary App ID `nz.nrbond.thrower`;
+   - **Domains:** `throwerapp.auth.eu-west-2.amazoncognito.com` and `throwerapp-dev.auth.eu-west-2.amazoncognito.com`;
+   - **Return URLs:** both URLs from the table.
+3. **Keys → +**: tick Sign in with Apple, with primary App ID `nz.nrbond.thrower`. **Download the `.p8` (only once)** and note the **Key ID**.
+
+**3. The six secrets (Nigel, Amplify console → `thrower_app` → Hosting → Secrets → Manage secrets, for all branches):**
+
+| Secret | Value |
+|---|---|
+| `GOOGLE_CLIENT_ID` | the Google client ID |
+| `GOOGLE_CLIENT_SECRET` | the Google client secret |
+| `APPLE_CLIENT_ID` | the Services ID, e.g. `nz.nrbond.thrower.signin` |
+| `APPLE_TEAM_ID` | `QCQ64RLD77` |
+| `APPLE_KEY_ID` | the key's ID |
+| `APPLE_PRIVATE_KEY` | the whole `.p8` file's text, including the BEGIN and END lines |
+
+Secrets never go in git or in a chat. A deploy fails until all six exist.
+
+**4. Deploy and finish (Claude, when Nigel says the secrets are set):**
+1. Push the Task 3 commit; the `main` build makes the `throwerapp` domain.
+2. Turn on Cognito's **Managed Login branding** for the app client. It's a manual step, not in CDK; without it Cognito shows "Login pages unavailable":
+   ```bash
+   aws cognito-idp create-managed-login-branding --user-pool-id <pool> --client-id <client> --use-cognito-provided-values --region eu-west-2
+   ```
+3. Regenerate the outputs (Connect the App to the Amplify Backend), rebuild, and install with `adb install -r`. The Account screen then shows Google and Apple buttons.
+4. **iOS (on the Mac, in Xcode):** Signing & Capabilities → **+ Sign in with Apple**. This creates `Runner.entitlements` and sets `CODE_SIGN_ENTITLEMENTS` for Debug, Release and Profile; WhereWillWeVisit needed all three.
+

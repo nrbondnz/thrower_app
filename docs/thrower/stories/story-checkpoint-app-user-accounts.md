@@ -166,6 +166,28 @@ Read as: do it as WhereWillWeVisit does.
   - the Sign in with Apple capability in Xcode (on the Mac, in the foreground: `docs/dont-ask-again.md`).
 - **Review Agent:** `AndroidManifest.xml`, `Info.plist`, entitlements, secrets never in git.
 - **Verify:** Nigel signs in with Google on the Samsung; the brother (or Nigel on the iPhone) with Apple.
+- **Status:** IN PROGRESS (2026-10-19): the code is written (unstaged, **not pushed**: a deploy fails until the secrets exist). **Waiting for Nigel's console setup** ([[Common Tasks]] → Set Up Google and Sign in with Apple: a Google OAuth client, the Apple Services ID and key, the six Amplify secrets).
+- **Written so far:**
+  - `amplify/auth/resource.ts`: `externalProviders.google` and `signInWithApple`, with six `secret(...)`s (as WhereWillWeVisit), `callbackUrls: ['throwerapp://callback/']` and `logoutUrls: ['throwerapp://signout/']`.
+  - `amplify/backend.ts`: **each branch's sign-in domain** from the first deploy: `throwerapp` (main) and `throwerapp-dev` (dev), both checked free in London. This follows WhereWillWeVisit's lessons:
+    - a hash domain shows on Google's consent screen;
+    - renaming one later takes two deploys.
+
+    The construct's ID differs in this Amplify version (`<name>UserPoolDomain`), so it's found by its ending, and the deploy fails loudly if it's missing.
+  - `android/app/src/main/AndroidManifest.xml`: an intent filter for `throwerapp` on `MainActivity`, and a `queries` entry for https (opening the browser).
+  - `ios/Runner/Info.plist`: the `throwerapp` URL type. **The Sign in with Apple capability (entitlements, all three build configurations) is added in Xcode on the Mac.**
+  - [[Common Tasks]] → Set Up Google and Sign in with Apple: the console steps, the redirect URLs per branch, the secrets, then Claude's finishing steps (Managed Login branding by CLI, as WhereWillWeVisit needed).
+- **Committed locally, not pushed** (2026-10-19): it's backend and platform config, which may be committed after review, but pushing deploys, and the deploy fails until the six secrets exist. **Thrower's app has none yet** (checked: no `/amplify/shared/d1yhmpx84pdvnh/*`). Copying WhereWillWeVisit's values across was refused by the safety check (credential handling), so Nigel sets them. Push once they exist.
+- **Safety Report (Task 3, Review Agent):**
+  - ✅ §1: no new permissions. Android gets an intent filter for `throwerapp` (VIEW, BROWSABLE) and a `queries` entry for https, so the sign-in browser can open (package visibility).
+  - ✅ iOS gets a URL type only; the entitlement comes in Xcode.
+  - ✅ §4: secrets live only in Amplify's secrets (SSM), never in git.
+  - ⚠️ §8: the sign-in domains (`throwerapp`, `throwerapp-dev`) are hard to rename later (two deploys).
+  - **Verdict:** OK to commit.
+- **Risks noted from WhereWillWeVisit:**
+  - **Apple rejected its custom Sign in with Apple button (Guideline 4).** Check that the Authenticator's Apple button meets Apple's style before any store build (Task 5's review), and swap in Apple's official button (`sign_in_with_apple`) if not.
+  - Each branch's domain must be on both Google's and Apple's lists, or that sign-in fails silently.
+  - The Cognito console can't delete Google-linked users; use the CLI.
 
 ### Task 4: Backup and restore of history and names
 - **Work:**
