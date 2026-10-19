@@ -63,7 +63,7 @@ The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explain
 - **Speed:** during a task, run only the affected tests; run the full suite once at the end of each task, before committing.
 - **Docs Agent:** once per story (or per few tasks), not after every task. Each task's own checkpoint record is still written as it goes.
 - **Builds:** Android builds and deploys run in the background.
-**Why:** most of the elapsed time was waiting (full test runs, a Docs Agent per task, a stop at every task boundary), not coding. Nigel also uses `/fast`.
+**Why:** most of the elapsed time was waiting (full test runs, a Docs Agent per task, a stop at every task boundary), not coding. Nigel may switch on `/fast` for a particular story (it costs extra).
 **Confirmed:** 2026-10-20 (Nigel: "yes, run whole stories and commit per task").
 
 ---
