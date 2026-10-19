@@ -43,6 +43,7 @@ dependencies:
   # Accounts (stage 2, AWS Amplify, as WhereWillWeVisit): sign-in via Cognito.
   amplify_flutter: ^2.16.0
   amplify_auth_cognito: ^2.16.0
+  amplify_authenticator: ^2.7.3
 
 dev_dependencies:
   flutter_test:

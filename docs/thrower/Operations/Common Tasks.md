@@ -166,14 +166,15 @@ The backend is in this repo (`amplify/`, Gen 2; [[story-checkpoint-app-user-acco
 **One-time, in the AWS console (Nigel):**
 1. Region **Europe (London) `eu-west-2`** (Nigel, 2026-10-19), account 445567075330 (as WhereWillWeVisit).
 2. **AWS Amplify → Create new app → GitHub → `nrbondnz/thrower_app`**, branch **`main`** (production). Amplify reads `amplify.yml`: it deploys `amplify/` with `ampx pipeline-deploy` and serves `web_public/` (a holding page; the privacy policy later).
-3. **Service role:** one with the `AmplifyBackendDeployFullAccess` policy, as WhereWillWeVisit's.
-4. Note the **App ID** (the `d…` id in the app's URL) in [[Mac Handoff]].
+3. **Service role:** **`amplify-thrower-app-backend-role`** (`AmplifyBackendDeployFullAccess`), created and attached 2026-10-19. A new region also needs **CDK bootstrapping** once: `npx cdk bootstrap aws://445567075330/<region>` (done for `eu-west-2`). Without either, the deploy fails ([[Known Issues]]).
+4. The **App ID** is **`d1yhmpx84pdvnh`** (app `thrower_app`, `eu-west-2`).
 5. **The dev environment:** a `dev` git branch (Claude creates and pushes it when asked), then in Amplify **Add branch → `dev`**.
 
 **On each machine that builds the app (PC and Mac), after each backend change:**
 ```bash
-npx ampx generate outputs --app-id <APP_ID> --branch main --out-dir assets/config
+AWS_REGION=eu-west-2 npx ampx generate outputs --app-id d1yhmpx84pdvnh --branch main --out-dir assets/config
 ```
+- **`AWS_REGION=eu-west-2` is needed:** the default AWS profile is set to Sydney (WhereWillWeVisit's region), and without it the command says the app ID or branch can't be found. In PowerShell: `$env:AWS_REGION='eu-west-2'` first.
 - Use `--branch dev` to point a test build at the dev backend.
 - It writes `assets/config/amplify_outputs.json`. The file is **gitignored**: each branch has its own Cognito pool, and a committed copy goes stale, as WhereWillWeVisit found.
 - It needs AWS credentials (the default profile) and `npm install` once.

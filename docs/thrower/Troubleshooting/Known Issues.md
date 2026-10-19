@@ -167,3 +167,16 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 **Symptom:** the first Amplify Hosting build (job 2, commit `21813f1`) failed in the backend phase: "`npm ci` can only install packages when your package.json and package-lock.json … are in sync … Missing: @aws-cdk/toolkit-lib@1.19.0 from lock file" (and about 40 more).
 **Cause:** `package-lock.json` was made on the PC with **Node 24 / npm 11**; Amplify's build image runs **Node 22 / npm 10**, which resolves the Amplify backend's dependency tree differently and rejects the npm 11 lock file.
 **Fix:** make the lock file with npm 10: `npx -y npm@10 install --package-lock-only`, check with `npx -y npm@10 ci --dry-run`, and commit it. Do the same whenever `package.json` changes. (WhereWillWeVisit avoids it by running `npm install` in its build, at the cost of reproducible installs.)
+
+## Amplify Build: "not authorized to perform ssm:GetParameter … /cdk-bootstrap/hnb659fds/version" (2026-10-19)
+
+**Symptom:** the next build (job 3, commit `8953499`) got past `npm ci`, then `ampx pipeline-deploy` failed: "[BootstrapDetectionError] Unable to detect CDK bootstrap stack due to permission issues … User: arn:aws:sts::499901155257:assumed-role/AemiliaControlPlaneLambda-CodeBuildRole-… is not authorized to perform: ssm:GetParameter".
+**Cause:** two missing one-off setups.
+1. The Amplify app had **no service role**, so the build ran as Amplify's own role (in AWS's account 499901155257, not ours).
+2. **London (`eu-west-2`) wasn't CDK-bootstrapped** in account 445567075330: there was no `CDKToolkit` stack. WhereWillWeVisit's Sydney region was bootstrapped long ago.
+
+**Fix (done 2026-10-19, with Nigel's OK):**
+- created the role **`amplify-thrower-app-backend-role`**: trusted by `amplify.amazonaws.com`, with the AWS-managed policy `AmplifyBackendDeployFullAccess`;
+- attached it to app `d1yhmpx84pdvnh` (`aws amplify update-app --iam-service-role-arn …`);
+- ran `npx cdk bootstrap aws://445567075330/eu-west-2`;
+- retried the build (job 4).

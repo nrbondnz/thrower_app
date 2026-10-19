@@ -13,7 +13,7 @@ The app user can **sign in**, and their **history and player names are backed up
 - a stored-data change (history kept in two places) (1).
 
 ## Status
-IN PROGRESS: Task 1 of 5 complete (2026-10-19), awaiting Nigel's checkpoint. Started on Nigel's "commit this and start stage 2".
+IN PROGRESS: Task 2 of 5 complete (2026-10-19). Deployed: Amplify app `d1yhmpx84pdvnh` (`thrower_app`, London), `main` built OK (job 4), Cognito pool `eu-west-2_TmfChXYyo`. Nigel signed up and in on the Samsung ("sign in works").
 
 ---
 
@@ -75,7 +75,7 @@ Read as: do it as WhereWillWeVisit does.
 - **Review Agent** (before committing): new native plugins, network access, the generated outputs file (no secrets in it), app size.
 - **Verify:** tests with a fake `AuthService`; **Nigel:** the app starts on the Samsung exactly as before, and the sandbox is visible in the AWS console.
 - **Plan change (2026-10-19):** no sandbox from the PC. Nigel connects the repo in the Amplify console, which deploys `amplify/` ([[Common Tasks]] → Connect the App to the Amplify Backend).
-- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-19); committed `21813f1`. Deploying needed: the lock file made with npm 10 (`8953499`), the service role `amplify-thrower-app-backend-role`, and CDK bootstrap of `eu-west-2` ([[Known Issues]]).
 - **What changed:**
   - **Backend** (`amplify/`, Gen 2, as WhereWillWeVisit):
     - `backend.ts` (`defineBackend({auth})`) and `auth/resource.ts` (`defineAuth`, email sign-in; Google and Apple in Task 3 once their secrets are set);
@@ -136,6 +136,28 @@ Read as: do it as WhereWillWeVisit does.
 ### Task 2: Home → Account: email sign-up, sign-in, sign-out
 - **Work:** an Account screen (the `amplify_authenticator` per Q6), the signed-in state on Home, sign-out. Nothing else changes.
 - **Verify:** widget tests (signed out, all of the app works; signed in, the Account screen shows the email). **Nigel:** create an account, confirm the emailed code, sign out and in.
+
+- **Status:** COMPLETE (2026-10-19); Nigel: "sign in works, commit this and continue to task 3".
+- **What changed:**
+  - `pubspec.yaml`: `amplify_authenticator` ^2.7.3 (Amplify's ready-made sign-in screens, as WhereWillWeVisit).
+  - `lib/ui/account_screen.dart` (new): `AccountScreen` (`AuthenticatedView` around `_SignedInUser`, which follows `authStateChanges`) and `AccountDetails` ("Signed in as" the email; scoring works the same either way; **Sign out**). Without accounts: "Accounts are not available in this build."
+  - `lib/ui/home_screen.dart`: an **Account** icon (`homeAccount`, top right), only when `authServiceProvider` isn't null.
+  - `lib/main.dart`: `ThrowerApp` wraps the app in `Authenticator` when accounts are connected.
+  - **Fixed after Nigel's check:** the first build used `Authenticator.builder()`, which puts the sign-in screens **in front of the whole app** whenever no one is signed in. Nigel: "Not super happy about having to login right from the start". That contradicts the story's rule (never needed to score) and Apple's 5.1.1. Removed: the sign-in now shows only inside the Account screen's `AuthenticatedView`. Reinstalled with `adb install -r` (data kept) for Nigel to recheck.
+  - **Mistake on the device:** the first install used `flutter install`, which uninstalls first and wiped the Samsung's History and names. Told Nigel; installs now use `adb install -r`.
+- **Verified by:** `flutter test`: 776 passed (5 new); `flutter analyze`: no issues. **Nigel (Samsung):** sign-up, the emailed code, sign-in and sign-out work against the London pool. **To recheck:** the app opens on Home signed out, and the sign-in shows only after tapping Account.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 2)
+- **New:** `test/ui/account_screen_test.dart` (5): no Account button without accounts (Home as before); an Account button with them; the Account screen without accounts says so; signed in, it shows the email and that scoring works either way; Sign out signs out.
+- **Not unit-tested:** Amplify's own sign-in screens (checked on the Samsung).
+- **Results:** 776 passed, 0 failed.
+
+#### Safety Report — 2026-10-19 (Task 2, Review Agent)
+- ✅ `amplify_authenticator` is Flutter UI only, with no new native code or permissions.
+- ✅ §5: the email and password go only to Cognito (London). Nothing new is stored by the app beyond Amplify's own secure session storage.
+- ⚠️→✅ **Store rule (5.1.1):** the whole-app sign-in gate is removed (above). Signing in is optional again.
+- **Verdict:** OK to commit.
 
 ### Task 3: Google and Sign in with Apple (per Q1)
 - **Work:**

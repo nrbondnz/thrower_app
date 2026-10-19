@@ -1,3 +1,4 @@
+import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,15 +19,21 @@ Future<void> main() async {
   ));
 }
 
-class ThrowerApp extends StatelessWidget {
+class ThrowerApp extends ConsumerWidget {
   const ThrowerApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accounts = ref.watch(authServiceProvider) != null;
+    final app = MaterialApp(
       title: 'Thrower App',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: targetRed)),
       home: const HomeScreen(),
     );
+    // With accounts, the sign-in screens appear only inside the Account
+    // screen's AuthenticatedView. Not Authenticator.builder(): that puts them
+    // in front of the whole app whenever no one is signed in (Nigel saw it
+    // on the Samsung, 2026-10-19), and signing in is never needed to score.
+    return accounts ? Authenticator(child: app) : app;
   }
 }
