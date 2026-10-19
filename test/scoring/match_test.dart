@@ -276,4 +276,45 @@ void main() {
       expect((changed.isOver, changed.winner), (true, 1), reason: '12–13');
     });
   });
+
+  // Named-players story (Nigel, 2026-10-19): a name is a label on a seat.
+  group('names', () {
+    test('without names, players are Player 1 and Player 2', () {
+      final m = Match(PlayMode.sharedTarget);
+      expect([m.nameOf(0), m.nameOf(1)], ['Player 1', 'Player 2']);
+    });
+
+    test('a named player goes by their name; a blank one is still Player N', () {
+      final m = Match(PlayMode.sharedTarget, names: ['  Mark ', '']);
+      expect([m.nameOf(0), m.nameOf(1)], ['Mark', 'Player 2']);
+      expect(m.names, ['Mark', null]);
+    });
+
+    test('names are cut to 16 characters', () {
+      expect(cleanName('Bartholomew the Great'), 'Bartholomew the');
+      expect(cleanName('Bartholomew the Great')!.length, lessThanOrEqualTo(maxNameLength));
+    });
+
+    test('one name per player: extra names are dropped, missing ones are none', () {
+      expect(Match(PlayMode.solo, names: ['Mark', 'Sam']).names, ['Mark']);
+      expect(Match(PlayMode.twoTargets, names: ['Mark']).names, ['Mark', null]);
+    });
+
+    test('renaming keeps the scores and whose turn it is', () {
+      final m = Match(PlayMode.sharedTarget).stuck(4, const TargetPoint(0.3, 0)).boardVisited();
+      final renamed = m.withNames(['Jo', 'Sam']);
+      expect((renamed.players[0].total, renamed.turn), (m.players[0].total, m.turn));
+      expect(renamed.nameOf(1), 'Sam');
+    });
+
+    test('names stay through throws, turns, corrections and Finish game', () {
+      final m = Match(PlayMode.sharedTarget, names: ['Jo', 'Sam'])
+          .stuck(4, const TargetPoint(0.3, 0))
+          .boardVisited()
+          .bounceOut()
+          .setScore(0, 0, 0, 5)
+          .finish();
+      expect(m.names, ['Jo', 'Sam']);
+    });
+  });
 }

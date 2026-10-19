@@ -184,4 +184,31 @@ void main() {
     game().addThrow(5);
     expect(container.read(gameProvider).players.single.total, 45);
   });
+
+  // Named-players story (2026-10-19).
+  group('names', () {
+    test('a finished game is kept with its players\' names', () async {
+      container.read(playModeProvider.notifier).choose(PlayMode.twoTargets);
+      container.read(playerNamesProvider.notifier).set(['Jo', 'Sam']);
+      throwBulls(9, board: 0);
+      throwBulls(9, board: 1, firstId: 100);
+      await pumpEventQueue();
+      expect(history.games.single.names, ['Jo', 'Sam']);
+    });
+
+    test('renaming during a game keeps the scores', () {
+      throwBulls(2);
+      container.read(playerNamesProvider.notifier).set(['Jo']);
+      final m = container.read(gameProvider);
+      expect((m.nameOf(0), m.players.single.total), ('Jo', 10));
+    });
+
+    test('New game keeps the names', () {
+      container.read(playerNamesProvider.notifier).set(['Jo']);
+      throwBulls(2);
+      game().newGame();
+      final m = container.read(gameProvider);
+      expect((m.nameOf(0), m.isEmpty), ('Jo', true));
+    });
+  });
 }

@@ -130,6 +130,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('2 targets'));
     await tester.pump();
+    await tester.scrollUntilVisible(find.byKey(const Key('playStart')), 100, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byKey(const Key('playStart')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -182,9 +183,10 @@ void main() {
     test("a board's message names its player", () {
       const episode = MotionEpisode(
           startFrame: 0, settledFrame: 1, start: Duration.zero, settled: Duration(seconds: 1), peakChange: 0.01, changeFromBefore: 0.01);
-      expect(boardMessage(1, const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.bounceOut), episode)), 'Player 2: Bounced off: 0.');
-      expect(boardMessage(0, const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.boardVisit), episode)), isNull);
-      expect(boardMessage(0, const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.sceneChanged), episode)), contains('Choose the boards again'));
+      expect(boardMessage('Player 2', const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.bounceOut), episode)), 'Player 2: Bounced off: 0.');
+      expect(boardMessage('Sam', const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.bounceOut), episode)), 'Sam: Bounced off: 0.');
+      expect(boardMessage('Player 1', const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.boardVisit), episode)), isNull);
+      expect(boardMessage('Player 1', const ThrowEvent(ThrowOutcome(ThrowOutcomeKind.sceneChanged), episode)), contains('Choose the boards again'));
     });
 
     test("each board's marks are drawn on that board: a knife's entry in its crop, moved by the crop's corner", () {
@@ -208,12 +210,15 @@ void main() {
     });
 
     test('the phone-moved message names the board, and says when to choose the boards again', () {
-      expect(boardMovedMessage(1), contains("Player 2's board"));
-      expect(boardMovedMessage(1), contains('choose the boards again when no one is throwing'));
+      expect(boardMovedMessage('Sam'), contains("Sam's board"));
+      expect(boardMovedMessage('Sam'), contains('choose the boards again when no one is throwing'));
     });
 
     test('watch states, short', () {
-      expect(boardsStateText([WatchState.motion, WatchState.blocked]), 'Player 1: throw seen · Player 2: someone at the board');
+      expect(
+        boardsStateText([WatchState.motion, WatchState.blocked], ['Jo', 'Player 2']),
+        'Jo: throw seen · Player 2: someone at the board',
+      );
     });
   });
 }

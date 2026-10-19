@@ -159,7 +159,9 @@ class GameRecordScreen extends ConsumerWidget {
             for (final (p, rounds) in game.players.indexed) ...[
               const SizedBox(height: 24),
               Text(
-                game.players.length > 1 ? 'Player ${p + 1}: ${counted[p]}' : 'Total: ${totals[p]}',
+                game.players.length > 1 || game.names.firstOrNull != null
+                    ? '${game.nameOf(p)}: ${counted[p]}'
+                    : 'Total: ${totals[p]}',
                 key: Key('historyPlayer-$p'),
                 style: theme.textTheme.titleLarge,
               ),
@@ -224,12 +226,16 @@ String howText(GameRecord game) => [
 /// The most rounds anyone played (a finished-early game).
 int _played(GameRecord game) => game.players.map((p) => p.length).reduce((a, b) => a > b ? a : b);
 
-/// "Player 2 wins 61–58", "A draw 40–40", or one player's total. Two
-/// players are judged on equal rounds ([GameRecord.countedTotals]).
+/// "Mark wins 61–58" ("Player 2 wins…" without names), "A draw 40–40", or
+/// one player's total ("Total 45", "Mark 45"). Two players are judged on
+/// equal rounds ([GameRecord.countedTotals]).
 String resultText(GameRecord game) {
-  if (game.players.length == 1) return 'Total ${game.totals.single}';
+  if (game.players.length == 1) {
+    final name = game.names.firstOrNull;
+    return name == null ? 'Total ${game.totals.single}' : '$name ${game.totals.single}';
+  }
   final score = game.countedTotals.join('–');
-  return game.draw ? 'A draw $score' : 'Player ${game.winner! + 1} wins $score';
+  return game.draw ? 'A draw $score' : '${game.nameOf(game.winner!)} wins $score';
 }
 
 /// A list line under the date: how it was played, then the result.

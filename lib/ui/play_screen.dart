@@ -241,7 +241,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
                     PlayersPanel(match: match, message: _message),
                     const SizedBox(height: 8),
                     for (var p = 0; p < match.players.length; p++)
-                      ScoreCorrections(host: this, player: p, board: 0, label: 'P${p + 1}'),
+                      ScoreCorrections(host: this, player: p, board: 0, label: rowLabel(match, p)),
                   ],
                   if (camera is RecordedCamera) ...[
                     const SizedBox(height: 12),
@@ -410,22 +410,23 @@ class PlayersPanel extends StatelessWidget {
 }
 
 /// Two players: the big line, kept short to read from the throwing line; at
-/// the end, "Player 2 wins" or "A draw". No one is told to throw while
+/// the end, "Mark wins" or "A draw" (players by [Match.nameOf]: "Player 2"
+/// without a name). No one is told to throw while
 /// someone may be at a board.
 /// - One target: "Player 1's turn"; once a turn has all its throws,
 ///   "Collect your knives".
 /// - Two targets: nothing while both are throwing; "Wait for Player 2" once
 ///   only Player 1's round is complete; "Collect your knives" once both are.
 String? turnText(Match match) {
-  if (match.isOver) return match.draw ? 'A draw' : 'Player ${match.winner! + 1} wins';
+  if (match.isOver) return match.draw ? 'A draw' : '${match.nameOf(match.winner!)} wins';
   if (match.mode == PlayMode.twoTargets) {
     final waiting = _waitingToCollect(match);
     if (waiting.every((w) => w)) return 'Collect your knives';
-    if (waiting.any((w) => w)) return 'Wait for Player ${waiting.indexOf(false) + 1}';
+    if (waiting.any((w) => w)) return 'Wait for ${match.nameOf(waiting.indexOf(false))}';
     return null;
   }
   if (match.turnComplete) return 'Collect your knives';
-  return "Player ${match.turn + 1}'s turn";
+  return "${match.nameOf(match.turn)}'s turn";
 }
 
 /// Under [turnText]: when to collect, and who's next. One target: "When no
@@ -439,7 +440,7 @@ String? turnDetail(Match match) {
     if (waiting.any((w) => w)) return 'Then collect your knives together.';
     return null;
   }
-  return match.turnComplete ? "When no one is throwing. Then Player ${match.nextTurn + 1}'s turn." : null;
+  return match.turnComplete ? "When no one is throwing. Then ${match.nameOf(match.nextTurn)}'s turn." : null;
 }
 
 /// Two targets: each player's round is complete and their knives are still
@@ -447,10 +448,11 @@ String? turnDetail(Match match) {
 List<bool> _waitingToCollect(Match match) =>
     [for (final g in match.players) g.roundComplete && !g.awaitingNextRound];
 
-/// "Player 1: 23", the player's game total; once the match is over, the
-/// total the result is judged on ([Match.countedTotals]).
+/// "Mark: 23" ("Player 1: 23" without a name), the player's game total;
+/// once the match is over, the total the result is judged on
+/// ([Match.countedTotals]).
 String playerTitle(Match match, int player) =>
-    'Player ${player + 1}: ${match.isOver ? match.countedTotals[player] : match.players[player].total}';
+    '${match.nameOf(player)}: ${match.isOver ? match.countedTotals[player] : match.players[player].total}';
 
 /// The player's round in progress ([roundText]), or every round's total once
 /// the match is over, a round beyond the [Match.countedRounds] marked "not

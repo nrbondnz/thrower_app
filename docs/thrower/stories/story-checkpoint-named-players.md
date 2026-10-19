@@ -10,7 +10,7 @@ Players can be given names in place of "Player 1" and "Player 2": "Mark wins", n
 - more than 3 acceptance criteria (1).
 
 ## Status
-PLANNED (2026-10-19): waiting for Nigel's approval of the plan. No code yet.
+IN PROGRESS: Task 2 of 4 complete (2026-10-19), awaiting Nigel's checkpoint (Task 1 not yet committed: Nigel said "continue"). Plan approved ("commit this and start task 1", `52173fc`).
 
 ## Answered (2026-10-19)
 1. **Remembering:** the **last names used, kept on the phone**: the setup screen fills them in, even after the app is closed. Change them by typing. No list to manage.
@@ -52,6 +52,30 @@ PLANNED (2026-10-19): waiting for Nigel's approval of the plan. No code yet.
 
   Nothing to see on the phone yet.
 - **Next:** Task 2.
+- **Status:** COMPLETE (2026-10-19); Nigel: "ok, continue" (not yet committed)
+- **What changed:**
+  - `lib/scoring/match.dart`: `maxNameLength` (16), `cleanName`, `playerNumber`; `Match.names`, `nameOf`, `withNames`, a `names:` argument (cleaned, one per player); every change keeps the names.
+  - `lib/history/game_record.dart`: **version 2**: `names` (written only when someone has one), `nameOf`; version 1 reads with no names; names that aren't one per player are a `FormatException`.
+  - `lib/settings/player_names_store.dart` (new edge folder): `PlayerNamesStore`, `FilePlayerNamesStore` (`player_names.json`; never throws on load; safe writes, one at a time).
+  - `lib/providers.dart`: `playerNamesStoreProvider`, `playerNamesProvider` (`PlayerNamesNotifier`: two seats, blank at first, then the kept names unless set already; `set` cleans and keeps them, ignoring a failed save); `GameNotifier` names each new game and renames the game in place when the names change; New game keeps them.
+- **Verified by:** `flutter test`: 729 passed (25 new), `flutter analyze`: no issues. Nothing to see on the phone until Task 2.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 1)
+- **New:**
+  - `match_test.dart` (6): Player 1 / 2 without names; trimmed, and blank is still Player N; cut to 16; one name per player; renaming keeps the scores and the turn; names stay through throws, turns, corrections and Finish game.
+  - `game_record_test.dart` (6): a game keeps its names; saved and read back; none written without names; a version 1 game reads as Player 1 / 2; malformed names rejected; version 2.
+  - `game_history_test.dart` (1): a version 1 history still reads, and is rewritten as version 2.
+  - `keeping_games_test.dart` (3): a finished game kept with its names; renaming mid-game keeps the scores; New game keeps the names.
+  - `test/settings/player_names_test.dart` (9):
+    - the file store: nothing kept; kept across a reopen; a damaged file is blank, then replaced; no folder; no temporary file left;
+    - the provider: blank, then the kept names; set cleans and saves; names set before loading win; a failed save doesn't stop a rename.
+- **Results:** 729 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 1)
+- [[Design Decisions]] → **Named Players** (new: names in the game, `cleanName` and 16 characters, the store, `GameRecord` version 2, privacy); Code Layout (`lib/settings/`); Game History (the format note).
+- [[Glossary]]: the named-players components and functions; concept **Named player**.
+- Left for Task 4: [[System Diagram]], [[Data Flow]], the web pages, the Instructions.
 
 ### Task 2: Names on the setup screen, Play and History
 - **Setup:** Task 1.
@@ -70,6 +94,28 @@ PLANNED (2026-10-19): waiting for Nigel's approval of the plan. No code yet.
 
   **Nigel:** Live test → Play, 2 players, type two names, play, and check History.
 - **Next:** Task 3.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/ui/play_setup_screen.dart`: "Name(s) (optional)", a field per player (`playName0`, `playName1`; hint "Player N"; at most 16 characters; words capitalised), filled with the kept names unless one has been typed; Start sets them.
+  - `lib/ui/play_screen.dart`: `turnText`, `turnDetail` and `playerTitle` use `Match.nameOf`; the correction rows' labels come from `rowLabel`.
+  - `lib/ui/two_target_play_screen.dart`: `boardMessage(player, event)`, `boardMovedMessage(player)` and `boardsStateText(states, names)` take names; the rows use `rowLabel`.
+  - `lib/ui/score_corrections.dart`: `rowLabel` ("P1", "Jo", "Barth…").
+  - `lib/ui/history_screen.dart`: `resultText` ("Sam wins 10–12", "Jo 27") and the players' headings use `GameRecord.nameOf`.
+- **Verified by:** `flutter test`: 743 passed (14 new), `flutter analyze`: no issues. **Nigel:** Live test → Play → 2 players, type two names → Start; the turn line, totals and winner use them; then History; then Play again: the names are filled in.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 2)
+- **New:**
+  - `play_setup_screen_test.dart` (6): a field per player with the hint; names typed go to the game and the phone; kept names filled in; a cleared name is Player 1; 16 characters at most; renaming a game in progress keeps its scores.
+  - `play_screen_test.dart` (5): whose turn, who's next and the totals; the winner; two targets: wait for Sam; `rowLabel`; the longest names fit Play on a 360 × 740 phone.
+  - `history_screen_test.dart` (3): the result names the winner (Player N without); one named player; a game's page headings.
+- **Updated:**
+  - `two_target_play_screen_test.dart`: the board texts take names ("Sam: Bounced off: 0.", "Sam's board", "Jo: throw seen").
+  - Three tests scroll to the setup screen's Start: it's below an 800 × 600 test screen now.
+- **Results:** 743 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 2)
+- [[Design Decisions]] → Named Players (what's shown where); [[Glossary]] (the functions that show names).
 
 ### Task 3: Names in Quick draw
 - **Setup:** Task 2.

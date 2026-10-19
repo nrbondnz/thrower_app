@@ -62,6 +62,15 @@ Future<int?> showScorePicker(BuildContext context, {required String title, requi
 /// knives are collected (the next round, not yet thrown).
 int? shownRound(GameSession game) => game.awaitingNextRound || game.rounds.isEmpty ? null : game.rounds.length - 1;
 
+/// A score-correction row's label: "P1" / "P2" without a name, the name
+/// if it's short, or its first letters ("Barth…"), so the row's slots keep
+/// their size.
+String rowLabel(Match match, int player) {
+  final name = match.names[player];
+  if (name == null) return 'P${player + 1}';
+  return name.length <= 6 ? name : '${name.substring(0, 5)}…';
+}
+
 /// One player's corrections row: the shown round's throws as big slots
 /// (an empty one adds a throw, when it's this player's to throw), then
 /// **Rounds**, which lists the player's other rounds to open one. One row a

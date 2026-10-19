@@ -135,6 +135,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500)); // The page transition.
     expect(find.byType(PlaySetupScreen), findsOneWidget);
+    await tester.scrollUntilVisible(find.byKey(const Key('playStart')), 100, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.byKey(const Key('playStart')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));

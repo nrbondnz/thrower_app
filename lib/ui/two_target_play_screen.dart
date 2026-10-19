@@ -65,7 +65,9 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
     _watched = targets;
     _watcher = PlayBoardsWatcher(camera, targets.boards)..start();
     _events = _watcher!.events.listen(_onEvent);
-    _moves = _watcher!.moves.listen((board) => setState(() => _message = boardMovedMessage(board)));
+    _moves = _watcher!.moves.listen(
+      (board) => setState(() => _message = boardMovedMessage(ref.read(gameProvider).nameOf(board))),
+    );
     // A Live test recording waits on its first frame until play starts.
     if (camera is RecordedCamera) WidgetsBinding.instance.addPostFrameCallback((_) => camera.restart());
   }
@@ -88,7 +90,9 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
     final match = ref.read(gameProvider);
     setState(() {
       _marks[board].apply(event, slot: identical(match, before) ? null : match.lastThrowAt(board), newRound: newRound);
-      if (event.outcome.kind != ThrowOutcomeKind.nothing) _message = boardMessage(board, event);
+      if (event.outcome.kind != ThrowOutcomeKind.nothing) {
+        _message = boardMessage(ref.read(gameProvider).nameOf(board), event);
+      }
     });
   }
 
@@ -239,7 +243,9 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                       ListenableBuilder(
                         listenable: Listenable.merge(watcher.states),
                         builder: (context, _) => Text(
-                          boardsStateText([for (final s in watcher.states) s.value]),
+                          boardsStateText([for (final s in watcher.states) s.value], [
+                            for (var p = 0; p < match.players.length; p++) match.nameOf(p),
+                          ]),
                           key: const Key('boardsState'),
                           style: const TextStyle(color: Colors.white70),
                         ),
@@ -248,7 +254,7 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                     PlayersPanel(match: match, message: _message),
                     const SizedBox(height: 8),
                     for (var p = 0; p < match.players.length; p++)
-                      ScoreCorrections(host: this, player: p, board: p, label: 'P${p + 1}'),
+                      ScoreCorrections(host: this, player: p, board: p, label: rowLabel(match, p)),
                     const SizedBox(height: 8),
                   ],
                   Wrap(
@@ -292,26 +298,28 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
   }
 }
 
-/// What Play says about [board]'s [event]: [eventMessage] with the player,
-/// e.g. "Player 2: Bounced off: 0."; null clears the last message.
-String? boardMessage(int board, ThrowEvent event) {
+/// What Play says about a board's [event]: [eventMessage] with its [player]
+/// (`Match.nameOf`), e.g. "Mark: Bounced off: 0."; null clears the last
+/// message.
+String? boardMessage(String player, ThrowEvent event) {
   if (event.outcome.kind == ThrowOutcomeKind.sceneChanged) {
     return 'The view changed (lights? camera moved?). Choose the boards again if the rings no longer line up.';
   }
   final message = eventMessage(event);
-  return message == null ? null : 'Player ${board + 1}: $message';
+  return message == null ? null : '$player: $message';
 }
 
 /// What two-target Play says when the phone moved while someone was
-/// changing a score: [board]'s picture shifted.
-String boardMovedMessage(int board) =>
-    "The phone may have moved (Player ${board + 1}'s board). If the rings no longer line up, "
+/// changing a score: [player]'s board's picture shifted.
+String boardMovedMessage(String player) =>
+    "The phone may have moved ($player's board). If the rings no longer line up, "
     'choose the boards again when no one is throwing.';
 
-/// Each board's watch state, short: "Player 1: ready · Player 2: throw seen".
-String boardsStateText(List<WatchState> states) => [
+/// Each board's watch state, short, by its player's [names]: "Mark: ready ·
+/// Player 2: throw seen".
+String boardsStateText(List<WatchState> states, List<String> names) => [
       for (final (i, s) in states.indexed)
-        'Player ${i + 1}: ${switch (s) {
+        '${names[i]}: ${switch (s) {
           WatchState.watching => 'ready',
           WatchState.motion || WatchState.settling => 'throw seen',
           WatchState.blocked => 'someone at the board',

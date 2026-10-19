@@ -20,6 +20,21 @@ enum PlayMode {
   final int targets;
 }
 
+/// The longest player name kept: longer wouldn't fit Play's large "Mark's
+/// turn", read from the throwing line (named-players story, 2026-10-19).
+const maxNameLength = 16;
+
+/// [name] as kept for a player: trimmed and cut to [maxNameLength]; null if
+/// blank (the player is then "Player N").
+String? cleanName(String? name) {
+  final t = name?.trim() ?? '';
+  if (t.isEmpty) return null;
+  return t.length > maxNameLength ? t.substring(0, maxNameLength).trimRight() : t;
+}
+
+/// "Player 1", "Player 2": a player with no name ([index] from 0).
+String playerNumber(int index) => 'Player ${index + 1}';
+
 /// Where a throw is in a [Match]: the player, the round and the throw
 /// (each from 0).
 typedef ThrowSlot = ({int player, int round, int index});
@@ -37,15 +52,31 @@ typedef ThrowSlot = ({int player, int round, int index});
 /// - Over once every player's game is over, or when it's [finish]ed early;
 ///   the highest total over the [countedRounds] wins, and equal totals are a
 ///   draw.
+/// - Players may have [names] (a label on a seat, nothing more: Nigel,
+///   2026-10-19); [nameOf] gives the name or "Player N".
 class Match {
-  Match(this.mode, {GameSession rules = const GameSession()})
+  Match(this.mode, {GameSession rules = const GameSession(), List<String?> names = const []})
       : players = List.unmodifiable(List.filled(mode.players, rules)),
+        names = _fitted(names, mode.players),
         turn = 0,
         turnThrows = 0;
 
-  const Match._(this.mode, this.players, this.turn, this.turnThrows);
+  const Match._(this.mode, this.players, this.names, this.turn, this.turnThrows);
 
   final PlayMode mode;
+
+  /// Each player's name, or null for none ([cleanName]), Player 1 first.
+  final List<String?> names;
+
+  /// [player]'s name, or "Player N" without one.
+  String nameOf(int player) => names[player] ?? playerNumber(player);
+
+  /// The same match with players named [names] (scores unchanged).
+  Match withNames(List<String?> names) => Match._(mode, players, _fitted(names, players.length), turn, turnThrows);
+
+  /// [names] cleaned, one per player (missing ones null).
+  static List<String?> _fitted(List<String?> names, int players) =>
+      List.unmodifiable([for (var i = 0; i < players; i++) cleanName(names.elementAtOrNull(i))]);
 
   /// Each player's game, Player 1 first.
   final List<GameSession> players;
@@ -69,7 +100,7 @@ class Match {
 
   /// Ends the match now for every player (Finish game): a round in progress
   /// counts with the throws made so far.
-  Match finish() => Match._(mode, List.unmodifiable([for (final p in players) p.finish()]), turn, turnThrows);
+  Match finish() => Match._(mode, List.unmodifiable([for (final p in players) p.finish()]), names, turn, turnThrows);
 
   /// The rounds the result is judged on: as many as every player has played
   /// (Nigel, 2026-10-17: finished early, two players are judged on equal
@@ -154,7 +185,7 @@ class Match {
     if (isOver) return this;
     // Thrown on without collecting: the turn already had all its knives.
     final m = turnComplete ? _passTurn() : this;
-    return Match._(mode, _replaced(m.players, m.turn, add(m.players[m.turn])), m.turn, m.turnThrows + 1);
+    return Match._(mode, _replaced(m.players, m.turn, add(m.players[m.turn])), names, m.turn, m.turnThrows + 1);
   }
 
   /// One target: this turn has all its throws; the knives are to be
@@ -175,7 +206,7 @@ class Match {
   /// Ends this turn: its round is closed, and [nextTurn] has the turn.
   Match _passTurn() {
     final closed = _replaced(players, turn, players[turn].boardVisited());
-    return Match._(mode, closed, _nextAfter(closed), 0);
+    return Match._(mode, closed, names, _nextAfter(closed), 0);
   }
 
   int _nextAfter(List<GameSession> closed) {
@@ -186,7 +217,8 @@ class Match {
     return turn;
   }
 
-  Match _with(int player, GameSession game) => Match._(mode, _replaced(players, player, game), turn, turnThrows);
+  Match _with(int player, GameSession game) =>
+      Match._(mode, _replaced(players, player, game), names, turn, turnThrows);
 
   static List<GameSession> _replaced(List<GameSession> players, int index, GameSession game) =>
       List.unmodifiable([...players]..[index] = game);

@@ -105,4 +105,38 @@ void main() {
     expect(r.winner, 0);
     expect(GameRecord.fromJson(jsonDecode(jsonEncode(r.toJson()))).winner, 0, reason: 'no format change');
   });
+
+  // Named-players story (2026-10-19): version 2 keeps each player's name.
+  group('names', () {
+    test('a game keeps the names it was played with', () {
+      final r = GameRecord.fromMatch(finishedShared().withNames(['Jo', null]), at: at);
+      expect([r.nameOf(0), r.nameOf(1)], ['Jo', 'Player 2']);
+    });
+
+    test('names survive saving and reading back', () {
+      final r = GameRecord.fromMatch(finishedShared().withNames(['Jo', 'Sam']), at: at);
+      expect(GameRecord.fromJson(jsonDecode(jsonEncode(r.toJson()))).names, ['Jo', 'Sam']);
+    });
+
+    test('a game with no names writes none', () {
+      expect(GameRecord.fromMatch(finishedShared(), at: at).toJson().containsKey('names'), isFalse);
+    });
+
+    test('a game kept before names (version 1) reads as Player 1 and Player 2', () {
+      final old = GameRecord.fromMatch(finishedShared(), at: at).toJson()..remove('names');
+      final r = GameRecord.fromJson(old);
+      expect([r.nameOf(0), r.nameOf(1)], ['Player 1', 'Player 2']);
+    });
+
+    test('names that aren\'t one per player are not misread', () {
+      final json = GameRecord.fromMatch(finishedShared(), at: at).toJson()..['names'] = ['Jo'];
+      expect(() => GameRecord.fromJson(json), throwsFormatException);
+      final wrongType = GameRecord.fromMatch(finishedShared(), at: at).toJson()..['names'] = [1, 2];
+      expect(() => GameRecord.fromJson(wrongType), throwsFormatException);
+    });
+
+    test('the format is version 2', () {
+      expect(GameRecord.version, 2);
+    });
+  });
 }

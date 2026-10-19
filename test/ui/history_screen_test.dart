@@ -10,12 +10,15 @@ import 'package:thrower_app/ui/history_screen.dart';
 import '../history/memory_game_history.dart';
 
 /// Game-history story, Task 3: Home → History.
-GameRecord game(DateTime at, PlayMode mode, List<List<int>> players, {String? recording}) => GameRecord(
+GameRecord game(DateTime at, PlayMode mode, List<List<int>> players,
+        {String? recording, List<String?> names = const []}) =>
+    GameRecord(
       id: '${at.microsecondsSinceEpoch}',
       finishedAt: at,
       mode: mode,
       rounds: players.first.length,
       players: players,
+      names: names,
       recording: recording,
     );
 
@@ -168,5 +171,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(history.games, isEmpty);
     expect(find.byKey(const Key('historyEmpty')), findsOneWidget);
+  });
+
+  // Named-players story (2026-10-19).
+  group('names', () {
+    final at = DateTime(2026, 10, 19, 20, 0);
+
+    test('the result names the winner; games without names say Player N', () {
+      final named = game(at, PlayMode.sharedTarget, [[10], [12]], names: ['Jo', 'Sam']);
+      expect(resultText(named), 'Sam wins 10–12');
+      expect(resultText(game(at, PlayMode.sharedTarget, [[10], [12]])), 'Player 2 wins 10–12');
+    });
+
+    test('one named player: the name and total', () {
+      expect(resultText(game(at, PlayMode.solo, [[15, 12]], names: ['Jo'])), 'Jo 27');
+      expect(resultText(game(at, PlayMode.solo, [[15, 12]])), 'Total 27');
+    });
+
+    testWidgets("a game's page heads each player's rounds with their name", (tester) async {
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          home: GameRecordScreen(game: game(at, PlayMode.sharedTarget, [[10], [12]], names: ['Jo', null])),
+        ),
+      ));
+      expect(tester.widget<Text>(find.byKey(const Key('historyPlayer-0'))).data, 'Jo: 10');
+      expect(tester.widget<Text>(find.byKey(const Key('historyPlayer-1'))).data, 'Player 2: 12');
+    });
   });
 }

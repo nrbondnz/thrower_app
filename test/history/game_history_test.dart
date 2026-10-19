@@ -104,4 +104,16 @@ void main() {
     final broken = FileGameHistory(() async => Directory(blocked.path));
     await expectLater(broken.add(game(10)), throwsA(isA<GameHistoryException>()));
   });
+
+  test('a history kept before names (version 1) still reads, and is written as version 2', () async {
+    file().writeAsStringSync(
+      '{"version": 1, "games": [{"id": "g1", "finishedAt": "2026-10-16T01:32:00.000Z", "mode": "sharedTarget", '
+      '"rounds": 1, "players": [[7], [12]]}]}',
+    );
+    final games = await history.load();
+    expect([games.single.nameOf(0), games.single.nameOf(1)], ['Player 1', 'Player 2']);
+    await history.add(game(40));
+    expect(file().readAsStringSync(), startsWith('{"version":2'));
+    expect((await history.load()).length, 2);
+  });
 }

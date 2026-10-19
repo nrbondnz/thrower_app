@@ -52,6 +52,17 @@ class SharedGameWith extends GameNotifier {
   }
 }
 
+/// Two named players on one target, Player 1's turn done: [names]' second
+/// player is up.
+class NamedShared extends GameNotifier {
+  NamedShared(this.names);
+
+  final List<String?> names;
+
+  @override
+  Match build() => Match(PlayMode.sharedTarget, names: names).stuck(4, p).stuck(4, p).stuck(4, p).boardVisited();
+}
+
 Future<void> pumpShared(WidgetTester tester, int throws, {bool collect = true}) =>
     pumpWithNavBar(tester, const PlayScreen(), overrides: [
       calibrationProvider.overrideWith(LockedCalibration.new),
@@ -235,5 +246,47 @@ void main() {
   test('the phone-moved message says to check the rings and calibrate again', () {
     expect(phoneMovedMessage, contains('The phone may have moved'));
     expect(phoneMovedMessage, contains('calibrate again when no one is throwing'));
+  });
+
+  // Named-players story (Nigel, 2026-10-19): names everywhere a player is
+  // named, "Player N" without one.
+  group('names', () {
+    final named = Match(PlayMode.sharedTarget, rules: const GameSession(maxRounds: 1), names: ['Jo', 'Sam']);
+
+    test("whose turn, who's next, the totals", () {
+      final turnDone = named.stuck(4, p).stuck(4, p).stuck(4, p);
+      expect(turnText(named), "Jo's turn");
+      expect(turnDetail(turnDone), "When no one is throwing. Then Sam's turn.");
+      expect(playerTitle(turnDone, 0), 'Jo: 12');
+    });
+
+    test('the winner', () {
+      final m = named.stuck(5, p).stuck(5, p).stuck(5, p).boardVisited().stuck(1, p).bounceOut().stuck(2, p);
+      expect(turnText(m), 'Jo wins');
+    });
+
+    test('two targets: who to wait for', () {
+      final m = Match(PlayMode.twoTargets, names: ['Jo', 'Sam']).stuck(4, p).stuck(4, p).stuck(4, p);
+      expect(turnText(m), 'Wait for Sam');
+    });
+
+    test("a correction row's label: P1 without a name, a short name, or its first letters", () {
+      final m = Match(PlayMode.sharedTarget, names: [null, 'Bartholomew']);
+      expect(rowLabel(m, 0), 'P1');
+      expect(rowLabel(Match(PlayMode.sharedTarget, names: ['Jo']), 0), 'Jo');
+      expect(rowLabel(m, 1), 'Barth…');
+    });
+
+    testWidgets('the longest name fits Play on a narrow phone', (tester) async {
+      tester.view.physicalSize = const Size(360, 740);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpWithNavBar(tester, const PlayScreen(), overrides: [
+        calibrationProvider.overrideWith(LockedCalibration.new),
+        gameProvider.overrideWith(() => NamedShared(['Bartholomew Smit', 'Maximilian Jones'])),
+      ]);
+      expect(tester.takeException(), isNull);
+      expect(textOf(tester, 'turnText'), "Maximilian Jones's turn");
+    });
   });
 }

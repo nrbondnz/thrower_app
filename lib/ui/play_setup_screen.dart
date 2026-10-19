@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
@@ -8,9 +9,12 @@ import 'two_target_play_screen.dart';
 
 /// The screen after Home → Play (and Live test → Play): **how many players**,
 /// 1 or 2, and for 2, **one target** (taking turns) or **two** (throwing at
-/// the same time); and **how many rounds**, 3, 5 or 9 (Nigel, 2026-10-16).
-/// Starts with the last choice. **Start** keeps a game in progress if the
-/// choice is the same, and starts a new one if it changed.
+/// the same time); and **how many rounds**, 3, 5 or 9 (Nigel, 2026-10-16);
+/// and, optionally, **each player's name** (named-players story, 2026-10-19:
+/// filled in with the last names used; blank is "Player N"). Starts with the
+/// last choice. **Start** keeps a game in progress if the choice is the
+/// same (renaming it if the names changed), and starts a new one if it
+/// changed.
 class PlaySetupScreen extends ConsumerStatefulWidget {
   const PlaySetupScreen({super.key});
 
@@ -26,6 +30,23 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
 
   late var _rounds = ref.read(gameLengthProvider);
 
+  /// Each seat's name field, filled with the names kept on the phone.
+  late final _names = [
+    for (final n in ref.read(playerNamesProvider)) TextEditingController(text: n ?? ''),
+  ];
+
+  /// A name has been typed: the kept names, if they load late, don't
+  /// replace it.
+  var _typed = false;
+
+  @override
+  void dispose() {
+    for (final c in _names) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   PlayMode get _mode => _players == 1
       ? PlayMode.solo
       : _targets == 1
@@ -36,6 +57,7 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
     final mode = _mode;
     ref.read(playModeProvider.notifier).choose(mode);
     ref.read(gameLengthProvider.notifier).choose(_rounds);
+    ref.read(playerNamesProvider.notifier).set([for (final c in _names) c.text]);
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => mode == PlayMode.twoTargets ? const TwoTargetPlayScreen() : const PlayScreen(),
     ));
@@ -43,6 +65,12 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(playerNamesProvider, (_, names) {
+      if (_typed) return;
+      for (final (i, c) in _names.indexed) {
+        c.text = names[i] ?? '';
+      }
+    });
     final theme = Theme.of(context);
     final mode = _mode;
     return Scaffold(
@@ -77,6 +105,17 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
                 onSelectionChanged: (s) => setState(() => _targets = s.single),
               ),
             ],
+            const SizedBox(height: 24),
+            Text(_players == 1 ? 'Name (optional)' : 'Names (optional)', style: theme.textTheme.titleMedium),
+            for (var i = 0; i < _players; i++)
+              TextField(
+                key: Key('playName$i'),
+                controller: _names[i],
+                decoration: InputDecoration(hintText: playerNumber(i)),
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [LengthLimitingTextInputFormatter(maxNameLength)],
+                onChanged: (_) => _typed = true,
+              ),
             const SizedBox(height: 24),
             Text('How many rounds?', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),

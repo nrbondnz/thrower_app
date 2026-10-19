@@ -15,6 +15,7 @@ import 'history/game_record.dart';
 import 'scoring/game_session.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
+import 'settings/player_names_store.dart';
 import 'sound/signal_sounds.dart';
 import 'vision/target_calibration.dart';
 import 'vision/target_mapping.dart';
@@ -211,6 +212,41 @@ class GameLengthNotifier extends Notifier<int> {
 
 final gameLengthProvider = NotifierProvider<GameLengthNotifier, int>(GameLengthNotifier.new);
 
+/// Where the player names last used are kept (the app's support folder).
+final playerNamesStoreProvider =
+    Provider<PlayerNamesStore>((ref) => FilePlayerNamesStore(getApplicationSupportDirectory));
+
+/// The players' names, Player 1 first (null for none: "Player N"), for Play
+/// and Quick draw (named-players story, Nigel 2026-10-19). Starts blank,
+/// then takes the names kept on the phone; each change is kept there. A
+/// failure to keep them is ignored: they're a convenience.
+class PlayerNamesNotifier extends Notifier<List<String?>> {
+  /// At most this many players have names (Play and Quick draw have 2).
+  static const seats = 2;
+
+  var _changed = false;
+
+  @override
+  List<String?> build() {
+    ref.read(playerNamesStoreProvider).load().then((kept) {
+      if (!_changed && ref.mounted) state = _fitted(kept);
+    });
+    return const [null, null];
+  }
+
+  /// Names the players [names] (each cleaned: blank is none) and keeps them.
+  void set(List<String?> names) {
+    _changed = true;
+    state = _fitted(names);
+    ref.read(playerNamesStoreProvider).save(state).ignore();
+  }
+
+  static List<String?> _fitted(List<String?> names) =>
+      List.unmodifiable([for (var i = 0; i < seats; i++) cleanName(names.elementAtOrNull(i))]);
+}
+
+final playerNamesProvider = NotifierProvider<PlayerNamesNotifier, List<String?>>(PlayerNamesNotifier.new);
+
 /// The time now, for when a game finished; tests fix it.
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
@@ -243,24 +279,26 @@ class GameNotifier extends Notifier<Match> {
   String? _kept;
 
   /// A new game whenever the camera (live camera ↔ a recording), the play
-  /// mode or the game length changes.
+  /// mode or the game length changes. Renaming the players renames this game
+  /// without restarting it.
   @override
   Match build() {
     ref.watch(recordingChoiceProvider);
     final mode = ref.watch(playModeProvider);
     final rounds = ref.watch(gameLengthProvider);
+    ref.listen(playerNamesProvider, (_, names) => state = state.withNames(names));
     _knives.clear();
     _finishedAt = null;
     _kept = null;
-    return Match(mode, rules: GameSession(maxRounds: rounds));
+    return Match(mode, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider));
   }
 
-  /// The same mode and length, from the start.
+  /// The same mode, length and names, from the start.
   void newGame() {
     _knives.clear();
     _finishedAt = null;
     _kept = null;
-    state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds));
+    state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds), names: state.names);
   }
 
   /// Score corrections (Nigel, 2026-10-17): [player]'s throw [throwIndex]
