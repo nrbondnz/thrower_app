@@ -38,10 +38,10 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`QuickDrawScreen`** (`lib/ui/quick_draw_screen.dart`), the recording (Live test → Quick draw): `quickDrawCameraProvider` → full-screen `RecordedPreview`, Play / Play again → `restart`
   - `_GoFlash`: "GO!" over the picture for 0.7 s from `Recording.go`, while playing (follows `RecordedCamera.position`)
   - `_progress`: the bottom line while a locked game plays: "Watching…", "Analysing… 0.4 s behind the picture." (more than 0.2 s behind), then `verdictText` once both throws are in or the whole clip is analysed
-  - boards chosen with `BoardChoosing` and `BoardsOverlay` (`tapsOff` while playing); Lock boards → `lock`; Choose boards again → `clear` + `rewind`
+  - boards chosen with `BoardChoosing` and `BoardsOverlay` (`tapsOff` while playing); Lock boards → `lock`; Choose boards again → `clear` + `rewind`; **Adjust boards** (`quickDrawAdjust`, locked and not playing) → stop watching + `unlock` + `rewind`
   - Play with the boards locked → a fresh `RecordingAnalysisFeed` and a `QuickDrawWatcher` on it; Choose boards again / leaving → `dispose` both
 - **`LiveQuickDrawScreen`** (`lib/ui/live_quick_draw_screen.dart`), Home → Quick draw: `CameraView(camera: liveQuickDrawCameraProvider)` full screen, system bars hidden
-  - boards chosen with `BoardChoosing` and `BoardsOverlay`; Lock boards → `lock`; Choose boards again → `_endDuel` + `clear`
+  - boards chosen with `BoardChoosing` and `BoardsOverlay`; Lock boards → `lock`; Choose boards again → `_endDuel` + `clear`; **Adjust boards** (`quickDrawAdjust`, not while a round is on) → `unlock` (boards and match kept)
   - `_start` (Start, once locked): a `StartSignal` (`startScheduleProvider`, `signalSoundsProvider`, `clock` = `camera.now`); `onWatch` (go − 1 s) → a `QuickDrawWatcher(queue: true)` on both boards; `onGo` → `_checkResult` every 250 ms (nothing shown at go: the beep is the signal)
   - `_checkResult`: once both throws are in, or `resultWindow` (4 s) after go with every queue caught up → `judgeQuickDraw(throws, goAt)`, the `result` chime, `_Result`
   - `_endDuel`: stops the signal, watcher and result; **Stop** (countdown) and **Next round** / **Extra round** (result) → `_nextRound` (boards kept)
@@ -52,10 +52,11 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **`NamesButton`** whenever no round is under way (hidden once Start is tapped)
   - `_WatchDebugLine` (debug builds, while watching): each board's state and how far behind, "1: watching · 2: motion · 0.03 s behind" ("· N dropped" if any)
 - **`quick_draw_boards.dart`** (`lib/ui/`): shared by both Quick draw screens
-  - **`BoardChoosing`** (mixin on the screen's state): `findBoardAt(camera, tap)` → `tapLocatorProvider` → `boardAt` → `quickDrawTargetsProvider.add`; `searching`, `missed`; **`playerNames`** (the names from `playerNamesProvider`, "Player N" without one; also two-target Play's); `choosingInstruction` ("Tap the centre of Player 1's board." / "… of Jo's board.", "No board found there. …", "Both boards found: …")
+  - **`BoardChoosing`** (mixin on the screen's state): `findBoardAt(camera, tap)` → `tapLocatorProvider` → `boardAt` → `quickDrawTargetsProvider.add`; `searching`, `missed`; **`playerNames`** (the names from `playerNamesProvider`, "Player N" without one; also two-target Play's); `choosingInstruction` ("Tap the centre of Player 1's board." / "… of Jo's board.", "No board found there. …", "Both boards found. Drag an outline to fit its rings if needed (only when no one is throwing), then lock them.")
   - **`NamesButton`** (Quick draw's **Names**, before Start, on both Quick draw screens) → **`editPlayerNames(context, ref)`**: a dialog (`_NamesDialog`, which owns its fields so they outlive its closing animation) with a field per player, filled with the current names; Save → `playerNamesProvider.set`; Cancel changes nothing
-  - **`BoardsOverlay`**: `BoardsPainter` over the picture; taps → **fractions** of the picture's width and height (`onTap`), ignored while `tapsOff`; `throws` → `boardLines`
-  - **`BoardsPainter`**: each board's rings, scaled from its own image size, and its player number (blue while choosing, green once locked); `results`: each player's line under their board
+  - **`BoardsOverlay`**: `BoardsPainter` over the picture; taps → **fractions** of the picture's width and height (`onTap`), ignored while `tapsOff`; `throws` → `boardLines`; **`onAdjust`** (set while both boards are found and not locked) → the `BoardsEditor` in place of taps
+  - **`BoardsEditor`** (2026-10-19, [[story-checkpoint-adjust-boards]]): both boards draggable; a touch → `grabAt` on each board (a handle beats a body; between bodies, the board whose centre is nearest) → `dragged` → `onAdjust(player, board)`
+  - **`BoardsPainter`**: each board's rings, scaled from its own image size, and its player number (blue while choosing, green once locked); `results`: each player's line under their board; `handles`: each board's two handles (while adjustable)
   - `boardLines(throws, go)`: the line under each board, via `judgeQuickDraw` → `judgedText` ("0.82 s · 5", "0.85 s · bounced", "false start"); null before the throw is in
   - `quickDrawLine(text)`: the instruction or result line at the bottom
 - **`CameraView`** (`lib/ui/camera_view.dart`): a camera's preview with errors, release in the background and re-open handled; `camera:` the provider to show (default `cameraProvider`; Quick draw: `liveQuickDrawCameraProvider`); `overlayBuilder`
@@ -70,7 +71,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **`AssetSignalSounds`**: `assets/sounds/` `beep.wav`, `go.wav`, `result.wav`, each on its own `audioplayers` player, loaded once, low-latency, `AssetRecordingSound.audioContext` (ducks, ignores the silent switch)
   - `signalSoundsProvider` (`lib/providers.dart`, auto-disposed)
   - made by **`tool/make_signal_sounds.dart`**: sine tones with 5 ms fades, written as WAV (mono, 16-bit, 22.05 kHz)
-- **`QuickDrawTargets`** (`lib/game/quick_draw_targets.dart`): the boards in tap order, `players` (2), `complete`, `locked`; `QuickDrawTargetsNotifier` (`lib/providers.dart`): `add`, `clear`, `lock`
+- **`QuickDrawTargets`** (`lib/game/quick_draw_targets.dart`): the boards in tap order, `players` (2), `complete`, `locked`; `QuickDrawTargetsNotifier` (`lib/providers.dart`): `add`, `clear`, `lock`, **`replace(index, board)`** (a dragged board; ignored once locked), **`unlock`** (Adjust boards: keeps both boards)
   - **`TapLocator`**: (camera, tap as a fraction of the upright picture) → `TappedTargetsResult`; `tapLocatorProvider`
   - `locateAtTap`: the camera's next frame → `compute(locateTappedInFrame)`; `boardAt`: result → `TargetCalibration` or null
 - **`QuickDrawWatcher`** (`lib/game/quick_draw_watcher.dart`), on the `RecordingAnalysisFeed` (since Task 4; was the picture's frames), or on the live camera with `queue: true`: `start`: per board a `CroppedCamera` (`cropRadii` 4, side rounded to even) + `TargetCalibration.within` (the crop's size) + (`queue`: a `QueuedCamera`) + `ThrowWatcher(interval: zero)`
@@ -96,6 +97,9 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `_learnColours`: colour A (bull), colour B (next ring)
   - `_fitFrom`: rays → A/B runs (gaps skipped) → boundary points
   - `fitEllipseRansac` per boundary; `_implausible` sanity check; confidence
+- **`CalibrationEditor`** (`lib/ui/calibration_editor.dart`): the single target's outline, dragged (`handleReach` 32 px); the drag rules, shared with `BoardsEditor`:
+  - **`grabAt(calibration, point, reach)`** → **`CalibrationGrab`** (`move`, `major`, `minor`) or null: the nearer handle within reach, unless the finger is nearer the centre (small targets); else `move` if inside the outer ring (× 1.1)
+  - **`dragged(calibration, grab, delta:, at:)`**: `moved`, `withMajorHandleAt` or `withMinorHandleAt`
 - **`TargetCalibration`** (`lib/vision/target_calibration.dart`)
   - `moved`, `withMajorHandleAt`, `withMinorHandleAt` (all rings together); `within(x, y, w, h)`: the same rings in a crop's coordinates
 - **`CalibrationNotifier`** (`lib/providers.dart`)
@@ -140,7 +144,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
-  - the screen: `BoardChoosing.addBoard` → `playTargetsProvider`; camera to 1×; `BoardMarksPainter`; `boardMessage`; `boardsStateText`
+  - the screen: `BoardChoosing.addBoard` → `playTargetsProvider`; camera to 1×; `BoardMarksPainter`; `boardMessage`; `boardsStateText`; **Adjust boards** (`playAdjustBoards`) → `_adjustBoards`: stops watching, clears the marks, `unlock` (scores stay; locking again watches afresh)
 - **`QuickDrawMatch`** (`lib/scoring/quick_draw_match.dart`): a Quick draw match of three rounds ([[story-checkpoint-quick-draw-match]])
   - `add(winner)` (null: a drawn round), `finish()`; `results`, `wins`, `leader`, `roundNumber`, `isExtraRound`, `isOver`, `winner`, `draw`, `scoreText`
 - **`TargetModel`** (`lib/scoring/target_model.dart`)
@@ -163,6 +167,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 | **Upright rotation** | Clockwise rotation turning a sideways sensor frame upright: (sensor − device + 360) % 360. | `frameRotation`, `frameToRgb` |
 | **Sensor layout vs upright** | A live frame arrives as the sensor lays it out (on Android, usually sideways); upright is how the user sees it. Boards are found and tapped in the upright picture; a board crop maps its upright rectangle back into the sensor's layout and is cut there, so only the small crop is ever turned. The crop's rotation is fixed when the crop is made, at the start of each duel's watching (the phone is on a stand). | `CroppedCamera.sensorRect`, `frameToRgb`, `frameToLuma`, `ThrowWatcher` |
 | **Calibration lock** | The fitted rings fixed for the session (the camera doesn't move); taps and later throws are scored against them. | `CalibrationNotifier`, `CalibrationScreen` |
+| **Grab (drag-to-adjust)** | What a touch on an outline picks up: the long-axis handle (turn and stretch), the short-axis handle (stretch), or the body (move); all rings move together. A handle wins only when the finger is nearer it than the centre, so the middle of a small outline still moves it. Requirement: [[Two Targets]]. | `grabAt`, `CalibrationEditor`, `BoardsEditor` |
 | **Turn** | Two players on one target: one player's knives (3, or fewer if collected early), from their first throw until they're collected or the next player's knife lands. Player 1 starts every round. | `Match` |
 | **Board visit** | Someone at the board (collecting knives), not a throw: they stood there, ≥ 10% of the region changed at once, or one shape ≥ 3% of the region moved (people are 4%+, knives up to 2.2%). Ends the round. | `classifyThrow`, `ThrowTracker`, `GameSession` |
 | **Episode** | One stretch of motion in the board's region, from the first change until the board has been still for 0.3 s and looks like the board again. One throw, one bounce, or one visit to the board. | `MotionDetector`, `ThrowTracker` |

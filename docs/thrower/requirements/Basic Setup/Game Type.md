@@ -12,7 +12,7 @@ The players choose the kind of game: **scoring** (rounds of throws, the highest 
 
 ## What Exists Today
 - **Home → Play:** scoring games. The setup screen chooses **1 or 2 players**, and for 2, **1 target** (turns) or **2 targets** (at once), and the game length ([[story-checkpoint-players-and-targets]]; device checks M0–M9 to come).
-- **Home → Quick draw:** the live duel: tap and lock both boards, a starter taps Start, five beeps, a random pause, the long beep is go; a match of 3 rounds ([[story-checkpoint-live-quick-draw]], [[story-checkpoint-quick-draw-match]]; device checks Q0–Q8, QM0–QM6 to come).
+- **Home → Quick draw:** the live duel: tap both boards (drag an outline into place if needed; **Adjust boards** later: [[story-checkpoint-adjust-boards]]) and lock them, a starter taps Start, five beeps, a random pause, the long beep is go; a match of 3 rounds ([[story-checkpoint-live-quick-draw]], [[story-checkpoint-quick-draw-match]]; device checks Q0–Q8, QM0–QM6 to come).
 - Both use the same player names, if given ([[Player Names]]): on Play's setup screen, or **Names** on Quick draw.
 - **Live test** (Home) plays both on recordings, for testing without throwing.
 
@@ -22,4 +22,4 @@ The players choose the kind of game: **scoring** (rounds of throws, the highest 
 ## Related
 - [[Round Play]]
 - [[Number of Rounds]]
-- [[Design Decisions]] → Quick Draw sections
+- [[Design Decisions]] → Quick Draw sections; Adjust Each Board

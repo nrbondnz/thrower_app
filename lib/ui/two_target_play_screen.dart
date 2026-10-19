@@ -122,6 +122,19 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
     camera.restart();
   }
 
+  /// Adjust boards (backlog #10): stop watching and unlock, keeping both
+  /// boards to drag into place; the game's scores stay. Locking again starts
+  /// watching afresh, as after choosing the boards.
+  void _adjustBoards() {
+    _stopWatcher();
+    setState(() {
+      for (final m in _marks) {
+        m.clear();
+      }
+    });
+    ref.read(playTargetsProvider.notifier).unlock();
+  }
+
   /// Choose boards again: stop watching and forget the boards (the game's
   /// scores stay).
   void _chooseAgain() {
@@ -214,6 +227,7 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                     BoardsOverlay(
                       targets: targets,
                       onTap: targets.complete || searching ? null : (tap) => findBoardAt(camera, tap),
+                      onAdjust: targets.complete && !targets.locked ? ref.read(playTargetsProvider.notifier).replace : null,
                     ),
                     if (watcher != null)
                       CustomPaint(
@@ -271,6 +285,13 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                             onPressed: () => _replay(camera),
                             child: Text(playing ? 'Restart the recording' : 'Recording finished: play again'),
                           ),
+                        ),
+                      if (targets.locked)
+                        OutlinedButton(
+                          key: const Key('playAdjustBoards'),
+                          style: buttonStyle,
+                          onPressed: _adjustBoards,
+                          child: const Text('Adjust boards'),
                         ),
                       if (targets.boards.isNotEmpty)
                         OutlinedButton(

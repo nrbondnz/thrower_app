@@ -237,6 +237,7 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 - **Adjustments act on all rings together**, driven by the outer ring: drag inside to move; drag the long-axis handle to turn and stretch; drag the short-axis handle to stretch the short axis. The rings stay in proportion and keep their perspective offsets.
 - **A rejected attempt can be adjusted and locked too**, so a near miss can be fixed by hand rather than retried forever.
 - **Safety (Review Agent §7):** whenever the outline can be adjusted, the screen shows *"Only adjust when no one is throwing."* The phone sits beside the board, so adjusting means standing near the throwing lane. Requirement: [[Instructions and Safety]].
+- **Updated 2026-10-19 (the shared grab rule):** what a touch picks up is now `grabAt` (`lib/ui/calibration_editor.dart`), shared with the two-board editor (see Adjust Each Board). One change for the single target too: a handle wins only when the finger is **nearer the handle than the target's centre**. On a small target the handles' 32 px touch zones (`CalibrationEditor.handleReach`) reached its middle, so touching the middle grabbed a handle instead of moving the target.
 
 ## Zoom the Camera onto the Target (2026-10-11)
 
@@ -545,9 +546,31 @@ The misses aren't resolution or compression: the right board fails as often on t
 
 **State:** `QuickDrawTargets` (`lib/game/quick_draw_targets.dart`): the boards as `TargetCalibration`s in tap order, two players, `locked`. `quickDrawTargetsProvider` adds the next player's board, `clear`s ("Choose boards again") and `lock`s (only once both are found); it's auto-disposed, so leaving Quick draw starts over. `tapLocatorProvider` is the tap search (tests replace it).
 
-**Screen:** an instruction line ("Tap the centre of Player 1's board.", "No board found there.", "Both boards found: lock them, or choose boards again."), `BoardsPainter` (each board's rings, scaled from its own image size, with its player number in a disc above it; blue while choosing, green once locked), and **Choose boards again** / **Lock boards** / **Play**. Taps are ignored while the clip plays or a search is running. **Choose boards again** also **rewinds** the clip, so boards are chosen on the still first frame, not where playback stopped. No drag-to-adjust yet: a wrong outline means Choose boards again.
+**Screen:** an instruction line ("Tap the centre of Player 1's board.", "No board found there.", "Both boards found: lock them, or choose boards again."), `BoardsPainter` (each board's rings, scaled from its own image size, with its player number in a disc above it; blue while choosing, green once locked), and **Choose boards again** / **Lock boards** / **Play**. Taps are ignored while the clip plays or a search is running. **Choose boards again** also **rewinds** the clip, so boards are chosen on the still first frame, not where playback stopped. Since 2026-10-19 a wrong outline can be dragged into place, and **Adjust boards** unlocks them (see Adjust Each Board); before that, a wrong outline meant Choose boards again.
 
 **Shared** (since 2026-10-15) by the recording's `QuickDrawScreen` and the live `LiveQuickDrawScreen`, in `lib/ui/quick_draw_boards.dart`: `BoardChoosing` (a mixin on the screen's state: `findBoardAt`, `searching`, `missed`, and the instruction line, `choosingInstruction`), `BoardsOverlay` (the painted boards, and the taps as fractions; `tapsOff` while a recording plays), `BoardsPainter`, `boardLines` and `quickDrawLine` (the bottom line). Until then they were private to `quick_draw_screen.dart`.
+
+## Adjust Each Board (2026-10-19)
+
+**Requirement:** [[Two Targets]], [[Game Type]] (Quick draw).
+
+**Decision** ([[story-checkpoint-adjust-boards]] Task 1, backlog #10): when two boards are chosen (both Quick draw screens and two-target Play), **each board's outline can be dragged into place**, as the single target's can: drag inside to move it, drag its long-axis handle to turn and stretch it, its short-axis handle to stretch it. Until then a wrong outline could only be fixed with **Choose boards again**, which forgets both boards. Nigel also said yes to an **Adjust boards** button after locking (*"yes, start #10 with the Adjust boards button"*): it unlocks, **keeping both boards**, so a knocked board is fixed without choosing both again.
+
+**Options (architectural purity over the quick option):**
+- **Quick, not chosen:** a `CalibrationEditor` for one "selected" board, with buttons to switch boards. It adds a mode to learn, and the other board can't be touched meanwhile.
+- **Chosen:** the single target's drag rules taken out as pure functions and shared. **`grabAt(calibration, point, reach)`** says what a touch picks up (`CalibrationGrab`: `move`, `major`, `minor`, or null); **`dragged`** applies the drag (`TargetCalibration.moved`, `withMajorHandleAt`, `withMinorHandleAt`). `CalibrationEditor` uses them unchanged, and a new **`BoardsEditor`** (`lib/ui/quick_draw_boards.dart`) hit-tests **both** boards: a handle beats a board's body; between bodies, the board whose centre is nearest the finger wins. No selection mode; the other board is untouched.
+
+**The grab rule, and a fix for small targets:** a handle wins only when the finger is nearer the handle than the board's centre. Two boards in one view are often small on screen, and the handles' 32 px touch zones reached their middles, so touching the middle grabbed a handle. This changes the single target too (see Adjust and Lock the Calibration).
+
+**How:**
+- `BoardsOverlay(onAdjust:)` becomes the `BoardsEditor` while both boards are found and not locked (taps no longer find boards then). `BoardsPainter(handles: true)` draws each board's two handles.
+- `QuickDrawTargetsNotifier.replace(index, board)` puts the dragged board in place (ignored once locked); `unlock()` keeps both boards. Shared by `quickDrawTargetsProvider` and `playTargetsProvider`.
+- **Adjust boards** shows once the boards are locked:
+  - live Quick draw (`quickDrawAdjust`): not while a round is on; the match is kept;
+  - the recorded Quick draw: not while playing; it stops watching and **rewinds**, so the boards are adjusted on the still board;
+  - two-target Play (`playAdjustBoards`, `_adjustBoards`): **stops watching** and **clears the marks** on the picture; the game's **scores stay**. Locking again watches afresh, as after choosing the boards.
+
+**Safety (Review Agent §7):** while the outlines can be adjusted, `choosingInstruction` says *"Both boards found. Drag an outline to fit its rings if needed (only when no one is throwing), then lock them."* In Quick draw and two-target Play the phone stands **behind the throwers**, so adjusting means someone at the phone: only when no one is throwing. Requirement: [[Instructions and Safety]].
 
 ## Quick Draw: Timing and Scoring Each Board (2026-10-15)
 

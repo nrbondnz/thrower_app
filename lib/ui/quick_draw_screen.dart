@@ -112,6 +112,7 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                       BoardsOverlay(
                         targets: targets,
                         onTap: targets.complete || searching ? null : (tap) => findBoardAt(value, tap),
+                        onAdjust: targets.complete && !targets.locked ? notifier.replace : null,
                         tapsOff: value.playing,
                         throws: _watcher?.throws,
                         go: value.recording.go ?? Duration.zero,
@@ -181,6 +182,26 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                                 key: const Key('quickDrawLock'),
                                 onPressed: notifier.lock,
                                 child: const Text('Lock boards'),
+                              ),
+                            if (targets.locked)
+                              ValueListenableBuilder(
+                                valueListenable: value.playing,
+                                builder: (context, playing, _) => playing
+                                    ? const SizedBox.shrink()
+                                    : OutlinedButton(
+                                        key: const Key('quickDrawAdjust'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.black54,
+                                        ),
+                                        onPressed: () {
+                                          setState(_stopWatching);
+                                          notifier.unlock();
+                                          // Adjust on the still board, not where playback stopped.
+                                          value.rewind();
+                                        },
+                                        child: const Text('Adjust boards'),
+                                      ),
                               ),
                             // Only once the boards are locked: played unlocked, nothing is analysed.
                             if (targets.locked) _PlayButton(camera: value, onPlay: () => _play(value)),

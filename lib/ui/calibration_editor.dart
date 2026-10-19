@@ -36,37 +36,48 @@ class CalibrationEditor extends StatefulWidget {
   State<CalibrationEditor> createState() => _CalibrationEditorState();
 }
 
-enum _Drag { move, major, minor }
+/// What a drag on a calibration's outline picks up: the whole target, or
+/// one of its outer ring's handles.
+enum CalibrationGrab { move, major, minor }
+
+/// What a touch at [at] (image pixels) picks up on [c]: the nearer handle
+/// within [reach] (image pixels), unless the touch is nearer the target's
+/// centre than that handle (a small target on screen: the touch zones
+/// overlap, and the middle should move it); else the target if the touch is
+/// inside its outer ring (or just outside it); null for neither. Shared by
+/// [CalibrationEditor] and the two-board editor.
+CalibrationGrab? grabAt(TargetCalibration c, Point2 at, double reach) {
+  double distance(Point2 p) => math.sqrt((at.x - p.x) * (at.x - p.x) + (at.y - p.y) * (at.y - p.y));
+  final toMajor = distance(c.majorHandle), toMinor = distance(c.minorHandle);
+  final handle = toMajor <= toMinor ? (CalibrationGrab.major, toMajor) : (CalibrationGrab.minor, toMinor);
+  final inside = c.outer.normalisedRadius(at) <= 1.1;
+  if (handle.$2 <= reach && (!inside || handle.$2 < distance(Point2(c.outer.cx, c.outer.cy)))) return handle.$1;
+  return inside ? CalibrationGrab.move : null;
+}
+
+/// [c] after a drag of what [grab] picked up: moved by [delta], or with the
+/// handle at [at] (image pixels).
+TargetCalibration dragged(TargetCalibration c, CalibrationGrab grab, {required Point2 delta, required Point2 at}) =>
+    switch (grab) {
+      CalibrationGrab.move => c.moved(delta.x, delta.y),
+      CalibrationGrab.major => c.withMajorHandleAt(at),
+      CalibrationGrab.minor => c.withMinorHandleAt(at),
+    };
 
 class _CalibrationEditorState extends State<CalibrationEditor> {
-  _Drag? _drag;
+  CalibrationGrab? _drag;
   late double _scale;
 
   Point2 _toImage(Offset o) => Point2(o.dx / _scale, o.dy / _scale);
-  Offset _toScreen(Point2 p) => Offset(p.x * _scale, p.y * _scale);
 
-  void _start(Offset at) {
-    final c = widget.calibration;
-    if ((at - _toScreen(c.majorHandle)).distance <= CalibrationEditor.handleReach) {
-      _drag = _Drag.major;
-    } else if ((at - _toScreen(c.minorHandle)).distance <= CalibrationEditor.handleReach) {
-      _drag = _Drag.minor;
-    } else if (c.outer.normalisedRadius(_toImage(at)) <= 1.1) {
-      _drag = _Drag.move;
-    } else {
-      _drag = null;
-    }
-  }
+  void _start(Offset at) => _drag = grabAt(widget.calibration, _toImage(at), CalibrationEditor.handleReach / _scale);
 
   void _update(DragUpdateDetails d) {
-    final c = widget.calibration;
-    final next = switch (_drag) {
-      _Drag.move => c.moved(d.delta.dx / _scale, d.delta.dy / _scale),
-      _Drag.major => c.withMajorHandleAt(_toImage(d.localPosition)),
-      _Drag.minor => c.withMinorHandleAt(_toImage(d.localPosition)),
-      null => null,
-    };
-    if (next != null) widget.onChanged(next);
+    final grab = _drag;
+    if (grab == null) return;
+    widget.onChanged(
+      dragged(widget.calibration, grab, delta: _toImage(d.delta), at: _toImage(d.localPosition)),
+    );
   }
 
   @override

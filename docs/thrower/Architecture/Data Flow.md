@@ -156,11 +156,11 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 
 ## Quick Draw: Choosing the Boards
 
-On Quick draw the user picks each player's board by tapping its centre (Task 2 of [[story-checkpoint-quick-draw]]; why, and the measurements, in [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping). Both Quick draw screens do it the same way: the recording's `QuickDrawScreen` and the live camera's `LiveQuickDrawScreen` share `BoardChoosing` and `BoardsOverlay` (`lib/ui/quick_draw_boards.dart`). Taps are fractions of the picture, turned into pixels only once the frame is upright (Task 1 of [[story-checkpoint-live-quick-draw]]).
+On Quick draw the user picks each player's board by tapping its centre (Task 2 of [[story-checkpoint-quick-draw]]; why, and the measurements, in [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping). Both Quick draw screens do it the same way: the recording's `QuickDrawScreen` and the live camera's `LiveQuickDrawScreen` share `BoardChoosing` and `BoardsOverlay` (`lib/ui/quick_draw_boards.dart`). Taps are fractions of the picture, turned into pixels only once the frame is upright (Task 1 of [[story-checkpoint-live-quick-draw]]). Two-target Play chooses its boards the same way. Since 2026-10-19 each outline can be dragged into place once both are found, and **Adjust boards** unlocks them later ([[story-checkpoint-adjust-boards]]; [[Design Decisions]] → Adjust Each Board).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│       QUICK DRAW: CHOOSING THE BOARDS (both Quick draw screens)     │
+│      CHOOSING TWO BOARDS (Quick draw screens, two-target Play)      │
 │                                                                     │
 │   User taps the centre of Player 1's board, then Player 2's         │
 │          │  BoardsOverlay: screen point ÷ the picture's size on     │
@@ -187,10 +187,16 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 │   │ none: "No board found there."; tap again                     │  │
 │   │ after two: Lock → lock() · Choose boards again → clear()     │  │
 │   │ (the recording also rewinds to its first frame)              │  │
+│   │ two found, not locked: BoardsOverlay(onAdjust:) →            │  │
+│   │   BoardsEditor: drag → grabAt on each board → dragged →      │  │
+│   │   replace(index, board) ("only when no one is throwing")     │  │
+│   │ locked: Adjust boards → unlock() (both boards kept) →        │  │
+│   │   drag → Lock again (two-target Play: watching stopped,      │  │
+│   │   marks cleared, scores kept; locking watches afresh)        │  │
 │   └──────────────────────────────────────────────────────────────┘  │
 │   BoardsPainter: each board's rings, scaled from its own image      │
 │   size, and player number (blue while choosing, green once          │
-│   locked)                                                           │
+│   locked; handles: each board's two handles while adjustable)       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 

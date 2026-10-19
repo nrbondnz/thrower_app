@@ -21,9 +21,10 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │              │                  └─ QuickDrawScreen            │  │
 │  │              │                       └─ RecordedPreview       │  │
 │  │              └─ DebugTargetScreen                             │  │
-│  │  quick_draw_boards (shared by both Quick draw screens):       │  │
+│  │  quick_draw_boards (Quick draw screens, two-target Play):     │  │
 │  │    BoardChoosing (tap → find → outline) · BoardsOverlay       │  │
 │  │    ── BoardsPainter · boardLines · quickDrawLine              │  │
+│  │    BoardsEditor (drag each outline; Adjust boards → unlock)   │  │
 │  │    playerNames (Play's names) · NamesButton ─▶                │  │
 │  │      editPlayerNames (Names dialog, before Start)             │  │
 │  └───────────────────────────────┬───────────────────────────────┘  │
@@ -36,6 +37,7 @@ Thrower App runs entirely on the phone (no backend yet; see [[Design Decisions]]
 │  │  gameProvider (GameNotifier)    targetModelProvider           │  │
 │  │  ringBoundaryRadiiProvider      authServiceProvider           │  │
 │  │  quickDrawTargetsProvider       tapLocatorProvider            │  │
+│  │    (add · replace · lock · unlock · clear)                    │  │
 │  │  liveQuickDrawCameraProvider (live Quick draw's own, 60 fps)  │  │
 │  │  signalSoundsProvider           startScheduleProvider         │  │
 │  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │

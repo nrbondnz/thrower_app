@@ -89,6 +89,16 @@ class QuickDrawTargetsNotifier extends Notifier<QuickDrawTargets> {
   /// "Choose boards again": forget the boards (and the lock).
   void clear() => state = const QuickDrawTargets();
 
+  /// Player [index]'s board, adjusted by hand (backlog #10). Ignored once
+  /// locked.
+  void replace(int index, TargetCalibration board) {
+    if (state.locked || index >= state.boards.length) return;
+    state = QuickDrawTargets(boards: [...state.boards]..[index] = board);
+  }
+
+  /// "Adjust boards": unlock, keeping both boards, so they can be adjusted.
+  void unlock() => state = QuickDrawTargets(boards: state.boards);
+
   void lock() {
     if (state.complete) state = QuickDrawTargets(boards: state.boards, locked: true);
   }

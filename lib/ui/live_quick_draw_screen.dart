@@ -207,6 +207,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
             overlayBuilder: (context, camera) => BoardsOverlay(
               targets: targets,
               onTap: targets.complete || searching ? null : (tap) => findBoardAt(camera, tap),
+              onAdjust: targets.complete && !targets.locked ? ref.read(quickDrawTargetsProvider.notifier).replace : null,
               throws: watcher?.throws,
               go: signal?.goAt ?? Duration.zero,
             ),
@@ -261,6 +262,16 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
                               key: const Key('quickDrawLock'),
                               onPressed: ref.read(quickDrawTargetsProvider.notifier).lock,
                               child: const Text('Lock boards'),
+                            ),
+                          if (targets.locked && !duelOn)
+                            OutlinedButton(
+                              key: const Key('quickDrawAdjust'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.black54,
+                              ),
+                              onPressed: ref.read(quickDrawTargetsProvider.notifier).unlock,
+                              child: const Text('Adjust boards'),
                             ),
                           if (targets.locked && !duelOn && !match.isOver && camera != null)
                             FilledButton(

@@ -134,7 +134,7 @@ void main() {
     await tapPicture(tester, 0.75, 0.5);
     expect(instruction(tester), "Tap the centre of Player 2's board.");
     await tapPicture(tester, 0.25, 0.5);
-    expect(instruction(tester), 'Both boards found: lock them, or choose them again.');
+    expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its rings'));
     // Taps reach the finder as fractions of the picture.
     expect([for (final t in taps) (t.x, t.y)], [(0.75, 0.5), (0.25, 0.5)]);
   });

@@ -84,9 +84,26 @@ void main() {
     await tapPicture(tester, 0.25, 0.5);
     expect(instruction(tester), "Tap the centre of Player 2's board.");
     await tapPicture(tester, 0.75, 0.5);
-    expect(instruction(tester), 'Both boards found: lock them, or choose them again.');
+    expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its rings'));
     expect(container.read(playTargetsProvider).boards.map((b) => b.outer.cx), [2, 6]);
     expect(container.read(quickDrawTargetsProvider).boards, isEmpty, reason: "Quick draw's boards are its own");
+  });
+
+  // Backlog #10 (Nigel, 2026-10-19).
+  testWidgets('Adjust boards unlocks them, keeping both, and locking again watches again', (tester) async {
+    await pumpScreen(tester, const TwoTargetPlayScreen());
+    await chooseAndLock(tester);
+    await tester.tap(find.byKey(const Key('playAdjustBoards')));
+    await tester.pump();
+    final targets = container.read(playTargetsProvider);
+    expect(targets.locked, isFalse);
+    expect([for (final b in targets.boards) b.outer.cx], [2, 6]);
+    expect(instruction(tester), startsWith('Both boards found. Drag an outline'));
+    expect(find.byKey(const Key('boardsEditor')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('playLockBoards')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(const Key('boardsState')), findsOneWidget);
   });
 
   testWidgets('locked: both players\' scores, and each board\'s watch state', (tester) async {

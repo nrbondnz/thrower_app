@@ -22,7 +22,7 @@ Part of [[Requirements Index]] → Across the app. **Status:** ✅ Built (kept u
 - **The sections** (`instructionSections`): Setting up, Calibrating the target, Playing a game, Two players on one target, Two players on two targets, Scoring, Changing a score, Resetting, History, Quick draw, Safety, Reporting problems.
   - Numbers (rounds, throws per round, ring scores, the line-touch rule, the name length) are read from the code (`GameSession`, `TargetModel`, `GameLengthNotifier.choices`, `maxNameLength`), so they can't drift.
   - Each story adds its own points: two players ([[story-checkpoint-players-and-targets]]), History ([[story-checkpoint-game-history]]), changing a score ([[story-checkpoint-score-corrections]]), the Quick draw match ([[story-checkpoint-quick-draw-match]]), and naming players and **Names** in Quick draw ([[story-checkpoint-named-players]], 2026-10-19).
-- **On-screen safety lines**, besides the Instructions: "Only adjust when no one is throwing" while calibrating; "Collect your knives when no one is throwing" at the end of a round; the next thrower is never named while the knives are still to be collected; Quick draw runs a whole duel with nobody touching the phone, and shows the result large enough to read from the throwing line.
+- **On-screen safety lines**, besides the Instructions: "Only adjust when no one is throwing" while calibrating, and "Drag an outline to fit its rings if needed (only when no one is throwing)" while two boards can be adjusted (2026-10-19, [[story-checkpoint-adjust-boards]]); "Collect your knives when no one is throwing" at the end of a round; the next thrower is never named while the knives are still to be collected; Quick draw runs a whole duel with nobody touching the phone, and shows the result large enough to read from the throwing line.
 - **Guarded by** the "Be Careful" Review Agent's §7 Physical Safety checklist (`docs/agents/review-agent/review-agent.md`), run on any change to what the user is told to do physically. Keeping the text current: [[Common Tasks#Update the In-App Instructions]]. Checked by `test/ui/instructions_test.dart`.
 - **Not yet:** an age rating, a first-run safety screen, translations.
 
@@ -33,6 +33,6 @@ Part of [[Requirements Index]] → Across the app. **Status:** ✅ Built (kept u
 - Should Quick draw ask the starter to confirm the lanes are separate before the first Start?
 
 ## Related
-- [[Design Decisions]] → Rounds and Scoring (In-app Instructions; Safety), Adjust and Lock the Calibration (Safety), Single Player First (the two-player Safety notes), Score Corrections (Safety), Quick Draw: the Live Duel and the Result, Named Players (Instructions)
+- [[Design Decisions]] → Rounds and Scoring (In-app Instructions; Safety), Adjust and Lock the Calibration (Safety), Single Player First (the two-player Safety notes), Score Corrections (Safety), Adjust Each Board (Safety), Quick Draw: the Live Duel and the Result, Named Players (Instructions)
 - [[Player Names]], [[Game Type]], [[One Target]], [[Two Targets]], [[Scoring Rules]]
 - [[backlog]] #6 (store-release hygiene)

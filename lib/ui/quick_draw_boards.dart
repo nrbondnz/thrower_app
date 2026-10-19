@@ -13,6 +13,7 @@ import '../providers.dart';
 import '../scoring/match.dart';
 import '../vision/ellipse.dart';
 import '../vision/target_calibration.dart';
+import 'calibration_editor.dart';
 
 /// Choosing two boards, shared by the Quick draw screens and two-target
 /// Play: tap the centre of Player 1's board, then Player 2's (each is found
@@ -57,7 +58,10 @@ mixin BoardChoosing<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final next = playerNames[math.min(targets.boards.length, PlayerNamesNotifier.seats - 1)];
     if (searching) return "Looking for $next's board…";
     if (targets.locked) return locked;
-    if (targets.complete) return 'Both boards found: lock them, or choose them again.';
+    if (targets.complete) {
+      return 'Both boards found. Drag an outline to fit its rings if needed (only when no one is throwing), '
+          'then lock them.';
+    }
     final again = missed ? 'No board found there. ' : '';
     return "${again}Tap the centre of $next's board.";
   }
@@ -78,12 +82,26 @@ Widget quickDrawLine(String text) => Container(
 /// Each board's rings, with its player number above it (blue while choosing,
 /// green once locked) and its result line under it, over the picture (sized
 /// exactly over it); and, while [onTap] is set and [tapsOff] isn't true,
-/// taps on the picture, as fractions of its width and height.
+/// taps on the picture, as fractions of its width and height. While
+/// [onAdjust] is set (both boards found, not locked: backlog #10), the
+/// outlines can be dragged instead, as the single target's can
+/// ([BoardsEditor]).
 class BoardsOverlay extends StatelessWidget {
-  const BoardsOverlay({super.key, required this.targets, this.onTap, this.tapsOff, this.throws, this.go = Duration.zero});
+  const BoardsOverlay({
+    super.key,
+    required this.targets,
+    this.onTap,
+    this.onAdjust,
+    this.tapsOff,
+    this.throws,
+    this.go = Duration.zero,
+  });
 
   final QuickDrawTargets targets;
   final ValueChanged<Point2>? onTap;
+
+  /// Player N's board, dragged into place.
+  final void Function(int player, TargetCalibration board)? onAdjust;
 
   /// While true, taps are ignored (e.g. while a recording plays).
   final ValueListenable<bool>? tapsOff;
@@ -95,6 +113,8 @@ class BoardsOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final adjust = onAdjust;
+    if (adjust != null) return BoardsEditor(targets: targets, onAdjust: adjust);
     final played = throws;
     final paint = played == null
         ? CustomPaint(size: Size.infinite, painter: BoardsPainter(targets))
@@ -126,6 +146,67 @@ class BoardsOverlay extends StatelessWidget {
   }
 }
 
+/// Both boards' outlines, draggable (backlog #10): a touch picks up the
+/// board under the finger ([grabAt]: a handle first, else the board whose
+/// centre is nearest), and dragging moves, turns or stretches that board
+/// alone, as on the single target ([CalibrationEditor]).
+class BoardsEditor extends StatefulWidget {
+  const BoardsEditor({super.key, required this.targets, required this.onAdjust});
+
+  final QuickDrawTargets targets;
+  final void Function(int player, TargetCalibration board) onAdjust;
+
+  @override
+  State<BoardsEditor> createState() => _BoardsEditorState();
+}
+
+class _BoardsEditorState extends State<BoardsEditor> {
+  /// The board being dragged, and what of it.
+  (int, CalibrationGrab)? _drag;
+  var _scale = 1.0;
+
+  Point2 _toImage(Offset o) => Point2(o.dx / _scale, o.dy / _scale);
+
+  void _start(Offset at) {
+    final p = _toImage(at);
+    final reach = CalibrationEditor.handleReach / _scale;
+    (int, CalibrationGrab)? best;
+    var bestRank = double.infinity;
+    for (final (i, board) in widget.targets.boards.indexed) {
+      final grab = grabAt(board, p, reach);
+      if (grab == null) continue;
+      // A handle beats a body; between bodies, the one whose centre is nearest.
+      final rank = grab == CalibrationGrab.move ? 1 + board.outer.normalisedRadius(p) : 0.0;
+      if (rank < bestRank) (best, bestRank) = ((i, grab), rank);
+    }
+    _drag = best;
+  }
+
+  void _update(DragUpdateDetails d) {
+    final drag = _drag;
+    if (drag == null) return;
+    final (i, grab) = drag;
+    final board = widget.targets.boards[i];
+    widget.onAdjust(i, dragged(board, grab, delta: _toImage(d.delta), at: _toImage(d.localPosition)));
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final boards = widget.targets.boards;
+          if (boards.isNotEmpty) _scale = constraints.maxWidth / boards.first.imageWidth;
+          return GestureDetector(
+            key: const Key('boardsEditor'),
+            behavior: HitTestBehavior.opaque,
+            onPanStart: (d) => _start(d.localPosition),
+            onPanUpdate: _update,
+            onPanEnd: (_) => _drag = null,
+            child: CustomPaint(size: Size.infinite, painter: BoardsPainter(widget.targets, handles: true)),
+          );
+        },
+      );
+}
+
 /// The line under each board: the throw's time after [go] and its score,
 /// "bounced" or "false start" ([judgedText]); null until its throw is in.
 List<String?> boardLines(List<QuickDrawThrow?> throws, Duration go) {
@@ -137,10 +218,13 @@ List<String?> boardLines(List<QuickDrawThrow?> throws, Duration go) {
 /// image size to the size painted, with each player's [results] line under
 /// their board.
 class BoardsPainter extends CustomPainter {
-  BoardsPainter(this.targets, {this.results = const []});
+  BoardsPainter(this.targets, {this.results = const [], this.handles = false});
 
   final QuickDrawTargets targets;
   final List<String?> results;
+
+  /// Draw each board's two handles (while the outlines can be adjusted).
+  final bool handles;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -155,6 +239,13 @@ class BoardsPainter extends CustomPainter {
         canvas.drawPath(_path(e.rescaled(scale)), stroke);
       }
       _label(canvas, board, scale, '${i + 1}', colour);
+      if (handles) {
+        for (final h in [board.majorHandle, board.minorHandle]) {
+          final at = Offset(h.x * scale, h.y * scale);
+          canvas.drawCircle(at, 12, Paint()..color = Colors.white);
+          canvas.drawCircle(at, 12, stroke);
+        }
+      }
       if (i < results.length && results[i] != null) _result(canvas, board, scale, results[i]!);
     }
   }
@@ -195,7 +286,8 @@ class BoardsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(BoardsPainter old) => old.targets != targets || !listEquals(old.results, results);
+  bool shouldRepaint(BoardsPainter old) =>
+      old.targets != targets || old.handles != handles || !listEquals(old.results, results);
 }
 
 /// Quick draw's **Names** button (named-players story, 2026-10-19): the two

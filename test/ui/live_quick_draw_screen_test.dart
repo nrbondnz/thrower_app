@@ -165,7 +165,7 @@ void main() {
     await tapPicture(tester, 0.25, 0.5);
     expect(instruction(tester), "Tap the centre of Player 2's board.");
     await tapPicture(tester, 0.75, 0.5);
-    expect(instruction(tester), 'Both boards found: lock them, or choose them again.');
+    expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its rings'));
     expect([for (final t in taps) (t.x, t.y)], [(0.25, 0.5), (0.75, 0.5)]);
     await tester.tap(find.byKey(const Key('quickDrawLock')));
     await tester.pump();
@@ -187,6 +187,24 @@ void main() {
       clock += d;
       await tester.pump(d);
     }
+
+    // Backlog #10 (Nigel, 2026-10-19).
+    testWidgets('Adjust boards unlocks them, keeping both; not while a round is on', (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      await tester.tap(find.byKey(const Key('quickDrawAdjust')));
+      await tester.pump();
+      expect(find.byKey(const Key('quickDrawStart')), findsNothing);
+      expect(find.byKey(const Key('quickDrawLock')), findsOneWidget);
+      expect(find.byKey(const Key('boardsEditor')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('quickDrawLock')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('quickDrawStart')));
+      await tester.pump();
+      expect(find.byKey(const Key('quickDrawAdjust')), findsNothing);
+      await tester.tap(find.byKey(const Key('quickDrawStop')));
+      await tester.pump();
+    });
 
     testWidgets('locked, Start appears; it lights the 5 lights a second apart with a beep each', (tester) async {
       await pumpHome(tester, clockCamera);
