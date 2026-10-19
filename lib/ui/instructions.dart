@@ -106,8 +106,12 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'Choose 2 players and 2 targets: a board each, side by side, both throwing at the same time.',
         'Put the phone on its stand behind the throwers, where it sees both boards: out of both lines of throw, '
             'not between the lanes, and out of reach of a backswing.',
-        "Before anyone throws, tap the centre of Player 1's board, then Player 2's, then Lock boards. "
-            'If an outline is wrong, tap Choose boards again.',
+        "Before anyone throws, tap the centre of Player 1's board, then Player 2's, then Lock boards.",
+        'If an outline doesn\'t fit its rings, drag it into place (inside to move it, a white handle to turn or '
+            'stretch it), or tap Choose boards again.',
+        // Adjust boards (backlog #10, 2026-10-19).
+        'If a board or the phone is knocked during a game, tap Adjust boards when no one is throwing, drag the '
+            'outline back, then Lock boards. Watching stops until you lock again; the scores stay.',
         'Each board scores for its own player. Use separate lanes, each thrower at their own line, '
             "under your venue's rules for throwing side by side.",
         'If you finish your round first, wait: the screen says to wait for the other player. '
@@ -159,8 +163,11 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
             'Tap Quick draw on the home screen. (Live test, then Quick draw, plays a recording of a real duel.)',
         'Put the phone on its stand behind the throwers, where it sees both boards: out of both lines of throw, '
             'not between the lanes, and out of reach of a backswing (at least 3 m back for axes, or as your venue says).',
-        "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards. "
-            'If an outline is wrong, tap Choose boards again.',
+        "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards.",
+        'If an outline doesn\'t fit its rings, drag it into place (inside to move it, a white handle to turn or '
+            'stretch it), or tap Choose boards again.',
+        'Between rounds, Adjust boards unlocks them to fix an outline (only when no one is throwing); the match '
+            'carries on.',
         'Choose and lock the boards before anyone throws. Tap Names to change the throwers\' names (the same '
             'names as Play).',
         'A third person, the starter, standing behind the throwers, taps Start. Throwers do not start their own '

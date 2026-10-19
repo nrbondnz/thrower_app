@@ -7,7 +7,7 @@ When two boards are chosen (Quick draw and two-target Play), each board's outlin
 3 (Medium: 2 tasks): the targets model and the UI (2 layers); three screens share the change (`BoardsOverlay`).
 
 ## Status
-IN PROGRESS: Task 1 of 2 complete (2026-10-19), awaiting Nigel's checkpoint. Plan approved with the Adjust boards button ("yes, start #10 with the Adjust boards button").
+BUILT: both tasks complete (2026-10-19); Task 1 committed (`d96be0d`). **Waiting for the device checks** ([[Device Test Plan]] → Adjust Boards Checks, A0–A5: Nigel on the Samsung for A0–A4; A5 needs the live camera; in TestFlight 1.0.0 (9)). Archive the story once they pass.
 
 ## What Exists
 - **The single target:** `CalibrationEditor` (`lib/ui/calibration_editor.dart`). Drag inside the outer ring to move; drag the long-axis handle to turn and stretch; drag the short-axis handle to stretch. It's built on `TargetCalibration.moved`, `withMajorHandleAt` and `withMinorHandleAt` (pure, already tested). The screen says "Only adjust when no one is throwing." ([[Design Decisions]] → Adjust and Lock the Calibration).
@@ -44,7 +44,7 @@ IN PROGRESS: Task 1 of 2 complete (2026-10-19), awaiting Nigel's checkpoint. Pla
 - **Verify:**
   - tests: `grabAt` cases; dragging board 2 moves only board 2; the handles turn and stretch; the single target is unchanged; Lock keeps the adjusted boards; Adjust boards unlocks.
   - **Nigel:** Live test → Quick draw (or two-target Play): tap both boards, drag one a little off, drag it back, Lock.
-- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-19); Nigel: "commit this and continue to task 2" (`d96be0d`)
 - **What changed:**
   - `lib/ui/calibration_editor.dart`:
     - **`CalibrationGrab`**, **`grabAt`** and **`dragged`**: the single target's drag rules, taken out to be shared. `CalibrationEditor` uses them.
@@ -93,8 +93,63 @@ IN PROGRESS: Task 1 of 2 complete (2026-10-19), awaiting Nigel's checkpoint. Pla
   - the Review Agent (§7: adjusting means someone at the phone, which sits behind the throwers);
   - the Traceability Agent.
 - **Verify:** `flutter test`; Nigel reads the Instructions.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/ui/instructions.dart`:
+    - **Two players on two targets** and **Quick draw:** "If an outline doesn't fit its rings, drag it into place (inside to move it, a white handle to turn or stretch it), or tap Choose boards again."
+    - **Two targets:** "If a board or the phone is knocked during a game, tap Adjust boards when no one is throwing, drag the outline back, then Lock boards. Watching stops until you lock again; the scores stay."
+    - **Quick draw:** "Between rounds, Adjust boards unlocks them to fix an outline (only when no one is throwing); the match carries on."
+  - [[Device Test Plan]] → **Adjust Boards Checks** (A0–A5). [[Mac Handoff]] section 0000: build 9 carries this too; 766 tests.
+  - **Docs Agent:**
+    - Design Decisions: the In-app Instructions decision updated, and Adjust Each Board notes the Instructions.
+    - Requirements: [[Two Targets]] and [[Instructions and Safety]].
+    - Backlog #10 done.
+    - `CLAUDE.md` and `working-with-nigel.md` overviews.
+- **Verified by:** `flutter test`: 766 passed (1 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 2)
+- **New:** `instructions_test.dart` (1): dragging an outline into place; Adjust boards in two targets (when no one is throwing, the scores stay) and Quick draw (between rounds).
+- **Results:** 766 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 2, Docs Agent)
+- **Files updated:**
+  - `Architecture/Design Decisions.md`: the In-app Instructions update for Task 2 (Requirement: [[Instructions and Safety]], [[Two Targets]]); Adjust Each Board notes the Instructions.
+  - `requirements/Basic Play/Two Targets.md`, `requirements/Instructions and Safety.md`.
+  - `stories/backlog.md` (#10 done; device checks to come).
+  - `CLAUDE.md` and `docs/working-with-nigel.md`.
+- **Notes:** the web pages are unchanged (the Instructions screen is described in general terms); Game Type was already current.
+
+#### Safety Report — 2026-10-19 (whole story, Review Agent)
+- **Files reviewed:** `lib/ui/calibration_editor.dart`, `lib/ui/quick_draw_boards.dart`, `lib/providers.dart`, the three screens, `lib/ui/instructions.dart`. `pubspec.yaml`, `AndroidManifest.xml` and `Info.plist` are unchanged.
+- ✅ §1–§6: no platform, permission, data or performance change. The editor is gestures and painting only.
+- ⚠️→✅ **§7 Physical safety:**
+  - Adjusting means a hand at the phone. In two-target Play and Quick draw the phone stands **behind the throwers**, out of both lines of throw, so this is less exposed than the single target's phone beside the board. It can still be near a backswing.
+  - **Mitigations:**
+    - The on-screen line while adjusting: "…(only when no one is throwing)…".
+    - The Instructions say "when no one is throwing" for Adjust boards, in both modes.
+    - In Quick draw, **Adjust boards is hidden once Start is tapped** (tested), so nothing invites anyone to the phone during a round.
+    - In two-target Play, **Adjust boards stops watching** until Lock, so throws made while someone adjusts aren't scored by surprise.
+  - **Residual:** the app can't see whether anyone is throwing; the players are relied on, as for collecting knives.
+- ✅ §8: no stored data; rolls back cleanly.
+- **Verdict:** OK to commit.
+
+#### Traceability Report — 2026-10-19 (story complete, device checks to come)
+
+| Requirement | Design Reference | Implementation | Test | Status |
+|---|---|---|---|---|
+| AC1: drag inside a board to move it, a handle to turn and stretch it; the other untouched | Design Decisions → Adjust Each Board | `BoardsEditor`, `grabAt`, `dragged`, `QuickDrawTargetsNotifier.replace`, `BoardsOverlay(onAdjust:)` | `board_adjust_test.dart` (`grabAt` ×6, `dragged`, replace, editor ×4) | ✅ Covered (device: A1, A2) |
+| AC2: Lock locks the adjusted boards; they're scored and timed against | Adjust Each Board | `lock` (unchanged), the watchers built from the locked boards | `two_target_play_screen_test.dart` (lock again → watching); `live_quick_draw_screen_test.dart` (lock again → Start) | ✅ Covered (device: A3, A4) |
+| AC3: Adjust boards unlocks, keeping both | Adjust Each Board (Nigel: yes) | `unlock`; `quickDrawAdjust`, `playAdjustBoards` / `_adjustBoards`, the recording's button | `board_adjust_test.dart` (unlock keeps both); both screen tests | ✅ Covered (device: A3–A5) |
+| AC4: "only when no one is throwing" while adjustable | Adjust Each Board → Safety; [[Instructions and Safety]] | `choosingInstruction`; the Instructions | three screen tests (the instruction); `instructions_test.dart` | ✅ Covered (and the Safety Report) |
+| AC5: the single target unchanged (the shared rule) | Adjust and Lock the Calibration (update) | `CalibrationEditor` → `grabAt` / `dragged` | `calibration_screen_test.dart` (6, unchanged, passing) | ✅ Covered. One deliberate change: on a small target, the middle now moves it (`board_adjust_test.dart`) |
+
+- **Coverage:** 5 of 5 have design, code and tests; device checks A0–A5 are to come.
+- **Backward:** every new symbol traces to an AC. `BoardsPainter(handles:)` serves AC1.
+- **Chain** (Docs Agent): [[Two Targets]] and [[Game Type]] → Design Decisions → Adjust Each Board, linked both ways; the Instructions decision sits under [[Instructions and Safety]].
 
 ---
 
 ## Plan Changes Log
 - **2026-10-19:** Planned while Nigel was away. Stuck at: one question and plan approval.
+- **2026-10-19:** Nigel: yes to Adjust boards. Both tasks done; story BUILT, waiting for A0–A5. Task 1 found and fixed the small-target grab (a handle's touch zone covered the middle).

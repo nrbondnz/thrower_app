@@ -135,6 +135,19 @@ For [[story-checkpoint-named-players]] (from build 9): players can be given name
 | N5 | Live test → Quick draw: **Names** → change them → Save, then choose the boards and Play | "Tap the centre of Jo's board"; the result line names the winner; Cancel instead changes nothing |
 | N6 | Live camera: Home → Quick draw with names, one round | "Jo wins", "Jo leads 1–0"; **Names** is hidden once Start is tapped |
 
+## Adjust Boards Checks (added 2026-10-19)
+
+For [[story-checkpoint-adjust-boards]] (backlog #10, from build 9): either board's outline can be dragged into place before locking, and **Adjust boards** unlocks them. Nigel can do A0–A4 on the Samsung with the Live test; A5 needs the live camera.
+
+| Step | Do | Look for |
+|---|---|---|
+| A0 | Live test → Quick draw: tap both bulls | Both outlines in blue, each with two white handles; "Both boards found. Drag an outline…" |
+| A1 | Drag inside board 2 a little to one side, then back | Only board 2 moves, smoothly; board 1 stays put |
+| A2 | Drag a white handle on board 1 | Board 1 turns or stretches; let go and it stays; the rings keep lining up with the paint when dragged back |
+| A3 | Lock boards, then **Adjust boards** | The boards unlock, both kept (no need to tap them again); drag one, Lock again; Play works as before |
+| A4 | Play → 2 players, 2 targets (Live test): lock, play a little, **Adjust boards**, drag, Lock boards | The scores so far stay; watching starts again ("ready" for both) |
+| A5 | Live camera, Quick draw: after a round, **Adjust boards** | Shown between rounds, hidden once Start is tapped; the match score carries on |
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

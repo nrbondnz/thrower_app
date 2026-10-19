@@ -144,6 +144,13 @@ void main() {
     expect(text, contains("Tap Names to change the throwers' names (the same names as Play)."));
   });
 
+  // Backlog #10 (2026-10-19): drag an outline into place; Adjust boards.
+  test('two boards: drag an outline into place, or Adjust boards later, only when no one is throwing', () {
+    expect(text, contains("If an outline doesn't fit its rings, drag it into place (inside to move it, a white handle"));
+    expect(text, contains('If a board or the phone is knocked during a game, tap Adjust boards when no one is throwing'));
+    expect(text, contains('Between rounds, Adjust boards unlocks them to fix an outline (only when no one is throwing)'));
+  });
+
   group('Quick draw (real board)', () {
     test('how to choose the boards and play, with the button names on the screen', () {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
