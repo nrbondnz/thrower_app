@@ -13,10 +13,13 @@ The app is paid for by **subscription** (Nigel, 2026-10-19):
 - Without a subscription, the app **denies or degrades** what's available, e.g. **no uploading to the Game Centre**, **no Quick draw**.
 - A free month's subscription is also a prize: [[Competitions and Prizes]].
 
+- **Payments by platform** (Nigel, 2026-10-20): **Stripe on Android**; Apple's in-app purchase on iOS (Apple requires it for digital subscriptions). Backlogged as [[backlog]] #15. The cloud config and secrets each will need are in [[Cloud Config Setup]] → Future: Subscriptions. **To check:** Google Play's payments policy (Play Billing is normally required for in-app digital subscriptions; Stripe needs Google's alternative or user-choice billing, or a purchase outside the app).
+
 ## What Exists Today
 - Nothing yet. Payments are **deferred** ([[Design Decisions]] → User Accounts Required; Backend and Payments Deferred).
 - Everything is free and works on the phone alone.
-- **Accounts: in progress** (stage 2 of the [[Accounts Roadmap]], [[story-checkpoint-app-user-accounts]]). Task 1 (2026-10-19) built the AWS Amplify backend (Cognito, email sign-in, London) and connected the app, with nothing visible yet. Subscriptions are **not in that story**: they come with the Game Centre (stage 6). Signing in is never needed to score.
+- **Accounts: in progress** (stage 2 of the [[Accounts Roadmap]], [[story-checkpoint-app-user-accounts]]; [[Accounts and Sign-In]]). Email sign-in is deployed (Home → Account); Google, Sign in with Apple, the backup and **Delete account inside the app** (one of the store rules below) are written and wait for the provider secrets. Subscriptions are **not in that story**: they come with the Game Centre (stage 6). Signing in is never needed to score.
+- The [[Privacy Policy (Draft)]] covers accounts only; a later version must cover payments.
 
 ## Proposed Shape (Claude's thoughts, 2026-10-19, to confirm)
 
@@ -56,7 +59,7 @@ Why this split:
   - **Restore purchases**;
   - a link to **manage or cancel** the subscription;
   - clear **terms** (price, length, renewal) on the paywall;
-  - **account deletion** inside the app (needed anyway with accounts).
+  - **account deletion** inside the app (needed anyway with accounts; written in accounts Task 5, without the subscription warning WhereWillWeVisit has, which comes with subscriptions).
 - **Club or venue plans** (later): a venue pays once for its members or lanes. This could matter more than individual subscriptions for a sport played at clubs.
 - **The weekly prize** (a free month) for someone still in their 14 free days: add the month on after the trial? (With a store trial, a free month is a **promotional offer** or **offer code**, which both stores support.)
 

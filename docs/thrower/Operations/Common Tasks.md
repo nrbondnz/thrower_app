@@ -161,6 +161,8 @@ Revoking kills the running app, so relaunch it afterwards.
 
 ## Connect the App to the Amplify Backend (Accounts, Stage 2)
 
+The full list of cloud pieces (AWS, Google, Apple; who set each up; how each secret is sourced) is in [[Cloud Config Setup]].
+
 The backend is in this repo (`amplify/`, Gen 2; [[story-checkpoint-app-user-accounts]]), and **Amplify Hosting deploys it** from GitHub (Nigel, 2026-10-19). Nothing is deployed from the PC. The app **runs signed out** until a build has the deployed backend's settings.
 
 **One-time, in the AWS console (Nigel):**
@@ -184,6 +186,8 @@ AWS_REGION=eu-west-2 npx ampx generate outputs --app-id d1yhmpx84pdvnh --branch 
 **Checking the backend code on the PC:** `npm run typecheck` (TypeScript only; it deploys nothing).
 
 ## Set Up Google and Sign in with Apple (Accounts Task 3)
+
+The six secrets, what each is and exactly where to get it: [[Cloud Config Setup]] → The Six Sign-In Secrets (the reference; the steps below are the short version).
 
 Code: `amplify/auth/resource.ts` (`externalProviders`, six `secret(...)`s, return link `throwerapp://callback/`), `amplify/backend.ts` (each branch's sign-in domain), the Android intent filter and the iOS URL type for `throwerapp`. Modelled on WhereWillWeVisit (its docs: Infrastructure → AWS Resources → "Cognito Hosted UI Domain & OAuth"), but with Thrower's **own** Google client and Apple Services ID, so the consent screens say Thrower.
 

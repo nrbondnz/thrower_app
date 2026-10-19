@@ -25,26 +25,55 @@ class AccountScreen extends ConsumerWidget {
   }
 }
 
-/// Follows [auth]'s user while signed in.
-class _SignedInUser extends StatelessWidget {
+/// Follows [auth]'s user while signed in, and how backing up went.
+class _SignedInUser extends ConsumerWidget {
   const _SignedInUser(this.auth);
 
   final AuthService auth;
 
   @override
-  Widget build(BuildContext context) => StreamBuilder<AppUser?>(
+  Widget build(BuildContext context, WidgetRef ref) => StreamBuilder<AppUser?>(
         stream: auth.authStateChanges(),
         initialData: auth.currentUser,
-        builder: (context, snapshot) => AccountDetails(user: snapshot.data, onSignOut: auth.signOut),
+        builder: (context, snapshot) => AccountDetails(
+          user: snapshot.data,
+          onSignOut: auth.signOut,
+          backup: ref.watch(backupStatusProvider),
+          onBackUp: ref.read(backupStatusProvider.notifier).backUpNow,
+          onDelete: () => confirmAndDeleteAccount(context, ref.read(deleteAccountProvider)),
+        ),
       );
 }
 
+/// What the Account screen says about the backup.
+String backupText(BackupStatus status) => switch (status) {
+      BackupOff() => 'Backing up is not available in this build.',
+      BackupRunning() => 'Backing up…',
+      BackupDone(:final result) => result.downloaded + result.uploaded == 0
+          ? 'Your games and player names are backed up.'
+          : 'Backed up: ${result.uploaded} game${result.uploaded == 1 ? '' : 's'} sent, '
+              '${result.downloaded} brought to this phone.',
+      BackupFailed() => "Couldn't back up just now (no signal?). Your games are safe on this phone.",
+    };
+
 /// Who's signed in, what the account is for, and Sign out.
 class AccountDetails extends StatelessWidget {
-  const AccountDetails({super.key, required this.user, required this.onSignOut});
+  const AccountDetails({
+    super.key,
+    required this.user,
+    required this.onSignOut,
+    this.backup = const BackupOff(),
+    this.onBackUp,
+    this.onDelete,
+  });
 
   final AppUser? user;
   final Future<void> Function() onSignOut;
+  final BackupStatus backup;
+  final Future<void> Function()? onBackUp;
+
+  /// Delete account (asks first).
+  final Future<void> Function()? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -55,15 +84,65 @@ class AccountDetails extends StatelessWidget {
         Text('Signed in as', style: theme.textTheme.bodySmall),
         Text(user?.displayName ?? '…', key: const Key('accountEmail'), style: theme.textTheme.titleLarge),
         const SizedBox(height: 16),
-        const Text('Scoring works the same signed in or out. Backing up your history and player names to your '
-            'account comes next.'),
+        const Text('Scoring works the same signed in or out. While you are signed in, your History and player '
+            'names are backed up to your account, and come back if you sign in on a new phone.'),
+        const SizedBox(height: 16),
+        Text(backupText(backup), key: const Key('accountBackup')),
+        if (onBackUp != null && backup is! BackupOff)
+          TextButton(
+            key: const Key('accountBackUpNow'),
+            onPressed: backup is BackupRunning ? null : onBackUp,
+            child: const Text('Back up now'),
+          ),
         const SizedBox(height: 24),
         OutlinedButton(
           key: const Key('accountSignOut'),
           onPressed: onSignOut,
           child: const Text('Sign out'),
         ),
+        if (onDelete != null) ...[
+          const SizedBox(height: 32),
+          TextButton(
+            key: const Key('accountDelete'),
+            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+            onPressed: onDelete,
+            child: const Text('Delete account'),
+          ),
+        ],
       ],
     );
   }
 }
+
+/// Asks before deleting the account, then [delete]s it; says if it couldn't
+/// (no signal: the account is still there).
+Future<void> confirmAndDeleteAccount(BuildContext context, Future<void> Function() delete) async {
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete your account?'),
+          content: const Text('Your account, and the games and player names backed up to it, are deleted for good. '
+              'The games and names on this phone stay. This cannot be undone.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(
+              key: const Key('accountDeleteConfirm'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete account'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed) return;
+  try {
+    await delete();
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't delete your account just now (no signal?). Please try again.")),
+      );
+    }
+  }
+}
+

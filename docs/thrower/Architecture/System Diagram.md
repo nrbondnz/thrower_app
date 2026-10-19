@@ -1,6 +1,6 @@
 # System Diagram
 
-Thrower App runs on the phone. The only part that reaches a backend is sign-in (AWS Amplify, stage 2 of the [[Accounts Roadmap]]), and only when the build has the backend's settings and the user signs in; see [[Design Decisions]] → User Accounts Required. The layers each depend only on the ones below them. The UI reaches every layer through Riverpod providers (`lib/providers.dart`), so tests can swap any layer for a fake. Drawn in the same box style as WhereWillWeVisit's System Diagram (2026-10-14).
+Thrower App runs on the phone. The only parts that reach a backend are sign-in and the backup of kept games and player names (AWS Amplify, stage 2 of the [[Accounts Roadmap]]), and only when the build has the backend's settings and the user signs in; see [[Design Decisions]] → User Accounts Required. Requirements: [[Accounts and Sign-In]], [[Game Recording]], [[Player Names]]. The layers each depend only on the ones below them. The UI reaches every layer through Riverpod providers (`lib/providers.dart`), so tests can swap any layer for a fake. Drawn in the same box style as WhereWillWeVisit's System Diagram (2026-10-14).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -10,6 +10,9 @@ Thrower App runs on the phone. The only part that reaches a backend is sign-in (
 │  ┌───────────────────────────────────────────────────────────────┐  │
 │  │                        UI  (lib/ui)                           │  │
 │  │  HomeScreen ─┬─ InstructionsScreen                            │  │
+│  │              ├─ AccountScreen (only with accounts): sign-in   │  │
+│  │              │    (AuthenticatedView), backup line, Back up   │  │
+│  │              │    now, Sign out, Delete account (asks first)  │  │
 │  │              ├─ HistoryScreen ── GameRecordScreen             │  │
 │  │              ├─ PlaySetupScreen (players, rounds, names)      │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
@@ -42,10 +45,17 @@ Thrower App runs on the phone. The only part that reaches a backend is sign-in (
 │  │  signalSoundsProvider           startScheduleProvider         │  │
 │  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │
 │  │  playTargetsProvider (two-target Play's boards, session-long) │  │
-│  │  gameHistoryProvider (kept games) · historySaveErrorProvider  │  │
+│  │  gameHistoryProvider (kept games: SyncedGameHistory)          │  │
+│  │    · historySaveErrorProvider                                 │  │
 │  │  clockProvider (when a game finished)                         │  │
 │  │  playerNamesProvider (PlayerNamesNotifier: the names,         │  │
-│  │    saved on change) ◀── playerNamesStoreProvider              │  │
+│  │    saved on change, backed up signed in) ◀──                  │  │
+│  │    playerNamesStoreProvider                                   │  │
+│  │  signedInUserProvider ◀── authServiceProvider                 │  │
+│  │  backupProvider (the signed-in user's Backup, or null)        │  │
+│  │    ◀── backupFactoryProvider (main: AmplifyBackup)            │  │
+│  │  backupStatusProvider (BackupNotifier: sync on sign-in;       │  │
+│  │    backUpNow) · deleteAccountProvider (backup, then account)  │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -97,14 +107,20 @@ Thrower App runs on the phone. The only part that reaches a backend is sign-in (
 │  ┌─────────────────────── HISTORY (lib/history) ──────────────────┐ │
 │  │ GameHistory (interface) ◀── GameNotifier (a finished game),    │ │
 │  │   HistoryScreen (list, delete, clear)                          │ │
-│  │  └FileGameHistory: game_history.json in the app's support      │ │
-│  │    folder; GameRecord v2 (when, mode, rounds, round totals,    │ │
-│  │    names)                                                      │ │
+│  │  └SyncedGameHistory (gameHistoryProvider): the phone first,    │ │
+│  │    then the backup if signed in; sync() merges by id           │ │
+│  │    ├FileGameHistory: game_history.json in the app's support    │ │
+│  │    │ folder; GameRecord v2 (when, mode, rounds, round totals,  │ │
+│  │    │ names): the source of truth                               │ │
+│  │    └RemoteGameStore (interface: list, put, remove) ◀──         │ │
+│  │      AmplifyBackup (lib/auth): KeptGame rows; also the names'  │ │
+│  │      PlayerNamesStore (PlayerNameList); erase                  │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
 │  ┌────────────────────── SETTINGS (lib/settings) ─────────────────┐ │
 │  │ PlayerNamesStore (interface: load, save) ◀──                   │ │
-│  │   playerNamesProvider (loads at start, saves on change)        │ │
+│  │   playerNamesProvider (loads at start, saves on change; signed │ │
+│  │   in, also to AmplifyBackup; syncWith on sign-in)              │ │
 │  │  └FilePlayerNamesStore: player_names.json in the app's         │ │
 │  │    support folder: the names last used (blank if unreadable)   │ │
 │  └────────────────────────────────────────────────────────────────┘ │
@@ -119,17 +135,26 @@ Thrower App runs on the phone. The only part that reaches a backend is sign-in (
 │  │   app's support folder)                                        │ │
 │  │ amplify_flutter, amplify_auth_cognito (AmplifyAuthService:     │ │
 │  │   Cognito sign-in; configured only if the settings exist)      │ │
+│  │ amplify_authenticator (AccountScreen's sign-in screens)        │ │
+│  │ amplify_api (AmplifyBackup: GraphQL; added only if the         │ │
+│  │   deployed backend has a data API: hasBackup)                  │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
-          │  AmplifyAuthService → Cognito (sign-in only; only if the
-          ▼  build has the settings and the user signs in)
+          │  AmplifyAuthService → Cognito (sign-in); AmplifyBackup →
+          │  the data API (the user's own games and names). Only if the
+          ▼  build has the settings and the user signs in
 ┌─────────────────────────────────────────────────────────────────────┐
 │            BACKEND  (AWS Amplify Gen 2, London eu-west-2)           │
 │                                                                     │
-│  amplify/backend.ts ── defineBackend({auth})                        │
+│  amplify/backend.ts ── defineBackend({auth, data}); sign-in         │
+│    domain per branch: throwerapp (main), throwerapp-dev (dev)       │
 │  amplify/auth/resource.ts ── defineAuth: Cognito user pool,         │
-│    email sign-in (Google, Sign in with Apple: Task 3)               │
-│  Data models (history, player names; owner rules): Task 4           │
+│    email, Google, Sign in with Apple (six secrets in SSM);          │
+│    return link throwerapp://callback/, throwerapp://signout/        │
+│  amplify/data/resource.ts ── defineData (user pool), owner-only     │
+│    (allow.owner()): KeptGame (id = <sub>:<gameId>, gameId,          │
+│    finishedAt, record: the app's GameRecord JSON) and               │
+│    PlayerNameList (id = <sub>, names)                               │
 │                                                                     │
 │  Deployed by Amplify Hosting from GitHub (amplify.yml:              │
 │    ampx pipeline-deploy): main = production, dev = development      │
@@ -228,7 +253,7 @@ Thrower App runs on the phone. The only part that reaches a backend is sign-in (
 **Rules:**
 - `lib/vision` and `lib/scoring` have **no Flutter imports**. They run in background isolates and in tests on a PC.
 - Vision depends on the camera layer's **data** types (`CameraFrame`) only, never on a plugin.
-- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`; Amplify behind `AuthService`), so tests feed recorded frames, fake sound and temporary folders.
+- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`; Amplify behind `AuthService`, and the backup behind `RemoteGameStore` and `PlayerNamesStore`), so tests feed recorded frames, fake sound and temporary folders.
 - Heavy work (frame conversion, ring finding, the entry search) runs off the UI thread via `compute`, using top-level functions and plain data. See [[Known Issues]] → Isolate Fails.
 
 See [[Data Flow]] for one frame's path to a score, and [[Glossary]] for the component → function tree and terms.

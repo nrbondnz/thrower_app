@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backing up: the sign-in merge and each kept game — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--auth);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Game flow</span>
+    <h1>Backing up: the sign-in merge and each kept game</h1>
+    <p class="dek">Signed in, the kept games and player names are backed up to the user&#x27;s own rows, and come back on a new phone. The phone stays the source of truth.</p>
+  </header>
+
+  <div class="detail-body">
+    <p>Offline-first: every change is made on the phone first. Signed in, it also goes to the backup, without waiting; anything that couldn't be sent (no signal) is caught up by the next merge, on sign-in or with Back up now.</p>
+    <p>The merge is by game <code>id</code>: games only in the backup come to the phone, games only on the phone go up. Delete and Clear history reach the backup too. Known limit: a game deleted while signed out comes back at the next sync.</p>
+    <p>Rows are owner-only (<code>allow.owner()</code>): <code>KeptGame</code> (<code>id</code> = <code>&lt;sub&gt;:&lt;gameId&gt;</code>, the record as the app's own JSON) and <code>PlayerNameList</code> (<code>id</code> = the <code>sub</code>). Delete account erases them, then the account.</p>
+  </div>
+
+  <div class="legend" aria-hidden="true" style="margin-top:0;">
+    <span class="legend-item">→ the next step (label: what's passed on)</span>
+    <span class="legend-item">click a box for its component</span>
+  </div>
+
+  <figure>
+    <div class="diagram-wrap" style="--svg-width:820px">
+<svg viewBox="0 0 820 650" role="img" aria-label="Backing up: the sign-in merge and each kept game: Home → Account: sign in → signedInUserProvider → backupProvider → PlayerNamesNotifier.syncWith → SyncedGameHistory.sync → AmplifyBackup → Account screen"><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--text-faint)"></path></marker></defs><a class="node-link" href="../components/screens.html" aria-label="Home → Account: sign in"><g><title>Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.</title><rect class="node-box" x="130.0" y="20" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--ui)" stroke-width="1.8"></rect><rect x="144.0" y="32" width="22" height="22" rx="6" style="fill:var(--ui)"></rect><g transform="translate(146.2,34.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="8" height="15" rx="1.8"/><line x1="9" y1="15" x2="11" y2="15"/></g><text x="676.0" y="47" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">UI</text><text x="176.0" y="47" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--ui)">Home → Account: sign in</text><text x="176.0" y="66" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">Amplify&#x27;s screens inside an AuthenticatedView</text><text x="176.0" y="81" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">never in front of the app</text></g></a><line x1="410.0" y1="92" x2="410.0" y2="126" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="113.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">authStateChanges</text><a class="node-link" href="../components/providers.html" aria-label="signedInUserProvider → backupProvider"><g><title>The one place the layers are wired together. Each layer sits behind a provider, so a test overrides it with a fake.</title><rect class="node-box" x="130.0" y="128" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--wiring)" stroke-width="1.8"></rect><rect x="144.0" y="140" width="22" height="22" rx="6" style="fill:var(--wiring)"></rect><g transform="translate(146.2,142.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7,2 V6 M13,2 V6 M5,6 H15 V10 A5,5 0 0 1 5,10 Z M10,15 V18"/></g><text x="676.0" y="155" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">WIRING</text><text x="176.0" y="155" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--wiring)">signedInUserProvider → backupProvider</text><text x="176.0" y="174" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">backupFactoryProvider(user.id) → AmplifyBackup</text><text x="176.0" y="189" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">null signed out, or no data API (hasBackup)</text></g></a><line x1="410.0" y1="200" x2="410.0" y2="234" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="221.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">BackupNotifier</text><a class="node-link" href="../components/player-names-store.html" aria-label="PlayerNamesNotifier.syncWith"><g><title>The players&#x27; names last used, kept on the phone so the setup screen fills them in next time.</title><rect class="node-box" x="130.0" y="236" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--wiring)" stroke-width="1.8"></rect><rect x="144.0" y="248" width="22" height="22" rx="6" style="fill:var(--wiring)"></rect><g transform="translate(146.2,250.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7,2 V6 M13,2 V6 M5,6 H15 V10 A5,5 0 0 1 5,10 Z M10,15 V18"/></g><text x="676.0" y="263" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">WIRING</text><text x="176.0" y="263" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--wiring)">PlayerNamesNotifier.syncWith</text><text x="176.0" y="282" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">an empty phone takes the backup&#x27;s names</text><text x="176.0" y="297" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">otherwise the phone&#x27;s go up</text></g></a><line x1="410.0" y1="308" x2="410.0" y2="342" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="329.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">then the games</text><a class="node-link" href="../components/game-history.html" aria-label="SyncedGameHistory.sync"><g><title>Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player&#x27;s round totals and names.</title><rect class="node-box" x="130.0" y="344" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--history)" stroke-width="1.8"></rect><rect x="144.0" y="356" width="22" height="22" rx="6" style="fill:var(--history)"></rect><g transform="translate(146.2,358.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10,5.5 V10 L13,12"/></g><text x="676.0" y="371" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">HISTORY AND SETTINGS</text><text x="176.0" y="371" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--history)">SyncedGameHistory.sync</text><text x="176.0" y="390" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">only in the backup → the phone (downloaded)</text><text x="176.0" y="405" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">only on the phone → the backup (uploaded)</text></g></a><line x1="410.0" y1="416" x2="410.0" y2="450" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="437.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">list · put</text><a class="node-link" href="../components/auth-service.html" aria-label="AmplifyBackup"><g><title>The app&#x27;s sign-in and backup, behind interfaces. Since stage 2 of the Accounts Roadmap (2026-10-19) it&#x27;s AWS Amplify: Cognito (email, Google, Sign in with Apple) and an owner-only backup of kept games and names, in London (eu-west-2). Signing in is never needed to score.</title><rect class="node-box" x="130.0" y="452" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--auth)" stroke-width="1.8"></rect><rect x="144.0" y="464" width="22" height="22" rx="6" style="fill:var(--auth)"></rect><g transform="translate(146.2,466.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="9" width="11" height="8.5" rx="1.5"/><path d="M7,9 V6.5 A3,3 0 0 1 13,6.5 V9"/></g><text x="676.0" y="479" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">AUTH</text><text x="176.0" y="479" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--auth)">AmplifyBackup</text><text x="176.0" y="498" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">GraphQL, signed by the user&#x27;s session</text><text x="176.0" y="513" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">KeptGame and PlayerNameList, owner-only</text></g></a><line x1="410.0" y1="524" x2="410.0" y2="558" style="stroke:var(--text-faint)" stroke-width="1.5" marker-end="url(#arrow)"></line><text x="420.0" y="545.0" style="font-family:'IBM Plex Sans';font-size:10px;fill:var(--text-faint)">BackupDone / BackupFailed</text><a class="node-link" href="../components/screens.html" aria-label="Account screen"><g><title>Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.</title><rect class="node-box" x="130.0" y="560" width="560" height="70" rx="8" style="fill:var(--node-fill);stroke:var(--ui)" stroke-width="1.8"></rect><rect x="144.0" y="572" width="22" height="22" rx="6" style="fill:var(--ui)"></rect><g transform="translate(146.2,574.2) scale(0.8800000000000001)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="8" height="15" rx="1.8"/><line x1="9" y1="15" x2="11" y2="15"/></g><text x="676.0" y="587" text-anchor="end" style="font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:0.06em;fill:var(--text-faint)">UI</text><text x="176.0" y="587" style="font-family:'IBM Plex Mono';font-size:12.5px;font-weight:600;fill:var(--ui)">Account screen</text><text x="176.0" y="606" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">&quot;Your games and player names are backed up.&quot;</text><text x="176.0" y="621" style="font-family:'IBM Plex Sans';font-size:11px;fill:var(--text-dim)">Back up now · Sign out · Delete account (asks first)</text></g></a></svg>
+    </div>
+    <figcaption>Written 2026-10-19 (accounts Tasks 4–5); deploys with Google and Apple once the secrets exist. Device checks AC0–AC8 to come.</figcaption>
+  </figure>
+
+  <h2 class="section-heading">Components</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../components/screens.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>UI</div>
+      <h3>Screens</h3>
+      <p>Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/providers.html">
+      <div class="cat"><span class="swatch" style="background:var(--wiring)"></span>Wiring</div>
+      <h3>Providers</h3>
+      <p>The one place the layers are wired together. Each layer sits behind a provider, so a test overrides it with a fake.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/game-history.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>History and settings</div>
+      <h3>GameHistory</h3>
+      <p>Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player&#x27;s round totals and names.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/player-names-store.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>History and settings</div>
+      <h3>PlayerNamesStore</h3>
+      <p>The players&#x27; names last used, kept on the phone so the setup screen fills them in next time.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../components/auth-service.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Auth</div>
+      <h3>AuthService</h3>
+      <p>The app&#x27;s sign-in and backup, behind interfaces. Since stage 2 of the Accounts Roadmap (2026-10-19) it&#x27;s AWS Amplify: Cognito (email, Google, Sign in with Apple) and an owner-only backup of kept games and names, in London (eu-west-2). Signing in is never needed to score.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/history/synced_game_history.dart · lib/auth/amplify_backup.dart · lib/providers.dart · lib/ui/account_screen.dart · amplify/data/resource.ts</footer>
+</div>
+</body>
+</html>

@@ -18,7 +18,7 @@ People can play remotely if both have the app.
 - "Remote" meaning **at different venues** (each with its own phone and camera, scores exchanged live), or friends at the **same venue** following on their own phones (stage 4), or both?
 - Live or not: throwing at the same time (needs a shared start signal, like Quick draw's) or each in their own time with results compared?
 - Trust: each venue's phone scores its own throws. How are disputes handled, and should remote games count for [[Rankings]]?
-- Needs accounts and a backend (stage 2): the backend choice is still open.
+- Needs accounts and a backend (stage 2): AWS Amplify, decided 2026-10-19 and in progress ([[Accounts and Sign-In]]).
 
 ## Related
 - [[Accounts Roadmap]] → Stages 4 and 6

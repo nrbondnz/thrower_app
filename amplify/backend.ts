@@ -1,6 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend';
 import type { CfnResource } from 'aws-cdk-lib';
 import { auth } from './auth/resource.js';
+import { data } from './data/resource.js';
 
 /**
  * Thrower App's backend (AWS Amplify Gen 2; Nigel, 2026-10-19: "stage two will
@@ -10,11 +11,12 @@ import { auth } from './auth/resource.js';
  * app, so nothing here is needed to score: signing in only adds backup,
  * friends and (later) the Game Centre.
  *
- * Task 1: sign-in; Task 3: Google and Sign in with Apple. The data models
- * (history, player names) come in Task 4.
+ * Task 1: sign-in; Task 3: Google and Sign in with Apple; Task 4: the backup
+ * of kept games and player names (data/resource.ts, owner-only rows).
  */
 const backend = defineBackend({
   auth,
+  data,
 });
 
 /**

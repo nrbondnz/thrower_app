@@ -82,7 +82,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       // Named-players story (Nigel, 2026-10-19).
       'Before Start you can type each player\'s name (up to $maxNameLength letters); leave it blank for '
           '"Player 1" or "Player 2". The screens and History use the names, and Quick draw uses the same ones.',
-      'The last names used are kept on this phone and filled in next time. They are sent nowhere.',
+      'The last names used are kept on this phone and filled in next time. They are sent nowhere, unless you '
+          'sign in (see Your account).',
     ]),
     // Players-and-targets story (Nigel, 2026-10-16).
     InstructionSection('Two players on one target', [
@@ -151,7 +152,19 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'and tap a game to see every round. Games played on a Live test recording are marked Live test.',
       'A game that is reset or left before it finishes is not kept.',
       'To remove a game, open it and tap the bin. Clear history removes them all; it asks first.',
-      'The history stays on this phone: the app sends it nowhere. Deleting the app deletes it.',
+      'The history stays on this phone: the app sends it nowhere unless you sign in (see Your account). '
+          'Deleting the app deletes the copy on this phone.',
+    ]),
+    // App user accounts story (2026-10-19): optional; backup; Delete account
+    // (Apple 5.1.1(v)).
+    const InstructionSection('Your account', [
+      'An account is optional: everything works without one. Tap the person icon on the home screen to create '
+          'one (with your email) or sign in.',
+      'While you are signed in, your History and player names are backed up to your account, and come back '
+          'when you sign in on another phone. Backing up waits for a signal; your games are always kept on the '
+          'phone first.',
+      'To delete your account, open it and tap Delete account (it asks first). The account and its backup are '
+          'deleted; the games and names on this phone stay.',
     ]),
     // Quick draw (story-checkpoint-quick-draw). The safety points come from the
     // Review Agent's Safety Report on it (§7, two people throwing at once).

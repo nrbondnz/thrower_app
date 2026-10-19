@@ -148,6 +148,23 @@ For [[story-checkpoint-adjust-boards]] (backlog #10, from build 9): either board
 | A4 | Play → 2 players, 2 targets (Live test): lock, play a little, **Adjust boards**, drag, Lock boards | The scores so far stay; watching starts again ("ready" for both) |
 | A5 | Live camera, Quick draw: after a round, **Adjust boards** | Shown between rounds, hidden once Start is tapped; the match score carries on |
 
+## Account Checks (added 2026-10-19)
+
+For [[story-checkpoint-app-user-accounts]] (accounts on AWS Amplify, London). Named **ACC**n so they don't clash with the story's acceptance criteria (AC1–AC7). Nigel on the Samsung, with a build that has the backend's settings ([[Common Tasks]] → Connect the App to the Amplify Backend).
+
+| Step | Do | Look for |
+|---|---|---|
+| ACC0 | Open the app, signed out | **Home straight away**, never a sign-in screen; the person icon top right; Play, History and Quick draw all work signed out |
+| ACC1 | Person icon → Create account (email) → the emailed code → signed in | "Signed in as" your email; done 2026-10-19 ("sign in works") |
+| ACC2 | Sign out; sign in again; close the app fully and reopen | Still signed in after reopening |
+| ACC3 | (After Task 3 deploys) Person icon → **Sign in with Google** | Google's page says **Thrower**, then back in the app signed in |
+| ACC4 | (After Task 3, iPhone) **Sign in with Apple** | Apple's sheet, then signed in |
+| ACC5 | (After Task 4 deploys) Signed in, play and finish a game → Account | "Your games and player names are backed up." (or "Backed up: 1 game sent…") |
+| ACC6 | Sign in on a second phone (or clear the app's data and sign in again) | History and the player names come back ("…brought to this phone") |
+| ACC7 | Airplane mode, finish a game, then signal back → Account → **Back up now** | The game stays in History throughout; it backs up once there's signal |
+| ACC8 | **Delete account** → Cancel; then Delete account → confirm | Cancel: nothing changes. Confirm: signed out; signing in with that email fails; the phone's History stays. **Claude checks** with the CLI that the Cognito user and every `KeptGame` / `PlayerNameList` row of that `sub` are gone |
+| ACC9 | Two test accounts, A and B: A backs up a game; then B signs in on another phone (or after clearing the app's data) | B's History doesn't get A's game. **Claude checks** with the CLI that each user's rows are theirs (`allow.owner()`); this replaces the story's "tests against the sandbox" (no sandbox) |
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

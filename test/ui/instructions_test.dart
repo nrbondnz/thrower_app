@@ -64,6 +64,7 @@ void main() {
       'Changing a score',
       'Resetting',
       'History',
+      'Your account',
       'Quick draw',
       'Safety',
       'Reporting problems',
@@ -94,7 +95,7 @@ void main() {
     expect(text, contains('Each game of Play is kept when it finishes. Tap History on the home screen'));
     expect(text, contains('reset or left before it finishes is not kept'));
     expect(text, contains('Clear history removes them all; it asks first.'));
-    expect(text, contains('The history stays on this phone: the app sends it nowhere.'));
+    expect(text, contains('The history stays on this phone: the app sends it nowhere unless you sign in'));
   });
 
   test('two players on two targets: own lanes, phone out of both lines, collect together', () {
@@ -140,7 +141,8 @@ void main() {
   test('naming players: optional, remembered on the phone, sent nowhere', () {
     expect(text, contains("Before Start you can type each player's name (up to 16 letters); leave it blank for "
         '"Player 1" or "Player 2".'));
-    expect(text, contains('The last names used are kept on this phone and filled in next time. They are sent nowhere.'));
+    expect(text, contains('The last names used are kept on this phone and filled in next time. They are sent nowhere, '
+        'unless you sign in'));
     expect(text, contains("Tap Names to change the throwers' names (the same names as Play)."));
   });
 
@@ -149,6 +151,14 @@ void main() {
     expect(text, contains("If an outline doesn't fit its rings, drag it into place (inside to move it, a white handle"));
     expect(text, contains('If a board or the phone is knocked during a game, tap Adjust boards when no one is throwing'));
     expect(text, contains('Between rounds, Adjust boards unlocks them to fix an outline (only when no one is throwing)'));
+  });
+
+  // App user accounts story (2026-10-19).
+  test("the account: optional, backs up History and names, Delete account keeps the phone's games", () {
+    expect(text, contains('An account is optional: everything works without one.'));
+    expect(text, contains('your History and player names are backed up to your account'));
+    expect(text, contains('tap Delete account (it asks first)'));
+    expect(text, contains('the games and names on this phone stay'));
   });
 
   group('Quick draw (real board)', () {

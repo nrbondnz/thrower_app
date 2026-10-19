@@ -12,6 +12,7 @@ import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
 import 'history/game_history.dart';
 import 'history/game_record.dart';
+import 'history/synced_game_history.dart';
 import 'scoring/game_session.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
@@ -244,11 +245,26 @@ class PlayerNamesNotifier extends Notifier<List<String?>> {
     return const [null, null];
   }
 
-  /// Names the players [names] (each cleaned: blank is none) and keeps them.
+  /// Names the players [names] (each cleaned: blank is none) and keeps them,
+  /// on the phone and, when someone is signed in, in their backup.
   void set(List<String?> names) {
     _changed = true;
     state = _fitted(names);
     ref.read(playerNamesStoreProvider).save(state).ignore();
+    ref.read(backupProvider)?.names.save(state).ignore();
+  }
+
+  /// Signing in (accounts Task 4): the backup's names fill in a phone with
+  /// none (a new phone); otherwise the phone's names are backed up.
+  Future<void> syncWith(PlayerNamesStore backup) async {
+    final backedUp = _fitted(await backup.load());
+    if (state.every((n) => n == null) && backedUp.any((n) => n != null)) {
+      _changed = true;
+      state = backedUp;
+      await ref.read(playerNamesStoreProvider).save(state);
+    } else if (state.any((n) => n != null)) {
+      await backup.save(state);
+    }
   }
 
   static List<String?> _fitted(List<String?> names) =>
@@ -406,11 +422,112 @@ class GameNotifier extends Notifier<Match> {
 final gameProvider = NotifierProvider<GameNotifier, Match>(GameNotifier.new);
 
 /// The finished games kept on the phone: a file in the app's own support
-/// folder. Tests override it with a temporary folder or a fake.
-final gameHistoryProvider = Provider<GameHistory>((ref) => FileGameHistory(getApplicationSupportDirectory));
+/// folder, backed up while someone is signed in ([SyncedGameHistory];
+/// accounts Task 4). Tests override it with a temporary folder or a fake.
+final gameHistoryProvider = Provider<GameHistory>(
+  (ref) => SyncedGameHistory(FileGameHistory(getApplicationSupportDirectory), () => ref.read(backupProvider)?.games),
+);
 
 /// The app's accounts (AWS Amplify, stage 2 of the Accounts Roadmap), or null
 /// when this build isn't connected to a backend: the app then runs signed
 /// out, as it always has. `main` overrides it once Amplify is configured
 /// (`connectAccounts`).
 final authServiceProvider = Provider<AuthService?>((ref) => null);
+
+/// Who's signed in (null when no one is, or there are no accounts).
+final signedInUserProvider = StreamProvider<AppUser?>((ref) async* {
+  final auth = ref.watch(authServiceProvider);
+  if (auth == null) {
+    yield null;
+    return;
+  }
+  yield auth.currentUser;
+  yield* auth.authStateChanges();
+});
+
+/// A signed-in user's backup (accounts Task 4): their kept games and player
+/// names on the backend.
+typedef Backup = ({RemoteGameStore games, PlayerNamesStore names, Future<void> Function() erase});
+
+/// Makes a user's [Backup] from their ID; null when the deployed backend has
+/// no data API (or there are no accounts). `main` overrides it.
+final backupFactoryProvider = Provider<Backup Function(String userId)?>((ref) => null);
+
+/// The signed-in user's backup, or null when no one is signed in.
+final backupProvider = Provider<Backup?>((ref) {
+  final user = ref.watch(signedInUserProvider).value;
+  final make = ref.watch(backupFactoryProvider);
+  return user == null || make == null ? null : make(user.id);
+});
+
+/// How backing up went, for the Account screen.
+sealed class BackupStatus {
+  const BackupStatus();
+}
+
+/// Not signed in, or no backup in this build.
+class BackupOff extends BackupStatus {
+  const BackupOff();
+}
+
+class BackupRunning extends BackupStatus {
+  const BackupRunning();
+}
+
+class BackupDone extends BackupStatus {
+  const BackupDone(this.result);
+  final SyncResult result;
+}
+
+/// It failed (no signal?): the games are safe on the phone; try again later.
+class BackupFailed extends BackupStatus {
+  const BackupFailed(this.message);
+  final String message;
+}
+
+/// Backs up when someone signs in: merges the phone's games and names with
+/// their backup ([SyncedGameHistory.sync], [PlayerNamesNotifier.syncWith]).
+/// [backUpNow] does it again (the Account screen's button).
+class BackupNotifier extends Notifier<BackupStatus> {
+  @override
+  BackupStatus build() {
+    final backup = ref.watch(backupProvider);
+    if (backup == null) return const BackupOff();
+    Future.microtask(backUpNow);
+    return const BackupRunning();
+  }
+
+  Future<void> backUpNow() async {
+    final backup = ref.read(backupProvider);
+    final history = ref.read(gameHistoryProvider);
+    if (backup == null || history is! SyncedGameHistory) {
+      state = const BackupOff();
+      return;
+    }
+    state = const BackupRunning();
+    try {
+      await ref.read(playerNamesProvider.notifier).syncWith(backup.names);
+      final result = await history.sync();
+      if (ref.mounted) state = result == null ? const BackupOff() : BackupDone(result);
+    } catch (e) {
+      if (ref.mounted) state = BackupFailed('$e');
+    }
+  }
+}
+
+final backupStatusProvider = NotifierProvider<BackupNotifier, BackupStatus>(BackupNotifier.new);
+
+/// Delete account (accounts Task 5; Apple 5.1.1(v), Google Play): erases the
+/// user's backup (their games and names on the backend), then the account
+/// itself, which signs them out. The phone's own History and names stay:
+/// they were the user's before any account. Throws if either step fails (no
+/// signal): the account is then still there to try again.
+Future<void> deleteAccount(Ref ref) async {
+  final auth = ref.read(authServiceProvider);
+  if (auth == null) return;
+  await ref.read(backupProvider)?.erase();
+  await auth.deleteUser();
+}
+
+/// [deleteAccount], for widgets.
+final deleteAccountProvider = Provider<Future<void> Function()>((ref) => () => deleteAccount(ref));

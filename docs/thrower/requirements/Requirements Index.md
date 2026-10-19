@@ -11,7 +11,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 **Status key:** ✅ built (device checks to come where noted) · 🟡 partly built · 🗺️ planned, not built · 💭 idea, to be thought through
 
 ## Basic Setup
-- [[Player Names|Setting up player names]] ✅ (named players; friends with accounts planned)
+- [[Player Names|Setting up player names]] ✅ (named players; backup written, not yet deployed; friends with accounts planned)
 - [[Scoring Rules|Rules of scoring]] ✅ (KATTA)
 - [[Number of Rounds|Setting number of rounds]] ✅
 - [[Game Type|Setting game type (scoring or quick draw)]] ✅
@@ -22,12 +22,13 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 	- [[Two Targets|Two targets]] ✅
 - [[Remote Play|People can play remote if both have the app]] 🗺️
 - [[Ending Early|Ending competition early]] ✅
-- [[Game Recording|Game recording]] 🟡 (scores kept; video planned)
+- [[Game Recording|Game recording]] 🟡 (scores kept; backup written, not yet deployed; video planned)
 - [[Results Sharing|Game results sharing]] 🗺️
 	- All players or each player
 
 ## Across the App
 - [[Instructions and Safety|In-app instructions and safety]] ✅ (Home → Instructions; the safety points that guard every screen)
+- [[Accounts and Sign-In|Accounts and sign-in]] 🟡 (email sign-in deployed; Google, Apple, the backup and Delete account written, waiting for secrets)
 
 ## Game Centre
 - [[Rankings]] 💭

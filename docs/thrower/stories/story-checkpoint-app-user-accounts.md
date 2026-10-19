@@ -13,7 +13,7 @@ The app user can **sign in**, and their **history and player names are backed up
 - a stored-data change (history kept in two places) (1).
 
 ## Status
-IN PROGRESS: Task 2 of 5 complete (2026-10-19). Deployed: Amplify app `d1yhmpx84pdvnh` (`thrower_app`, London), `main` built OK (job 4), Cognito pool `eu-west-2_TmfChXYyo`. Nigel signed up and in on the Samsung ("sign in works").
+IN PROGRESS (2026-10-19, Nigel away: "make as much progress as you can … carry on with assumptions"). Tasks 1–2 done and committed. Task 3 is committed locally, **not pushed** (waiting for the six secrets). Tasks 4–5 are written and tested, unstaged, and deploy with Task 3. Deployed: Amplify app `d1yhmpx84pdvnh` (`thrower_app`, London), `main` built OK (job 4), Cognito pool `eu-west-2_TmfChXYyo`. Nigel signed up and in on the Samsung ("sign in works").
 
 ---
 
@@ -197,6 +197,54 @@ Read as: do it as WhereWillWeVisit does.
   - tests (merge without duplicates; offline queue; owner rules against the sandbox).
   - **Nigel:** play a game signed in; clear the app's data (or use a second phone); sign in, and History comes back.
 
+- **Status:** CODE COMPLETE (2026-10-19), unstaged. **Deploys with Task 3's push** (`backend.ts` now has `data`), so it waits on the secrets. Not yet seen on the phone.
+- **What changed:**
+  - **Backend:** `amplify/data/resource.ts` (new). Two models, each **owner-only** (`allow.owner()`, no custom resolvers):
+    - **`KeptGame`**: `id` = `<sub>:<gameId>`, `gameId`, `finishedAt`, and `record`, the app's own `GameRecord.toJson()` as JSON, so the app's format can grow without a schema change;
+    - **`PlayerNameList`**: `id` = `<sub>`, `names`.
+
+    `backend.ts` adds `data`; the default auth mode is the user pool.
+  - `pubspec.yaml`: `amplify_api` ^2.16.0.
+  - `lib/history/synced_game_history.dart` (new): `RemoteGameStore` (interface: `list`, `put`, `remove`) and **`SyncedGameHistory`**, a `GameHistory` around the phone's file:
+    - add, delete and clear also reach the backup (best effort, never failing the phone);
+    - `sync()` merges both ways by game `id`.
+
+    **Known limit:** a game deleted while signed out comes back at the next sync (no tombstones).
+  - `lib/auth/amplify_backup.dart` (new): `AmplifyBackup` (`RemoteGameStore` and `PlayerNamesStore` on GraphQL, `erase`):
+    - `put` creates, and updates if the row exists (a corrected game re-kept);
+    - a game from a newer app version is skipped, not misread.
+  - `lib/auth/amplify_accounts.dart`: `hasBackup(outputs)`. The API plugin is added only when the deployed backend has a data API; otherwise accounts work without the backup.
+  - `lib/providers.dart`:
+    - `signedInUserProvider`, the `Backup` record, `backupFactoryProvider` (`main` sets it when there's a backup) and `backupProvider` (the signed-in user's);
+    - `gameHistoryProvider` is now `SyncedGameHistory`;
+    - **`BackupNotifier` / `backupStatusProvider`:** on sign-in, the names (`PlayerNamesNotifier.syncWith`: an empty phone takes the backup's, otherwise the phone's are backed up) and then the games; `BackupOff`, `BackupRunning`, `BackupDone(result)` or `BackupFailed`; `backUpNow`;
+    - names set while signed in are backed up too.
+  - `lib/main.dart`: keeps the backup running app-wide (`ref.listen`).
+  - `lib/ui/account_screen.dart`: the backup line (`backupText`) and **Back up now**.
+- **Verified by:** `flutter test`: 800 passed; `flutter analyze`: no issues; `npm run typecheck`; `flutter build apk --debug`.
+- **Plan change (2026-10-19):** Task 4 was done before Task 3 deployed, because Task 3 waits for the secrets. They deploy together.
+
+#### Test Report — 2026-10-19 (Task 4)
+- **New:** `test/history/synced_game_history_test.dart` (16, plus 2 for Task 5):
+  - **signed out:** the phone only; nothing to sync;
+  - **signed in:** a kept game is backed up; a re-kept game replaces its backup; delete and Clear history reach the backup; no signal keeps the phone's game and the next sync backs it up;
+  - **sync:** a new phone gets the backup and the phone's games go up; twice in a row does nothing; no signal fails without touching the phone;
+  - **the providers:** the backup is the signed-in user's, and none signed out; signing in merges and reports; a new phone takes the backed-up names; names are backed up, and later changes too; no signal shows, and Back up now retries.
+- **New:** `account_screen_test.dart` (2): the backup text; Back up now (disabled while running, retries, hidden when off).
+- **Not unit-tested:** `AmplifyBackup` (Amplify's static API): checked on the device (AC5–AC7).
+- **Results:** 800 passed.
+
+#### Safety Report — 2026-10-19 (Task 4, Review Agent)
+- ⚠️ **§5 Privacy (the main change):** for the first time, **user data leaves the phone**: a signed-in user's kept games (scores, modes, dates, player names) and names, to AWS London.
+  - Only after the user chooses to sign in.
+  - The rows are owner-only (`allow.owner()`), and travel over HTTPS signed by the user's session.
+  - The Instructions say so ("Your account"), and the privacy policy draft covers it.
+  - The **store privacy labels must be updated before any store build with accounts** (Task 5).
+- ✅ §1–§2: no new permissions; `amplify_api` adds no native code beyond Amplify's own.
+- ✅ §4: no secrets; the GraphQL endpoint is in the gitignored outputs.
+- ✅ §8: the phone's file format is unchanged (still `GameRecord` version 2). The backup stores the same JSON, and the app skips any record version it can't read.
+- **Verdict:** OK to commit, with the privacy follow-ups in Task 5.
+
 ### Task 5: Delete account, privacy, Instructions, docs, device checks, traceability
 - **Work:**
   - **Delete account** (asks first): the account's rows, then `Amplify.Auth.deleteUser()`;
@@ -207,10 +255,82 @@ Read as: do it as WhereWillWeVisit does.
   - [[Device Test Plan]] → Account checks; [[Mac Handoff]] (a build with accounts);
   - the Traceability Agent.
 - **Verify:** Nigel deletes a test account; it's gone from Cognito and the data table (CLI check, as WhereWillWeVisit's Common Tasks).
+- **Status:** CODE COMPLETE (2026-10-19), unstaged; the privacy policy is a **draft** for Nigel.
+- **What changed:**
+  - **Delete account** (Apple 5.1.1(v), Google Play):
+    - `AuthService.deleteUser` (`AmplifyAuthService`: `Amplify.Auth.deleteUser()`); `AmplifyBackup.erase` (every game, then the names row); `deleteAccount(ref)` / `deleteAccountProvider`: the backup is erased first, then the account. **The phone's History and names stay.** On no signal it throws and the account is still there.
+    - The Account screen: **Delete account** (red), asking first ("Delete your account? … The games and names on this phone stay. This cannot be undone."); a message if it fails.
+    - **Not wired (decided):** the account isn't deleted when the app is deleted (as both stores expect: the account is the user's).
+  - **Instructions:** a new section, **Your account** (after History): optional; what's backed up; Delete account keeps the phone's games. History's privacy line now says "…sends it nowhere unless you sign in".
+  - [[Privacy Policy (Draft)]]: for Nigel to approve. It covers camera pictures (never sent), the phone's games, the optional account (email, Cognito, the backup, AWS London), no ads or analytics, deletion, a children note, and notes for the store labels. **Not published** (it needs the contact email and owner name). Once approved it goes up as `web_public/privacy.html`.
+  - [[Device Test Plan]] → **Account Checks** (AC0–AC8); [[Mac Handoff]] → section 00000 (`pod install`, the settings, the Sign in with Apple capability in Xcode, before any store build).
+- **Verified by:** `flutter test`: 800 passed (5 new for Task 5: 3 dialog, 2 deletion, plus the Instructions test).
+
+#### Test Report — 2026-10-19 (Task 5)
+- **New:**
+  - `account_screen_test.dart` (3): Delete account asks first and Cancel deletes nothing; confirmed, it deletes; no signal says so.
+  - `synced_game_history_test.dart` (2): it erases the backup and then the account, and the phone keeps its games; no signal throws and the account stays.
+  - `instructions_test.dart` (1): the Your account section.
+- **Updated:** the section order (Your account after History) and History's privacy line.
+- **Results:** 800 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Tasks 2–5, Docs Agent)
+- **Files updated:**
+  - `Architecture/Design Decisions.md` → User Accounts Required:
+    - Task 2: sign-in only in the Account screen, and why not `Authenticator.builder()`;
+    - Task 3: Google and Apple, six secrets, readable per-branch domains and WhereWillWeVisit's lessons, `throwerapp://`;
+    - Task 4: the offline-first backup, owner-only rows, `id` = `<sub>:<gameId>`, the record as the app's own JSON, merge by id, delete and clear reach the backup, the known limit, `hasBackup`;
+    - Task 5: erase, then the account; the phone keeps its games; the privacy draft.
+
+    Game History also gets a backup update.
+  - `Architecture/System Diagram.md`, `Data Flow.md` (new "Backup: Sign-In Merge and Each Kept Game") and `Glossary.md` (the components; the concepts Backup (owner-only), Offline-first, Merge by id, Sign-in domain, Return link).
+  - The web pages (new flow `backup`).
+  - Requirements: Game Recording, Player Names, Instructions and Safety, Subscriptions, Remote Play, the index.
+  - The Accounts Roadmap.
+- **Files created:** `requirements/Accounts and Sign-In.md` (🟡).
+- **Drift:** the Instructions' "sent nowhere" line, fixed in code by the orchestrator (below).
+
+#### Traceability Report — 2026-10-19 (Traceability Agent; story not complete)
+| Requirement | Implementation | Test | Status |
+|---|---|---|---|
+| AC1: everything works signed out | `authServiceProvider` (null), `connectAccounts`, `ThrowerApp` (`Authenticator(child:)`, no `builder`), `SyncedGameHistory` with no backup | `amplify_accounts_test.dart` (2); `account_screen_test.dart` (no Account button); `synced_game_history_test.dart` (signed out ×2); **`widget_test.dart` 'with accounts, signed out: the app opens on Home, not a sign-in screen'** (added after the report) | ✅ Covered (device: ACC0 to recheck) |
+| AC2: Home → Account: sign up, in, out (email, Google, Apple) | `HomeScreen` `homeAccount`, `AccountScreen`, `AccountDetails`, `AmplifyAuthService`; `auth/resource.ts`, `backend.ts` domains, the `throwerapp` link | `account_screen_test.dart` (4) | ✅ Email (device ACC1 ✅). ⛔ Google and Apple: secrets, deploy, Xcode |
+| AC3: backed up; kept on the phone without signal and sent later | `SyncedGameHistory`, `PlayerNamesNotifier.set`/`syncWith`, `BackupNotifier`, `AmplifyBackup.put`/`save` | `synced_game_history_test.dart` (signed in ×5; providers) | ⚠️ "Later" means at the next sign-in, app start or Back up now (no automatic retry on reconnect). Device ACC5/ACC7 after the deploy |
+| AC4: a new phone restores, no duplicates | `SyncedGameHistory.sync` (merge by id), `syncWith` | sync ×3; providers ×2 | ⚠️ Names: the phone's win unless the phone has none (by design; the AC said "merged"). Device ACC6 |
+| AC5: Delete account removes the account and backup; the phone's history stays | `confirmAndDeleteAccount`, `deleteAccount`, `AmplifyBackup.erase`, `AmplifyAuthService.deleteUser` | `account_screen_test.dart` (3); `synced_game_history_test.dart` (2) | ✅ After a fix (below); device ACC8 with the CLI check |
+| AC6: users only reach their own data | `KeptGame`, `PlayerNameList` `allow.owner()`; row ids `<sub>:…` | none (no sandbox: Task 1's plan change) | ⚠️ **Replaced by device check ACC9** (two accounts, CLI check) |
+| AC7: Instructions, privacy policy, store labels | Your account section; `Privacy Policy (Draft).md` | `instructions_test.dart` | ⚠️ Instructions ✅; ⛔ the policy is a draft; ⛔ the labels (Nigel) |
+
+**Fixed straight after the report (2026-10-19):**
+- **Delete account could leave data behind:** `AmplifyBackup.erase` went through `list()`, which skips games it can't read (a newer version's), so those rows would have outlived the account. It now lists **row IDs** and deletes them without reading the games.
+- The Instructions' names line: "They are sent nowhere, unless you sign in (see Your account)", with its test and the Design Decisions quote.
+- **New tests:** `hasBackup` (3); the app opening on Home with accounts (built under `runAsync`: Amplify's Authenticator starts a repeating timer); the known limit documented by a test (a game deleted with no signal comes back at the next sync).
+- **Device checks renamed ACC0–ACC9** (they clashed with AC1–AC7). Added **ACC9**, a two-account owner check, and the CLI check in ACC8.
+
+**Decisions for Nigel (from the report):**
+1. **Deletes with no signal:** keep the limit (the game comes back), or remember pending deletes (tombstones)?
+2. **A shared phone:** after A signs out and B signs in, the phone's games, including A's, go up to B's account. Is that intended (the phone's games are its owner's), or should each game remember which account kept it?
+3. **Retry:** also try the backup when the app comes back to the foreground, not only at sign-in, app start and Back up now?
+
+#### Cloud config (2026-10-20)
+- Nigel asked which secrets Thrower needs, and whether they're new per app. **[[Cloud Config Setup]]** (new) documents the AWS pieces, the **six sign-in secrets**:
+  - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`;
+  - `APPLE_TEAM_ID`, `APPLE_CLIENT_ID`;
+  - `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`.
+
+  For each: what it is, how to source it, and whether it's new for Thrower (all six are recommended new; the team ID is `QCQ64RLD77`). It also covers the future subscription config: Apple IAP on iOS, **Stripe on Android** (Nigel's requirement, backlog #15, with the Google Play policy check).
+- WhereWillWeVisit's secrets audit: added to **its** Known Issues → Backlog as a cleanup item. The redundant-looking names are `AWS_REGION`, `AMPLIFY_APP_ID`, `APPLE_APP_ID`, `SUPPORT_EMAIL_ADDRESS` and possibly `DOCS_REVIEW_SESSION_SECRET` (unstaged in that repo, on branch `whereinnz`).
+
+#### Still open in Task 5 (needs Nigel or the deploy)
+- Approve and publish the privacy policy; the store privacy labels.
+- Device checks AC0–AC8 (AC3–AC8 after the push).
+- The Apple button's style (Guideline 4) before any store build.
+- The Docs Agent's alignment and the Traceability report run now; the device results get added when they come.
 
 ---
 
 ## Plan Changes Log
+- **2026-10-19:** Nigel away ("make as much progress as you can … carry on with assumptions"). Task 3 is committed locally, not pushed: Thrower has no secrets yet, and copying WhereWillWeVisit's values was refused by the safety check, so Nigel sets them. Tasks 4 and 5 were written meanwhile (unstaged) and deploy with Task 3. The privacy policy is a draft for Nigel.
 - **2026-10-19:** Planned while Nigel was away ("carry on till you get stuck"), from WhereWillWeVisit's accounts. Stuck at: seven questions and plan approval.
 
 ## Notes

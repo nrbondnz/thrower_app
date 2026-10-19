@@ -49,4 +49,19 @@ void main() {
     addTearDown(container.dispose);
     expect(container.read(authServiceProvider), isNull);
   });
+
+  // Task 4: the backup's API is used only when the deployed backend has one.
+  group('hasBackup', () {
+    test('settings with a data API: a backup', () {
+      expect(hasBackup('{"auth": {}, "data": {"url": "https://example.appsync-api.eu-west-2.amazonaws.com/graphql"}}'), isTrue);
+    });
+
+    test('settings without one (sign-in only): no backup', () {
+      expect(hasBackup('{"auth": {}}'), isFalse);
+    });
+
+    test('settings that are not JSON: no backup', () {
+      expect(hasBackup('not json'), isFalse);
+    });
+  });
 }

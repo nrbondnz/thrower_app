@@ -20,9 +20,10 @@ COMPONENTS = {
         name='Screens', lane='ui', type='Flutter widgets',
         files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
-               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart'],
+               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart',
+               'lib/ui/account_screen.dart'],
         trigger='The user, from Home',
-        dek='Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target.',
+        dek='Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>. Two-target Play does too. Once both boards are found, <code>BoardsEditor</code> lets each outline be dragged into place, with the single target\'s drag rules (<code>grabAt</code>, <code>dragged</code>); <strong>Adjust boards</strong> unlocks them later, keeping both (2026-10-19).',
@@ -45,8 +46,9 @@ COMPONENTS = {
             ('BoardsEditor', 'both boards found, not locked: drag an outline to move, turn or stretch it (grabAt: a handle, else the board whose centre is nearest); Adjust boards unlocks, keeping both'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
+            ('AccountScreen · AccountDetails', 'Home → Account (only with accounts): Amplify\'s sign-in screens inside an AuthenticatedView; then who\'s signed in, the backup line (backupText), Back up now, Sign out, Delete account (confirmAndDeleteAccount: asks first)'),
         ],
-        flows=['calibration', 'play', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw'],
+        flows=['calibration', 'play', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -67,11 +69,14 @@ COMPONENTS = {
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),
             ('playTargetsProvider', "two-target Play's boards, kept for the session"),
             ('signalSoundsProvider · startScheduleProvider', 'the beeps, and a new random pause each duel'),
-            ('gameHistoryProvider · historySaveErrorProvider · clockProvider', 'the kept games, a failed save, when a game finished'),
+            ('gameHistoryProvider · historySaveErrorProvider · clockProvider', 'the kept games (SyncedGameHistory: the phone first, then the backup), a failed save, when a game finished'),
             ('playerNamesProvider (PlayerNamesNotifier) · playerNamesStoreProvider', 'the players\' names: loaded at start; set cleans and saves them; GameNotifier renames the game in place'),
             ('authServiceProvider', 'the app\'s accounts (AmplifyAuthService), or null when the build has no backend settings: signed out'),
+            ('signedInUserProvider · backupFactoryProvider · backupProvider', 'who\'s signed in; how main makes a user\'s Backup (AmplifyBackup); the signed-in user\'s Backup, or null'),
+            ('backupStatusProvider (BackupNotifier)', 'on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow'),
+            ('deleteAccountProvider (deleteAccount)', 'erase the backup, then delete the account; the phone keeps its games and names'),
         ],
-        flows=['frame-sources', 'play', 'game-history', 'player-names', 'live-quick-draw'],
+        flows=['frame-sources', 'play', 'game-history', 'player-names', 'live-quick-draw', 'backup'],
     ),
     'target-camera': dict(
         name='TargetCamera', lane='camera', type='Interface', files=['lib/camera/target_camera.dart', 'lib/camera/camera_frame.dart'],
@@ -393,21 +398,23 @@ COMPONENTS = {
     ),
     'game-history': dict(
         name='GameHistory', lane='history', type='Interface + file store',
-        files=['lib/history/game_history.dart', 'lib/history/game_record.dart'],
-        trigger='A game of Play finishing; Home → History',
+        files=['lib/history/game_history.dart', 'lib/history/game_record.dart', 'lib/history/synced_game_history.dart'],
+        trigger='A game of Play finishing; Home → History; signing in (the backup)',
         dek='Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player\'s round totals and names.',
         body=[
             'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals, the players\' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2) and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
             '<code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app\'s own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can\'t be read is renamed, never deleted, and the history starts afresh.',
-            'Behind an interface, so a backend can keep the games instead once there are accounts (backlog #4). Nothing leaves the phone today.',
+            'Since accounts Task 4 (2026-10-19), <code>gameHistoryProvider</code> is a <code>SyncedGameHistory</code> around the file: the phone stays the source of truth (offline-first), and while someone is signed in each add, delete and clear also reaches their backup (a <code>RemoteGameStore</code>), without waiting. <code>sync()</code> merges both ways by game <code>id</code> on sign-in. Known limit: a game deleted while signed out comes back at the next sync. Signed out, nothing leaves the phone.',
         ],
         functions=[
             ('load · add · delete · clear', 'newest first; a game is replaced by its id'),
             ('GameRecord.fromMatch · toJson · fromJson', 'a finished match as a record, with its names; format version 2 (version 1 still reads)'),
             ('GameRecord.nameOf', 'a player\'s name, or Player N'),
             ('GameHistoryException', 'a read or write failed; setAside: a damaged file was renamed'),
+            ('SyncedGameHistory: add · delete · clear · sync', 'the phone first, then the backup if signed in; sync → SyncResult (downloaded, uploaded)'),
+            ('RemoteGameStore: list · put · remove', 'the backup\'s interface (AmplifyBackup; a fake in tests)'),
         ],
-        flows=['game-history', 'player-names'],
+        flows=['game-history', 'player-names', 'backup'],
     ),
     'player-names-store': dict(
         name='PlayerNamesStore', lane='history', type='Interface + file store',
@@ -417,31 +424,34 @@ COMPONENTS = {
         body=[
             'A name is a label on a seat for one game (stage 1 of the Accounts Roadmap): no player list, no history of their own. Friends with their own accounts come later.',
             '<code>FilePlayerNamesStore</code> keeps them in <code>player_names.json</code> in the app\'s own support folder, beside the history, written through a <code>.tmp</code> file, one save at a time. A file that can\'t be read gives blank names; a failed save is ignored. They\'re a convenience: nothing else depends on them.',
-            'It lives in its own edge folder, <code>lib/settings/</code>, because names aren\'t history. Nothing leaves the phone.',
+            'It lives in its own edge folder, <code>lib/settings/</code>, because names aren\'t history. Signed out, nothing leaves the phone; signed in, <code>set</code> also saves them to the backup, and signing in merges them (<code>syncWith</code>: an empty phone takes the backup\'s).',
         ],
         functions=[
             ('load · save', 'the names, one per seat (null for blank); load never throws'),
-            ('playerNamesProvider (PlayerNamesNotifier)', 'two seats, blank at first, then the kept names (unless set already); set → cleanName → save'),
+            ('playerNamesProvider (PlayerNamesNotifier)', 'two seats, blank at first, then the kept names (unless set already); set → cleanName → save (and the backup, signed in); syncWith'),
         ],
-        flows=['player-names'],
+        flows=['player-names', 'backup'],
     ),
     'auth-service': dict(
         name='AuthService', lane='auth', type='Interface + Amplify sign-in',
-        files=['lib/auth/auth_service.dart', 'lib/auth/amplify_accounts.dart', 'lib/main.dart', 'amplify/backend.ts', 'amplify/auth/resource.ts', 'amplify.yml'],
-        trigger='App start (main: connectAccounts, if the build has the backend\'s settings)',
-        dek='The app\'s sign-in, behind an interface. Since stage 2 of the Accounts Roadmap (2026-10-19) it\'s AWS Amplify: Cognito, email sign-in, in London (eu-west-2). Signing in is never needed to score.',
+        files=['lib/auth/auth_service.dart', 'lib/auth/amplify_accounts.dart', 'lib/auth/amplify_backup.dart', 'lib/main.dart', 'lib/ui/account_screen.dart', 'amplify/backend.ts', 'amplify/auth/resource.ts', 'amplify/data/resource.ts', 'amplify.yml'],
+        trigger='App start (main: connectAccounts, if the build has the backend\'s settings); Home → Account',
+        dek='The app\'s sign-in and backup, behind interfaces. Since stage 2 of the Accounts Roadmap (2026-10-19) it\'s AWS Amplify: Cognito (email, Google, Sign in with Apple) and an owner-only backup of kept games and names, in London (eu-west-2). Signing in is never needed to score.',
         body=[
             'At start, <code>main</code> reads the deployed backend\'s settings from the asset <code>assets/config/amplify_outputs.json</code> (<code>loadAmplifyOutputs</code>; gitignored, one per branch). With them, <code>connectAccounts</code> adds the Cognito plugin, configures Amplify and returns an <code>AmplifyAuthService</code>, which overrides <code>authServiceProvider</code>. Without them, or if Amplify can\'t be configured, the provider is null and the app runs signed out, as it always has.',
             '<code>AmplifyAuthService</code> follows the Hub\'s sign-in events (signed in, signed out, session expired, user deleted). The user\'s ID is the Cognito <code>sub</code>, never the email; the display name is the email.',
-            'The backend lives in the repo (<code>amplify/</code>, Amplify Gen 2: <code>defineAuth</code> with email sign-in; Google and Sign in with Apple come in Task 3). Amplify Hosting deploys it from GitHub (<code>amplify.yml</code>: <code>ampx pipeline-deploy</code>): <code>main</code> is production, <code>dev</code> development. Its only web page is <code>web_public/</code>, later home to the privacy policy.',
-            'Nothing leaves the phone unless the build has the settings and the user signs in (their email and password, to Cognito). No Account screen yet (Task 2).',
+            'The backend lives in the repo (<code>amplify/</code>, Amplify Gen 2). <code>defineAuth</code>: email, Google and Sign in with Apple (six secrets in the Amplify console, never in git), returning to the app on <code>throwerapp://</code>; each branch has a readable sign-in domain (<code>throwerapp</code>, <code>throwerapp-dev</code>). <code>defineData</code>: <code>KeptGame</code> and <code>PlayerNameList</code>, each owner-only (<code>allow.owner()</code>). Amplify Hosting deploys it from GitHub (<code>amplify.yml</code>: <code>ampx pipeline-deploy</code>): <code>main</code> is production, <code>dev</code> development. Its only web page is <code>web_public/</code>, later home to the privacy policy. Google, Apple and the backup are written and wait for the secrets before they deploy.',
+            'Sign-in shows only on Home → Account (<code>AuthenticatedView</code>), never in front of the app. <code>AmplifyBackup</code> is the signed-in user\'s backup on GraphQL (the API plugin is added only when the outputs have a data API: <code>hasBackup</code>). <strong>Delete account</strong> erases the backup, then the account; the phone keeps its games and names.',
+            'Nothing leaves the phone unless the build has the settings and the user signs in: then their sign-in goes to Cognito, and their kept games and names to their own backup.',
         ],
         functions=[
             ('loadAmplifyOutputs(bundle)', 'the backend\'s settings, or null if the build has none'),
             ('connectAccounts(outputs)', 'adds AmplifyAuthCognito and configures Amplify; null without settings or on failure'),
-            ('AmplifyAuthService: currentUser · authStateChanges · signOut', 'the signed-in AppUser (id = the Cognito sub), from the Hub\'s events'),
+            ('AmplifyAuthService: currentUser · authStateChanges · signOut · deleteUser', 'the signed-in AppUser (id = the Cognito sub), from the Hub\'s events; deleting the account'),
+            ('hasBackup(outputs)', 'whether the deployed backend has the backup\'s data API'),
+            ('AmplifyBackup: list · put · remove · load · save · erase', 'the user\'s KeptGame rows (id = <sub>:<gameId>) and PlayerNameList row; erase for Delete account'),
         ],
-        flows=[],
+        flows=['backup'],
     ),
 }
 
@@ -452,6 +462,8 @@ EXTERNAL = [
     ('Flutter image codec', 'decodes the recordings\' JPEGs'),
     ('path_provider', 'the app\'s support folder (history, names)'),
     ('amplify_flutter · amplify_auth_cognito', 'sign-in to Cognito (AWS, eu-west-2)'),
+    ('amplify_authenticator', 'the ready-made sign-in screens (Account screen)'),
+    ('amplify_api', 'the backup\'s GraphQL API (only if the backend has one)'),
 ]
 
 # id: dict(title, cat ('core' | 'flow'), lane, dek, body[paras], steps[(lane, title, [lines], component_id|None, arrow_label|None)], caption, files)
@@ -551,7 +563,7 @@ FLOWS = {
             ('ui', 'Home → HistoryScreen', ['load: newest first · "No games yet"', '"Couldn\'t load the history" + Try again'], 'screens', 'tap a game'),
             ('ui', 'GameRecordScreen', ['the result, each player\'s total and rounds', 'Delete · Clear history (asks first)'], 'screens', None),
         ],
-        caption='The history stays on the phone: the app sends it nowhere, and deleting the app deletes it.',
+        caption='The history stays on the phone, and deleting the app deletes it. Signed out, the app sends it nowhere; signed in, it\'s also backed up (see Backing up).',
         files=['lib/providers.dart', 'lib/history/game_record.dart', 'lib/history/game_history.dart', 'lib/ui/history_screen.dart'],
     ),
     'player-names': dict(
@@ -568,7 +580,7 @@ FLOWS = {
             ('scoring', 'GameNotifier → Match.withNames', ['each new game named; a change renames it in place', 'nameOf(i): the name, or Player i+1'], 'game-session', 'Match'),
             ('ui', 'Play · History · Quick draw', ['"Jo\'s turn", "Sam wins 10–12" (GameRecord version 2)', '"Tap the centre of Jo\'s board", "Sam wins the match 2–1"'], 'screens', None),
         ],
-        caption='Names stay on the phone: nothing is sent anywhere, and deleting the app deletes them.',
+        caption='Names stay on the phone, and deleting the app deletes them. Signed out, nothing is sent anywhere; signed in, they\'re also backed up (see Backing up).',
         files=['lib/ui/play_setup_screen.dart', 'lib/ui/quick_draw_boards.dart', 'lib/settings/player_names_store.dart', 'lib/scoring/match.dart', 'lib/history/game_record.dart', 'lib/ui/live_quick_draw_screen.dart'],
     ),
     'choosing-boards': dict(
@@ -627,10 +639,29 @@ FLOWS = {
         caption='Untested on a phone so far: 60 fps, heat over ten duels, beep latency and reading the result from 4 m (Device Test Plan → Quick Draw Checks).',
         files=['lib/ui/live_quick_draw_screen.dart', 'lib/game/start_signal.dart', 'lib/camera/queued_camera.dart', 'lib/sound/signal_sounds.dart'],
     ),
+    'backup': dict(
+        title='Backing up: the sign-in merge and each kept game', cat='flow', lane='auth',
+        dek='Signed in, the kept games and player names are backed up to the user\'s own rows, and come back on a new phone. The phone stays the source of truth.',
+        body=[
+            'Offline-first: every change is made on the phone first. Signed in, it also goes to the backup, without waiting; anything that couldn\'t be sent (no signal) is caught up by the next merge, on sign-in or with Back up now.',
+            'The merge is by game <code>id</code>: games only in the backup come to the phone, games only on the phone go up. Delete and Clear history reach the backup too. Known limit: a game deleted while signed out comes back at the next sync.',
+            'Rows are owner-only (<code>allow.owner()</code>): <code>KeptGame</code> (<code>id</code> = <code>&lt;sub&gt;:&lt;gameId&gt;</code>, the record as the app\'s own JSON) and <code>PlayerNameList</code> (<code>id</code> = the <code>sub</code>). Delete account erases them, then the account.',
+        ],
+        steps=[
+            ('ui', 'Home → Account: sign in', ['Amplify\'s screens inside an AuthenticatedView', 'never in front of the app'], 'screens', 'authStateChanges'),
+            ('wiring', 'signedInUserProvider → backupProvider', ['backupFactoryProvider(user.id) → AmplifyBackup', 'null signed out, or no data API (hasBackup)'], 'providers', 'BackupNotifier'),
+            ('wiring', 'PlayerNamesNotifier.syncWith', ['an empty phone takes the backup\'s names', 'otherwise the phone\'s go up'], 'player-names-store', 'then the games'),
+            ('history', 'SyncedGameHistory.sync', ['only in the backup → the phone (downloaded)', 'only on the phone → the backup (uploaded)'], 'game-history', 'list · put'),
+            ('auth', 'AmplifyBackup', ['GraphQL, signed by the user\'s session', 'KeptGame and PlayerNameList, owner-only'], 'auth-service', 'BackupDone / BackupFailed'),
+            ('ui', 'Account screen', ['"Your games and player names are backed up."', 'Back up now · Sign out · Delete account (asks first)'], 'screens', None),
+        ],
+        caption='Written 2026-10-19 (accounts Tasks 4–5); deploys with Google and Apple once the secrets exist. Device checks AC0–AC8 to come.',
+        files=['lib/history/synced_game_history.dart', 'lib/auth/amplify_backup.dart', 'lib/providers.dart', 'lib/ui/account_screen.dart', 'amplify/data/resource.ts'],
+    ),
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-correction', 'game-history', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
@@ -640,6 +671,7 @@ CARD_TEXT = {
     'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
     'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
     'player-names': 'A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.',
+    'backup': 'Signed in, kept games and names backed up to the user\'s own rows; merged by id on sign-in; the phone first.',
     'choosing-boards': 'Tap Player 1\'s board, then Player 2\'s: a fraction of the picture, a window search, the rings; drag an outline into place.',
     'quick-draw-recording': 'The recording of a real duel: every frame analysed in order, each knife timed from go, the winner.',
     'live-quick-draw': 'The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.',
@@ -656,7 +688,7 @@ NOTES = [
         'The motion pass stays on the UI thread: brightness only, at ~320 px.',
     ]),
     ('On the phone only', [
-        'Camera frames never leave the phone, and nor do the game history and the player names (files in the app\'s own folder). The only network calls are sign-in to the accounts backend (AWS Amplify, stage 2), and only when the build has its settings and the user signs in.',
+        'Camera frames never leave the phone. The game history and the player names are files in the app\'s own folder. The only network calls are to the accounts backend (AWS Amplify, stage 2): sign-in, and the backup of the kept games and names to the user\'s own rows. Both happen only when the build has its settings and the user signs in.',
         'The camera records no sound today. Recording and sharing (backlog #11) would change that, and needs the Review Agent.',
     ]),
 ]

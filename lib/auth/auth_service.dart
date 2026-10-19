@@ -16,4 +16,9 @@ abstract interface class AuthService {
   Stream<AppUser?> authStateChanges();
 
   Future<void> signOut();
+
+  /// Deletes the signed-in user's account (the stores require it inside the
+  /// app: Apple 5.1.1(v)); they're signed out. Their backup is erased first
+  /// (see `deleteAccount` in providers).
+  Future<void> deleteUser();
 }

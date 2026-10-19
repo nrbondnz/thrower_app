@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -32,11 +34,25 @@ Future<AuthService?> connectAccounts(String? outputs) async {
   if (outputs == null) return null;
   try {
     await Amplify.addPlugin(AmplifyAuthCognito());
+    // The backup's API (accounts Task 4), only when the deployed backend has
+    // one: configuring the API plugin without it would fail, and with it the
+    // whole of accounts.
+    if (hasBackup(outputs)) await Amplify.addPlugin(AmplifyAPI());
     await Amplify.configure(outputs);
     return AmplifyAuthService()..start();
   } on Exception catch (e) {
     debugPrint('Accounts unavailable: $e');
     return null;
+  }
+}
+
+/// Whether [outputs] describe a data API (the backup, accounts Task 4).
+bool hasBackup(String outputs) {
+  try {
+    final json = jsonDecode(outputs);
+    return json is Map<String, Object?> && json['data'] != null;
+  } on FormatException {
+    return false;
   }
 }
 
@@ -88,6 +104,9 @@ class AmplifyAuthService implements AuthService {
 
   @override
   Future<void> signOut() => Amplify.Auth.signOut();
+
+  @override
+  Future<void> deleteUser() => Amplify.Auth.deleteUser();
 
   void dispose() {
     _hub?.cancel();

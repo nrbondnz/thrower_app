@@ -42,9 +42,12 @@
     <div><dt><code>quickDrawTargetsProvider · tapLocatorProvider</code></dt><dd>the tapped boards, and how a tap finds one</dd></div>
     <div><dt><code>playTargetsProvider</code></dt><dd>two-target Play&#x27;s boards, kept for the session</dd></div>
     <div><dt><code>signalSoundsProvider · startScheduleProvider</code></dt><dd>the beeps, and a new random pause each duel</dd></div>
-    <div><dt><code>gameHistoryProvider · historySaveErrorProvider · clockProvider</code></dt><dd>the kept games, a failed save, when a game finished</dd></div>
+    <div><dt><code>gameHistoryProvider · historySaveErrorProvider · clockProvider</code></dt><dd>the kept games (SyncedGameHistory: the phone first, then the backup), a failed save, when a game finished</dd></div>
     <div><dt><code>playerNamesProvider (PlayerNamesNotifier) · playerNamesStoreProvider</code></dt><dd>the players&#x27; names: loaded at start; set cleans and saves them; GameNotifier renames the game in place</dd></div>
     <div><dt><code>authServiceProvider</code></dt><dd>the app&#x27;s accounts (AmplifyAuthService), or null when the build has no backend settings: signed out</dd></div>
+    <div><dt><code>signedInUserProvider · backupFactoryProvider · backupProvider</code></dt><dd>who&#x27;s signed in; how main makes a user&#x27;s Backup (AmplifyBackup); the signed-in user&#x27;s Backup, or null</dd></div>
+    <div><dt><code>backupStatusProvider (BackupNotifier)</code></dt><dd>on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow</dd></div>
+    <div><dt><code>deleteAccountProvider (deleteAccount)</code></dt><dd>erase the backup, then delete the account; the phone keeps its games and names</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -77,6 +80,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>Live Quick draw: start signal to result</h3>
       <p>The start signal, both boards queued at 60 fps from 1 s before go, the result in large type.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/backup.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Backing up: the sign-in merge and each kept game</h3>
+      <p>Signed in, kept games and names backed up to the user&#x27;s own rows; merged by id on sign-in; the phone first.</p>
       <span class="more">Open →</span>
     </a>
   </div>

@@ -387,11 +387,11 @@ A name is a label on a seat (stage 1 of the [[Accounts Roadmap]]; requirement [[
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Nothing here leaves the phone.
+Signed out, nothing here leaves the phone. Signed in, the names are also backed up (see Backup, below).
 
 ## App Start: Accounts (If the Build Has Them)
 
-Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Task 1; why in [[Design Decisions]] → User Accounts Required). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. There's no Account screen yet (Task 2), so nothing calls sign-in today.
+Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Tasks 1, 2 and 4; why in [[Design Decisions]] → User Accounts Required; requirement [[Accounts and Sign-In]]). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. Signing in happens only on Home → Account (`AccountScreen`, Amplify's screens inside an `AuthenticatedView`), never in front of the app.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -406,6 +406,7 @@ Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Task
 │          ├── none, or empty ──▶ null                                │
 │          ▼                                                          │
 │   connectAccounts(outputs): Amplify.addPlugin(AmplifyAuthCognito),  │
+│   AmplifyAPI too if hasBackup(outputs) (the outputs have data),     │
 │   Amplify.configure(outputs) (local: no network call)               │
 │          │                                                          │
 │          ├── null outputs, or configure fails ──▶ null              │
@@ -417,7 +418,11 @@ Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Task
 │          │                                                          │
 │          ▼                                                          │
 │   runApp(ProviderScope(overrides: authServiceProvider →             │
-│   the AmplifyAuthService, only if connected))                       │
+│   the AmplifyAuthService, only if connected; and, if hasBackup,     │
+│   backupFactoryProvider → (userId) => AmplifyBackup(userId)))       │
+│   ThrowerApp: Authenticator(child: app), not .builder(): the        │
+│   sign-in screens only inside AccountScreen's AuthenticatedView;    │
+│   ref.listen(backupStatusProvider) keeps the backup running         │
 │                                                                     │
 │   authServiceProvider null = signed out: the app runs as it         │
 │   always has. Nothing reads it to gate scoring, Quick draw or       │
@@ -425,7 +430,53 @@ Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Task
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Nothing leaves the phone unless the build has the settings and the user signs in: then their email and password go to Cognito (AWS, London `eu-west-2`).
+Nothing leaves the phone unless the build has the settings and the user signs in: then their email and password (or their Google or Apple sign-in) go to Cognito (AWS, London `eu-west-2`), and the backup below starts.
+
+## Backup: Sign-In Merge and Each Kept Game
+
+Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Tasks 4–5; why in [[Design Decisions]] → User Accounts Required; requirements [[Game Recording]], [[Player Names]], [[Accounts and Sign-In]]). The phone is the source of truth (offline-first): every game is kept on the phone first and the backup follows. Each user's rows are theirs alone (`allow.owner()`): `KeptGame` (`id` = `<sub>:<gameId>`, the record as the app's own JSON) and `PlayerNameList` (`id` = `<sub>`).
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│        BACKUP: SIGN-IN MERGE, EACH KEPT GAME, DELETE ACCOUNT        │
+│                                                                     │
+│   Sign in (AccountScreen) → authStateChanges → signedInUserProvider │
+│          │                                                          │
+│          ▼                                                          │
+│   backupProvider: backupFactoryProvider(user.id) → Backup (games,   │
+│   names, erase) = AmplifyBackup(sub); null when signed out          │
+│          │                                                          │
+│          ▼                                                          │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ BackupNotifier (backupStatusProvider): BackupRunning, then   │  │
+│   │ 1. PlayerNamesNotifier.syncWith(backup.names): an empty      │  │
+│   │    phone takes the backup's names; else the phone's go up    │  │
+│   │ 2. SyncedGameHistory.sync(): backup.list() and local.load(); │  │
+│   │    only in the backup → local.add (downloaded); only on the  │  │
+│   │    phone → backup.put (uploaded); merged by game id          │  │
+│   │ → BackupDone(downloaded, uploaded), or BackupFailed (no      │  │
+│   │   signal: the phone untouched); Back up now = backUpNow      │  │
+│   └──────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│   Each change while signed in (SyncedGameHistory):                  │
+│     add(record) → FileGameHistory first → put (create, or update    │
+│       if the row exists: a corrected game kept again)               │
+│     delete(id) → local, then remove(id) · clear → local, then       │
+│       remove each game. Best effort: never waits, never fails the   │
+│       phone; the next sync catches up                               │
+│     playerNamesProvider.set → the file, and backup.names.save       │
+│                                                                     │
+│   Delete account (asks first: confirmAndDeleteAccount):             │
+│     deleteAccount → backup.erase() (every KeptGame, then the        │
+│     PlayerNameList row) → AuthService.deleteUser (signed out).      │
+│     The phone keeps its games and names. No signal: it throws,      │
+│     the account stays                                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Known limit:** a game deleted while signed out (or with no signal) is still in the backup, so the next sync brings it back (no tombstones).
+
+Signed in, the kept games (scores, modes, dates, names) and the names go to AWS London, over HTTPS signed by the user's session. Signed out, nothing is sent.
 
 ## Coordinate Spaces
 

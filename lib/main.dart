@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth/amplify_accounts.dart';
+import 'auth/amplify_backup.dart';
 import 'providers.dart';
 import 'ui/home_screen.dart';
 import 'ui/target_painter.dart';
@@ -12,9 +13,18 @@ import 'ui/target_painter.dart';
 /// ([connectAccounts]); either way the app starts as before.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final accounts = await connectAccounts(await loadAmplifyOutputs(rootBundle));
+  final outputs = await loadAmplifyOutputs(rootBundle);
+  final accounts = await connectAccounts(outputs);
   runApp(ProviderScope(
-    overrides: [if (accounts != null) authServiceProvider.overrideWithValue(accounts)],
+    overrides: [
+      if (accounts != null) authServiceProvider.overrideWithValue(accounts),
+      // The backup (accounts Task 4), when the deployed backend has its data API.
+      if (accounts != null && hasBackup(outputs!))
+        backupFactoryProvider.overrideWithValue((userId) {
+          final backup = AmplifyBackup(userId);
+          return (games: backup, names: backup, erase: backup.erase);
+        }),
+    ],
     child: const ThrowerApp(),
   ));
 }
@@ -25,6 +35,9 @@ class ThrowerApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(authServiceProvider) != null;
+    // Keeps the backup running app-wide: signing in merges the phone's games
+    // and names with the user's backup (accounts Task 4).
+    ref.listen(backupStatusProvider, (_, _) {});
     final app = MaterialApp(
       title: 'Thrower App',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: targetRed)),

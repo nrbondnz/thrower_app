@@ -21,14 +21,14 @@
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Interface + file store</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/history/game_history.dart</code><br><code>lib/history/game_record.dart</code><br></dd></div>
-    <div><dt>Used when</dt><dd>A game of Play finishing; Home → History</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/history/game_history.dart</code><br><code>lib/history/game_record.dart</code><br><code>lib/history/synced_game_history.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>A game of Play finishing; Home → History; signing in (the backup)</dd></div>
   </dl>
 
   <div class="detail-body">
     <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals, the players' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2) and, for a Live test game, the recording's name. Totals and the winner are worked out from the rounds, never stored.</p>
     <p><code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app's own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can't be read is renamed, never deleted, and the history starts afresh.</p>
-    <p>Behind an interface, so a backend can keep the games instead once there are accounts (backlog #4). Nothing leaves the phone today.</p>
+    <p>Since accounts Task 4 (2026-10-19), <code>gameHistoryProvider</code> is a <code>SyncedGameHistory</code> around the file: the phone stays the source of truth (offline-first), and while someone is signed in each add, delete and clear also reaches their backup (a <code>RemoteGameStore</code>), without waiting. <code>sync()</code> merges both ways by game <code>id</code> on sign-in. Known limit: a game deleted while signed out comes back at the next sync. Signed out, nothing leaves the phone.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -37,6 +37,8 @@
     <div><dt><code>GameRecord.fromMatch · toJson · fromJson</code></dt><dd>a finished match as a record, with its names; format version 2 (version 1 still reads)</dd></div>
     <div><dt><code>GameRecord.nameOf</code></dt><dd>a player&#x27;s name, or Player N</dd></div>
     <div><dt><code>GameHistoryException</code></dt><dd>a read or write failed; setAside: a damaged file was renamed</dd></div>
+    <div><dt><code>SyncedGameHistory: add · delete · clear · sync</code></dt><dd>the phone first, then the backup if signed in; sync → SyncResult (downloaded, uploaded)</dd></div>
+    <div><dt><code>RemoteGameStore: list · put · remove</code></dt><dd>the backup&#x27;s interface (AmplifyBackup; a fake in tests)</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -53,9 +55,15 @@
       <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
       <span class="more">Open →</span>
     </a>
+    <a class="flow-card" href="../flows/backup.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Backing up: the sign-in merge and each kept game</h3>
+      <p>Signed in, kept games and names backed up to the user&#x27;s own rows; merged by id on sign-in; the phone first.</p>
+      <span class="more">Open →</span>
+    </a>
   </div>
 
-  <footer class="colophon">lib/history/game_history.dart · lib/history/game_record.dart</footer>
+  <footer class="colophon">lib/history/game_history.dart · lib/history/game_record.dart · lib/history/synced_game_history.dart</footer>
 </div>
 </body>
 </html>

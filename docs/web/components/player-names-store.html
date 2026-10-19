@@ -28,13 +28,13 @@
   <div class="detail-body">
     <p>A name is a label on a seat for one game (stage 1 of the Accounts Roadmap): no player list, no history of their own. Friends with their own accounts come later.</p>
     <p><code>FilePlayerNamesStore</code> keeps them in <code>player_names.json</code> in the app's own support folder, beside the history, written through a <code>.tmp</code> file, one save at a time. A file that can't be read gives blank names; a failed save is ignored. They're a convenience: nothing else depends on them.</p>
-    <p>It lives in its own edge folder, <code>lib/settings/</code>, because names aren't history. Nothing leaves the phone.</p>
+    <p>It lives in its own edge folder, <code>lib/settings/</code>, because names aren't history. Signed out, nothing leaves the phone; signed in, <code>set</code> also saves them to the backup, and signing in merges them (<code>syncWith</code>: an empty phone takes the backup's).</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
     <div><dt><code>load · save</code></dt><dd>the names, one per seat (null for blank); load never throws</dd></div>
-    <div><dt><code>playerNamesProvider (PlayerNamesNotifier)</code></dt><dd>two seats, blank at first, then the kept names (unless set already); set → cleanName → save</dd></div>
+    <div><dt><code>playerNamesProvider (PlayerNamesNotifier)</code></dt><dd>two seats, blank at first, then the kept names (unless set already); set → cleanName → save (and the backup, signed in); syncWith</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -43,6 +43,12 @@
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Player names: into the game, History and Quick draw</h3>
       <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/backup.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Backing up: the sign-in merge and each kept game</h3>
+      <p>Signed in, kept games and names backed up to the user&#x27;s own rows; merged by id on sign-in; the phone first.</p>
       <span class="more">Open →</span>
     </a>
   </div>

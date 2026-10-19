@@ -6,6 +6,14 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 
 ---
 
+## 00000. Accounts on the Mac (2026-10-19): before any build with sign-in
+
+From [[story-checkpoint-app-user-accounts]]. Build 9 can still go out without accounts: without the settings file, the app runs signed out exactly as before.
+1. `git pull`, then `npm install` (once) and `flutter pub get`. **`cd ios && pod install`**: Amplify adds pods (iOS 15 is fine; Amplify needs 13).
+2. **The backend's settings for the build:** `AWS_REGION=eu-west-2 npx ampx generate outputs --app-id d1yhmpx84pdvnh --branch main --out-dir assets/config` (gitignored; [[Common Tasks]]). **Leave it out** for a build that should have no accounts.
+3. **Xcode (in the foreground, Nigel clicking):** Runner → Signing & Capabilities → **+ Sign in with Apple**. This makes `Runner.entitlements` and `CODE_SIGN_ENTITLEMENTS` in Debug, Release and Profile; WhereWillWeVisit needed all three. Commit them.
+4. Before any App Store build: the privacy policy published and linked ([[Privacy Policy (Draft)]]); the privacy labels; check the Sign in with Apple button meets Apple's style (WhereWillWeVisit was rejected under Guideline 4).
+
 ## 0000. Handover 2026-10-19: TestFlight Build 1.0.0 (9), the Quick Draw Match
 
 **Start here** when Nigel wants build 9 (build 8 went to Beta App Review on 2026-10-19: `06104c8`, `dd40600`). Section 00 has the steps; do them with **`1.0.0+9`** in place of `+7`, commit the bump as e.g. `Build 1.0.0+9 for TestFlight (Quick draw match)`, and **add the build to the External testers group** ([[Known Issues]]: builds of the same version often skip review).

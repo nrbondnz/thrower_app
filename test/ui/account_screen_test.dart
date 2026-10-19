@@ -16,12 +16,21 @@ class FakeAuthService implements AuthService {
   @override
   AppUser? currentUser;
   var signOuts = 0;
+  var deleted = false;
+  var failDelete = false;
 
   @override
   Stream<AppUser?> authStateChanges() => const Stream.empty();
 
   @override
   Future<void> signOut() async => signOuts++;
+
+  @override
+  Future<void> deleteUser() async {
+    if (failDelete) throw Exception('no signal');
+    deleted = true;
+    currentUser = null;
+  }
 }
 
 /// App user accounts story, Task 2: Home → Account, only when the build is
@@ -71,4 +80,87 @@ void main() {
       expect(auth.signOuts, 1);
     });
   });
+
+  // Task 4: the backup.
+  group('backup', () {
+    test('what the screen says', () {
+      expect(backupText(const BackupRunning()), 'Backing up…');
+      expect(backupText(const BackupDone((downloaded: 0, uploaded: 0))), 'Your games and player names are backed up.');
+      expect(backupText(const BackupDone((downloaded: 2, uploaded: 1))), 'Backed up: 1 game sent, 2 brought to this phone.');
+      expect(backupText(const BackupFailed('x')), contains('Your games are safe on this phone.'));
+    });
+
+    testWidgets('Back up now: offered once a backup has run, not while one is running', (tester) async {
+      var runs = 0;
+      Future<void> pump(BackupStatus status) => tester.pumpWidget(MaterialApp(
+            home: Scaffold(
+              body: AccountDetails(
+                user: const AppUser(id: 'sub-1', displayName: 'jo@example.com'),
+                onSignOut: () async {},
+                backup: status,
+                onBackUp: () async => runs++,
+              ),
+            ),
+          ));
+      await pump(const BackupRunning());
+      expect(tester.widget<TextButton>(find.byKey(const Key('accountBackUpNow'))).onPressed, isNull);
+      await pump(const BackupFailed('no signal'));
+      await tester.tap(find.byKey(const Key('accountBackUpNow')));
+      expect(runs, 1);
+      await pump(const BackupOff());
+      expect(find.byKey(const Key('accountBackUpNow')), findsNothing);
+    });
+  });
+
+  // Task 5: Delete account (asks first).
+  group('Delete account', () {
+    Future<List<int>> pump(WidgetTester tester, {bool fail = false}) async {
+      final calls = <int>[];
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => AccountDetails(
+              user: const AppUser(id: 'sub-1', displayName: 'jo@example.com'),
+              onSignOut: () async {},
+              onDelete: () => confirmAndDeleteAccount(context, () async {
+                calls.add(1);
+                if (fail) throw Exception('no signal');
+              }),
+            ),
+          ),
+        ),
+      ));
+      return calls;
+    }
+
+    testWidgets('asks first; Cancel deletes nothing', (tester) async {
+      final calls = await pump(tester);
+      await tester.tap(find.byKey(const Key('accountDelete')));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete your account?'), findsOneWidget);
+      expect(find.textContaining('The games and names on this phone stay.'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(calls, isEmpty);
+    });
+
+    testWidgets('confirmed: deletes', (tester) async {
+      final calls = await pump(tester);
+      await tester.tap(find.byKey(const Key('accountDelete')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('accountDeleteConfirm')));
+      await tester.pumpAndSettle();
+      expect(calls, [1]);
+    });
+
+    testWidgets("no signal: says it couldn't, to try again", (tester) async {
+      await pump(tester, fail: true);
+      await tester.tap(find.byKey(const Key('accountDelete')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('accountDeleteConfirm')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining("Couldn't delete your account just now"), findsOneWidget);
+    });
+  });
 }
+
