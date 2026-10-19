@@ -4,6 +4,8 @@ Everything outside this repo that the Thrower App's cloud side depends on: AWS (
 
 Day-to-day how-tos stay in [[Common Tasks]] (Connect the App to the Amplify Backend; Set Up Google and Sign in with Apple). Gotchas met so far are in [[Known Issues]].
 
+**Thrower shares nothing with WhereWillWeVisit** (Nigel, 2026-10-20): every client, key, ID, secret and payment account is **new and Thrower's own**. The only common ground is the AWS account itself (and the Apple and Google developer accounts they're made in). Nothing is copied or reused from WhereWillWeVisit, even as a stopgap.
+
 Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts and Sign-In]], [[Subscriptions]], [[Design Decisions]] → User Accounts Required, [[Mac Handoff]].
 
 ---
@@ -11,7 +13,7 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
 ## 1. AWS
 
 ### Account and region
-- **Account:** `445567075330` (shared with WhereWillWeVisit).
+- **Account:** `445567075330`. The same AWS account as WhereWillWeVisit, but nothing in it is shared: Thrower has its own app, region, role, pools, tables and secrets.
 - **Region:** **Europe (London) `eu-west-2`** (Nigel, 2026-10-19). UK users' data stays in the UK (UK GDPR).
 - **The PC's AWS CLI:** the default profile's region is **Sydney** (WhereWillWeVisit's), so Thrower commands need `AWS_REGION=eu-west-2` ([[Known Issues]]).
 
@@ -69,41 +71,46 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
 ### Who sets them
 - **Nigel.** Claude doesn't read or copy secret values. Copying WhereWillWeVisit's was refused by the safety check, which was right.
 
-### New or shared with WhereWillWeVisit?
-- All six should be **new for Thrower**. WhereWillWeVisit's are in its own app (`d1wqo0bm59b4p9`, Sydney), and its list is due a cleanup (its Known Issues → Backlog).
+### All new: nothing from WhereWillWeVisit
+- All six are **created fresh for Thrower** (Nigel, 2026-10-20). Don't reuse or copy WhereWillWeVisit's Google client, Services ID or keys, even temporarily. WhereWillWeVisit's secrets stay in its own app (`d1wqo0bm59b4p9`, Sydney); its list is due a cleanup (its Known Issues → Backlog).
+- **Why:**
+  - Google's consent screen and Apple's sign-in sheet name **Thrower**, not WhereWillWeVisit.
+  - Each app's users get their own Apple user IDs (Apple keys aren't grouped).
+  - Revoking or rotating one app's credentials never breaks the other.
+  - The two apps can move teams, projects or regions independently.
 
 ### Summary
 
-| # | Secret | New for Thrower? |
+| # | Secret | Source |
 |---|---|---|
-| 1 | `GOOGLE_CLIENT_ID` | New (recommended) |
-| 2 | `GOOGLE_CLIENT_SECRET` | New (pairs with #1) |
-| 3 | `APPLE_TEAM_ID` | `QCQ64RLD77` |
-| 4 | `APPLE_CLIENT_ID` | New |
-| 5 | `APPLE_KEY_ID` | New |
-| 6 | `APPLE_PRIVATE_KEY` | New (pairs with #5) |
+| 1 | `GOOGLE_CLIENT_ID` | New Thrower Google project |
+| 2 | `GOOGLE_CLIENT_SECRET` | The same new client |
+| 3 | `APPLE_TEAM_ID` | Thrower's team, `QCQ64RLD77` |
+| 4 | `APPLE_CLIENT_ID` | New Services ID |
+| 5 | `APPLE_KEY_ID` | New Sign in with Apple key |
+| 6 | `APPLE_PRIVATE_KEY` | That new key's `.p8` |
 
 ### 1. `GOOGLE_CLIENT_ID`
 - **What:** the Google OAuth client's ID (ends `….apps.googleusercontent.com`).
 - **How to source it** (Google Cloud console):
-  1. Create (or pick) a **project for Thrower**.
+  1. **Create a new Google Cloud project** for Thrower (e.g. "Thrower App"). Don't use WhereWillWeVisit's project.
   2. **APIs & Services → OAuth consent screen:** External; app name **Thrower**; support email; scopes `email`, `profile`, `openid`.
   3. **Credentials → Create credentials → OAuth client ID → Web application.**
   4. **Authorized redirect URIs:** add both:
      - `https://throwerapp.auth.eu-west-2.amazoncognito.com/oauth2/idpresponse`
      - `https://throwerapp-dev.auth.eu-west-2.amazoncognito.com/oauth2/idpresponse`
   5. Copy the **Client ID**.
-- **New or shared:** **new** is recommended. The consent screen belongs to the *project*, so sharing WhereWillWeVisit's client would show "WhereWillWeVisit" when signing into Thrower. Sharing still works if needed (add the two redirect URIs to its client).
+- **New:** the client lives in Thrower's own project, whose consent screen is named Thrower.
 
 ### 2. `GOOGLE_CLIENT_SECRET`
 - **What:** the same client's secret.
 - **How to source it:** the client from #1 → **Client secret**.
-- **New or shared:** new, with #1 (they're a pair).
+- **New:** with #1 (they're a pair).
 
 ### 3. `APPLE_TEAM_ID`
 - **What:** the Apple developer team.
 - **How to source it:** developer.apple.com → **Membership details → Team ID**.
-- **Value:** **`QCQ64RLD77`** (Thrower's team). The same as WhereWillWeVisit's only if that app is in the same team.
+- **Value:** **`QCQ64RLD77`**, Thrower's team. Everything Apple below (the App ID, Services ID and key) is created in this team.
 
 ### 4. `APPLE_CLIENT_ID`
 - **What:** the **Services ID**, which Cognito uses as Apple's client ID for its web sign-in flow (not the App ID).
@@ -115,7 +122,7 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
      - **Domains:** `throwerapp.auth.eu-west-2.amazoncognito.com` and `throwerapp-dev.auth.eu-west-2.amazoncognito.com`;
      - **Return URLs:** the two `…/oauth2/idpresponse` URLs from #1.
   4. The secret's value is the **Services ID itself** (e.g. `nz.nrbond.thrower.signin`).
-- **New or shared:** new (it's per app).
+- **New:** Thrower's own Services ID.
 
 ### 5. `APPLE_KEY_ID`
 - **What:** the Sign in with Apple key's ID.
@@ -123,14 +130,14 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
   1. **Keys → +.**
   2. Tick **Sign in with Apple → Configure:** primary App ID `nz.nrbond.thrower`.
   3. Register, then note the **Key ID**.
-- **New or shared:** new. A key belongs to one team and one primary App ID. Sharing means grouping the apps, which gives both the same Apple user ID.
+- **New:** Thrower's own key, with `nz.nrbond.thrower` as its primary App ID. It's never grouped with another app's (grouping gives both apps the same Apple user ID).
 
 ### 6. `APPLE_PRIVATE_KEY`
 - **What:** that key's private key.
 - **How to source it:** the same page → **Download** the `.p8`.
   - **It can be downloaded once only.** Keep it in the password manager.
   - The secret's value is the **whole text** of the `.p8`, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines.
-- **New or shared:** new, with #5.
+- **New:** with #5.
 
 ### After setting them
 - Tell Claude. It:
@@ -167,17 +174,17 @@ From [[Subscriptions]]: 14 days free, then subscribe; the Game Centre is the rea
   - subscription products in App Store Connect;
   - an **App Store Server API** key (to check purchases on the server);
   - an **App Store Server Notifications** URL (a backend function).
-- **Secrets (Amplify, new for Thrower)**, as WhereWillWeVisit's `verifyAppleTransaction` and `appleServerNotifications`:
+- **Secrets (Amplify, new for Thrower;** the same *pattern* as WhereWillWeVisit's `verifyAppleTransaction` and `appleServerNotifications`, but Thrower's own key, never WhereWillWeVisit's**):**
   - `APPLE_IAP_ISSUER_ID`: App Store Connect → Users and Access → Integrations → **In-App Purchase** keys → Issuer ID.
   - `APPLE_IAP_KEY_ID`: a key generated on that same page.
   - `APPLE_IAP_PRIVATE_KEY`: that key's `.p8` (downloaded once).
 
 ### Android: Stripe (Nigel's requirement)
 - **Cloud config it will need:**
-  - a Stripe account, with products and prices (a subscription);
+  - **Thrower's own Stripe account** (not WhereWillWeVisit's), with products and prices (a subscription);
   - a **webhook** endpoint (a backend function) for subscription events;
   - the publishable key in the app.
-- **Secrets (Amplify, new for Thrower)**, as WhereWillWeVisit's, each from the Stripe dashboard (Developers → API keys; the webhook's signing secret):
+- **Secrets (Amplify, new for Thrower)**, named as WhereWillWeVisit's but with Thrower's own values, each from Thrower's Stripe dashboard (Developers → API keys; the webhook's signing secret):
   - `STRIPE_SECRET_KEY`
   - `STRIPE_PUBLISHABLE_KEY`
   - `STRIPE_WEBHOOK_SECRET`

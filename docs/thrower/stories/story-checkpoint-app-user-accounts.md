@@ -352,6 +352,13 @@ Read as: do it as WhereWillWeVisit does.
   For each: what it is, how to source it, and whether it's new for Thrower (all six are recommended new; the team ID is `QCQ64RLD77`). It also covers the future subscription config: Apple IAP on iOS, **Stripe on Android** (Nigel's requirement, backlog #15, with the Google Play policy check).
 - WhereWillWeVisit's secrets audit: added to **its** Known Issues → Backlog as a cleanup item. The redundant-looking names are `AWS_REGION`, `AMPLIFY_APP_ID`, `APPLE_APP_ID`, `SUPPORT_EMAIL_ADDRESS` and possibly `DOCS_REVIEW_SESSION_SECRET` (unstaged in that repo, on branch `whereinnz`).
 
+#### Decision (2026-10-20): nothing shared with WhereWillWeVisit
+- Nigel: every secret is **new**. Nothing is reused from WhereWillWeVisit, even as a stopgap. [[Cloud Config Setup]] and [[Common Tasks]] now describe only the new path:
+  - a new Google Cloud project and client;
+  - a new Services ID and key in Thrower's team `QCQ64RLD77`;
+  - later, Thrower's own IAP key and Stripe account.
+- It's also a settled answer in both repos' `docs/dont-ask-again.md`.
+
 #### Still open in Task 5 (needs Nigel or the deploy)
 - Approve and publish the privacy policy; the store privacy labels.
 - Device checks AC0–AC8 (AC3–AC8 after the push).

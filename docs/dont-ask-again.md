@@ -53,6 +53,11 @@ The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explain
 **Why:** found 2026-10-20 on the Thrower App's Cloud Config Setup page ("cut off at a certain width and does not even loop to the next line"); every existing wide table in both projects' docs was converted to lists the same day.
 **Confirmed:** 2026-10-20.
 
+## Thrower and WhereWillWeVisit share no credentials
+**Settled answer:** The Thrower App never shares or reuses WhereWillWeVisit's cloud credentials: Google OAuth clients and projects, Apple Services IDs and keys, App Store and IAP keys, Stripe accounts, Amplify secrets. Every one is created new for the project that uses it. Only the AWS account and the Apple and Google developer accounts are common. Don't offer "reuse WhereWillWeVisit's for now" as a shortcut.
+**Why:** each app's consent screens and sign-in sheets name that app; users get separate Apple IDs per app; rotating or revoking one app's credentials never breaks the other; and the apps can change teams, projects or regions independently.
+**Confirmed:** 2026-10-20 (Nigel: "all new, so document in that way").
+
 ---
 
 *Add new entries above this line as they come up. Keep each entry to a few lines — link to `working-with-nigel.md` or another doc for full detail rather than duplicating it here.*

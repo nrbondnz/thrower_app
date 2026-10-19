@@ -189,7 +189,7 @@ AWS_REGION=eu-west-2 npx ampx generate outputs --app-id d1yhmpx84pdvnh --branch 
 
 The six secrets, what each is and exactly where to get it: [[Cloud Config Setup]] → The Six Sign-In Secrets (the reference; the steps below are the short version).
 
-Code: `amplify/auth/resource.ts` (`externalProviders`, six `secret(...)`s, return link `throwerapp://callback/`), `amplify/backend.ts` (each branch's sign-in domain), the Android intent filter and the iOS URL type for `throwerapp`. Modelled on WhereWillWeVisit (its docs: Infrastructure → AWS Resources → "Cognito Hosted UI Domain & OAuth"), but with Thrower's **own** Google client and Apple Services ID, so the consent screens say Thrower.
+Code: `amplify/auth/resource.ts` (`externalProviders`, six `secret(...)`s, return link `throwerapp://callback/`), `amplify/backend.ts` (each branch's sign-in domain), the Android intent filter and the iOS URL type for `throwerapp`. Modelled on WhereWillWeVisit's *setup* (its docs: Infrastructure → AWS Resources → "Cognito Hosted UI Domain & OAuth"), but **nothing is shared with it** (Nigel, 2026-10-20): a new Google Cloud project and client, and a new Services ID and key, all Thrower's own.
 
 **Each branch's sign-in domain** (set in `backend.ts`, London):
 
@@ -199,7 +199,7 @@ Code: `amplify/auth/resource.ts` (`externalProviders`, six `secret(...)`s, retur
 | `dev` | `throwerapp-dev.auth.eu-west-2.amazoncognito.com` | `https://throwerapp-dev.auth.eu-west-2.amazoncognito.com/oauth2/idpresponse` |
 
 **1. Google (Nigel, Google Cloud console):**
-1. A project for Thrower (or WhereWillWeVisit's, but a **new** client). Go to **APIs & Services → OAuth consent screen**: External; app name **Thrower**; support email; the scopes `email`, `profile`, `openid`.
+1. **A new Google Cloud project** for Thrower (not WhereWillWeVisit's). Go to **APIs & Services → OAuth consent screen**: External; app name **Thrower**; support email; the scopes `email`, `profile`, `openid`.
 2. **Credentials → Create credentials → OAuth client ID → Web application**, named e.g. "Thrower Cognito".
 3. **Authorized redirect URIs:** both URLs from the table.
 4. Keep the **Client ID** and **Client secret** for step 3.
