@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
 import '../scoring/game_session.dart';
+import '../scoring/match.dart';
 import '../scoring/target_model.dart';
 
 /// One heading and its points on the Instructions screen.
@@ -78,6 +79,10 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'After round ${rules.maxRounds} the game is over and shows your final total. Tap New game to play again.',
       'To stop sooner, tap Finish game (it asks first): the game ends with the rounds played so far, '
           'including a round in progress, and is kept in History.',
+      // Named-players story (Nigel, 2026-10-19).
+      'Before Start you can type each player\'s name (up to $maxNameLength letters); leave it blank for '
+          '"Player 1" or "Player 2". The screens and History use the names, and Quick draw uses the same ones.',
+      'The last names used are kept on this phone and filled in next time. They are sent nowhere.',
     ]),
     // Players-and-targets story (Nigel, 2026-10-16).
     InstructionSection('Two players on one target', [
@@ -156,7 +161,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
             'not between the lanes, and out of reach of a backswing (at least 3 m back for axes, or as your venue says).',
         "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards. "
             'If an outline is wrong, tap Choose boards again.',
-        'Choose and lock the boards before anyone throws.',
+        'Choose and lock the boards before anyone throws. Tap Names to change the throwers\' names (the same '
+            'names as Play).',
         'A third person, the starter, standing behind the throwers, taps Start. Throwers do not start their own '
             'duel: be at your line, ready, before Start is tapped.',
         'Five beeps, a light coming on with each, then a pause that changes every time, then the long beep: '

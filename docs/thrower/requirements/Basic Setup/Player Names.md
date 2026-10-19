@@ -19,6 +19,7 @@ Players can be named, not just "Player 1" and "Player 2" (Nigel, 2026-10-19): **
   - **Play and two-target Play** use the names everywhere a player is named: whose turn, wait for, the totals, the winner, the score-correction rows, the board messages. Renaming mid-game keeps the scores; New game keeps the names.
   - **History** keeps the names each game was played with (`GameRecord` version 2); games kept before show Player 1 / Player 2.
   - **Quick draw** uses the same names (choosing the boards, the round result, the match), changeable with **Names** before Start. The per-player result lines keep "1:" / "2:", matching the board numbers on the picture.
+  - **The in-app Instructions explain it** (Task 4): *Playing a game* says how to name players before Start (up to 16 letters, blank is Player 1 / Player 2) and that the last names are kept on this phone and sent nowhere; *Quick draw* says to tap **Names**. See [[Instructions and Safety]].
 - **Friends** (other app users, linked accounts): not built. `AuthService` exists as an interface only (`lib/auth/`); no sign-in yet.
 
 ## Open Questions
@@ -30,4 +31,5 @@ Players can be named, not just "Player 1" and "Player 2" (Nigel, 2026-10-19): **
 - [[Data Flow]] → Player Names: Into the Game, History and Quick Draw
 - [[Glossary]] → Named player
 - [[backlog]] #4 Accounts, #5 Game modes (typed names)
+- [[Instructions and Safety]] (how the Instructions explain naming)
 - [[Remote Play]], [[Results Sharing]]

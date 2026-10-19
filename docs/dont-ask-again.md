@@ -43,6 +43,11 @@ The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explain
 **Why:** Nigel wants to follow and learn the Xcode flow, not just get results.
 **Confirmed:** 2026-10-10.
 
+## Backend: always AWS Amplify
+**Settled answer:** The backend (accounts, data, payments) is **AWS Amplify** (Gen 2: Cognito sign-in, AppSync/DynamoDB, Lambda), always. Use **WhereWillWeVisit** (`C:\dev\flutter_projs\whereinuk\where_in_nz_v3`) as the guide: it already has accounts implemented (`amplify/auth/resource.ts`, `docs/wherewillwevisit/Architecture/User Identity and Authorization.md`). Don't offer Firebase or Supabase.
+**Why:** Nigel's standing choice across his projects; one stack he knows and can reuse.
+**Confirmed:** 2026-10-19.
+
 ---
 
 *Add new entries above this line as they come up. Keep each entry to a few lines — link to `working-with-nigel.md` or another doc for full detail rather than duplicating it here.*

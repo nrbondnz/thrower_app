@@ -10,7 +10,7 @@ Players can be given names in place of "Player 1" and "Player 2": "Mark wins", n
 - more than 3 acceptance criteria (1).
 
 ## Status
-IN PROGRESS: Task 3 of 4 complete (2026-10-19), awaiting Nigel's checkpoint. Tasks 1–2 committed (`9802369`). Plan approved ("commit this and start task 1", `52173fc`).
+BUILT: all 4 tasks complete (2026-10-19); Tasks 1–3 committed (`9802369`, `e35cabf`). **Waiting for the device checks** ([[Device Test Plan]] → Named Players Checks, N0–N6: Nigel on the Samsung for N0–N5; N6 needs the live camera; in TestFlight 1.0.0 (9), [[Mac Handoff]] section 0000). Archive the story once they pass. Plan approved ("commit this and start task 1", `52173fc`).
 
 ## Answered (2026-10-19)
 1. **Remembering:** the **last names used, kept on the phone**: the setup screen fills them in, even after the app is closed. Change them by typing. No list to manage.
@@ -127,7 +127,7 @@ IN PROGRESS: Task 3 of 4 complete (2026-10-19), awaiting Nigel's checkpoint. Tas
     - the recorded Quick draw too.
 - **Verify:** widget tests (the board instruction, the round and match result with names, blank → Player 1). **Nigel:** Live test → Quick draw with names.
 - **Next:** Task 4.
-- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-19); Nigel: "commit this" (`e35cabf`)
 - **What changed:**
   - `lib/ui/quick_draw_boards.dart`:
     - `BoardChoosing.playerNames`: the names from `playerNamesProvider`, "Player N" without. Shared with two-target Play, so it also says "Tap the centre of Jo's board".
@@ -187,11 +187,80 @@ Kept along the chain: requirement → architecture → design decisions (Docs Ag
   - **Review Agent:** §5 (names of real people stored on the phone, not sent), §8 (the version 1 → 2 history format).
   - **Traceability Agent** report.
 - **Verify:** `flutter test`; Nigel reads the Instructions; the checks are ready.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/ui/instructions.dart`:
+    - **Playing a game:** "Before Start you can type each player's name (up to 16 letters); leave it blank for "Player 1" or "Player 2". The screens and History use the names, and Quick draw uses the same ones." and "The last names used are kept on this phone and filled in next time. They are sent nowhere."
+    - **Quick draw:** "…Tap Names to change the throwers' names (the same names as Play)."
+  - [[Device Test Plan]] → **Named Players Checks** (N0–N6). [[Mac Handoff]] section 0000: build 9 now carries named players too (history version 2, `player_names.json`, no new plugins); 749 tests.
+  - **Docs Agent** (a separate agent, as Nigel asked):
+    - new requirement page [[Instructions and Safety]] (closes the drift item: the Instructions decisions had no requirement above them), with the safety and Instructions decisions linking up to it;
+    - the Task 4 update to the In-app Instructions decision;
+    - [[Player Names]], the backlog (#4 stage 1 and #5 typed names built), `CLAUDE.md` and `working-with-nigel.md`.
+    - Its log is below.
+- **Verified by:** `flutter test`: 749 passed (1 new), `flutter analyze`: no issues.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 4)
+- **New:** `instructions_test.dart` (1: naming is optional, the names are remembered on the phone and sent nowhere, and Quick draw's Names).
+- **Results:** 749 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 4, Docs Agent)
+- **Files updated:**
+  - `requirements/Requirements Index.md` (a new "Across the App" section);
+  - `requirements/Basic Setup/Player Names.md`;
+  - `Architecture/Design Decisions.md`:
+    - the In-app Instructions decision names its requirement, plus the Task 4 update;
+    - the Named Players section gains an Instructions bullet;
+    - the safety decisions link up to [[Instructions and Safety]];
+  - `stories/backlog.md` (priorities; #4 stage 1 built; #5 typed names built);
+  - `CLAUDE.md` and `docs/working-with-nigel.md` (the overview lists Named players and the requirements folder);
+  - `stories/accounts/Accounts Roadmap.md` (stage 1 built in Tasks 1–4; fixed by the orchestrator, from the agent's drift note).
+- **Files created:** `requirements/Instructions and Safety.md`.
+- **Notes:** the web pages are unchanged (the Instructions screen's description is still right). The older text of the Instructions decision still ends "Next duel"; that's history, kept under the newer update that says Next round.
+
+#### Safety Report — 2026-10-19 (whole story, Review Agent)
+- **Files reviewed:** `lib/scoring/match.dart`, `lib/history/game_record.dart`, `lib/settings/player_names_store.dart`, `lib/providers.dart`, the setup, Play, two-target, History and Quick draw screens, and `lib/ui/instructions.dart`. `pubspec.yaml`, `AndroidManifest.xml` and `Info.plist` are unchanged.
+- ✅ §1–§2: no permission, plugin or platform change. `path_provider` was already a dependency, so both platforms behave alike.
+- ✅ §3: no debug-only paths.
+- ✅ §4: no secrets; names aren't logged.
+- ⚠️→✅ **§5 Privacy:** the app now keeps **names of real people** on the phone (`player_names.json`, and in the history file).
+  - They stay in the app's private support folder (not the Files app); they're sent nowhere; and they're deleted with the app. They're in the phone's own backups, as the history already is.
+  - The Instructions say so: "They are sent nowhere."
+  - **For later:** when accounts and a backend come (stage 2), names will leave the phone. The store privacy labels and a privacy policy must then cover them ([[Accounts Roadmap]], stage 2's store rules).
+- ✅ §6: two small files, no new processing.
+- ✅ §7 Physical safety: naming happens on the setup screen before Start, or with **Names** in Quick draw before Start. Names is hidden while a round is on, so nothing invites anyone to the phone during a round. Larger names keep the large turn text readable from the throwing line (16 letters at most; tested on a 360 px phone).
+- ⚠️→✅ **§8 Stored data:**
+  - The history format moves to **version 2**. Version 1 files still read, and the first save after updating rewrites the file as version 2.
+  - An **older** app (e.g. reinstalling an earlier TestFlight build) would treat a version 2 history as newer and **set it aside** (renamed `….damaged-<time>`, not deleted), starting a fresh history. That's the existing safe behaviour, and testers go forward, not back, so it's unlikely. It's noted in [[Design Decisions]] → Named Players.
+  - Rolling back the code leaves `player_names.json` unused and harmless.
+- **Verdict:** OK to commit.
+
+#### Traceability Report — 2026-10-19 (story complete, device checks to come)
+
+| Requirement | Design Reference | Implementation | Test | Status |
+|---|---|---|---|---|
+| AC1: a name field per player on the setup screen; blank is Player 1 / 2 | Design Decisions → Named Players; [[Player Names]] | `PlaySetupScreen` (`playName0`/`1`), `cleanName`, `playerNumber`, `Match.nameOf` | `play_setup_screen_test.dart` (a field per player; a cleared name is Player 1; 16 characters); `match_test.dart` (names) | ✅ Covered (device: N0, N3, N4) |
+| AC2: the names are filled in next time, after the app is closed | Named Players → the store | `PlayerNamesStore`, `FilePlayerNamesStore`, `playerNamesProvider` | `player_names_test.dart` (9); `play_setup_screen_test.dart` (kept names filled in) | ✅ Covered (device: N2) |
+| AC3: Play and two-target Play use the names everywhere | Named Players → Shown | `turnText`, `turnDetail`, `playerTitle`, `boardMessage`, `boardMovedMessage`, `boardsStateText`, `rowLabel` | `play_screen_test.dart` (names group, incl. the longest names on a 360 px phone); `two_target_play_screen_test.dart` | ✅ Covered (device: N0, N4) |
+| AC4: History shows names; old games still Player 1 / 2 (version 2; version 1 reads) | Named Players; Game History (format) | `GameRecord.names` / `nameOf` (v2), `resultText`, `GameRecordScreen` | `game_record_test.dart` (6); `game_history_test.dart` (a v1 history reads, rewritten as v2); `history_screen_test.dart` (3); `keeping_games_test.dart` (kept with names) | ✅ Covered (device: N1) |
+| AC5: Quick draw uses the same names; changed before Start | Named Players → Quick draw (Task 3) | `BoardChoosing.playerNames`, `choosingInstruction`, `NamesButton`, `editPlayerNames`, `verdictText(names:)`, `matchText`, `QuickDrawResultPanel(names:)` | `live_quick_draw_screen_test.dart` (names group; Names hidden after Start; the panel by name); `quick_draw_judge_test.dart` | ✅ Covered (device: N5, N6) |
+| AC6: renaming mid-game keeps the scores; New game keeps the names | Named Players → names are part of the game | `Match.withNames`, `GameNotifier` (`ref.listen`), `newGame` | `match_test.dart` (renaming keeps scores and turn); `keeping_games_test.dart` (renaming, New game); `play_setup_screen_test.dart` (renaming a game in progress) | ✅ Covered |
+| AC7: names stay on the phone (Review Agent) | Named Players → Privacy; [[Instructions and Safety]] | `FilePlayerNamesStore` (support folder); nothing sends | `instructions_test.dart` ("They are sent nowhere"); the Safety Report | ✅ Covered |
+
+- **Coverage:** 7 of 7 have design, code and tests; device checks N0–N6 are to come.
+- **Backward:** every new symbol traces to an AC.
+  - `rowLabel` serves AC3 (keeping the correction slots their size).
+  - `NamesButton` / `_NamesDialog` serve AC5.
+  - `maxNameLength` serves AC1 and AC3 (it keeps the turn text readable).
+- **Chain** (Docs Agent): [[Player Names]] → [[Design Decisions]] → Named Players, linked both ways; the Instructions decisions now sit under [[Instructions and Safety]].
+- **Stale links:** none found.
 
 ---
 
 ## Plan Changes Log
 - **2026-10-19:** Planned from Nigel's model of app users, named players and friends; four questions answered as recommended (last names kept on the phone; blank is Player N; 1 or 2 players; Quick draw too).
+- **2026-10-19:** All 4 tasks done; story BUILT, waiting for N0–N6. Nigel asked for the Docs Agent to keep requirements → architecture → design decisions aligned as we go; it ran (as a separate agent) after Tasks 3 and 4, and its protocol now has the chain.
 
 ## Notes
 - Friends (other app users, linked accounts, throws recorded on their own app) are stage 3 of the [[Accounts Roadmap]]. A seat will then be a named player **or** a friend, so `Match.names` should stay a label, not become an identity.

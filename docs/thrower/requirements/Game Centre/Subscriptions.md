@@ -49,6 +49,7 @@ Why this split:
 - **No point running the clock before there's anything to pay for.** Until the Game Centre exists, everything stays free. Testers and early users get their 14 days when subscriptions start.
 
 **Other points:**
+- **The backend is AWS Amplify** (Nigel, 2026-10-19). WhereWillWeVisit (`where_in_nz_v3`) already verifies Apple purchases on the server and listens to Apple's server notifications (`verifyAppleTransaction`, `appleServerNotifications`): the pattern to reuse, plus Google Play's equivalent.
 - **Monthly and yearly prices** (yearly at a discount). The stores take 15–30% (15% for small developers, and for subscriptions after the first year). Digital features must be bought through the stores' own in-app purchase.
 - **Store requirements:**
   - **Restore purchases**;

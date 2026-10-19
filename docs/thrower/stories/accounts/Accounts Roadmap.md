@@ -38,8 +38,8 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 | Stage | What it adds | Backend | Story |
 |---|---|---|---|
-| **1. Named players** | Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names | None | **Built** 2026-10-19 (Tasks 1–3; device checks to come): [[story-checkpoint-named-players]] |
-| **2. The app user's account** | The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone | Sign-in, storage, payments | — |
+| **1. Named players** | Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names | None | **Built** 2026-10-19 (Tasks 1–4; device checks to come): [[story-checkpoint-named-players]] |
+| **2. The app user's account** | The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone | AWS Amplify: sign-in, storage, payments | Planned 2026-10-19: [[story-checkpoint-app-user-accounts]] (waiting for Nigel's answers) |
 | **3. Friends** | Another app user **links their account** to this app user and becomes a **friend**; a seat can be a friend; their throws on the host's phone are **recorded on their own app** | Friends, shared records | — |
 | **4. Join a live session** | The host's phone runs a session; friends join from their own phones; live scores, turns and corrections on each thrower's phone | Live sync (server or local Wi-Fi) | — |
 | **5. Throws on video, owned by the thrower** | The host records each throw (#11); each friend's clips are delivered to them to keep or share | Clip delivery | Builds on #11 |
@@ -53,7 +53,7 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 - **Data model:** the game's players carry an optional name (`Match` / `GameNotifier`); `GameRecord` **version 2** stores each player's name. Version 1 files still read, with no names.
 - **No player list, no history by player, no IDs:** a name is a label for one game.
 - **No backend, nothing leaves the phone.**
-- **Built** 2026-10-19 ([[story-checkpoint-named-players]] Tasks 1–3; Task 4, the Instructions, device checks and traceability, to come). Requirement: [[Player Names]]; design: [[Design Decisions]] → Named Players.
+- **Built** 2026-10-19 ([[story-checkpoint-named-players]] Tasks 1–4; device checks N0–N6 to come). Requirement: [[Player Names]]; design: [[Design Decisions]] → Named Players.
   - Names on the setup screen, Play, two-target Play, the score-correction rows and History; `GameRecord` version 2.
   - The **last names used are kept on the phone** (`player_names.json`, `lib/settings/`) and filled in next time: no list to manage.
   - **Quick draw** uses the same names, changed with **Names** before Start.
@@ -66,7 +66,14 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 - **Sign-in:** the chosen provider behind `AuthService`, which already exists (`lib/auth/`; `authServiceProvider` throws until overridden).
 - **Backup and restore:** `GameHistory` gets a backend implementation, or a sync layer over the file ones.
   - **Offline-first:** venues often have poor signal, so the phone stays the source of truth and syncs when it can.
-- **The backend choice is made here** (see Open Decisions). Revisit CI/CD (A8) and the branch model (a dev/prod split) at the same time.
+- **The backend is AWS Amplify** (Nigel, 2026-10-19: "stage two will always be AWS Amplify"), Gen 2, with **WhereWillWeVisit (`where_in_nz_v3`) as the guide**, which has accounts implemented. What to carry over:
+  - **Sign-in:** Cognito, with email, Google and **Sign in with Apple** (`amplify/auth/resource.ts`: `defineAuth`; secrets in SSM via `secret(...)`; a custom URL scheme for the mobile callback).
+  - **The user ID is the Cognito `sub`,** never derived from the email. WhereWillWeVisit learned this the hard way: Sign in with Apple's private-relay email isn't stable, and an email-hash ID silently created a second account (its *User Identity and Authorization* page, "Known incident").
+  - **Ownership checks on the server:** resolvers run under `userPools` auth and take the caller's `sub` from the verified identity, never from what the app sends (its "CR-03").
+  - **Account deletion** inside the app (its `account_deletion_flow.dart`): required by both stores.
+  - **Subscriptions:** Apple purchases verified server-side, with Apple's server notifications (its `verifyAppleTransaction` and `appleServerNotifications` functions); Google Play's equivalent for Android. Its Stripe flow is for web payments and doesn't apply to in-app digital subscriptions.
+  - **Local development:** the Amplify Gen 2 sandbox (`npx ampx sandbox`); deploys with `ampx pipeline-deploy`.
+- Revisit CI/CD (A8) and the branch model (a dev/prod split) at the same time.
 - **Store rules:**
   - Sign in with Apple is required on iOS if any other social sign-in is offered.
   - **Account deletion inside the app** is required on both stores.
@@ -131,7 +138,7 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 | Decision | Needed by | Options | Leaning |
 |---|---|---|---|
-| **Backend and sign-in provider** | Stage 2 | **Firebase** (sign-in, a live database and storage in one; fastest to stage 4); **Supabase** (Postgres, live updates, open source); **AWS** (Cognito, AppSync and S3; the stack Nigel's other projects use; more setup) | Not yet chosen: weigh Firebase against AWS at stage 2 |
+| ~~**Backend and sign-in provider**~~ **Decided 2026-10-19: AWS Amplify** (Gen 2, Cognito; WhereWillWeVisit as the guide) | Stage 2 | **Firebase** (sign-in, a live database and storage in one; fastest to stage 4); **Supabase** (Postgres, live updates, open source); **AWS** (Cognito, AppSync and S3; the stack Nigel's other projects use; more setup) | Not yet chosen: weigh Firebase against AWS at stage 2 |
 | **Where video goes** | Stage 5 | **Phone to phone** (clips sent straight to the thrower; the app never hosts video; cheaper; sharing through their own share sheet) or **cloud** (stored; allows sharing later and clips on leaderboards; storage costs, consent and moderation) | Phone to phone first (not yet confirmed) |
 | **Live session transport** | Stage 4 | Server, local network or Bluetooth, or both | Decide when planning stage 4 |
 | **Ownership rule** | Stage 3 | As above | Proposed |
@@ -142,6 +149,7 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 ## Changes Log
 
-- **2026-10-19:** Stage 1 (named players) built, Tasks 1–3 of [[story-checkpoint-named-players]]; device checks to come.
+- **2026-10-19:** Stage 1 (named players) built, Tasks 1–4 of [[story-checkpoint-named-players]]; device checks to come.
 - **2026-10-19:** Nigel's model of app users, named players and friends added; signing in not a gate for scoring (proposed). Stage 1 simplified to **Named players** (a name on a seat, no player list, history or IDs); friends link their accounts and get their throws on their own app (stage 3).
+- **2026-10-19:** Backend decided: **AWS Amplify**, always, with WhereWillWeVisit (`where_in_nz_v3`) as the guide (stage 2).
 - **2026-10-18:** Written from Nigel's description of the destination (friends on one phone first; ultimately a game centre where friends sign in, join the host's session, and share their own throw videos). Nigel: stage 1 first.

@@ -11,12 +11,13 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 **Start here** when Nigel wants build 9 (build 8 went to Beta App Review on 2026-10-19: `06104c8`, `dd40600`). Section 00 has the steps; do them with **`1.0.0+9`** in place of `+7`, commit the bump as e.g. `Build 1.0.0+9 for TestFlight (Quick draw match)`, and **add the build to the External testers group** ([[Known Issues]]: builds of the same version often skip review).
 
 ### What's in it since build 8 (from the PC, pushed to `main`)
+- **Named players** ([[story-checkpoint-named-players]], 2026-10-19): a name for each player on Play's setup screen (optional, at most 16 letters, kept on the phone); Play, two-target Play, History and Quick draw use them; Quick draw has a **Names** button. The history file becomes **version 2** (names); version 1 files still read. New file `player_names.json` beside the history. **No new plugins or permissions** (`path_provider` was already there).
 - **The live Quick draw is a match of three rounds** ([[story-checkpoint-quick-draw-match]], from Nigel's brother's rules): the first to stick wins a round; a bounce-out or false start loses; **the same frame → the higher score wins**, the same score → a drawn round. All three rounds are thrown; level after three → **Extra round** until one is won. **Next round**, **Finish match** (asks first), **New match**. The panel shows "Round 2 of 3", the round's winner and "Player 1 leads 1–0", then "Player 1 wins the match 2–1" in green.
 - The Instructions name the scoring **KATTA** (the same rings and line rule as before; `TargetModel.katta`).
-- **No new plugins, permissions or assets.** `flutter test`: 704 pass on the PC.
+- **No new plugins, permissions or assets.** `flutter test`: 749 pass on the PC.
 
 ### Then
-Nigel sends his brother [[Device Test Plan]] → **Quick Draw Match Checks** (QM0–QM6), with whatever of Q0–Q8, M0–M9, H0–H7 and C0–C7 is still to do from build 8.
+Nigel sends his brother [[Device Test Plan]] → **Quick Draw Match Checks** (QM0–QM6) and **Named Players Checks** (N0–N6), with whatever of Q0–Q8, M0–M9, H0–H7 and C0–C7 is still to do from build 8.
 
 ---
 

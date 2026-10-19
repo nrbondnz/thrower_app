@@ -121,6 +121,20 @@ For [[story-checkpoint-quick-draw-match]] (from build 9): the live Quick draw as
 | QM5 | Is the result panel readable from the throwing line (about 4 m), held the way he uses the phone (upright or sideways)? | Round, winner and match line readable; nothing cut off |
 | QM6 | Later, **real knives**, as Q8: two experienced throwers, separate lanes, the starter behind them taps Start and Next round | Each round's winner as seen by eye; knives collected together between rounds; nobody goes to the phone during a round |
 
+## Named Players Checks (added 2026-10-19)
+
+For [[story-checkpoint-named-players]] (from build 9): players can be given names in place of "Player 1" and "Player 2". Nigel can do N0–N5 on the Samsung with the Live test; N6 needs the live camera.
+
+| Step | Do | Look for |
+|---|---|---|
+| N0 | Live test → Target 1 → Play, **2 players, 1 target**: type two names (e.g. Jo, Sam) → Start | "Jo's turn" in large type; the totals "Jo: …" / "Sam: …"; the correction rows labelled Jo / Sam |
+| N1 | Play to the end (or **Finish game**) | "Jo wins" / "Sam wins" / "A draw"; then **History**: the game says "Sam wins 61–58" and its page heads the rounds with the names |
+| N2 | Close the app completely, open it, Play | The names are filled in again |
+| N3 | Clear one name → Start | That player is "Player 1" (or "Player 2") again |
+| N4 | Type a long name (e.g. "Bartholomew Smithson") | It stops at 16 letters; "…'s turn" still fits the screen; the correction row shows its first letters ("Barth…") |
+| N5 | Live test → Quick draw: **Names** → change them → Save, then choose the boards and Play | "Tap the centre of Jo's board"; the result line names the winner; Cancel instead changes nothing |
+| N6 | Live camera: Home → Quick draw with names, one round | "Jo wins", "Jo leads 1–0"; **Names** is hidden once Start is tapped |
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

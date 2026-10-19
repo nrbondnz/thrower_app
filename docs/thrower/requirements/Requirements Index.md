@@ -26,6 +26,9 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 - [[Results Sharing|Game results sharing]] 🗺️
 	- All players or each player
 
+## Across the App
+- [[Instructions and Safety|In-app instructions and safety]] ✅ (Home → Instructions; the safety points that guard every screen)
+
 ## Game Centre
 - [[Rankings]] 💭
 	- [[Rankings#Daily Ranking|Daily ranking]]

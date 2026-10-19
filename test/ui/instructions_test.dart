@@ -136,6 +136,14 @@ void main() {
     expect(text, contains("This is KATTA scoring (the UK's Knife Axe and Tomahawk Throwing Association)"));
   });
 
+  // Named-players story (Nigel, 2026-10-19).
+  test('naming players: optional, remembered on the phone, sent nowhere', () {
+    expect(text, contains("Before Start you can type each player's name (up to 16 letters); leave it blank for "
+        '"Player 1" or "Player 2".'));
+    expect(text, contains('The last names used are kept on this phone and filled in next time. They are sent nowhere.'));
+    expect(text, contains("Tap Names to change the throwers' names (the same names as Play)."));
+  });
+
   group('Quick draw (real board)', () {
     test('how to choose the boards and play, with the button names on the screen', () {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
