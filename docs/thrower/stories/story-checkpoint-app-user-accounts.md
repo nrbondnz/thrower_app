@@ -20,15 +20,27 @@ IN PROGRESS (2026-10-19, Nigel away: "make as much progress as you can … carry
 ## What WhereWillWeVisit Teaches (`C:\dev\flutter_projs\whereinuk\where_in_nz_v3`)
 Read 2026-10-19: `amplify/auth/resource.ts`, `amplify/data/resource.ts`, `lib/main_support_utils.dart`, `lib/services/AuthService.dart`, `lib/utilities/account_deletion_flow.dart`, `docs/wherewillwevisit/Architecture/User Identity and Authorization.md`, `docs/wherewillwevisit/Troubleshooting/Known Issues.md`.
 
-| Carry over | Where it is there | Note for Thrower |
-|---|---|---|
-| **Amplify Gen 2** backend in the repo (`amplify/backend.ts`, `auth/resource.ts`, `data/resource.ts`), `npx ampx sandbox` locally, `ampx pipeline-deploy` in the Amplify build | `amplify/`, `amplify.yml`, `package.json` (`@aws-amplify/backend` 1.22) | Same layout. Thrower needs no Java lambdas to start |
-| **Cognito** sign-in: email, Google, **Sign in with Apple** (`defineAuth`, secrets via `secret(...)` in SSM, a custom URL scheme callback for mobile) | `amplify/auth/resource.ts` | Apple requires Sign in with Apple if Google is offered |
-| **The user ID is the Cognito `sub`**, never an email hash | *User Identity and Authorization* → "Known incident: Apple sign-in silently created a second account" | Start right: no migration later |
-| Flutter: `Amplify.addPlugin(AmplifyAuthCognito())`, `AmplifyAPI`, `Amplify.configure(amplifyConfig)`; the Hub's `signedIn` / `signedOut` / `sessionExpired` events | `lib/main_support_utils.dart`, `lib/services/AuthService.dart` | Thrower already has `AuthService` (interface) and `authServiceProvider`: an `AmplifyAuthService` implements it |
-| **Account deletion** inside the app, with a warning that an Apple subscription must be cancelled in Settings | `lib/utilities/account_deletion_flow.dart` | Required by both stores. No subscriptions yet, so a simpler warning |
-| **Ownership on the server** | Its custom resolvers take the caller's `sub` from the verified identity (CR-03) | **Simpler here:** Amplify Data **owner** rules (`allow.owner()`) on each model, so a user only ever reads and writes their own rows, with no custom resolvers. (Its models are mostly `allow.authenticated("identityPool")`, which lets any signed-in user read every row; they rely on resolvers instead) |
-| Known issues | *Known Issues*: **SES sandbox** blocked sign-up confirmation emails (fixed for its account in `ap-southeast-2`); the Cognito console can't delete Google-linked users (use the CLI); `amplify_outputs` conflicts across branches | If the same AWS account and region are used, SES is already out of the sandbox |
+- **Amplify Gen 2** backend in the repo (`amplify/backend.ts`, `auth/resource.ts`, `data/resource.ts`), `npx ampx sandbox` locally, `ampx pipeline-deploy` in the Amplify build
+  - **Where it is there:** `amplify/`, `amplify.yml`, `package.json` (`@aws-amplify/backend` 1.22)
+  - **Note for Thrower:** Same layout. Thrower needs no Java lambdas to start
+- **Cognito** sign-in: email, Google, **Sign in with Apple** (`defineAuth`, secrets via `secret(...)` in SSM, a custom URL scheme callback for mobile)
+  - **Where it is there:** `amplify/auth/resource.ts`
+  - **Note for Thrower:** Apple requires Sign in with Apple if Google is offered
+- **The user ID is the Cognito `sub`**, never an email hash
+  - **Where it is there:** *User Identity and Authorization* → "Known incident: Apple sign-in silently created a second account"
+  - **Note for Thrower:** Start right: no migration later
+- **Flutter: `Amplify.addPlugin(AmplifyAuthCognito())`, `AmplifyAPI`, `Amplify.configure(amplifyConfig)`; the Hub's `signedIn` / `signedOut` / `sessionExpired` events**
+  - **Where it is there:** `lib/main_support_utils.dart`, `lib/services/AuthService.dart`
+  - **Note for Thrower:** Thrower already has `AuthService` (interface) and `authServiceProvider`: an `AmplifyAuthService` implements it
+- **Account deletion** inside the app, with a warning that an Apple subscription must be cancelled in Settings
+  - **Where it is there:** `lib/utilities/account_deletion_flow.dart`
+  - **Note for Thrower:** Required by both stores. No subscriptions yet, so a simpler warning
+- **Ownership on the server**
+  - **Where it is there:** Its custom resolvers take the caller's `sub` from the verified identity (CR-03)
+  - **Note for Thrower:** **Simpler here:** Amplify Data **owner** rules (`allow.owner()`) on each model, so a user only ever reads and writes their own rows, with no custom resolvers. (Its models are mostly `allow.authenticated("identityPool")`, which lets any signed-in user read every row; they rely on resolvers instead)
+- **Known issues**
+  - **Where it is there:** *Known Issues*: **SES sandbox** blocked sign-up confirmation emails (fixed for its account in `ap-southeast-2`); the Cognito console can't delete Google-linked users (use the CLI); `amplify_outputs` conflicts across branches
+  - **Note for Thrower:** If the same AWS account and region are used, SES is already out of the sandbox
 
 ---
 
@@ -291,15 +303,34 @@ Read as: do it as WhereWillWeVisit does.
 - **Drift:** the Instructions' "sent nowhere" line, fixed in code by the orchestrator (below).
 
 #### Traceability Report — 2026-10-19 (Traceability Agent; story not complete)
-| Requirement | Implementation | Test | Status |
-|---|---|---|---|
-| AC1: everything works signed out | `authServiceProvider` (null), `connectAccounts`, `ThrowerApp` (`Authenticator(child:)`, no `builder`), `SyncedGameHistory` with no backup | `amplify_accounts_test.dart` (2); `account_screen_test.dart` (no Account button); `synced_game_history_test.dart` (signed out ×2); **`widget_test.dart` 'with accounts, signed out: the app opens on Home, not a sign-in screen'** (added after the report) | ✅ Covered (device: ACC0 to recheck) |
-| AC2: Home → Account: sign up, in, out (email, Google, Apple) | `HomeScreen` `homeAccount`, `AccountScreen`, `AccountDetails`, `AmplifyAuthService`; `auth/resource.ts`, `backend.ts` domains, the `throwerapp` link | `account_screen_test.dart` (4) | ✅ Email (device ACC1 ✅). ⛔ Google and Apple: secrets, deploy, Xcode |
-| AC3: backed up; kept on the phone without signal and sent later | `SyncedGameHistory`, `PlayerNamesNotifier.set`/`syncWith`, `BackupNotifier`, `AmplifyBackup.put`/`save` | `synced_game_history_test.dart` (signed in ×5; providers) | ⚠️ "Later" means at the next sign-in, app start or Back up now (no automatic retry on reconnect). Device ACC5/ACC7 after the deploy |
-| AC4: a new phone restores, no duplicates | `SyncedGameHistory.sync` (merge by id), `syncWith` | sync ×3; providers ×2 | ⚠️ Names: the phone's win unless the phone has none (by design; the AC said "merged"). Device ACC6 |
-| AC5: Delete account removes the account and backup; the phone's history stays | `confirmAndDeleteAccount`, `deleteAccount`, `AmplifyBackup.erase`, `AmplifyAuthService.deleteUser` | `account_screen_test.dart` (3); `synced_game_history_test.dart` (2) | ✅ After a fix (below); device ACC8 with the CLI check |
-| AC6: users only reach their own data | `KeptGame`, `PlayerNameList` `allow.owner()`; row ids `<sub>:…` | none (no sandbox: Task 1's plan change) | ⚠️ **Replaced by device check ACC9** (two accounts, CLI check) |
-| AC7: Instructions, privacy policy, store labels | Your account section; `Privacy Policy (Draft).md` | `instructions_test.dart` | ⚠️ Instructions ✅; ⛔ the policy is a draft; ⛔ the labels (Nigel) |
+- **AC1: everything works signed out**
+  - **Implementation:** `authServiceProvider` (null), `connectAccounts`, `ThrowerApp` (`Authenticator(child:)`, no `builder`), `SyncedGameHistory` with no backup
+  - **Test:** `amplify_accounts_test.dart` (2); `account_screen_test.dart` (no Account button); `synced_game_history_test.dart` (signed out ×2); **`widget_test.dart` 'with accounts, signed out: the app opens on Home, not a sign-in screen'** (added after the report)
+  - **Status:** ✅ Covered (device: ACC0 to recheck)
+- **AC2: Home → Account: sign up, in, out (email, Google, Apple)**
+  - **Implementation:** `HomeScreen` `homeAccount`, `AccountScreen`, `AccountDetails`, `AmplifyAuthService`; `auth/resource.ts`, `backend.ts` domains, the `throwerapp` link
+  - **Test:** `account_screen_test.dart` (4)
+  - **Status:** ✅ Email (device ACC1 ✅). ⛔ Google and Apple: secrets, deploy, Xcode
+- **AC3: backed up; kept on the phone without signal and sent later**
+  - **Implementation:** `SyncedGameHistory`, `PlayerNamesNotifier.set`/`syncWith`, `BackupNotifier`, `AmplifyBackup.put`/`save`
+  - **Test:** `synced_game_history_test.dart` (signed in ×5; providers)
+  - **Status:** ⚠️ "Later" means at the next sign-in, app start or Back up now (no automatic retry on reconnect). Device ACC5/ACC7 after the deploy
+- **AC4: a new phone restores, no duplicates**
+  - **Implementation:** `SyncedGameHistory.sync` (merge by id), `syncWith`
+  - **Test:** sync ×3; providers ×2
+  - **Status:** ⚠️ Names: the phone's win unless the phone has none (by design; the AC said "merged"). Device ACC6
+- **AC5: Delete account removes the account and backup; the phone's history stays**
+  - **Implementation:** `confirmAndDeleteAccount`, `deleteAccount`, `AmplifyBackup.erase`, `AmplifyAuthService.deleteUser`
+  - **Test:** `account_screen_test.dart` (3); `synced_game_history_test.dart` (2)
+  - **Status:** ✅ After a fix (below); device ACC8 with the CLI check
+- **AC6: users only reach their own data**
+  - **Implementation:** `KeptGame`, `PlayerNameList` `allow.owner()`; row ids `<sub>:…`
+  - **Test:** none (no sandbox: Task 1's plan change)
+  - **Status:** ⚠️ **Replaced by device check ACC9** (two accounts, CLI check)
+- **AC7: Instructions, privacy policy, store labels**
+  - **Implementation:** Your account section; `Privacy Policy (Draft).md`
+  - **Test:** `instructions_test.dart`
+  - **Status:** ⚠️ Instructions ✅; ⛔ the policy is a draft; ⛔ the labels (Nigel)
 
 **Fixed straight after the report (2026-10-19):**
 - **Delete account could leave data behind:** `AmplifyBackup.erase` went through `list()`, which skips games it can't read (a newer version's), so those rows would have outlived the account. It now lists **row IDs** and deletes them without reading the games.

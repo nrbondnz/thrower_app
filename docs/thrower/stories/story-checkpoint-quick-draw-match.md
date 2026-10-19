@@ -171,15 +171,41 @@ BUILT: all 3 tasks complete (2026-10-19); Tasks 1–2 committed (`d6809c0`, `0c2
 
 #### Traceability Report — 2026-10-19 (story complete, device checks to come)
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| AC1: a round's rule: first to stick; bounce-out and false start lose; same frame → higher score; same or unknown score → drawn; none stuck → drawn | Design Decisions → Quick Draw: Go, False Starts and the Winner (update 2026-10-19) | `judgeQuickDraw` (`byScore`), `verdictText`, `QuickDrawResultPanel.headline` | `quick_draw_judge_test.dart` (table, incl. 4 same-frame cases; "wins on score"); `live_quick_draw_screen_test.dart` ('a win on score says so', 'a draw') | ✅ Covered (device: QM0, QM6) |
-| AC2: the live Quick draw is a three-round match; the round and match score shown; Next round keeps the boards | Quick Draw: the Live Duel (update 2026-10-19) | `QuickDrawMatch`, `LiveQuickDrawScreen._match` / `_nextRound`, `roundLabel`, `matchText`, `_line` | `quick_draw_match_test.dart`; `live_quick_draw_screen_test.dart` (the round and match; Next round's line) | ✅ Covered (device: QM0–QM1) |
-| AC3: more rounds won wins; level after three → extra rounds until one is won; all three thrown at 2–0 | as AC2 | `QuickDrawMatch.isOver` / `isExtraRound` / `winner`; the Extra round button | `quick_draw_match_test.dart` (2–0 not over; drawn extra rounds go on); `live_quick_draw_screen_test.dart` ('level after three rounds: an extra round') | ✅ Covered (device: QM2–QM3) |
-| AC4: Finish match after any round, asking; decided on rounds so far, level a draw; New match | as AC2 | `QuickDrawMatch.finish`, `confirmFinishMatch`, `_finishMatch`, `_newMatch` | `quick_draw_match_test.dart` (finishing early ×5); `live_quick_draw_screen_test.dart` (Finish asks; between rounds; Cancel; New match) | ✅ Covered (device: QM4) |
-| AC5: the match result in large type, readable from the throwing line, with the chime | Quick Draw: the Live Duel; Review Agent 2026-10-15 | `QuickDrawResultPanel` (44 pt green match line; fits by scaling); `SignalSounds.result` on each round | `live_quick_draw_screen_test.dart` ('the match result, large and green' ≥ 40 pt; fits upright and sideways; the chime on a result) | ✅ Covered (device: QM5, the open question) |
-| AC6: KATTA named; scores unchanged | Design Decisions → Throwing Sport (update 2026-10-19) | `TargetModel.katta`; Instructions → Scoring | `target_model_test.dart` (unchanged cases, renamed); `instructions_test.dart` ('names KATTA scoring') | ✅ Covered |
-| AC7: the Instructions explain the match; safety points kept | Design Decisions → In-app Instructions (update) | `instructionSections` → Quick draw | `instructions_test.dart` (3 new; the earlier safety tests still pass) | ✅ Covered (and the Safety Report) |
+- **AC1: a round's rule: first to stick; bounce-out and false start lose; same frame → higher score; same or unknown score → drawn; none stuck → drawn**
+  - **Design Reference:** Design Decisions → Quick Draw: Go, False Starts and the Winner (update 2026-10-19)
+  - **Implementation:** `judgeQuickDraw` (`byScore`), `verdictText`, `QuickDrawResultPanel.headline`
+  - **Test:** `quick_draw_judge_test.dart` (table, incl. 4 same-frame cases; "wins on score"); `live_quick_draw_screen_test.dart` ('a win on score says so', 'a draw')
+  - **Status:** ✅ Covered (device: QM0, QM6)
+- **AC2: the live Quick draw is a three-round match; the round and match score shown; Next round keeps the boards**
+  - **Design Reference:** Quick Draw: the Live Duel (update 2026-10-19)
+  - **Implementation:** `QuickDrawMatch`, `LiveQuickDrawScreen._match` / `_nextRound`, `roundLabel`, `matchText`, `_line`
+  - **Test:** `quick_draw_match_test.dart`; `live_quick_draw_screen_test.dart` (the round and match; Next round's line)
+  - **Status:** ✅ Covered (device: QM0–QM1)
+- **AC3: more rounds won wins; level after three → extra rounds until one is won; all three thrown at 2–0**
+  - **Design Reference:** as AC2
+  - **Implementation:** `QuickDrawMatch.isOver` / `isExtraRound` / `winner`; the Extra round button
+  - **Test:** `quick_draw_match_test.dart` (2–0 not over; drawn extra rounds go on); `live_quick_draw_screen_test.dart` ('level after three rounds: an extra round')
+  - **Status:** ✅ Covered (device: QM2–QM3)
+- **AC4: Finish match after any round, asking; decided on rounds so far, level a draw; New match**
+  - **Design Reference:** as AC2
+  - **Implementation:** `QuickDrawMatch.finish`, `confirmFinishMatch`, `_finishMatch`, `_newMatch`
+  - **Test:** `quick_draw_match_test.dart` (finishing early ×5); `live_quick_draw_screen_test.dart` (Finish asks; between rounds; Cancel; New match)
+  - **Status:** ✅ Covered (device: QM4)
+- **AC5: the match result in large type, readable from the throwing line, with the chime**
+  - **Design Reference:** Quick Draw: the Live Duel; Review Agent 2026-10-15
+  - **Implementation:** `QuickDrawResultPanel` (44 pt green match line; fits by scaling); `SignalSounds.result` on each round
+  - **Test:** `live_quick_draw_screen_test.dart` ('the match result, large and green' ≥ 40 pt; fits upright and sideways; the chime on a result)
+  - **Status:** ✅ Covered (device: QM5, the open question)
+- **AC6: KATTA named; scores unchanged**
+  - **Design Reference:** Design Decisions → Throwing Sport (update 2026-10-19)
+  - **Implementation:** `TargetModel.katta`; Instructions → Scoring
+  - **Test:** `target_model_test.dart` (unchanged cases, renamed); `instructions_test.dart` ('names KATTA scoring')
+  - **Status:** ✅ Covered
+- **AC7: the Instructions explain the match; safety points kept**
+  - **Design Reference:** Design Decisions → In-app Instructions (update)
+  - **Implementation:** `instructionSections` → Quick draw
+  - **Test:** `instructions_test.dart` (3 new; the earlier safety tests still pass)
+  - **Status:** ✅ Covered (and the Safety Report)
 
 - **Coverage:** 7 of 7 have design, code and tests; device checks QM0–QM6 are to come.
 - **Backward:** every new symbol traces to an AC. `QuickDrawMatch.leader` and `scoreText` serve `matchText` (AC2). `byScore` serves AC1's wording.

@@ -25,41 +25,101 @@ Turn the default `flutter create` scaffold into a properly set-up project for an
 
 ## Architecture Questions
 
-| # | Question | Answer (2026-10-04) |
-|---|---|---|
-| A1 | What does the app do? | Camera on a round 5-ring target (5 = inner, 1 = outer, alternating colours); detects the target off-centre; registers the score of each throw. To be refined. |
-| A2 | Target platforms | **iOS and Android** |
-| A3 | Backend | **Later** |
-| A4 | Auth / accounts | **Accounts needed** (provider deferred with the backend) |
-| A5 | Payments | **Later** |
-| A6 | Structure / AI | AI for **visual and timing** tasks. Proposed: on-device, 3-layer split. See [[Design Decisions]]. |
-| A7 | Source control | **GitHub, private repo `thrower_app`, `main` only** |
-| A8 | CI/CD | Not yet discussed. Revisit with the backend decision. |
+- **A1**
+  - **Question:** What does the app do?
+  - **Answer (2026-10-04):** Camera on a round 5-ring target (5 = inner, 1 = outer, alternating colours); detects the target off-centre; registers the score of each throw. To be refined.
+- **A2**
+  - **Question:** Target platforms
+  - **Answer (2026-10-04):** **iOS and Android**
+- **A3**
+  - **Question:** Backend
+  - **Answer (2026-10-04):** **Later**
+- **A4**
+  - **Question:** Auth / accounts
+  - **Answer (2026-10-04):** **Accounts needed** (provider deferred with the backend)
+- **A5**
+  - **Question:** Payments
+  - **Answer (2026-10-04):** **Later**
+- **A6**
+  - **Question:** Structure / AI
+  - **Answer (2026-10-04):** AI for **visual and timing** tasks. Proposed: on-device, 3-layer split. See [[Design Decisions]].
+- **A7**
+  - **Question:** Source control
+  - **Answer (2026-10-04):** **GitHub, private repo `thrower_app`, `main` only**
+- **A8**
+  - **Question:** CI/CD
+  - **Answer (2026-10-04):** Not yet discussed. Revisit with the backend decision.
 
 ## Open Questions (refining the product)
 
-| # | Question | Why it matters |
-|---|---|---|
-| Q1 | What's being thrown? | **Knives or axes** into a wooden board (Nigel, 2026-10-04; corrects an earlier "darts"). Score is where the blade meets the board; a throw that doesn't stick scores 0. See [[Design Decisions]] → Throwing Sport. |
-| Q2 | Target size, and how far is the phone from it? Tripod or handheld? | **Static camera** (2026-10-04). Board size and distance are still open; IKTHOF's is 50 cm with throws from about 12–21 ft. |
-| Q3 | Ring colours? Real photos? | Close example: red paint and bare wood alternating, red bull (`reference/target-example.png`). **Nigel's own photos to follow.** |
-| Q4 | A throw on a line: higher or lower score? A miss scores 0? | **Backlog** (refine scoring by hit point). Interim: IKTHOF, i.e. touching blade scores the higher ring, no stick = 0. Make it a setting. |
-| Q5 | Players, rounds and throws per round? Single-player first? | **Single player first** (2026-10-04). Throws per round still open. |
-| Q6 | Repo name and public/private; dev/prod branches as in WhereWillWeVisit? | **`thrower_app`, private, on GitHub; `main` only for now** (2026-10-04). |
-| Q7 | Remove the web/desktop platform folders? | **Yes**: done 2026-10-04 |
+- **Q1**
+  - **Question:** What's being thrown?
+  - **Why it matters:** **Knives or axes** into a wooden board (Nigel, 2026-10-04; corrects an earlier "darts"). Score is where the blade meets the board; a throw that doesn't stick scores 0. See [[Design Decisions]] → Throwing Sport.
+- **Q2**
+  - **Question:** Target size, and how far is the phone from it? Tripod or handheld?
+  - **Why it matters:** **Static camera** (2026-10-04). Board size and distance are still open; IKTHOF's is 50 cm with throws from about 12–21 ft.
+- **Q3**
+  - **Question:** Ring colours? Real photos?
+  - **Why it matters:** Close example: red paint and bare wood alternating, red bull (`reference/target-example.png`). **Nigel's own photos to follow.**
+- **Q4**
+  - **Question:** A throw on a line: higher or lower score? A miss scores 0?
+  - **Why it matters:** **Backlog** (refine scoring by hit point). Interim: IKTHOF, i.e. touching blade scores the higher ring, no stick = 0. Make it a setting.
+- **Q5**
+  - **Question:** Players, rounds and throws per round? Single-player first?
+  - **Why it matters:** **Single player first** (2026-10-04). Throws per round still open.
+- **Q6**
+  - **Question:** Repo name and public/private; dev/prod branches as in WhereWillWeVisit?
+  - **Why it matters:** **`thrower_app`, private, on GitHub; `main` only for now** (2026-10-04).
+- **Q7**
+  - **Question:** Remove the web/desktop platform folders?
+  - **Why it matters:** **Yes**: done 2026-10-04
 
 ## Traceability Matrix (final, 2026-10-05)
 
-| ID | Requirement | Design ref | Implementation | Test | Status |
-|---|---|---|---|---|---|
-| R1 | Project has a docs area matching WhereWillWeVisit's workflow | `working-with-nigel.md` | `docs/`, `CLAUDE.md` | n/a (docs) | ✅ Task 0 |
-| R2 | Runs on iOS and Android only, as `nz.nrbond.thrower` | Design Decisions | web/desktop folders removed; bundle IDs set | Android debug build; Nigel ran it on both platforms | ✅ Task 2 |
-| R3 | Scores a point on a 5-ring target: 5 inner → 1 outer, 0 outside; line-touch rule is a setting (default: higher) | Design Decisions → Throwing Sport | `TargetModel.scoreAt` | `target_model_test.dart` (17); `debug_target_screen_test.dart` (4); Nigel on device | ✅ Task 3 |
-| R4 | Live camera preview of the target on iOS and Android; frames available to vision; denied access handled | Design Decisions → Camera | `LiveCamera`, `liveCameraProvider`, `CameraScreen` | `camera_screen_test.dart` (7), `live_camera_test.dart` (4), `frame_rate_meter_test.dart` (3); Android device: first-run prompt → preview (Claude), preview (Nigel) | ⚠️ Android ✅; **iOS device check outstanding**; Android "Don't allow" path tested in widget tests only |
-| R5 | Finds the round target when viewed off-centre | Design Decisions | | | ➡️ [[story-checkpoint-target-calibration]] (C1–C5) |
-| R6 | Detects a thrown knife or axe that sticks and registers its score; a throw that doesn't stick scores 0 | Design Decisions | | | ➡️ [[backlog]] #2 |
-| R7 | User accounts | Design Decisions | `AuthService` interface, `authServiceProvider` (unimplemented) | n/a (interface only) | ➡️ Interface done; provider in [[backlog]] #4 |
-| R8 | Printable test target for development before the real board is set up (Nigel, 2026-10-05) | Plan Changes Log 2026-10-05 | `tool/printable_target.dart` → `reference/printable/*.pdf` | visual check (dev utility; no automated test) | ✅ |
+- **R1**
+  - **Requirement:** Project has a docs area matching WhereWillWeVisit's workflow
+  - **Design ref:** `working-with-nigel.md`
+  - **Implementation:** `docs/`, `CLAUDE.md`
+  - **Test:** n/a (docs)
+  - **Status:** ✅ Task 0
+- **R2**
+  - **Requirement:** Runs on iOS and Android only, as `nz.nrbond.thrower`
+  - **Design ref:** Design Decisions
+  - **Implementation:** web/desktop folders removed; bundle IDs set
+  - **Test:** Android debug build; Nigel ran it on both platforms
+  - **Status:** ✅ Task 2
+- **R3**
+  - **Requirement:** Scores a point on a 5-ring target: 5 inner → 1 outer, 0 outside; line-touch rule is a setting (default: higher)
+  - **Design ref:** Design Decisions → Throwing Sport
+  - **Implementation:** `TargetModel.scoreAt`
+  - **Test:** `target_model_test.dart` (17); `debug_target_screen_test.dart` (4); Nigel on device
+  - **Status:** ✅ Task 3
+- **R4**
+  - **Requirement:** Live camera preview of the target on iOS and Android; frames available to vision; denied access handled
+  - **Design ref:** Design Decisions → Camera
+  - **Implementation:** `LiveCamera`, `liveCameraProvider`, `CameraScreen`
+  - **Test:** `camera_screen_test.dart` (7), `live_camera_test.dart` (4), `frame_rate_meter_test.dart` (3); Android device: first-run prompt → preview (Claude), preview (Nigel)
+  - **Status:** ⚠️ Android ✅; **iOS device check outstanding**; Android "Don't allow" path tested in widget tests only
+- **R5**
+  - **Requirement:** Finds the round target when viewed off-centre
+  - **Design ref:** Design Decisions
+  - **Status:** ➡️ [[story-checkpoint-target-calibration]] (C1–C5)
+- **R6**
+  - **Requirement:** Detects a thrown knife or axe that sticks and registers its score; a throw that doesn't stick scores 0
+  - **Design ref:** Design Decisions
+  - **Status:** ➡️ [[backlog]] #2
+- **R7**
+  - **Requirement:** User accounts
+  - **Design ref:** Design Decisions
+  - **Implementation:** `AuthService` interface, `authServiceProvider` (unimplemented)
+  - **Test:** n/a (interface only)
+  - **Status:** ➡️ Interface done; provider in [[backlog]] #4
+- **R8**
+  - **Requirement:** Printable test target for development before the real board is set up (Nigel, 2026-10-05)
+  - **Design ref:** Plan Changes Log 2026-10-05
+  - **Implementation:** `tool/printable_target.dart` → `reference/printable/*.pdf`
+  - **Test:** visual check (dev utility; no automated test)
+  - **Status:** ✅
 
 ---
 

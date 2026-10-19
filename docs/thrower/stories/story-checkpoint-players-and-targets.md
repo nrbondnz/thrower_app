@@ -155,15 +155,48 @@ BUILT: all 4 tasks complete (2026-10-16); Tasks 1–3 committed (`a1bbd35`, `89a
 
 ### Traceability Report — 2026-10-16 (story complete, before the device checks)
 
-| Req | Requirement | Design reference | Implementation | Tests | Status |
-|---|---|---|---|---|---|
-| AC1 | Play opens a setup screen: 1 / 2 players; for 2, 1 / 2 targets; Start | Design Decisions → Single Player First (update 2026-10-16) | `PlaySetupScreen`, `modeDescription`, `PlayMode`, `playModeProvider` | `play_setup_screen_test` (7); `two_target_play_screen_test` 'Start with 2 players on 2 targets…'; `live_quick_draw_screen_test` 'Play opens the setup screen…' | ✅ (device: M0) |
-| AC2 | 1 player plays exactly as before | same | `PlayScreen` (one-player branch), `Match` solo → one `GameSession` | `play_screen_test` (5, unchanged), `game_notifier_test`, `play_through_test`, `live_replay_test` (both recordings), `match_test` 'one player' | ✅ |
-| AC3 | 2 players, 1 target: whose turn in large type; throws to that player; turn passes after 3 or a collection; both totals; marks clear each turn | same, Task 2 | `Match` (`turn`, `turnThrows`, `turnComplete`, `nextTurn`, `_passTurn`, `nextThrowStartsRound`), `GameNotifier.onEvent`, `PlayersPanel`, `turnText` / `turnDetail` / `playerTitle` / `playerDetail` | `match_test` 'two players on one target' (13); `play_screen_test` 'two players on one target' (3) + 'two-player text' (2); `game_notifier_test` 'one target: throws go to whoever's turn it is'; **`live_replay_test` 'as two players on one target…' (both recordings)** | ✅ (device: M1, M3, M4) |
-| AC4 | 2 players, 2 targets: both boards chosen and locked, each on its crop; each board's throws, collections and fall-outs for its player only; both boards' marks | same, Task 3 | `TwoTargetPlayScreen`, `BoardChoosing.addBoard`, `playTargetsProvider`, `PlayBoardsWatcher`, `cropToBoard`, `Match` two targets, `GameNotifier` knives by (board, id), `BoardMarksPainter` / `paintRoundMarks` | **`two_target_replay_test` (the Quick draw recording: P1 bounce-out 0, P2 stuck 5)**; `two_target_play_screen_test` (15); `game_notifier_test` 'two targets…' (3); `match_test` 'two players on two targets' (3); Quick draw's tests for the shared crop | ✅ (device: M2, M5, M6, M8) |
-| AC5 | At the end: who won or a draw, both totals, large | same | `Match.isOver` / `winner` / `draw`, `turnText` (44 pt), `playerDetail`, `matchFooter`, New game | `match_test` (winner, draw, Player 2 still throws round 9, one finishing first on two targets); `play_screen_test` 'at the end…'; `two_target_play_screen_test` 'the winner at the end' | ✅ (device: M7) |
-| AC6 | Safety: own lanes for two targets, collect together; never told to throw while someone may be at the board | Review Agent Safety Reports (Tasks 2, 3); Known Issues → Two Targets: One Thrower Collecting Early | `turnText` / `turnDetail` ("Collect your knives / When no one is throwing", "Wait for Player 2"); Instructions: Two players on one target, Two players on two targets, Safety | `instructions_test` (3 new: each section, the Safety point); the text tests above | ✅ (device: M9, real knives later) |
-| AC7 | Rules tested without a camera, and each mode's screen | — | — | `match_test` (21), the screen tests above | ✅ |
+- **AC1**
+  - **Requirement:** Play opens a setup screen: 1 / 2 players; for 2, 1 / 2 targets; Start
+  - **Design reference:** Design Decisions → Single Player First (update 2026-10-16)
+  - **Implementation:** `PlaySetupScreen`, `modeDescription`, `PlayMode`, `playModeProvider`
+  - **Tests:** `play_setup_screen_test` (7); `two_target_play_screen_test` 'Start with 2 players on 2 targets…'; `live_quick_draw_screen_test` 'Play opens the setup screen…'
+  - **Status:** ✅ (device: M0)
+- **AC2**
+  - **Requirement:** 1 player plays exactly as before
+  - **Design reference:** same
+  - **Implementation:** `PlayScreen` (one-player branch), `Match` solo → one `GameSession`
+  - **Tests:** `play_screen_test` (5, unchanged), `game_notifier_test`, `play_through_test`, `live_replay_test` (both recordings), `match_test` 'one player'
+  - **Status:** ✅
+- **AC3**
+  - **Requirement:** 2 players, 1 target: whose turn in large type; throws to that player; turn passes after 3 or a collection; both totals; marks clear each turn
+  - **Design reference:** same, Task 2
+  - **Implementation:** `Match` (`turn`, `turnThrows`, `turnComplete`, `nextTurn`, `_passTurn`, `nextThrowStartsRound`), `GameNotifier.onEvent`, `PlayersPanel`, `turnText` / `turnDetail` / `playerTitle` / `playerDetail`
+  - **Tests:** `match_test` 'two players on one target' (13); `play_screen_test` 'two players on one target' (3) + 'two-player text' (2); `game_notifier_test` 'one target: throws go to whoever's turn it is'; **`live_replay_test` 'as two players on one target…' (both recordings)**
+  - **Status:** ✅ (device: M1, M3, M4)
+- **AC4**
+  - **Requirement:** 2 players, 2 targets: both boards chosen and locked, each on its crop; each board's throws, collections and fall-outs for its player only; both boards' marks
+  - **Design reference:** same, Task 3
+  - **Implementation:** `TwoTargetPlayScreen`, `BoardChoosing.addBoard`, `playTargetsProvider`, `PlayBoardsWatcher`, `cropToBoard`, `Match` two targets, `GameNotifier` knives by (board, id), `BoardMarksPainter` / `paintRoundMarks`
+  - **Tests:** **`two_target_replay_test` (the Quick draw recording: P1 bounce-out 0, P2 stuck 5)**; `two_target_play_screen_test` (15); `game_notifier_test` 'two targets…' (3); `match_test` 'two players on two targets' (3); Quick draw's tests for the shared crop
+  - **Status:** ✅ (device: M2, M5, M6, M8)
+- **AC5**
+  - **Requirement:** At the end: who won or a draw, both totals, large
+  - **Design reference:** same
+  - **Implementation:** `Match.isOver` / `winner` / `draw`, `turnText` (44 pt), `playerDetail`, `matchFooter`, New game
+  - **Tests:** `match_test` (winner, draw, Player 2 still throws round 9, one finishing first on two targets); `play_screen_test` 'at the end…'; `two_target_play_screen_test` 'the winner at the end'
+  - **Status:** ✅ (device: M7)
+- **AC6**
+  - **Requirement:** Safety: own lanes for two targets, collect together; never told to throw while someone may be at the board
+  - **Design reference:** Review Agent Safety Reports (Tasks 2, 3); Known Issues → Two Targets: One Thrower Collecting Early
+  - **Implementation:** `turnText` / `turnDetail` ("Collect your knives / When no one is throwing", "Wait for Player 2"); Instructions: Two players on one target, Two players on two targets, Safety
+  - **Tests:** `instructions_test` (3 new: each section, the Safety point); the text tests above
+  - **Status:** ✅ (device: M9, real knives later)
+- **AC7**
+  - **Requirement:** Rules tested without a camera, and each mode's screen
+  - **Design reference:** —
+  - **Implementation:** —
+  - **Tests:** `match_test` (21), the screen tests above
+  - **Status:** ✅
 
 **Coverage:** 7 of 7 requirements with design, code and tests. **Device checks:** all still to come (M0–M9); nothing here has run on a phone.
 

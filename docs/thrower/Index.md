@@ -4,13 +4,16 @@ Obsidian knowledge base for **Thrower App**. Open `docs/thrower/` as a vault. Or
 
 ## Folder Map
 
-| Folder | What's Inside |
-|--------|---------------|
-| [[Architecture Index\|Architecture]] | Design decisions, system diagram, data flow |
-| `requirements/` | [[Requirements Index]]: what the app should do, by area (setup, play, Game Centre), with what exists today and open questions |
-| `stories/` | Story checkpoint files (active), [[backlog]]; `stories/archive/` for completed ones |
-| `Operations/` | [[Common Tasks]], [[Device Test Plan]], [[Mac Handoff]] (state + App Store setup for Claude on the Mac), [[Cloud Config Setup]] (AWS, Google, Apple and payment setup; how each secret is sourced) |
-| `Troubleshooting/` | [[Known Issues]] |
+- **[[Architecture Index|Architecture]]**
+  - **What's Inside:** Design decisions, system diagram, data flow
+- **`requirements/`**
+  - **What's Inside:** [[Requirements Index]]: what the app should do, by area (setup, play, Game Centre), with what exists today and open questions
+- **`stories/`**
+  - **What's Inside:** Story checkpoint files (active), [[backlog]]; `stories/archive/` for completed ones
+- **`Operations/`**
+  - **What's Inside:** [[Common Tasks]], [[Device Test Plan]], [[Mac Handoff]] (state + App Store setup for Claude on the Mac), [[Cloud Config Setup]] (AWS, Google, Apple and payment setup; how each secret is sourced)
+- **`Troubleshooting/`**
+  - **What's Inside:** [[Known Issues]]
 
 ## Quick Links
 

@@ -34,24 +34,61 @@ The approach is already decided (Design Decisions → Throw Detection): a static
 
 ### D1: How to find the blade's entry point (the hard part)
 
-| Option | What it means | Pros | Cons |
-|---|---|---|---|
-| **A. Geometry on the difference (recommended first)** | The new knife is the region that changed between reference and settled frame. The handle sticks out towards the camera, so in the image the blade enters at the end of that region **nearest the board's surface**: with a calibrated, static camera, the end that lies on the board plane (low parallax), found from the region's shape and its shadow-free core. | Pure Dart, testable on the rendered views (known entry points), no training data | Heuristic; a handle hiding its own entry point, shadows and neighbouring knives make it harder |
-| B. Trained model (keypoint) | A small model predicts the entry point from a crop | Copes with messy cases | Needs many labelled images (renders can supply many) and an ML runtime |
+- **A. Geometry on the difference (recommended first)**
+  - **What it means:** The new knife is the region that changed between reference and settled frame. The handle sticks out towards the camera, so in the image the blade enters at the end of that region **nearest the board's surface**: with a calibrated, static camera, the end that lies on the board plane (low parallax), found from the region's shape and its shadow-free core.
+  - **Pros:** Pure Dart, testable on the rendered views (known entry points), no training data
+  - **Cons:** Heuristic; a handle hiding its own entry point, shadows and neighbouring knives make it harder
+- **B. Trained model (keypoint)**
+  - **What it means:** A small model predicts the entry point from a crop
+  - **Pros:** Copes with messy cases
+  - **Cons:** Needs many labelled images (renders can supply many) and an ML runtime
 
 **Decided (Nigel, 2026-10-08): A first, measured against the renders' known entry points;** keep the interface (`EntryPointEstimator`) so B can replace it if A's error is too large.
 
 ## Traceability Matrix (final, 2026-10-08)
 
-| ID | Requirement | Design ref | Implementation | Test | Status |
-|---|---|---|---|---|---|
-| T-R0 | Realistic throw sequences with known answers (stick, bounce-out, retrieval) from the camera's position, with Nigel's all-steel knives | Plan Task 1; Design Decisions → The Knives | `SyntheticScene` (`FlyingKnife`, `Person`, steel knife), `tool/render_throw_sequences.dart`, `tool/reference_board.dart` | `synthetic_scene_test.dart`; used by every T-R test | ✅ Task 1 (added in Task 6: was untraced) |
-| T-R1 | Detect a throw (motion) and wait for the board to settle; not fooled by a person standing at the board, noise or slow light changes | Design Decisions → Motion and Settle | `MotionDetector`, `WatchRegion`, `frameToLuma`, `WatchStatus` | `motion_detector_test.dart` (7: one episode per rendered sequence in the right place, person ≫ throw, noise σ 4 and light drift never trigger), `luma_image_test.dart` (5) | ✅ Task 2 |
-| T-R2 | Tell a stick from a bounce-out (0 points), and from someone at the board | Design Decisions → Stuck or Bounced Off | `classifyThrow`, `findNewObject`, `ThrowOutcome`; shown in `WatchStatus` | `throw_classifier_test.dart` (9: 4 rendered sequences → stuck / stuck / bounce-out / board visit, the shape covers the true entry point; noise, blocked, big change, new scene, shape off the target) | ✅ Task 3; the fall-out gap closed in Task 5 (T-R5) |
-| T-R3 | Find the blade's entry point, not the handle (or its shadow) | Design Decisions → Blade Entry Point | `GeometricEntryEstimator` (`EntryPointEstimator`), `outwardDirection`; full-resolution before/after in `ThrowWatcher` | `entry_point_test.dart` (7: 6 rendered throws within 4% of the target radius with the right score (actual 0.7–1.7%); outward direction) | ✅ Task 4 |
-| T-R4 | Score the throw and keep a single-player session: rounds of 3, totals | Design Decisions → Rounds and Scoring | `GameSession`, `GameNotifier`/`gameProvider`, `ThrowWatcher`, `PlayScreen` | `game_session_test.dart` (8), `game_notifier_test.dart` (11), **`play_through_test.dart`: recorded frames of a whole round → 4 · 3 · 0 = 7** | ✅ Task 5 |
-| T-R5 | Detect retrieval (end of round) and reset; a knife falling out isn't taken for a new one | Design Decisions → Motion and Settle, Stuck or Bounced Off, Rounds and Scoring | `MotionDetector` (blocked), `ThrowTracker` (known knives), `classifyThrow(knownKnives:)` | `throw_classifier_test.dart` (+3 fell-out), `play_through_test.dart` (retrieval closes the round, knives forgotten) | ✅ Task 5 |
-| T-R6 | Never imply the lane is safe; no prompts to approach the board while armed | Review Agent §7 | `gameText` ("Collect your knives when no one is throwing"), `playStateText` | `game_notifier_test.dart` (play screen text) | ✅ Task 5 |
+- **T-R0**
+  - **Requirement:** Realistic throw sequences with known answers (stick, bounce-out, retrieval) from the camera's position, with Nigel's all-steel knives
+  - **Design ref:** Plan Task 1; Design Decisions → The Knives
+  - **Implementation:** `SyntheticScene` (`FlyingKnife`, `Person`, steel knife), `tool/render_throw_sequences.dart`, `tool/reference_board.dart`
+  - **Test:** `synthetic_scene_test.dart`; used by every T-R test
+  - **Status:** ✅ Task 1 (added in Task 6: was untraced)
+- **T-R1**
+  - **Requirement:** Detect a throw (motion) and wait for the board to settle; not fooled by a person standing at the board, noise or slow light changes
+  - **Design ref:** Design Decisions → Motion and Settle
+  - **Implementation:** `MotionDetector`, `WatchRegion`, `frameToLuma`, `WatchStatus`
+  - **Test:** `motion_detector_test.dart` (7: one episode per rendered sequence in the right place, person ≫ throw, noise σ 4 and light drift never trigger), `luma_image_test.dart` (5)
+  - **Status:** ✅ Task 2
+- **T-R2**
+  - **Requirement:** Tell a stick from a bounce-out (0 points), and from someone at the board
+  - **Design ref:** Design Decisions → Stuck or Bounced Off
+  - **Implementation:** `classifyThrow`, `findNewObject`, `ThrowOutcome`; shown in `WatchStatus`
+  - **Test:** `throw_classifier_test.dart` (9: 4 rendered sequences → stuck / stuck / bounce-out / board visit, the shape covers the true entry point; noise, blocked, big change, new scene, shape off the target)
+  - **Status:** ✅ Task 3; the fall-out gap closed in Task 5 (T-R5)
+- **T-R3**
+  - **Requirement:** Find the blade's entry point, not the handle (or its shadow)
+  - **Design ref:** Design Decisions → Blade Entry Point
+  - **Implementation:** `GeometricEntryEstimator` (`EntryPointEstimator`), `outwardDirection`; full-resolution before/after in `ThrowWatcher`
+  - **Test:** `entry_point_test.dart` (7: 6 rendered throws within 4% of the target radius with the right score (actual 0.7–1.7%); outward direction)
+  - **Status:** ✅ Task 4
+- **T-R4**
+  - **Requirement:** Score the throw and keep a single-player session: rounds of 3, totals
+  - **Design ref:** Design Decisions → Rounds and Scoring
+  - **Implementation:** `GameSession`, `GameNotifier`/`gameProvider`, `ThrowWatcher`, `PlayScreen`
+  - **Test:** `game_session_test.dart` (8), `game_notifier_test.dart` (11), **`play_through_test.dart`: recorded frames of a whole round → 4 · 3 · 0 = 7**
+  - **Status:** ✅ Task 5
+- **T-R5**
+  - **Requirement:** Detect retrieval (end of round) and reset; a knife falling out isn't taken for a new one
+  - **Design ref:** Design Decisions → Motion and Settle, Stuck or Bounced Off, Rounds and Scoring
+  - **Implementation:** `MotionDetector` (blocked), `ThrowTracker` (known knives), `classifyThrow(knownKnives:)`
+  - **Test:** `throw_classifier_test.dart` (+3 fell-out), `play_through_test.dart` (retrieval closes the round, knives forgotten)
+  - **Status:** ✅ Task 5
+- **T-R6**
+  - **Requirement:** Never imply the lane is safe; no prompts to approach the board while armed
+  - **Design ref:** Review Agent §7
+  - **Implementation:** `gameText` ("Collect your knives when no one is throwing"), `playStateText`
+  - **Test:** `game_notifier_test.dart` (play screen text)
+  - **Status:** ✅ Task 5
 
 ---
 

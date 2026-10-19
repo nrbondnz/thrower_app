@@ -12,11 +12,21 @@ IN PROGRESS: Task 1 of 4 complete; Task 2 paused (colour shadow tests no better 
 ## Baseline (2026-10-13, answer key re-scored and reviewed by Nigel from the original)
 Nigel re-scored every knife from the original video, then reviewed the six the app disagreed with. Three were his (b1-t01 is a 4, b1-t02 a 5, b1-t10 a 4: hidden in the footage, but he watched it pulled out of the 4). The app now scores **16 of 19** exactly (Target 1: 9 of 10; Target 2: 7 of 9). The three real misses (Nigel → app):
 
-| Knife | Video time | Nigel | App | Why (Nigel, on review) |
-|---|---|---|---|---|
-| b1-t11 | 2:17 | 3 | 4 | "You can see the solid knife shape in the 3." The shape the app found was mostly the **shadow** beside the blade. |
-| b2-t02 | 1:10 | 4 | 5 | "Always look for the solid shape of the knife. The shadow is there, but it's coming from the knife; the light is to the right on this target." |
-| b2-t05 | 1:46 | 4 | 5 | "Difficult to pick out, but below the blade tip there is white, not red, so it's 4." |
+- **b1-t11**
+  - **Video time:** 2:17
+  - **Nigel:** 3
+  - **App:** 4
+  - **Why (Nigel, on review):** "You can see the solid knife shape in the 3." The shape the app found was mostly the **shadow** beside the blade.
+- **b2-t02**
+  - **Video time:** 1:10
+  - **Nigel:** 4
+  - **App:** 5
+  - **Why (Nigel, on review):** "Always look for the solid shape of the knife. The shadow is there, but it's coming from the knife; the light is to the right on this target."
+- **b2-t05**
+  - **Video time:** 1:46
+  - **Nigel:** 4
+  - **App:** 5
+  - **Why (Nigel, on review):** "Difficult to pick out, but below the blade tip there is white, not red, so it's 4."
 
 - All three score **too high**: `faceOnEntry` takes the knife pixels nearest the bull, and a shadow reaches nearer the bull than the blade.
 - Nigel's rule: **find the solid shape of the knife** and score where the blade goes into the wood. Notes: b1-t12 (2:20) "4, handle end leans into 5"; b2-t09 (2:20) "point gets to 4"; b2-t10 (2:43) "think 5, as though the point is 4, the part sticking in is 5".

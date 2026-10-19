@@ -129,3 +129,4 @@ When running inside a Story Agent workflow, the Docs Agent is spawned **after ev
 2. **Link before you write.** If the vault already has a relevant note, update it and add a backlink. Do not create orphan pages.
 3. **Use the same terms as the code.** If the code calls it `entryPoint`, the docs say `entryPoint`, not "where the knife went in".
 4. **Flag drift, don't just fix it.** If the agent spots out-of-date documentation unrelated to the current change, log it as a drift item for later cleanup. Do not expand scope.
+5. **Keep tables to short cells.** Obsidian doesn't wrap long table cells: a wide table runs off the page and gets cut off (Nigel, 2026-10-20, on Cloud Config Setup). Put steps, explanations and long values in headed sections with bullets or numbered lists, and use a table only for short facts (a name, a value, a status).

@@ -136,15 +136,41 @@ BUILT: all 6 tasks complete (2026-10-17); Tasks 1–5 committed (`a276c91`, `d00
 
 ### Traceability Report — 2026-10-17 (story complete, device checks to come)
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| AC1: a finished game is saved: when, mode, rounds, each player's rounds and total, the winner or a draw; Live test games marked | Design Decisions → Game History | `GameRecord.fromMatch`, `totals`, `winner`, `draw`; `GameNotifier._keep` (`recordingChoiceProvider`) | `game_record_test.dart`; `keeping_games_test.dart` ('a finished game is kept…', 'a two-player game is kept when both have finished…', 'a Live test game…'); `live_replay_test.dart` ('a 3-round game played on it is kept…') | ✅ Covered (device: H1) |
-| AC2: survives closing and reopening the app | Game History → one file, safe writes | `FileGameHistory` (`game_history.json`, support folder) | `game_history_test.dart` ('found again by a new history on the same folder') | ✅ Covered (device: H3) |
-| AC3: Home → History, newest first; a game shows every round of each player | Game History → The History screen | `HomeScreen`, `HistoryScreen`, `GameRecordScreen`, `whenText`, `summaryText` | `history_screen_test.dart` (list order, line texts, a game's rounds); `widget_test.dart` ('home screen opens the History') | ✅ Covered (device: H1–H2) |
-| AC4: delete one game; Clear history removes all, after asking | The History screen | `GameRecordScreen._delete`, `_HistoryScreenState._clear` | `history_screen_test.dart` (delete; Clear → Cancel; Clear → Clear) | ✅ Covered (device: H4) |
-| AC5: unfinished games not saved; a finished game saved once | When a game is kept | `GameNotifier.onEvent` → `_keep` (`_finishedAt`, `_kept`; reset in `build` / `newGame`) | `keeping_games_test.dart` (nothing while on; reset half-way; throws after the end; knife falling out after the end; two games after New game) | ✅ Covered (device: H5) |
-| AC6: a file that can't be read or written doesn't stop Play; History says it couldn't load | Safe writes; When a game is kept | `GameHistoryException`, `historySaveErrorProvider` + Play's snack bar, `HistoryScreen` error + Try again | `game_history_test.dart` (damaged, newer version, unwritable folder); `keeping_games_test.dart` ('if it can't be saved…'); `play_screen_test.dart` ('says when a finished game could not be saved'); `history_screen_test.dart` ('couldn't load… tries again') | ✅ Covered |
-| AC7: nothing leaves the phone; no new permission | Game History → Privacy | no network code; app support folder | Review Agent (Tasks 1 and 4); `instructions_test.dart` (History: 'stays on this phone') | ✅ Covered (by review) |
+- **AC1: a finished game is saved: when, mode, rounds, each player's rounds and total, the winner or a draw; Live test games marked**
+  - **Design Reference:** Design Decisions → Game History
+  - **Implementation:** `GameRecord.fromMatch`, `totals`, `winner`, `draw`; `GameNotifier._keep` (`recordingChoiceProvider`)
+  - **Test:** `game_record_test.dart`; `keeping_games_test.dart` ('a finished game is kept…', 'a two-player game is kept when both have finished…', 'a Live test game…'); `live_replay_test.dart` ('a 3-round game played on it is kept…')
+  - **Status:** ✅ Covered (device: H1)
+- **AC2: survives closing and reopening the app**
+  - **Design Reference:** Game History → one file, safe writes
+  - **Implementation:** `FileGameHistory` (`game_history.json`, support folder)
+  - **Test:** `game_history_test.dart` ('found again by a new history on the same folder')
+  - **Status:** ✅ Covered (device: H3)
+- **AC3: Home → History, newest first; a game shows every round of each player**
+  - **Design Reference:** Game History → The History screen
+  - **Implementation:** `HomeScreen`, `HistoryScreen`, `GameRecordScreen`, `whenText`, `summaryText`
+  - **Test:** `history_screen_test.dart` (list order, line texts, a game's rounds); `widget_test.dart` ('home screen opens the History')
+  - **Status:** ✅ Covered (device: H1–H2)
+- **AC4: delete one game; Clear history removes all, after asking**
+  - **Design Reference:** The History screen
+  - **Implementation:** `GameRecordScreen._delete`, `_HistoryScreenState._clear`
+  - **Test:** `history_screen_test.dart` (delete; Clear → Cancel; Clear → Clear)
+  - **Status:** ✅ Covered (device: H4)
+- **AC5: unfinished games not saved; a finished game saved once**
+  - **Design Reference:** When a game is kept
+  - **Implementation:** `GameNotifier.onEvent` → `_keep` (`_finishedAt`, `_kept`; reset in `build` / `newGame`)
+  - **Test:** `keeping_games_test.dart` (nothing while on; reset half-way; throws after the end; knife falling out after the end; two games after New game)
+  - **Status:** ✅ Covered (device: H5)
+- **AC6: a file that can't be read or written doesn't stop Play; History says it couldn't load**
+  - **Design Reference:** Safe writes; When a game is kept
+  - **Implementation:** `GameHistoryException`, `historySaveErrorProvider` + Play's snack bar, `HistoryScreen` error + Try again
+  - **Test:** `game_history_test.dart` (damaged, newer version, unwritable folder); `keeping_games_test.dart` ('if it can't be saved…'); `play_screen_test.dart` ('says when a finished game could not be saved'); `history_screen_test.dart` ('couldn't load… tries again')
+  - **Status:** ✅ Covered
+- **AC7: nothing leaves the phone; no new permission**
+  - **Design Reference:** Game History → Privacy
+  - **Implementation:** no network code; app support folder
+  - **Test:** Review Agent (Tasks 1 and 4); `instructions_test.dart` (History: 'stays on this phone')
+  - **Status:** ✅ Covered (by review)
 
 - **Coverage:** 7 of 7 requirements with design, code and tests; device checks H0–H5 to come.
 - **Backward:** every new symbol traces to an AC. **Minor:** `GameRecord.liveTest` is used only by tests (the screens read `recording` for the name); harmless, keep for the History filter or statistics that may come later, or drop it then.
@@ -196,9 +222,11 @@ BUILT: all 6 tasks complete (2026-10-17); Tasks 1–5 committed (`a276c91`, `d00
 
 ### Traceability — AC8 (2026-10-17)
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| AC8: Finish game: a part-round counts; two players on equal rounds; kept, "2 of 9 rounds" | Design Decisions → Game History → Finish game | `GameSession.finish`, `Match.finish` / `countedRounds` / `countedTotals` / `winner`, `GameNotifier.finishGame`, `confirmFinishGame`, `gameOverText`, `playerDetail`, `matchFooter`, `GameRecord.countedTotals`, `howText`, `resultText` | `game_session_test.dart`, `match_test.dart` ('finished early' groups), `game_record_test.dart`, `keeping_games_test.dart`, `play_screen_test.dart` ('Finish game', 'finished early, two players'), `history_screen_test.dart`, `instructions_test.dart` | ✅ Covered (device: H6–H7) |
+- **AC8: Finish game: a part-round counts; two players on equal rounds; kept, "2 of 9 rounds"**
+  - **Design Reference:** Design Decisions → Game History → Finish game
+  - **Implementation:** `GameSession.finish`, `Match.finish` / `countedRounds` / `countedTotals` / `winner`, `GameNotifier.finishGame`, `confirmFinishGame`, `gameOverText`, `playerDetail`, `matchFooter`, `GameRecord.countedTotals`, `howText`, `resultText`
+  - **Test:** `game_session_test.dart`, `match_test.dart` ('finished early' groups), `game_record_test.dart`, `keeping_games_test.dart`, `play_screen_test.dart` ('Finish game', 'finished early, two players'), `history_screen_test.dart`, `instructions_test.dart`
+  - **Status:** ✅ Covered (device: H6–H7)
 
 - With AC1–AC7 above: 8 of 8 covered.
 

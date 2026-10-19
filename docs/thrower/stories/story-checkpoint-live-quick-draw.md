@@ -136,24 +136,86 @@ BUILT, all 5 tasks (2026-10-15). Waiting for the device check by Nigel's brother
 - **Save:** story archived.
 - **Traceability Report (2026-10-15):** the code and tests were read, and the relevant tests run: 188 passed, 0 failed (`live_quick_draw_screen_test`, `start_signal_test`, `cropped_camera_test`, `queued_camera_test`, `quick_draw_live_path_test`, `quick_draw_screen_test`, `instructions_test`: 85; `quick_draw_replay_test`, `tapped_target_locator_test`, `game_session_test`, `game_notifier_test`, `quick_draw_judge_test`, `live_camera_test`, `play_screen_test`, `recording_analysis_feed_test`, `recorded_camera_test`: 103). DD = `Architecture/Design Decisions.md`.
 
-  | Requirement | Design | Implementation | Test | Status |
-  |---|---|---|---|---|
-  | C1 Separate Home buttons, Play and Quick draw, each with its line | DD → Quick Draw: the Live Screen | `HomeScreen` → `LiveQuickDrawScreen` | `live_quick_draw_screen_test`: 'Home has Play … and Quick draw … as separate buttons'; 'Play still opens single-target Play' | ✅ Covered (device: Q0) |
-  | C2 Live camera full screen | DD → the Live Screen | `LiveQuickDrawScreen` (`immersiveSticky`), `CameraView(camera: liveQuickDrawCameraProvider)` | 'Quick draw opens the camera full screen …'; 'leaving brings the system bars back'; 'camera access refused …' | ✅ Covered |
-  | C2 Tap Player 1, then 2, outlined and numbered; Lock | DD → Choosing the Boards by Tapping | `BoardChoosing`, `BoardsOverlay`, `TapLocator`/`locateTappedInFrame` (fractions) | 'tapping both boards, in order, then locking them'; `tapped_target_locator_test` 'a sideways frame …'; 'start again forgets the boards' | ✅ Covered (device: Q2) |
-  | 60 fps, falling back to the default | DD → the Live Camera — 60 fps | `LiveCamera.open(fps:)`, `liveQuickDrawCameraProvider` (60) | *None*: the fallback needs the plugin; only `failureFor` is unit-tested | ⚠️ Device only (Q3/Q7, frames/s label in a debug build) |
-  | C7 Rotation-aware crops (Android sideways, iOS upright) | DD → the Live Camera — Crops | `CroppedCamera.sensorRect`, fixed `uprightRotation`, misfit frame skipped, even rounding | `cropped_camera_test` (0/90/180/270, BGRA and YUV; fixed rotation; skipped frame); `quick_draw_live_path_test` (sideways, 90°) | ✅ Covered |
-  | C4 Every frame queued, in order, report late; 75 MB cap | DD → the Live Camera — a Queue; Analysing Every Frame | `compactFrame`, `QueuedCamera` (`waiting`, `behind`, `dropped`, `maxBytes`), `QuickDrawWatcher(queue: true)` | `queued_camera_test` (all 5); live path 'no frame was dropped' | ✅ Covered |
-  | C3 Start signal: 5 beeps 1 s apart, random 1.0–3.0 s in 0.2 s, long go beep, GO! | DD → the Start Signal | `StartSchedule`, `startPauses`, `StartSchedule.random`, `StartSignal`, `startScheduleProvider`; `_Lights`, GO! (`goShown`) | `start_signal_test` (schedule; pauses; random uses all; lights and beeps; Stop); screen 'locked, Start appears …', 'at go: …', 'Stop during the countdown …' | ✅ Covered (device: Q3) |
-  | C3 Heard with the silent switch on; ducks other audio | DD → the Start Signal | `AssetSignalSounds` (`AssetRecordingSound.audioContext`, low latency), `signalSoundsProvider`; `tool/make_signal_sounds.dart` → `assets/sounds/` | *None*: the plugin (like `AssetRecordingSound`); widget tests override with `FakeSignalSounds` | ⚠️ Device only, **and see Gap 1** |
-  | C4 Analysis from go − 1 s | DD → the Start Signal; Analysing Every Frame | `quickDrawLeadIn`, `StartSchedule.watchFrom`, `StartSignal.onWatch` → `QuickDrawWatcher` | 'watching starts 1 s before go'; screen 'at go: … watched from 1 s before' | ✅ Covered |
-  | Go on the camera's clock | DD → the Start Signal | `TargetCamera.now` (`LiveCamera`'s stopwatch, passed through by crops and queues), `StartSignal.goAt` | `start_signal_test` (goAt on the clock); live path 'judged from go (2.8 s, on the frames' clock) …' | ✅ Covered |
-  | C4 Timed from go; stuck (score) or bounced; first to stick wins; false start | DD → Go, False Starts and the Winner | `QuickDrawWatcher._onEvent`, `judgeQuickDraw`, `verdictText` | `quick_draw_judge_test` (all cases incl. false start); live path (Player 1 bounced, Player 2 stuck 5, Mark wins ~0.82 s) | ✅ Covered (logic); live screen shows only the no-throw verdict in tests (Gap 3); device: Q4, Q5 |
-  | C5 Result readable from the line (winner, each time and score) | DD → the Live Duel and the Result | `_Result` (52 pt headline, 34 pt lines), `resultWindow` (4 s, after catch-up), result chime | 'with no throws, the result after the window …' (≥ 48 pt) | ✅ Covered for size; readability at 4 m is device only (Q4) |
-  | C6 Next duel keeps the boards | DD → the Live Duel and the Result | `_nextDuel` (keeps `quickDrawTargetsProvider`); `_startAgain` forgets them | 'Next duel keeps the boards and shows Start again' | ✅ Covered (device: Q6); wording stale (Gap 4) |
-  | C7 Recording version and Play unchanged | DD → Live Test: A Recording …; Rounds and Scoring | `QuickDrawScreen`, `PlayScreen` (no diff in this story's working changes except shared `quick_draw_boards.dart`, Task 1) | `quick_draw_screen_test`, `quick_draw_replay_test`, `play_screen_test` all pass | ✅ Covered |
-  | Backlog #12: next round shows once the knives are collected | DD → Rounds and Scoring | `GameSession` (`awaitingNextRound`, `roundNumber`, `finishedRounds`), `roundText`/`gameText` | `game_session_test` ('collected, the next round is under way …' etc.); `game_notifier_test` ('once the knives are collected, the next round shows straight away' etc.) | ✅ Covered |
-  | Instructions' safety points (readable result, nobody at the phone, go ≠ clear, lanes, false start, hear the countdown) | DD → the Live Duel and the Result; Common Tasks → Update the In-App Instructions | `instructions.dart` Quick draw section | `instructions_test` 'Quick draw (real board)' group (7 tests) | ✅ Covered (Review Agent re-check not yet logged under Task 5) |
+- **C1 Separate Home buttons, Play and Quick draw, each with its line**
+  - **Design:** DD → Quick Draw: the Live Screen
+  - **Implementation:** `HomeScreen` → `LiveQuickDrawScreen`
+  - **Test:** `live_quick_draw_screen_test`: 'Home has Play … and Quick draw … as separate buttons'; 'Play still opens single-target Play'
+  - **Status:** ✅ Covered (device: Q0)
+- **C2 Live camera full screen**
+  - **Design:** DD → the Live Screen
+  - **Implementation:** `LiveQuickDrawScreen` (`immersiveSticky`), `CameraView(camera: liveQuickDrawCameraProvider)`
+  - **Test:** 'Quick draw opens the camera full screen …'; 'leaving brings the system bars back'; 'camera access refused …'
+  - **Status:** ✅ Covered
+- **C2 Tap Player 1, then 2, outlined and numbered; Lock**
+  - **Design:** DD → Choosing the Boards by Tapping
+  - **Implementation:** `BoardChoosing`, `BoardsOverlay`, `TapLocator`/`locateTappedInFrame` (fractions)
+  - **Test:** 'tapping both boards, in order, then locking them'; `tapped_target_locator_test` 'a sideways frame …'; 'start again forgets the boards'
+  - **Status:** ✅ Covered (device: Q2)
+- **60 fps, falling back to the default**
+  - **Design:** DD → the Live Camera — 60 fps
+  - **Implementation:** `LiveCamera.open(fps:)`, `liveQuickDrawCameraProvider` (60)
+  - **Test:** *None*: the fallback needs the plugin; only `failureFor` is unit-tested
+  - **Status:** ⚠️ Device only (Q3/Q7, frames/s label in a debug build)
+- **C7 Rotation-aware crops (Android sideways, iOS upright)**
+  - **Design:** DD → the Live Camera — Crops
+  - **Implementation:** `CroppedCamera.sensorRect`, fixed `uprightRotation`, misfit frame skipped, even rounding
+  - **Test:** `cropped_camera_test` (0/90/180/270, BGRA and YUV; fixed rotation; skipped frame); `quick_draw_live_path_test` (sideways, 90°)
+  - **Status:** ✅ Covered
+- **C4 Every frame queued, in order, report late; 75 MB cap**
+  - **Design:** DD → the Live Camera — a Queue; Analysing Every Frame
+  - **Implementation:** `compactFrame`, `QueuedCamera` (`waiting`, `behind`, `dropped`, `maxBytes`), `QuickDrawWatcher(queue: true)`
+  - **Test:** `queued_camera_test` (all 5); live path 'no frame was dropped'
+  - **Status:** ✅ Covered
+- **C3 Start signal: 5 beeps 1 s apart, random 1.0–3.0 s in 0.2 s, long go beep, GO!**
+  - **Design:** DD → the Start Signal
+  - **Implementation:** `StartSchedule`, `startPauses`, `StartSchedule.random`, `StartSignal`, `startScheduleProvider`; `_Lights`, GO! (`goShown`)
+  - **Test:** `start_signal_test` (schedule; pauses; random uses all; lights and beeps; Stop); screen 'locked, Start appears …', 'at go: …', 'Stop during the countdown …'
+  - **Status:** ✅ Covered (device: Q3)
+- **C3 Heard with the silent switch on; ducks other audio**
+  - **Design:** DD → the Start Signal
+  - **Implementation:** `AssetSignalSounds` (`AssetRecordingSound.audioContext`, low latency), `signalSoundsProvider`; `tool/make_signal_sounds.dart` → `assets/sounds/`
+  - **Test:** *None*: the plugin (like `AssetRecordingSound`); widget tests override with `FakeSignalSounds`
+  - **Status:** ⚠️ Device only, **and see Gap 1**
+- **C4 Analysis from go − 1 s**
+  - **Design:** DD → the Start Signal; Analysing Every Frame
+  - **Implementation:** `quickDrawLeadIn`, `StartSchedule.watchFrom`, `StartSignal.onWatch` → `QuickDrawWatcher`
+  - **Test:** 'watching starts 1 s before go'; screen 'at go: … watched from 1 s before'
+  - **Status:** ✅ Covered
+- **Go on the camera's clock**
+  - **Design:** DD → the Start Signal
+  - **Implementation:** `TargetCamera.now` (`LiveCamera`'s stopwatch, passed through by crops and queues), `StartSignal.goAt`
+  - **Test:** `start_signal_test` (goAt on the clock); live path 'judged from go (2.8 s, on the frames' clock) …'
+  - **Status:** ✅ Covered
+- **C4 Timed from go; stuck (score) or bounced; first to stick wins; false start**
+  - **Design:** DD → Go, False Starts and the Winner
+  - **Implementation:** `QuickDrawWatcher._onEvent`, `judgeQuickDraw`, `verdictText`
+  - **Test:** `quick_draw_judge_test` (all cases incl. false start); live path (Player 1 bounced, Player 2 stuck 5, Mark wins ~0.82 s)
+  - **Status:** ✅ Covered (logic); live screen shows only the no-throw verdict in tests (Gap 3); device: Q4, Q5
+- **C5 Result readable from the line (winner, each time and score)**
+  - **Design:** DD → the Live Duel and the Result
+  - **Implementation:** `_Result` (52 pt headline, 34 pt lines), `resultWindow` (4 s, after catch-up), result chime
+  - **Test:** 'with no throws, the result after the window …' (≥ 48 pt)
+  - **Status:** ✅ Covered for size; readability at 4 m is device only (Q4)
+- **C6 Next duel keeps the boards**
+  - **Design:** DD → the Live Duel and the Result
+  - **Implementation:** `_nextDuel` (keeps `quickDrawTargetsProvider`); `_startAgain` forgets them
+  - **Test:** 'Next duel keeps the boards and shows Start again'
+  - **Status:** ✅ Covered (device: Q6); wording stale (Gap 4)
+- **C7 Recording version and Play unchanged**
+  - **Design:** DD → Live Test: A Recording …; Rounds and Scoring
+  - **Implementation:** `QuickDrawScreen`, `PlayScreen` (no diff in this story's working changes except shared `quick_draw_boards.dart`, Task 1)
+  - **Test:** `quick_draw_screen_test`, `quick_draw_replay_test`, `play_screen_test` all pass
+  - **Status:** ✅ Covered
+- **Backlog #12: next round shows once the knives are collected**
+  - **Design:** DD → Rounds and Scoring
+  - **Implementation:** `GameSession` (`awaitingNextRound`, `roundNumber`, `finishedRounds`), `roundText`/`gameText`
+  - **Test:** `game_session_test` ('collected, the next round is under way …' etc.); `game_notifier_test` ('once the knives are collected, the next round shows straight away' etc.)
+  - **Status:** ✅ Covered
+- **Instructions' safety points (readable result, nobody at the phone, go ≠ clear, lanes, false start, hear the countdown)**
+  - **Design:** DD → the Live Duel and the Result; Common Tasks → Update the In-App Instructions
+  - **Implementation:** `instructions.dart` Quick draw section
+  - **Test:** `instructions_test` 'Quick draw (real board)' group (7 tests)
+  - **Status:** ✅ Covered (Review Agent re-check not yet logged under Task 5)
 
   **Coverage:** 16 rows; 13 covered by tests (several also need the device check), 3 device-only (60 fps fallback, sounds, readability at 4 m), plus Gap 1 below.
 

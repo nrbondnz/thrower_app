@@ -90,18 +90,56 @@ DONE (2026-10-09): committed in `442d1af`; build 1.0.0 (2) uploaded to TestFligh
 
 ## Traceability Report — Story: Instructions, 9-Round Games and Reset
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| R1: a game is a maximum of 9 rounds (fixed 9) | Design Decisions → Rounds and Scoring (update 2026-10-09) | `GameSession.maxRounds`, `isOver`, `_withThrow` | game_session_test '9-round games' | ✅ Covered |
-| R1a: game over shows the final total; later throws ignored | same | `gameText` (isOver branch), `GameNotifier.onEvent` guard | game_notifier_test 'game over shows…', 'after game over a stuck knife is ignored…' | ✅ Covered |
-| R2: users can reset the play session | Design Decisions (Reset asks first) | `_PlayScreenState._confirmReset`, `_newGame` | play_screen_test (Cancel / confirm / disabled) | ✅ Covered |
-| R2a: start again at game over | same | `New game` FilledButton when `game.isOver` | play_screen_test 'game over shows New game…' | ✅ Covered |
-| R3: Instructions button on the main screen opens a new page | Design Decisions (in-app Instructions) | `HomeScreen` → `InstructionsScreen` | instructions_test 'Home → Instructions…' | ✅ Covered |
-| R3a: explains setup and how rounds work | same | `instructionSections` | instructions_test (sections, rounds, scoring) | ✅ Covered |
-| R3b: instructions can change as the project changes | Common Tasks → Update the In-App Instructions; Docs Agent trigger | rule numbers read from `GameSession` / `TargetModel` | instructions_test 'follows the rules if they change' | ✅ Covered |
-| R5: two versions: real board (main) and paper + Blu Tack | Design Decisions (two versions) | `InstructionTarget`, `instructionSections(kind:)`, `SegmentedButton` | instructions_test 'real board…' / 'paper target…' groups, 'opens on Real board…' | ✅ Covered |
-| R4: stable camera, preferably a tripod (Nigel) | Plan Changes Log | `instructionSections` → Setting up | instructions_test 'tripod' | ✅ Covered |
-| Safety: never imply the lane is clear | Review Agent §7 | `instructionSections` → Safety; reset/collect wording | instructions_test 'lane is clear' | ✅ Covered |
+- **R1: a game is a maximum of 9 rounds (fixed 9)**
+  - **Design Reference:** Design Decisions → Rounds and Scoring (update 2026-10-09)
+  - **Implementation:** `GameSession.maxRounds`, `isOver`, `_withThrow`
+  - **Test:** game_session_test '9-round games'
+  - **Status:** ✅ Covered
+- **R1a: game over shows the final total; later throws ignored**
+  - **Design Reference:** same
+  - **Implementation:** `gameText` (isOver branch), `GameNotifier.onEvent` guard
+  - **Test:** game_notifier_test 'game over shows…', 'after game over a stuck knife is ignored…'
+  - **Status:** ✅ Covered
+- **R2: users can reset the play session**
+  - **Design Reference:** Design Decisions (Reset asks first)
+  - **Implementation:** `_PlayScreenState._confirmReset`, `_newGame`
+  - **Test:** play_screen_test (Cancel / confirm / disabled)
+  - **Status:** ✅ Covered
+- **R2a: start again at game over**
+  - **Design Reference:** same
+  - **Implementation:** `New game` FilledButton when `game.isOver`
+  - **Test:** play_screen_test 'game over shows New game…'
+  - **Status:** ✅ Covered
+- **R3: Instructions button on the main screen opens a new page**
+  - **Design Reference:** Design Decisions (in-app Instructions)
+  - **Implementation:** `HomeScreen` → `InstructionsScreen`
+  - **Test:** instructions_test 'Home → Instructions…'
+  - **Status:** ✅ Covered
+- **R3a: explains setup and how rounds work**
+  - **Design Reference:** same
+  - **Implementation:** `instructionSections`
+  - **Test:** instructions_test (sections, rounds, scoring)
+  - **Status:** ✅ Covered
+- **R3b: instructions can change as the project changes**
+  - **Design Reference:** Common Tasks → Update the In-App Instructions; Docs Agent trigger
+  - **Implementation:** rule numbers read from `GameSession` / `TargetModel`
+  - **Test:** instructions_test 'follows the rules if they change'
+  - **Status:** ✅ Covered
+- **R5: two versions: real board (main) and paper + Blu Tack**
+  - **Design Reference:** Design Decisions (two versions)
+  - **Implementation:** `InstructionTarget`, `instructionSections(kind:)`, `SegmentedButton`
+  - **Test:** instructions_test 'real board…' / 'paper target…' groups, 'opens on Real board…'
+  - **Status:** ✅ Covered
+- **R4: stable camera, preferably a tripod (Nigel)**
+  - **Design Reference:** Plan Changes Log
+  - **Implementation:** `instructionSections` → Setting up
+  - **Test:** instructions_test 'tripod'
+  - **Status:** ✅ Covered
+- **Safety: never imply the lane is clear**
+  - **Design Reference:** Review Agent §7
+  - **Implementation:** `instructionSections` → Safety; reset/collect wording
+  - **Test:** instructions_test 'lane is clear'
+  - **Status:** ✅ Covered
 
 **Coverage:** 10/10 requirements fully covered. **Orphan code:** none (`_withRounds` exists so `maxRounds` survives every change; tested). **Gaps:** button names in the instructions are typed by hand and not checked against the screens (documented in Common Tasks); on-device verification pending.
 

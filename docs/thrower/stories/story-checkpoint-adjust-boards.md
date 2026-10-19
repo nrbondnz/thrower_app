@@ -136,13 +136,31 @@ BUILT: both tasks complete (2026-10-19); Task 1 committed (`d96be0d`). **Waiting
 
 #### Traceability Report — 2026-10-19 (story complete, device checks to come)
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| AC1: drag inside a board to move it, a handle to turn and stretch it; the other untouched | Design Decisions → Adjust Each Board | `BoardsEditor`, `grabAt`, `dragged`, `QuickDrawTargetsNotifier.replace`, `BoardsOverlay(onAdjust:)` | `board_adjust_test.dart` (`grabAt` ×6, `dragged`, replace, editor ×4) | ✅ Covered (device: A1, A2) |
-| AC2: Lock locks the adjusted boards; they're scored and timed against | Adjust Each Board | `lock` (unchanged), the watchers built from the locked boards | `two_target_play_screen_test.dart` (lock again → watching); `live_quick_draw_screen_test.dart` (lock again → Start) | ✅ Covered (device: A3, A4) |
-| AC3: Adjust boards unlocks, keeping both | Adjust Each Board (Nigel: yes) | `unlock`; `quickDrawAdjust`, `playAdjustBoards` / `_adjustBoards`, the recording's button | `board_adjust_test.dart` (unlock keeps both); both screen tests | ✅ Covered (device: A3–A5) |
-| AC4: "only when no one is throwing" while adjustable | Adjust Each Board → Safety; [[Instructions and Safety]] | `choosingInstruction`; the Instructions | three screen tests (the instruction); `instructions_test.dart` | ✅ Covered (and the Safety Report) |
-| AC5: the single target unchanged (the shared rule) | Adjust and Lock the Calibration (update) | `CalibrationEditor` → `grabAt` / `dragged` | `calibration_screen_test.dart` (6, unchanged, passing) | ✅ Covered. One deliberate change: on a small target, the middle now moves it (`board_adjust_test.dart`) |
+- **AC1: drag inside a board to move it, a handle to turn and stretch it; the other untouched**
+  - **Design Reference:** Design Decisions → Adjust Each Board
+  - **Implementation:** `BoardsEditor`, `grabAt`, `dragged`, `QuickDrawTargetsNotifier.replace`, `BoardsOverlay(onAdjust:)`
+  - **Test:** `board_adjust_test.dart` (`grabAt` ×6, `dragged`, replace, editor ×4)
+  - **Status:** ✅ Covered (device: A1, A2)
+- **AC2: Lock locks the adjusted boards; they're scored and timed against**
+  - **Design Reference:** Adjust Each Board
+  - **Implementation:** `lock` (unchanged), the watchers built from the locked boards
+  - **Test:** `two_target_play_screen_test.dart` (lock again → watching); `live_quick_draw_screen_test.dart` (lock again → Start)
+  - **Status:** ✅ Covered (device: A3, A4)
+- **AC3: Adjust boards unlocks, keeping both**
+  - **Design Reference:** Adjust Each Board (Nigel: yes)
+  - **Implementation:** `unlock`; `quickDrawAdjust`, `playAdjustBoards` / `_adjustBoards`, the recording's button
+  - **Test:** `board_adjust_test.dart` (unlock keeps both); both screen tests
+  - **Status:** ✅ Covered (device: A3–A5)
+- **AC4: "only when no one is throwing" while adjustable**
+  - **Design Reference:** Adjust Each Board → Safety; [[Instructions and Safety]]
+  - **Implementation:** `choosingInstruction`; the Instructions
+  - **Test:** three screen tests (the instruction); `instructions_test.dart`
+  - **Status:** ✅ Covered (and the Safety Report)
+- **AC5: the single target unchanged (the shared rule)**
+  - **Design Reference:** Adjust and Lock the Calibration (update)
+  - **Implementation:** `CalibrationEditor` → `grabAt` / `dragged`
+  - **Test:** `calibration_screen_test.dart` (6, unchanged, passing)
+  - **Status:** ✅ Covered. One deliberate change: on a small target, the middle now moves it (`board_adjust_test.dart`)
 
 - **Coverage:** 5 of 5 have design, code and tests; device checks A0–A5 are to come.
 - **Backward:** every new symbol traces to an AC. `BoardsPainter(handles:)` serves AC1.

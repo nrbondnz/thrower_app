@@ -213,13 +213,16 @@ The tester is **an internal tester** (decided 2026-10-08), so he gets each build
 
 ## 3. Committing (Nigel's Rules)
 
-| Change | Commit? |
-|---|---|
-| Dart / Flutter code (`lib/`) | **Only when Nigel says "commit this"** (he tests first) |
-| Tests | Yes, together with the code they test |
-| Config / platform (`ios/`, `android/`, `pubspec.yaml`) | Yes, **after** the "Be Careful" Review Agent checklist (`docs/agents/review-agent/review-agent.md`) passes. Show Nigel the Safety Report |
-| Docs (`docs/`) | **No, leave unstaged**, unless Nigel asks |
-| `.claude/`, CLAUDE.md | Yes |
+- **Dart / Flutter code (`lib/`)**
+  - **Commit?:** **Only when Nigel says "commit this"** (he tests first)
+- **Tests**
+  - **Commit?:** Yes, together with the code they test
+- **Config / platform (`ios/`, `android/`, `pubspec.yaml`)**
+  - **Commit?:** Yes, **after** the "Be Careful" Review Agent checklist (`docs/agents/review-agent/review-agent.md`) passes. Show Nigel the Safety Report
+- **Docs (`docs/`)**
+  - **Commit?:** **No, leave unstaged**, unless Nigel asks
+- **`.claude/`, CLAUDE.md**
+  - **Commit?:** Yes
 
 **On the Mac, this will usually mean:**
 - The **signing change** (`ios/Runner.xcodeproj/project.pbxproj`, team ID added) is a config change. Run the Review Agent checklist: identity unchanged (bundle ID still `nz.nrbond.thrower`), no secrets, only team lines changed. Then commit it, e.g. `iOS: set the signing team for TestFlight`.

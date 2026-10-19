@@ -238,15 +238,41 @@ Kept along the chain: requirement → architecture → design decisions (Docs Ag
 
 #### Traceability Report — 2026-10-19 (story complete, device checks to come)
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| AC1: a name field per player on the setup screen; blank is Player 1 / 2 | Design Decisions → Named Players; [[Player Names]] | `PlaySetupScreen` (`playName0`/`1`), `cleanName`, `playerNumber`, `Match.nameOf` | `play_setup_screen_test.dart` (a field per player; a cleared name is Player 1; 16 characters); `match_test.dart` (names) | ✅ Covered (device: N0, N3, N4) |
-| AC2: the names are filled in next time, after the app is closed | Named Players → the store | `PlayerNamesStore`, `FilePlayerNamesStore`, `playerNamesProvider` | `player_names_test.dart` (9); `play_setup_screen_test.dart` (kept names filled in) | ✅ Covered (device: N2) |
-| AC3: Play and two-target Play use the names everywhere | Named Players → Shown | `turnText`, `turnDetail`, `playerTitle`, `boardMessage`, `boardMovedMessage`, `boardsStateText`, `rowLabel` | `play_screen_test.dart` (names group, incl. the longest names on a 360 px phone); `two_target_play_screen_test.dart` | ✅ Covered (device: N0, N4) |
-| AC4: History shows names; old games still Player 1 / 2 (version 2; version 1 reads) | Named Players; Game History (format) | `GameRecord.names` / `nameOf` (v2), `resultText`, `GameRecordScreen` | `game_record_test.dart` (6); `game_history_test.dart` (a v1 history reads, rewritten as v2); `history_screen_test.dart` (3); `keeping_games_test.dart` (kept with names) | ✅ Covered (device: N1) |
-| AC5: Quick draw uses the same names; changed before Start | Named Players → Quick draw (Task 3) | `BoardChoosing.playerNames`, `choosingInstruction`, `NamesButton`, `editPlayerNames`, `verdictText(names:)`, `matchText`, `QuickDrawResultPanel(names:)` | `live_quick_draw_screen_test.dart` (names group; Names hidden after Start; the panel by name); `quick_draw_judge_test.dart` | ✅ Covered (device: N5, N6) |
-| AC6: renaming mid-game keeps the scores; New game keeps the names | Named Players → names are part of the game | `Match.withNames`, `GameNotifier` (`ref.listen`), `newGame` | `match_test.dart` (renaming keeps scores and turn); `keeping_games_test.dart` (renaming, New game); `play_setup_screen_test.dart` (renaming a game in progress) | ✅ Covered |
-| AC7: names stay on the phone (Review Agent) | Named Players → Privacy; [[Instructions and Safety]] | `FilePlayerNamesStore` (support folder); nothing sends | `instructions_test.dart` ("They are sent nowhere"); the Safety Report | ✅ Covered |
+- **AC1: a name field per player on the setup screen; blank is Player 1 / 2**
+  - **Design Reference:** Design Decisions → Named Players; [[Player Names]]
+  - **Implementation:** `PlaySetupScreen` (`playName0`/`1`), `cleanName`, `playerNumber`, `Match.nameOf`
+  - **Test:** `play_setup_screen_test.dart` (a field per player; a cleared name is Player 1; 16 characters); `match_test.dart` (names)
+  - **Status:** ✅ Covered (device: N0, N3, N4)
+- **AC2: the names are filled in next time, after the app is closed**
+  - **Design Reference:** Named Players → the store
+  - **Implementation:** `PlayerNamesStore`, `FilePlayerNamesStore`, `playerNamesProvider`
+  - **Test:** `player_names_test.dart` (9); `play_setup_screen_test.dart` (kept names filled in)
+  - **Status:** ✅ Covered (device: N2)
+- **AC3: Play and two-target Play use the names everywhere**
+  - **Design Reference:** Named Players → Shown
+  - **Implementation:** `turnText`, `turnDetail`, `playerTitle`, `boardMessage`, `boardMovedMessage`, `boardsStateText`, `rowLabel`
+  - **Test:** `play_screen_test.dart` (names group, incl. the longest names on a 360 px phone); `two_target_play_screen_test.dart`
+  - **Status:** ✅ Covered (device: N0, N4)
+- **AC4: History shows names; old games still Player 1 / 2 (version 2; version 1 reads)**
+  - **Design Reference:** Named Players; Game History (format)
+  - **Implementation:** `GameRecord.names` / `nameOf` (v2), `resultText`, `GameRecordScreen`
+  - **Test:** `game_record_test.dart` (6); `game_history_test.dart` (a v1 history reads, rewritten as v2); `history_screen_test.dart` (3); `keeping_games_test.dart` (kept with names)
+  - **Status:** ✅ Covered (device: N1)
+- **AC5: Quick draw uses the same names; changed before Start**
+  - **Design Reference:** Named Players → Quick draw (Task 3)
+  - **Implementation:** `BoardChoosing.playerNames`, `choosingInstruction`, `NamesButton`, `editPlayerNames`, `verdictText(names:)`, `matchText`, `QuickDrawResultPanel(names:)`
+  - **Test:** `live_quick_draw_screen_test.dart` (names group; Names hidden after Start; the panel by name); `quick_draw_judge_test.dart`
+  - **Status:** ✅ Covered (device: N5, N6)
+- **AC6: renaming mid-game keeps the scores; New game keeps the names**
+  - **Design Reference:** Named Players → names are part of the game
+  - **Implementation:** `Match.withNames`, `GameNotifier` (`ref.listen`), `newGame`
+  - **Test:** `match_test.dart` (renaming keeps scores and turn); `keeping_games_test.dart` (renaming, New game); `play_setup_screen_test.dart` (renaming a game in progress)
+  - **Status:** ✅ Covered
+- **AC7: names stay on the phone (Review Agent)**
+  - **Design Reference:** Named Players → Privacy; [[Instructions and Safety]]
+  - **Implementation:** `FilePlayerNamesStore` (support folder); nothing sends
+  - **Test:** `instructions_test.dart` ("They are sent nowhere"); the Safety Report
+  - **Status:** ✅ Covered
 
 - **Coverage:** 7 of 7 have design, code and tests; device checks N0–N6 are to come.
 - **Backward:** every new symbol traces to an AC.

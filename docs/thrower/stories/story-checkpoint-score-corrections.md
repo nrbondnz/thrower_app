@@ -106,15 +106,41 @@ BUILT: all 4 tasks complete (2026-10-17); Tasks 1–3 committed (`ae4313b`, `fac
 
 ### Traceability Report — 2026-10-17 (story complete, device checks to come)
 
-| Requirement | Design Reference | Implementation | Test | Status |
-|---|---|---|---|---|
-| AC1: tap a throw's score (this round or an earlier one) → 0–5 + Cancel; totals follow | Design Decisions → Score Corrections | `ScoreCorrections`, `showScorePicker`, `scoreChoices`, `_RoundList`, `_RoundEditor`; `GameSession.setScore`, `Match.setScore`, `GameNotifier.setScore` | `score_corrections_test.dart` (change; Cancel; Rounds → round → change); `game_session_test.dart`, `match_test.dart` ('scores set by hand') | ✅ Covered (device: C1, C3) |
-| AC2: an empty slot adds a throw (0 a miss); one target: the turn's player, counting toward the turn | Score Corrections | `ThrowRecord.byHand`, `ThrowResult.missed`, `GameSession.byHand` / `addToRound`, `Match.byHand` / `nextThrowerAt`, `GameNotifier.addThrow` / `addToRound` | `score_corrections_test.dart` (adds a miss; only the first slot; not the other player's mid-turn); `match_test.dart` (the turn's player, completes the turn); `game_session_test.dart` | ✅ Covered (device: C2, C4) |
-| AC3: a corrected finished game is kept with the new scores, once; the last throw added ends the game | Score Corrections; Game History | `GameNotifier._change` → `_keep` | `keeping_games_test.dart` (a miss finishes the game; a correction after the end re-saves the same record and time) | ✅ Covered |
-| AC4: nothing is scored while a popup is open; watching resumes after | Score Corrections → without jogging | `ThrowWatcher.pause` / `resume`, `MotionDetector.restart`, `PlayBoardsWatcher.pause` / `resume`, `CorrectionHost` | `throw_watcher_pause_test.dart` (paused over the throw; mid-throw; ready again); `motion_detector_test.dart` (restart); `score_corrections_test.dart` (pause and resume around every popup) | ✅ Covered |
-| AC5: after a correction, a moved phone is reported; a light tap is not | Score Corrections → 2 px | `cameraShift`, `phoneMovedShift`, `ThrowWatcher.moves`, `phoneMovedMessage`, `boardMovedMessage` | `camera_move_test.dart` (13); `throw_watcher_pause_test.dart` (moved 3 px; not moved; 1 px; no pause) | ✅ Covered (device: C5, C6) |
-| AC6: Instructions: only when no one is throwing; tap lightly; out of the line of throw; re-calibrate if told | Score Corrections → Safety | `instructionSections` → Changing a score, Safety | `instructions_test.dart` (2) | ✅ Covered (and the Safety Report) |
-| AC7: corrected throws are marked; a corrected knife that falls out scores 0 | Score Corrections | `_Slot` (light blue, ✎), `markColour`, `RoundMarks` (`ThrowSlot`), `paintRoundMarks(match:)` | `score_corrections_test.dart` ('1✎'); `play_screen_test.dart` (light blue); `round_marks_test.dart`; `game_session_test.dart` (falls out → 0) | ✅ Covered |
+- **AC1: tap a throw's score (this round or an earlier one) → 0–5 + Cancel; totals follow**
+  - **Design Reference:** Design Decisions → Score Corrections
+  - **Implementation:** `ScoreCorrections`, `showScorePicker`, `scoreChoices`, `_RoundList`, `_RoundEditor`; `GameSession.setScore`, `Match.setScore`, `GameNotifier.setScore`
+  - **Test:** `score_corrections_test.dart` (change; Cancel; Rounds → round → change); `game_session_test.dart`, `match_test.dart` ('scores set by hand')
+  - **Status:** ✅ Covered (device: C1, C3)
+- **AC2: an empty slot adds a throw (0 a miss); one target: the turn's player, counting toward the turn**
+  - **Design Reference:** Score Corrections
+  - **Implementation:** `ThrowRecord.byHand`, `ThrowResult.missed`, `GameSession.byHand` / `addToRound`, `Match.byHand` / `nextThrowerAt`, `GameNotifier.addThrow` / `addToRound`
+  - **Test:** `score_corrections_test.dart` (adds a miss; only the first slot; not the other player's mid-turn); `match_test.dart` (the turn's player, completes the turn); `game_session_test.dart`
+  - **Status:** ✅ Covered (device: C2, C4)
+- **AC3: a corrected finished game is kept with the new scores, once; the last throw added ends the game**
+  - **Design Reference:** Score Corrections; Game History
+  - **Implementation:** `GameNotifier._change` → `_keep`
+  - **Test:** `keeping_games_test.dart` (a miss finishes the game; a correction after the end re-saves the same record and time)
+  - **Status:** ✅ Covered
+- **AC4: nothing is scored while a popup is open; watching resumes after**
+  - **Design Reference:** Score Corrections → without jogging
+  - **Implementation:** `ThrowWatcher.pause` / `resume`, `MotionDetector.restart`, `PlayBoardsWatcher.pause` / `resume`, `CorrectionHost`
+  - **Test:** `throw_watcher_pause_test.dart` (paused over the throw; mid-throw; ready again); `motion_detector_test.dart` (restart); `score_corrections_test.dart` (pause and resume around every popup)
+  - **Status:** ✅ Covered
+- **AC5: after a correction, a moved phone is reported; a light tap is not**
+  - **Design Reference:** Score Corrections → 2 px
+  - **Implementation:** `cameraShift`, `phoneMovedShift`, `ThrowWatcher.moves`, `phoneMovedMessage`, `boardMovedMessage`
+  - **Test:** `camera_move_test.dart` (13); `throw_watcher_pause_test.dart` (moved 3 px; not moved; 1 px; no pause)
+  - **Status:** ✅ Covered (device: C5, C6)
+- **AC6: Instructions: only when no one is throwing; tap lightly; out of the line of throw; re-calibrate if told**
+  - **Design Reference:** Score Corrections → Safety
+  - **Implementation:** `instructionSections` → Changing a score, Safety
+  - **Test:** `instructions_test.dart` (2)
+  - **Status:** ✅ Covered (and the Safety Report)
+- **AC7: corrected throws are marked; a corrected knife that falls out scores 0**
+  - **Design Reference:** Score Corrections
+  - **Implementation:** `_Slot` (light blue, ✎), `markColour`, `RoundMarks` (`ThrowSlot`), `paintRoundMarks(match:)`
+  - **Test:** `score_corrections_test.dart` ('1✎'); `play_screen_test.dart` (light blue); `round_marks_test.dart`; `game_session_test.dart` (falls out → 0)
+  - **Status:** ✅ Covered
 
 - **Coverage:** 7 of 7 with design, code and tests; device checks C0–C7 to come.
 - **Backward:** every new symbol traces to an AC. `Match.throwAt` / `lastThrowAt` serve the marks (AC7) and adding by hand (AC2).

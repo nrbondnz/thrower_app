@@ -21,11 +21,15 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 *"Each app user has an account. They can name players and can send videos using share, but for them to be fully integrated they will have to also have the app and become friends with this app user."* And: *"they can name players but they just have scores (they could just as well be player 2). Friends, also have the app and have linked their account to this user so will get their throws recorded on their app."*
 
-| Term | Who | What they get |
-|---|---|---|
-| **App user** | Whoever runs the app on their phone; has an **account** | Their own history, settings and subscription |
-| **Named player** | A **name on a seat** of one game ("Mark" instead of "Player 2"): a label, nothing more | Their scores in that game, on the app user's phone only. Clips can be sent to them with the phone's **Share** (any app). They don't need the app |
-| **Friend** | Another app user who has **linked their account** to this app user | Fully integrated: their throws are **recorded on their own app** (history, clips), they join sessions, and they rank in the Game Centre |
+- **App user**
+  - **Who:** Whoever runs the app on their phone; has an **account**
+  - **What they get:** Their own history, settings and subscription
+- **Named player**
+  - **Who:** A **name on a seat** of one game ("Mark" instead of "Player 2"): a label, nothing more
+  - **What they get:** Their scores in that game, on the app user's phone only. Clips can be sent to them with the phone's **Share** (any app). They don't need the app
+- **Friend**
+  - **Who:** Another app user who has **linked their account** to this app user
+  - **What they get:** Fully integrated: their throws are **recorded on their own app** (history, clips), they join sessions, and they rank in the Game Centre
 
 - **A named player is not a person in the app:** no list, no history of their own, no ID. A name typed for one game.
 - **A seat holds either a named player or a friend.** When Mark gets the app and links up, the app user picks him as a friend from then on. Games where he was a named player stay on the app user's phone under "Mark"; they don't move to his app.
@@ -36,14 +40,30 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 ## Stages
 
-| Stage | What it adds | Backend | Story |
-|---|---|---|---|
-| **1. Named players** | Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names | None | **Built** 2026-10-19 (Tasks 1–4; device checks to come): [[story-checkpoint-named-players]] |
-| **2. The app user's account** | The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone | AWS Amplify (London, `eu-west-2`): sign-in, storage, payments | **In progress**: Tasks 1–2 deployed, 3–5 written (waiting for the provider secrets) (2026-10-19): [[story-checkpoint-app-user-accounts]] |
-| **3. Friends** | Another app user **links their account** to this app user and becomes a **friend**; a seat can be a friend; their throws on the host's phone are **recorded on their own app** | Friends, shared records | — |
-| **4. Join a live session** | The host's phone runs a session; friends join from their own phones; live scores, turns and corrections on each thrower's phone | Live sync (server or local Wi-Fi) | — |
-| **5. Throws on video, owned by the thrower** | The host records each throw (#11); each friend's clips are delivered to them to keep or share | Clip delivery | Builds on #11 |
-| **6. Game centre** | Leaderboards, leagues, achievements, remote matches | All of the above | — |
+- **1. Named players**
+  - **What it adds:** Each seat can be given a name in place of "Player 1" / "Player 2"; History shows the names
+  - **Backend:** None
+  - **Story:** **Built** 2026-10-19 (Tasks 1–4; device checks to come): [[story-checkpoint-named-players]]
+- **2. The app user's account**
+  - **What it adds:** The app user signs in (when they want backup, friends, the Game Centre or a subscription, not to score); history backed up and restored on a new phone
+  - **Backend:** AWS Amplify (London, `eu-west-2`): sign-in, storage, payments
+  - **Story:** **In progress**: Tasks 1–2 deployed, 3–5 written (waiting for the provider secrets) (2026-10-19): [[story-checkpoint-app-user-accounts]]
+- **3. Friends**
+  - **What it adds:** Another app user **links their account** to this app user and becomes a **friend**; a seat can be a friend; their throws on the host's phone are **recorded on their own app**
+  - **Backend:** Friends, shared records
+  - **Story:** —
+- **4. Join a live session**
+  - **What it adds:** The host's phone runs a session; friends join from their own phones; live scores, turns and corrections on each thrower's phone
+  - **Backend:** Live sync (server or local Wi-Fi)
+  - **Story:** —
+- **5. Throws on video, owned by the thrower**
+  - **What it adds:** The host records each throw (#11); each friend's clips are delivered to them to keep or share
+  - **Backend:** Clip delivery
+  - **Story:** Builds on #11
+- **6. Game centre**
+  - **What it adds:** Leaderboards, leagues, achievements, remote matches
+  - **Backend:** All of the above
+  - **Story:** —
 
 ### Stage 1: Named Players
 
@@ -143,14 +163,30 @@ Related: [[Requirements Index]] (what each stage delivers: [[Player Names]], [[R
 
 ## Open Decisions
 
-| Decision | Needed by | Options | Leaning |
-|---|---|---|---|
-| ~~**Backend and sign-in provider**~~ **Decided 2026-10-19: AWS Amplify** (Gen 2, Cognito; WhereWillWeVisit as the guide) | Stage 2 | **Firebase** (sign-in, a live database and storage in one; fastest to stage 4); **Supabase** (Postgres, live updates, open source); **AWS** (Cognito, AppSync and S3; the stack Nigel's other projects use; more setup) | Decided: AWS Amplify (Nigel, 2026-10-19) |
-| **Where video goes** | Stage 5 | **Phone to phone** (clips sent straight to the thrower; the app never hosts video; cheaper; sharing through their own share sheet) or **cloud** (stored; allows sharing later and clips on leaderboards; storage costs, consent and moderation) | Phone to phone first (not yet confirmed) |
-| **Live session transport** | Stage 4 | Server, local network or Bluetooth, or both | Decide when planning stage 4 |
-| **Ownership rule** | Stage 3 | As above | Proposed |
-| **Subscriptions** | Stage 2 (payments come with accounts) | Nigel, 2026-10-19: 14 days free, then subscribe, or services denied or degraded (no Game Centre uploads, no Quick draw). See [[Subscriptions]] | Degrade, not deny: core scoring free, online and video features paid; the store's 2-week trial (proposed) |
-| **Age** | Stage 2 | Knife throwing: are accounts adults only (an age check at sign-up), or are under-18s allowed with care? | To ask |
+- ~~**Backend and sign-in provider**~~ **Decided 2026-10-19: AWS Amplify** (Gen 2, Cognito; WhereWillWeVisit as the guide)
+  - **Needed by:** Stage 2
+  - **Options:** **Firebase** (sign-in, a live database and storage in one; fastest to stage 4); **Supabase** (Postgres, live updates, open source); **AWS** (Cognito, AppSync and S3; the stack Nigel's other projects use; more setup)
+  - **Leaning:** Decided: AWS Amplify (Nigel, 2026-10-19)
+- **Where video goes**
+  - **Needed by:** Stage 5
+  - **Options:** **Phone to phone** (clips sent straight to the thrower; the app never hosts video; cheaper; sharing through their own share sheet) or **cloud** (stored; allows sharing later and clips on leaderboards; storage costs, consent and moderation)
+  - **Leaning:** Phone to phone first (not yet confirmed)
+- **Live session transport**
+  - **Needed by:** Stage 4
+  - **Options:** Server, local network or Bluetooth, or both
+  - **Leaning:** Decide when planning stage 4
+- **Ownership rule**
+  - **Needed by:** Stage 3
+  - **Options:** As above
+  - **Leaning:** Proposed
+- **Subscriptions**
+  - **Needed by:** Stage 2 (payments come with accounts)
+  - **Options:** Nigel, 2026-10-19: 14 days free, then subscribe, or services denied or degraded (no Game Centre uploads, no Quick draw). See [[Subscriptions]]
+  - **Leaning:** Degrade, not deny: core scoring free, online and video features paid; the store's 2-week trial (proposed)
+- **Age**
+  - **Needed by:** Stage 2
+  - **Options:** Knife throwing: are accounts adults only (an age check at sign-up), or are under-18s allowed with care?
+  - **Leaning:** To ask
 
 ---
 

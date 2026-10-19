@@ -145,18 +145,36 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Decision:**
 
-| Folder | Layer | Rule |
-|---|---|---|
-| `lib/scoring/` | Scoring domain | **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`. |
-| `lib/auth/` | Accounts | `AuthService` interface and `AppUser`. `amplify_accounts.dart`: `loadAmplifyOutputs` (the `assets/config/amplify_outputs.json` settings, or null), `connectAccounts` (configures Amplify; null if it can't) and `AmplifyAuthService` (Cognito sign-in; `AppUser.id` is the Cognito `sub`). An edge folder like `lib/camera/`: the rest of the app depends on the interface. `authServiceProvider` is null when the build isn't connected (signed out). Since 2026-10-19 ([[story-checkpoint-app-user-accounts]]). The backend itself is in `amplify/` (TypeScript, outside `lib/`). |
-| `lib/camera/` | Camera | `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`, `now`: the clock its frames are stamped with), with two implementations: `LiveCamera` (the `camera` plugin's back camera; `open(fps:)`) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `Recording.go`). `RecordingAnalysisFeed` (every frame of a recording, in order, timed by its place in the clip, for analysis; Quick draw). `CroppedCamera` (a part of another camera's picture as a camera of its own, cut in the sensor's layout; Quick draw, one per board; `compactFrame`). `QueuedCamera` (every frame of a crop, kept and handed on in order, falling behind rather than skipping; 75 MB cap; the live Quick draw). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin. |
-| `lib/vision/` | Target finding, throw detection | **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw; the tap is a fraction of the upright picture). |
-| `lib/game/` | Watching a game | Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board, with a `QueuedCamera` between for the live camera (`queue`); `states`, `queues`; `QuickDrawThrow`), `judgeQuickDraw` (Quick draw's winner rule; `QuickDrawVerdict`), `StartSignal` (Quick draw's start signal: `StartSchedule`, `startPauses`, `StartPhase`; go on the camera's clock). |
-| `lib/sound/` | Sound | `SignalSounds` (interface: Quick draw's `beep`, `go`, `result`) and `AssetSignalSounds` (the bundled `assets/sounds/` WAVs, made by `tool/make_signal_sounds.dart`, on the `audioplayers` plugin). An edge folder like `lib/camera/`: `lib/game/` depends on the interface; tests use a fake. |
-| `lib/history/` | Game history | `GameRecord` (a finished game: when, mode, rounds, each player's round totals, the names (since version 2), the Live test recording if any; JSON, `version` 2) and `GameHistory` (interface: `load`, `add`, `delete`, `clear`) with `FileGameHistory` (one JSON file, `game_history.json`, in the app's support folder via `path_provider`). An edge folder like `lib/camera/`: the rest of the app depends on the interface; tests use a temporary folder. Since 2026-10-16 ([[story-checkpoint-game-history]]). |
-| `lib/settings/` | Settings kept on the phone | `PlayerNamesStore` (interface: `load`, `save`) with `FilePlayerNamesStore` (`player_names.json` in the app's support folder): the player names last used. An edge folder like `lib/history/`. Since 2026-10-19 ([[story-checkpoint-named-players]]). |
-| `lib/ui/` | Screens and painters | Depends on the layers through providers. `HistoryScreen` and `GameRecordScreen` show the kept games. `RoundMarks` holds the Play screen's marks for the round. `CameraView` takes the camera to show as a `camera:` provider (default `cameraProvider`). `quick_draw_boards.dart` holds what both Quick draw screens share: `BoardChoosing` (with `playerNames`), `BoardsOverlay`, `BoardsPainter`, `boardLines`, `quickDrawLine`, `NamesButton` / `editPlayerNames`. `LiveQuickDrawScreen` runs the live duel (start signal, result panel). |
-| `lib/providers.dart` | Wiring | One place to see and override every layer. |
+- **`lib/scoring/`**
+  - **Layer:** Scoring domain
+  - **Rule:** **Pure Dart**: no Flutter imports, no pixels. `TargetModel`, `TargetPoint`, `Ring`, `LineTouchRule`.
+- **`lib/auth/`**
+  - **Layer:** Accounts
+  - **Rule:** `AuthService` interface and `AppUser`. `amplify_accounts.dart`: `loadAmplifyOutputs` (the `assets/config/amplify_outputs.json` settings, or null), `connectAccounts` (configures Amplify; null if it can't) and `AmplifyAuthService` (Cognito sign-in; `AppUser.id` is the Cognito `sub`). An edge folder like `lib/camera/`: the rest of the app depends on the interface. `authServiceProvider` is null when the build isn't connected (signed out). Since 2026-10-19 ([[story-checkpoint-app-user-accounts]]). The backend itself is in `amplify/` (TypeScript, outside `lib/`).
+- **`lib/camera/`**
+  - **Layer:** Camera
+  - **Rule:** `CameraFrame` (plugin-independent pixels + timestamp), `CameraSource` (interface: `frames()`), `TargetCamera` (a `CameraSource` the screens use: upright rotation, zoom, `minChange`, `now`: the clock its frames are stamped with), with two implementations: `LiveCamera` (the `camera` plugin's back camera; `open(fps:)`) and `RecordedCamera` (a Live test recording, `FramePack`, with an optional `RecordingSound`; `Recording.go`). `RecordingAnalysisFeed` (every frame of a recording, in order, timed by its place in the clip, for analysis; Quick draw). `CroppedCamera` (a part of another camera's picture as a camera of its own, cut in the sensor's layout; Quick draw, one per board; `compactFrame`). `QueuedCamera` (every frame of a crop, kept and handed on in order, falling behind rather than skipping; 75 MB cap; the live Quick draw). `AssetRecordingSound` plays a recording's sound track (`audioplayers` plugin). `FrameRateMeter`. Vision depends on `CameraSource`/`CameraFrame` only, never on the plugin.
+- **`lib/vision/`**
+  - **Layer:** Target finding, throw detection
+  - **Rule:** **Pure Dart, no Flutter imports.** `RgbImage`, `LumaImage`, `Ellipse`/`fitEllipse`/`fitEllipseRansac`, `TargetLocator` → `ColourRingLocator` (via `buildTargetLocator`), `TargetCalibration`, `zoomToFit`, `MotionDetector`, `classifyThrow`, entry points (`GeometricEntryEstimator`, `faceOnEntry`), `image_difference.dart`, `SyntheticTarget` (test scenes with known answers), `decodeToRgb`, `locateTargetAt` / `locateTappedInFrame` (find the board at a tap, Quick draw; the tap is a fraction of the upright picture).
+- **`lib/game/`**
+  - **Layer:** Watching a game
+  - **Rule:** Joins camera and vision: `ThrowWatcher` (frames → `ThrowEvent`s), `ThrowTracker` (knives in the board, visit cool-down), `findTarget` (Find target with zoom), `WatchDebugLog`, `QuickDrawTargets` (Quick draw's boards, in tap order; `locateAtTap`, `boardAt`), `QuickDrawWatcher` (a crop and a `ThrowWatcher` per board, with a `QueuedCamera` between for the live camera (`queue`); `states`, `queues`; `QuickDrawThrow`), `judgeQuickDraw` (Quick draw's winner rule; `QuickDrawVerdict`), `StartSignal` (Quick draw's start signal: `StartSchedule`, `startPauses`, `StartPhase`; go on the camera's clock).
+- **`lib/sound/`**
+  - **Layer:** Sound
+  - **Rule:** `SignalSounds` (interface: Quick draw's `beep`, `go`, `result`) and `AssetSignalSounds` (the bundled `assets/sounds/` WAVs, made by `tool/make_signal_sounds.dart`, on the `audioplayers` plugin). An edge folder like `lib/camera/`: `lib/game/` depends on the interface; tests use a fake.
+- **`lib/history/`**
+  - **Layer:** Game history
+  - **Rule:** `GameRecord` (a finished game: when, mode, rounds, each player's round totals, the names (since version 2), the Live test recording if any; JSON, `version` 2) and `GameHistory` (interface: `load`, `add`, `delete`, `clear`) with `FileGameHistory` (one JSON file, `game_history.json`, in the app's support folder via `path_provider`). An edge folder like `lib/camera/`: the rest of the app depends on the interface; tests use a temporary folder. Since 2026-10-16 ([[story-checkpoint-game-history]]).
+- **`lib/settings/`**
+  - **Layer:** Settings kept on the phone
+  - **Rule:** `PlayerNamesStore` (interface: `load`, `save`) with `FilePlayerNamesStore` (`player_names.json` in the app's support folder): the player names last used. An edge folder like `lib/history/`. Since 2026-10-19 ([[story-checkpoint-named-players]]).
+- **`lib/ui/`**
+  - **Layer:** Screens and painters
+  - **Rule:** Depends on the layers through providers. `HistoryScreen` and `GameRecordScreen` show the kept games. `RoundMarks` holds the Play screen's marks for the round. `CameraView` takes the camera to show as a `camera:` provider (default `cameraProvider`). `quick_draw_boards.dart` holds what both Quick draw screens share: `BoardChoosing` (with `playerNames`), `BoardsOverlay`, `BoardsPainter`, `boardLines`, `quickDrawLine`, `NamesButton` / `editPlayerNames`. `LiveQuickDrawScreen` runs the live duel (start signal, result panel).
+- **`lib/providers.dart`**
+  - **Layer:** Wiring
+  - **Rule:** One place to see and override every layer.
 
 Folders are created when their first code arrives, never empty "just in case". Navigation is plain `Navigator` until there are enough screens to justify a router.
 
@@ -466,12 +484,22 @@ Each render comes with its answers: each blade's entry point (board and pixel), 
 
 **How the sport scores (research, 2026-10-04):**
 
-| Body | Rings / points | A blade touching a line | Did not stick |
-|---|---|---|---|
-| **KATTA UK** (knife, axe & tomahawk; the European face) | 5 rings at 10 / 20 / 30 / 40 / 50 cm diameter, scoring **5 / 4 / 3 / 2 / 1** | **Higher** score ("the best ring that is cut will be counted") | 0 |
-| **IKTHOF** (knife & axe) | 5 octagons at 10 / 20 / 30 / 40 / 50 cm, scoring **5 / 4 / 3 / 2 / 1** | **Higher** score | 0 |
-| WATL (axe) | Bull 6, rings 5 to 1, killshot 8 | **Lower** score | 0 |
-| IATF (axe) | 5 / 3 / 1, clutch 7 | Where the **majority of the blade** is | 0 |
+- **KATTA UK** (knife, axe & tomahawk; the European face)
+  - **Rings / points:** 5 rings at 10 / 20 / 30 / 40 / 50 cm diameter, scoring **5 / 4 / 3 / 2 / 1**
+  - **A blade touching a line:** **Higher** score ("the best ring that is cut will be counted")
+  - **Did not stick:** 0
+- **IKTHOF** (knife & axe)
+  - **Rings / points:** 5 octagons at 10 / 20 / 30 / 40 / 50 cm, scoring **5 / 4 / 3 / 2 / 1**
+  - **A blade touching a line:** **Higher** score
+  - **Did not stick:** 0
+- **WATL (axe)**
+  - **Rings / points:** Bull 6, rings 5 to 1, killshot 8
+  - **A blade touching a line:** **Lower** score
+  - **Did not stick:** 0
+- **IATF (axe)**
+  - **Rings / points:** 5 / 3 / 1, clutch 7
+  - **A blade touching a line:** Where the **majority of the blade** is
+  - **Did not stick:** 0
 
 Nigel's 5-to-1 five-ring target matches the **IKTHOF** layout. Scoring is decided by **where the blade meets the target surface**, not by where the handle is. A throw only scores if it **sticks**.
 

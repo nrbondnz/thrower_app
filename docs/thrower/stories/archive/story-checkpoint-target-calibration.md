@@ -25,11 +25,18 @@ This is the foundation for [[backlog|throw detection]]: that story only has to f
 
 ### D1: How to process images
 
-| Option | What it means | Pros | Cons |
-|---|---|---|---|
-| **A. Pure Dart (recommended)** | Our own colour segmentation and ellipse fitting on frame bytes, behind a `TargetLocator` interface | No native dependency, no app-size cost; tests run on Windows against fixture images; calibration is a **one-off on a single still** (static camera), so speed hardly matters | We write the maths (segmentation, ellipse fit); per-frame work in the throw-detection story may need optimising |
-| B. OpenCV (`opencv_dart`) | Native OpenCV: `fitEllipse`, `findHomography`, etc. | Proven algorithms; fast | Adds tens of MB to the app; native build complexity on both platforms; harder to test on Windows |
-| C. Trained ML model | Segmentation model (TFLite) | Copes best with messy real boards | Needs labelled training photos we don't have yet |
+- **A. Pure Dart (recommended)**
+  - **What it means:** Our own colour segmentation and ellipse fitting on frame bytes, behind a `TargetLocator` interface
+  - **Pros:** No native dependency, no app-size cost; tests run on Windows against fixture images; calibration is a **one-off on a single still** (static camera), so speed hardly matters
+  - **Cons:** We write the maths (segmentation, ellipse fit); per-frame work in the throw-detection story may need optimising
+- **B. OpenCV (`opencv_dart`)**
+  - **What it means:** Native OpenCV: `fitEllipse`, `findHomography`, etc.
+  - **Pros:** Proven algorithms; fast
+  - **Cons:** Adds tens of MB to the app; native build complexity on both platforms; harder to test on Windows
+- **C. Trained ML model**
+  - **What it means:** Segmentation model (TFLite)
+  - **Pros:** Copes best with messy real boards
+  - **Cons:** Needs labelled training photos we don't have yet
 
 **Decided (Nigel, 2026-10-05): A.** Recommendation was A, behind the `TargetLocator` interface so B or C can replace it without touching the UI or scoring (the "architectural purity" option: the approach can be swapped). Revisit if real-board photos defeat colour segmentation.
 
@@ -41,17 +48,60 @@ This is the foundation for [[backlog|throw detection]]: that story only has to f
 
 ## Traceability Matrix (final, 2026-10-08)
 
-| ID | Requirement | Design ref | Implementation | Test | Status |
-|---|---|---|---|---|---|
-| C1 | Find the 5 painted rings in a still image, ignoring the bark edge and old cuts | Design Decisions → Target Locating | `ColourRingLocator` | `colour_ring_locator_test.dart`: reference photo + 6 synthetic scenes; Nigel on device | ✅ Task 1 |
-| C1b | Rings can be **any two alternating colours**, learned from the image | Design Decisions → Target Locating | `ColourRingLocator` (`_candidateCentres`, `_learnColours`) | `colour_ring_locator_test.dart`: black/white, blue/yellow, green-on-white with handles, wood bull with red rings, reference photo with red and blue swapped | ✅ Task 1b (Nigel to check a non-red board) |
-| C2 | Works off-centre (the phone is beside the throwing line), including at the main camera's 1× zoom where the board is small | Design Decisions → Coarse-to-Fine | `ColourRingLocator` (ellipses) + `CoarseToFineLocator` | synthetic 40°/55°; **6 rendered camera views** (1× / 2×, 0/1/2 knives, reference board, 45°) with truth edges | ✅ Task 2b (rendered; real angled photos still needed) |
-| C3 | Show the detected outline over the live preview | Design Decisions → Target Locating (camera frame to rings) | `CalibrationScreen`, `CalibrationEditor`/`CalibrationPainter` (replaced Task 2's `RingOverlayPainter`), `locateInFrame`, `frameToRgb`, `LiveCamera.uprightRotation`, `CameraView` | `frame_to_rgb_test.dart` (16), `locate_in_frame_test.dart` (3), `calibration_screen_test.dart` (4); Nigel on Android (A4) | ⚠️ Android ✅; **iOS not yet checked** (backlog) |
-| C4 | The user can adjust the outline and lock it; it stays locked for the session; re-calibrate on request | Design Decisions → Adjust and Lock | `TargetCalibration`, `CalibrationNotifier`/`calibrationProvider`, `CalibrationEditor`, `CalibrationControls`, `calibrationFrom` | `target_calibration_test.dart` (7), `calibration_editor_test.dart` (12) | ✅ Task 3 (Nigel to check on device) |
-| C5 | Map any image point to normalised target coordinates, accurate enough to score | Design Decisions → Score Against the Painted Rings | `TargetMapping`; tap-to-score in `CalibrationScreen` (`lockedStatus`, `CalibrationEditor.onTapLocked`) | `target_mapping_test.dart` (10, incl. end to end on 4 rendered knife views: right score, radius within 0.01); `calibration_editor_test.dart` (+5) | ✅ Task 4 (Nigel to tap-test on device) |
-| C6 | Tell the user to calibrate only when no one is throwing | Review Agent §7 | `CalibrationControls.safetyNote` | `calibration_editor_test.dart` (shown while adjusting; hidden once locked) | ✅ Task 3 |
-| C7 | Realistic test pictures from the camera's real position (2 m, ~45°), based on the reference board, with 0/1/2 knives at realistic angles, with known answers (Nigel, 2026-10-08) | Design Decisions → Rendered Camera Views | `SyntheticScene`, `PhotoBoardTexture`, `tool/render_camera_views.dart`; `SyntheticTarget` + `DebugLocatorScreen` (Task 1 debug checks) | `synthetic_scene_test.dart` (4); used by `coarse_to_fine_locator_test`, `target_mapping_test` | ✅ Task 2b (added in Task 5 review: was untraced) |
-| C8 | Works indoors in dim or flat light (the camera's live stream is washed out) | Design Decisions → Coarse-to-Fine (dim light) | `ContrastNormalisingLocator`; debug frame dump (`describeFrame`, `debugFramePng`) | `contrast_normalising_locator_test.dart` (10, incl. a real Android frame at 50%/30% brightness and half contrast) | ✅ (added in Task 5 review: was untraced) |
+- **C1**
+  - **Requirement:** Find the 5 painted rings in a still image, ignoring the bark edge and old cuts
+  - **Design ref:** Design Decisions → Target Locating
+  - **Implementation:** `ColourRingLocator`
+  - **Test:** `colour_ring_locator_test.dart`: reference photo + 6 synthetic scenes; Nigel on device
+  - **Status:** ✅ Task 1
+- **C1b**
+  - **Requirement:** Rings can be **any two alternating colours**, learned from the image
+  - **Design ref:** Design Decisions → Target Locating
+  - **Implementation:** `ColourRingLocator` (`_candidateCentres`, `_learnColours`)
+  - **Test:** `colour_ring_locator_test.dart`: black/white, blue/yellow, green-on-white with handles, wood bull with red rings, reference photo with red and blue swapped
+  - **Status:** ✅ Task 1b (Nigel to check a non-red board)
+- **C2**
+  - **Requirement:** Works off-centre (the phone is beside the throwing line), including at the main camera's 1× zoom where the board is small
+  - **Design ref:** Design Decisions → Coarse-to-Fine
+  - **Implementation:** `ColourRingLocator` (ellipses) + `CoarseToFineLocator`
+  - **Test:** synthetic 40°/55°; **6 rendered camera views** (1× / 2×, 0/1/2 knives, reference board, 45°) with truth edges
+  - **Status:** ✅ Task 2b (rendered; real angled photos still needed)
+- **C3**
+  - **Requirement:** Show the detected outline over the live preview
+  - **Design ref:** Design Decisions → Target Locating (camera frame to rings)
+  - **Implementation:** `CalibrationScreen`, `CalibrationEditor`/`CalibrationPainter` (replaced Task 2's `RingOverlayPainter`), `locateInFrame`, `frameToRgb`, `LiveCamera.uprightRotation`, `CameraView`
+  - **Test:** `frame_to_rgb_test.dart` (16), `locate_in_frame_test.dart` (3), `calibration_screen_test.dart` (4); Nigel on Android (A4)
+  - **Status:** ⚠️ Android ✅; **iOS not yet checked** (backlog)
+- **C4**
+  - **Requirement:** The user can adjust the outline and lock it; it stays locked for the session; re-calibrate on request
+  - **Design ref:** Design Decisions → Adjust and Lock
+  - **Implementation:** `TargetCalibration`, `CalibrationNotifier`/`calibrationProvider`, `CalibrationEditor`, `CalibrationControls`, `calibrationFrom`
+  - **Test:** `target_calibration_test.dart` (7), `calibration_editor_test.dart` (12)
+  - **Status:** ✅ Task 3 (Nigel to check on device)
+- **C5**
+  - **Requirement:** Map any image point to normalised target coordinates, accurate enough to score
+  - **Design ref:** Design Decisions → Score Against the Painted Rings
+  - **Implementation:** `TargetMapping`; tap-to-score in `CalibrationScreen` (`lockedStatus`, `CalibrationEditor.onTapLocked`)
+  - **Test:** `target_mapping_test.dart` (10, incl. end to end on 4 rendered knife views: right score, radius within 0.01); `calibration_editor_test.dart` (+5)
+  - **Status:** ✅ Task 4 (Nigel to tap-test on device)
+- **C6**
+  - **Requirement:** Tell the user to calibrate only when no one is throwing
+  - **Design ref:** Review Agent §7
+  - **Implementation:** `CalibrationControls.safetyNote`
+  - **Test:** `calibration_editor_test.dart` (shown while adjusting; hidden once locked)
+  - **Status:** ✅ Task 3
+- **C7**
+  - **Requirement:** Realistic test pictures from the camera's real position (2 m, ~45°), based on the reference board, with 0/1/2 knives at realistic angles, with known answers (Nigel, 2026-10-08)
+  - **Design ref:** Design Decisions → Rendered Camera Views
+  - **Implementation:** `SyntheticScene`, `PhotoBoardTexture`, `tool/render_camera_views.dart`; `SyntheticTarget` + `DebugLocatorScreen` (Task 1 debug checks)
+  - **Test:** `synthetic_scene_test.dart` (4); used by `coarse_to_fine_locator_test`, `target_mapping_test`
+  - **Status:** ✅ Task 2b (added in Task 5 review: was untraced)
+- **C8**
+  - **Requirement:** Works indoors in dim or flat light (the camera's live stream is washed out)
+  - **Design ref:** Design Decisions → Coarse-to-Fine (dim light)
+  - **Implementation:** `ContrastNormalisingLocator`; debug frame dump (`describeFrame`, `debugFramePng`)
+  - **Test:** `contrast_normalising_locator_test.dart` (10, incl. a real Android frame at 50%/30% brightness and half contrast)
+  - **Status:** ✅ (added in Task 5 review: was untraced)
 
 ---
 

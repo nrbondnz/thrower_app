@@ -480,12 +480,24 @@ Signed in, the kept games (scores, modes, dates, names) and the names go to AWS 
 
 ## Coordinate Spaces
 
-| Space | Where | Notes |
-|---|---|---|
-| Camera frame | `CameraFrame` | Live: sensor orientation (usually sideways), 1280 × 720 at `ResolutionPreset.high`. Recording: already upright, the pack's size (322 × 322, or 720 × 1280 for Quick draw) |
-| Upright image | `RgbImage` from `frameToRgb` | Rotated by the camera's `uprightRotation` (0 for a recording); calibration ellipses live here |
-| Tap (Quick draw) | `BoardsOverlay` → `TapLocator` | A **fraction** of the upright picture, 0–1 each way (since 2026-10-15). `locateTappedInFrame` multiplies it by the upright image's size after `frameToRgb`, so a sideways live frame and an upright recording are treated alike |
-| Board crop (Quick draw) | `CroppedCamera` frames | A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner). The frames themselves are cut in the camera's **sensor layout** (`sensorRect`; live Quick draw Task 2): a sideways live crop stays sideways, carrying the source's `uprightRotation` (fixed when the crop is made: each duel, 1 s before go), and is turned upright by whoever reads it; a recording's (rotation 0) is the rectangle as it is |
-| Preview widget | `CalibrationEditor` | Upright image × (preview width ÷ image width); drawn as `CameraPreview`'s (or `RecordedPreview`'s) child so it lines up |
-| Brightness frame | `LumaImage` from `frameToLuma` | Upright, ~320 px long side (180 × 320 portrait from a 1280 × 720 stream); motion detection and stuck/bounce classification; `WatchRegion` is in fractions so it's size-independent |
-| Target | `TargetPoint` | Normalised: centre 0,0, outer edge of ring 1 at radius 1, v up; **ideal** ring radii 0.2 … 1.0 |
+- **Camera frame**
+  - **Where:** `CameraFrame`
+  - **Notes:** Live: sensor orientation (usually sideways), 1280 × 720 at `ResolutionPreset.high`. Recording: already upright, the pack's size (322 × 322, or 720 × 1280 for Quick draw)
+- **Upright image**
+  - **Where:** `RgbImage` from `frameToRgb`
+  - **Notes:** Rotated by the camera's `uprightRotation` (0 for a recording); calibration ellipses live here
+- **Tap (Quick draw)**
+  - **Where:** `BoardsOverlay` → `TapLocator`
+  - **Notes:** A **fraction** of the upright picture, 0–1 each way (since 2026-10-15). `locateTappedInFrame` multiplies it by the upright image's size after `frameToRgb`, so a sideways live frame and an upright recording are treated alike
+- **Board crop (Quick draw)**
+  - **Where:** `CroppedCamera` frames
+  - **Notes:** A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner). The frames themselves are cut in the camera's **sensor layout** (`sensorRect`; live Quick draw Task 2): a sideways live crop stays sideways, carrying the source's `uprightRotation` (fixed when the crop is made: each duel, 1 s before go), and is turned upright by whoever reads it; a recording's (rotation 0) is the rectangle as it is
+- **Preview widget**
+  - **Where:** `CalibrationEditor`
+  - **Notes:** Upright image × (preview width ÷ image width); drawn as `CameraPreview`'s (or `RecordedPreview`'s) child so it lines up
+- **Brightness frame**
+  - **Where:** `LumaImage` from `frameToLuma`
+  - **Notes:** Upright, ~320 px long side (180 × 320 portrait from a 1280 × 720 stream); motion detection and stuck/bounce classification; `WatchRegion` is in fractions so it's size-independent
+- **Target**
+  - **Where:** `TargetPoint`
+  - **Notes:** Normalised: centre 0,0, outer edge of ring 1 at radius 1, v up; **ideal** ring radii 0.2 … 1.0

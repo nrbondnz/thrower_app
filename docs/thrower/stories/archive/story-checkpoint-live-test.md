@@ -249,20 +249,78 @@ COMPLETE (2026-10-11): all 7 tasks done and committed (f68a5d7, 6a8f5c4, 5ca68ec
 
 **Coverage summary:** 12 requirements; 8 fully covered (design + code + test); 3 partly covered (only checkable on a device, or known to be imperfect); 1 config-only (no test possible). Orphan code: 1 found and removed.
 
-| # | Requirement (source) | Design | Implementation | Test | Status |
-|---|---|---|---|---|---|
-| R1 | A **Live test** button on the main screen, then **Target 1** / **Target 2** (Nigel) | Live Test: A Recording in Place of the Camera | `HomeScreen`, `LiveTestScreen`, `recordingChoiceProvider` | `live_test_screen_test.dart` | ✅ |
-| R2 | Each recording runs **live** through the same calibrate → Play pipeline, analysed every run (Nigel) | Same | `RecordedCamera`, `FramePack`, `cameraProvider`, `RecordedPreview` | `recorded_camera_test.dart`, `frame_pack_test.dart`, `camera_view_test.dart` | ✅ |
-| R3 | Find the rings whatever their colours (Nigel: "the ring colors change") | Ring Finding on Real Boards | `ColourRingLocator` (edge reading), `RgbImage.upscaled` | `live_recording_locate_test.dart` | ✅ |
-| R4 | Pale outer edge scores 0, bull 5 (Q3) | Throwing Sport | `TargetModel.ikthof` | `target_model_test.dart` | ✅ |
-| R5 | Detect every throw, **including bounce-outs**, and nothing else (Nigel) | Throw Detection on Real Footage | `MotionDetector` (pair noise, largest shape), `classifyThrow`, `ThrowTracker`, `TargetCamera.minChange` | `live_replay_test.dart` (every throw; nothing extra), `motion_detector_test.dart`, `throw_classifier_test.dart`, `throw_tracker_test.dart`, `image_difference_test.dart` | ✅ |
-| R6 | Rounds, **including rounds of just 1 throw** (Nigel) | Rounds and Scoring; Throw Detection on Real Footage | `GameSession.boardVisited`, `classifyThrow` (`minVisit`), `ThrowTracker` (cool-down) | `live_replay_test.dart` (rounds, throw by throw), `game_session_test.dart` | ✅ |
-| R7 | Score each throw **correctly** (Nigel) | Throw Detection on Real Footage → Where a face-on knife went in | `faceOnEntry`, `isFaceOn`, `ThrowWatcher` | `live_replay_test.dart` (floor: 5 of 10, 6 of 9 exact) | ⚠️ **Partial:** 11 of 19 exact, 17 within a ring. Limited by the 140 px footage. The original video is the fix. |
-| R8 | A **yellow circle with the score** at each knife and a **0 marker beside the board** for a bounce-out, cleared on collection (Nigel) | Rounds and Scoring (Play screen) | `RoundMarks`, `besidePosition`, `PlayOverlayPainter` | `round_marks_test.dart` | ⚠️ **Partial:** the painting itself isn't tested (Nigel's visual check). |
-| R9 | Live test in **TestFlight builds** too (Q4) | Live Test section | `pubspec.yaml` assets | none (config) | ⚠️ **Config only.** Safety flags stand: +21 MB, people in the recordings (before any public release). |
-| R10 | **Camera zoom** onto the target on Find (Nigel) | Zoom the Camera onto the Target | `findTarget`, `zoomToFit`, `TargetCamera.setZoom`, `LiveCamera`, `CalibrationState.zoom`, `cameraProvider` | `zoom_to_fit_test.dart`, `find_target_test.dart`, `calibration_editor_test.dart` | ⚠️ **Partial:** that the plugin zooms the image stream, and the zoom is restored on reopening, needs a device. |
-| R11 | Off-centre board: zoom what it can, plus a tip (Nigel's choice) | Zoom section | `ZoomPlan.offCentre`, `calibrationStatus` | `zoom_to_fit_test.dart`, `calibration_screen_test.dart` | ✅ |
-| R12 | Answer key: Claude drafts, Nigel corrects (Q2) | Task 1 | `reference/live-camera/truth.json` | used by `live_replay_test.dart` | ✅ |
+- **R1**
+  - **Requirement (source):** A **Live test** button on the main screen, then **Target 1** / **Target 2** (Nigel)
+  - **Design:** Live Test: A Recording in Place of the Camera
+  - **Implementation:** `HomeScreen`, `LiveTestScreen`, `recordingChoiceProvider`
+  - **Test:** `live_test_screen_test.dart`
+  - **Status:** ✅
+- **R2**
+  - **Requirement (source):** Each recording runs **live** through the same calibrate → Play pipeline, analysed every run (Nigel)
+  - **Design:** Same
+  - **Implementation:** `RecordedCamera`, `FramePack`, `cameraProvider`, `RecordedPreview`
+  - **Test:** `recorded_camera_test.dart`, `frame_pack_test.dart`, `camera_view_test.dart`
+  - **Status:** ✅
+- **R3**
+  - **Requirement (source):** Find the rings whatever their colours (Nigel: "the ring colors change")
+  - **Design:** Ring Finding on Real Boards
+  - **Implementation:** `ColourRingLocator` (edge reading), `RgbImage.upscaled`
+  - **Test:** `live_recording_locate_test.dart`
+  - **Status:** ✅
+- **R4**
+  - **Requirement (source):** Pale outer edge scores 0, bull 5 (Q3)
+  - **Design:** Throwing Sport
+  - **Implementation:** `TargetModel.ikthof`
+  - **Test:** `target_model_test.dart`
+  - **Status:** ✅
+- **R5**
+  - **Requirement (source):** Detect every throw, **including bounce-outs**, and nothing else (Nigel)
+  - **Design:** Throw Detection on Real Footage
+  - **Implementation:** `MotionDetector` (pair noise, largest shape), `classifyThrow`, `ThrowTracker`, `TargetCamera.minChange`
+  - **Test:** `live_replay_test.dart` (every throw; nothing extra), `motion_detector_test.dart`, `throw_classifier_test.dart`, `throw_tracker_test.dart`, `image_difference_test.dart`
+  - **Status:** ✅
+- **R6**
+  - **Requirement (source):** Rounds, **including rounds of just 1 throw** (Nigel)
+  - **Design:** Rounds and Scoring; Throw Detection on Real Footage
+  - **Implementation:** `GameSession.boardVisited`, `classifyThrow` (`minVisit`), `ThrowTracker` (cool-down)
+  - **Test:** `live_replay_test.dart` (rounds, throw by throw), `game_session_test.dart`
+  - **Status:** ✅
+- **R7**
+  - **Requirement (source):** Score each throw **correctly** (Nigel)
+  - **Design:** Throw Detection on Real Footage → Where a face-on knife went in
+  - **Implementation:** `faceOnEntry`, `isFaceOn`, `ThrowWatcher`
+  - **Test:** `live_replay_test.dart` (floor: 5 of 10, 6 of 9 exact)
+  - **Status:** ⚠️ **Partial:** 11 of 19 exact, 17 within a ring. Limited by the 140 px footage. The original video is the fix.
+- **R8**
+  - **Requirement (source):** A **yellow circle with the score** at each knife and a **0 marker beside the board** for a bounce-out, cleared on collection (Nigel)
+  - **Design:** Rounds and Scoring (Play screen)
+  - **Implementation:** `RoundMarks`, `besidePosition`, `PlayOverlayPainter`
+  - **Test:** `round_marks_test.dart`
+  - **Status:** ⚠️ **Partial:** the painting itself isn't tested (Nigel's visual check).
+- **R9**
+  - **Requirement (source):** Live test in **TestFlight builds** too (Q4)
+  - **Design:** Live Test section
+  - **Implementation:** `pubspec.yaml` assets
+  - **Test:** none (config)
+  - **Status:** ⚠️ **Config only.** Safety flags stand: +21 MB, people in the recordings (before any public release).
+- **R10**
+  - **Requirement (source):** **Camera zoom** onto the target on Find (Nigel)
+  - **Design:** Zoom the Camera onto the Target
+  - **Implementation:** `findTarget`, `zoomToFit`, `TargetCamera.setZoom`, `LiveCamera`, `CalibrationState.zoom`, `cameraProvider`
+  - **Test:** `zoom_to_fit_test.dart`, `find_target_test.dart`, `calibration_editor_test.dart`
+  - **Status:** ⚠️ **Partial:** that the plugin zooms the image stream, and the zoom is restored on reopening, needs a device.
+- **R11**
+  - **Requirement (source):** Off-centre board: zoom what it can, plus a tip (Nigel's choice)
+  - **Design:** Zoom section
+  - **Implementation:** `ZoomPlan.offCentre`, `calibrationStatus`
+  - **Test:** `zoom_to_fit_test.dart`, `calibration_screen_test.dart`
+  - **Status:** ✅
+- **R12**
+  - **Requirement (source):** Answer key: Claude drafts, Nigel corrects (Q2)
+  - **Design:** Task 1
+  - **Implementation:** `reference/live-camera/truth.json`
+  - **Test:** used by `live_replay_test.dart`
+  - **Status:** ✅
 
 **Gaps and recommendations:**
 1. **R7, score accuracy.** Recommend the original phone video (Q1): boards would be roughly 250–500 px across instead of 106, and the replay test's floor can then be raised towards a full match.
