@@ -1,5 +1,5 @@
 // Generates printable test targets as PDFs (and the A4 one as a JPEG), with
-// ring sizes taken from TargetModel.ikthof() so the print always matches the
+// ring sizes taken from TargetModel.katta() so the print always matches the
 // scoring.
 //
 //   dart run tool/printable_target.dart
@@ -121,7 +121,7 @@ List<int> pdf(Paper paper, String content) {
 }
 
 void main() {
-  final model = TargetModel.ikthof();
+  final model = TargetModel.katta();
   final dir = Directory('docs/thrower/reference/printable')..createSync(recursive: true);
   for (final paper in papers) {
     _write(File('${dir.path}/target-${paper.name}.pdf'), pdf(paper, pageContent(paper, model)));

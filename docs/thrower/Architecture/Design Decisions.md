@@ -378,11 +378,14 @@ Each render comes with its answers: each blade's entry point (board and pixel), 
 
 | Body | Rings / points | A blade touching a line | Did not stick |
 |---|---|---|---|
-| **IKTHOF** (knife & axe) | 5 rings at 10 / 20 / 30 / 40 / 50 cm diameter, scoring **5 / 4 / 3 / 2 / 1** | **Higher** score | 0 |
+| **KATTA UK** (knife, axe & tomahawk; the European face) | 5 rings at 10 / 20 / 30 / 40 / 50 cm diameter, scoring **5 / 4 / 3 / 2 / 1** | **Higher** score ("the best ring that is cut will be counted") | 0 |
+| **IKTHOF** (knife & axe) | 5 octagons at 10 / 20 / 30 / 40 / 50 cm, scoring **5 / 4 / 3 / 2 / 1** | **Higher** score | 0 |
 | WATL (axe) | Bull 6, rings 5 to 1, killshot 8 | **Lower** score | 0 |
 | IATF (axe) | 5 / 3 / 1, clutch 7 | Where the **majority of the blade** is | 0 |
 
 Nigel's 5-to-1 five-ring target matches the **IKTHOF** layout. Scoring is decided by **where the blade meets the target surface**, not by where the handle is. A throw only scores if it **sticks**.
+
+**Update (Nigel's brother, via Nigel, 2026-10-19): the scoring is KATTA**, "which is prevalent in the UK". KATTA UK (knifethrowing.co.uk; its *Guide to different Targets*) uses the European face: the same ring sizes and scores as IKTHOF ("practically the same", IKTHOF's octagons about 1% larger), and a blade cutting a line takes the higher ring. So nothing changed in scoring: `TargetModel.ikthof()` was renamed **`TargetModel.katta()`** ([[story-checkpoint-quick-draw-match]] Task 1). Nigel's 75–85 cm boards are larger than the 50 cm face; scoring works on proportions (`TargetMapping`), so that doesn't matter.
 
 **Backlog (Nigel, 2026-10-04):** refine scoring by hit point, meaning which line-touch rule applies and any per-sport variants. For now: IKTHOF ring values, a touching blade scores the higher ring, and a throw that doesn't stick scores 0. The line-touch rule is a setting on `TargetModel` (`LineTouchRule.higher` / `.lower`), not hard-coded. **Implemented in Task 3:** `TargetModel.scoreAt(point, bladeHalfWidth:)` treats a blade as touching a line when it comes within `bladeHalfWidth` of it; a point exactly on a line counts as touching. IATF's majority-of-blade rule needs the blade's extent and stays on the backlog.
 
@@ -562,6 +565,11 @@ The misses aren't resolution or compression: the right board fails as often on t
 ## Quick Draw: Go, False Starts and the Winner (2026-10-15)
 
 **Decision (Nigel, 2026-10-14):** **the first knife to stick wins.** A bounce-out loses. A knife that reaches its board **before "go"** is a **false start**, and loses. If both stick, the one that reached its board first wins; ring scores are shown but don't decide it. Both on the **same frame** is a **draw**. If neither sticks, **nobody wins** (Task 4 of [[story-checkpoint-quick-draw]]).
+
+**Update (Nigel's brother, via Nigel, 2026-10-19): the score breaks a tie, and a match is three rounds.** *"The quick draw is always three rounds, first to stick in target wins, bounce outs lose, if the times are the same then score is the decider if possible, if the same score the round is a draw."* That's the European **Duel Cup** format (eurothrowers.org/duel-cup: 3 runs, the first to stick wins a run, at the same time the knife closer to the centre wins; level → more runs). [[story-checkpoint-quick-draw-match]]:
+- **A round** (`judgeQuickDraw`): both stuck on the **same frame** → the **higher score** wins (`QuickDrawVerdict.byScore`; "Player 2 wins on score: …"); the same score, **or a score that wasn't found**, is a draw. "The same time" stays the same camera frame (about 17 ms at 60 fps), the finest the camera can tell apart (the Duel Cup's 10 ms needs a timing device).
+- **A match** (`QuickDrawMatch`, `lib/scoring/quick_draw_match.dart`, pure Dart: it keeps each round's winner, not the verdicts, so scoring doesn't depend on `lib/game/`): **all three rounds are thrown**, even at 2–0, so both throw alike; the player with more rounds won wins. **Level after three: extra rounds** until one is won (Nigel). **Finish match** ends it after any round, on the rounds won so far; finished early and level is a draw (no extra rounds forced). Drawn rounds (no one stuck, or a tie) count for neither.
+- False starts still lose the round (the Duel Cup warns first; not asked for).
 
 **"Go":** `Recording.go`, when the recording's countdown says go, from its start. For `quickDrawRecording` it's **2.8 s** (161.3 s in the original, by Nigel's ear; answer key `reference/live-camera/quickdraw.json`). On the recording the app plays no countdown of its own: the footage's audio gives it. The live game plays its own countdown (Formula 1 style): see Quick Draw: the Start Signal. There `go` is the moment the go beep is asked to play, on the camera's clock; `judgeQuickDraw` is the same.
 

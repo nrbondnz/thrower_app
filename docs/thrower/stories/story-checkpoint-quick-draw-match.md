@@ -7,7 +7,7 @@ Quick draw follows the rules Nigel's brother plays to (Nigel, 2026-10-19): **"Th
 4 (Large): rules (pure Dart) → the live Quick draw screen → instructions (3 layers), and branches: the score tie-break, extra rounds, finishing early (1).
 
 ## Status
-PLANNED (2026-10-19): waiting for Nigel's approval of the plan. No code yet.
+IN PROGRESS: Task 1 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Plan approved ("commit this and start task 1", `df1e1d5`).
 
 ## Research (2026-10-19)
 - **KATTA UK** (knifethrowing.co.uk; its *Guide to different Targets*, from the club files on ebthrowers.co.uk) uses the **European target face**: a 50 cm circle of 5 concentric rings, **10 / 20 / 30 / 40 / 50 cm** across, scoring **5 / 4 / 3 / 2 / 1**. The guide says it is "practically the same" as the IKTHOF target (octagons of the same sizes, about 1% larger). The European rules (eurothrowers.org) say "The best ring that is cut will be counted", which is the **higher** score on a line. A throw counts only if the tip **sticks**.
@@ -53,6 +53,24 @@ PLANNED (2026-10-19): waiting for Nigel's approval of the plan. No code yet.
   - `TargetModel.ikthof()` renamed **`TargetModel.katta()`**, with a doc comment that it's the same as the IKTHOF and European faces.
 - **Verify:** tests: a table of round cases (stick vs bounce, same frame with higher, equal or unknown scores, false starts, no throws); matches (2–1; 2–0 then the third thrown; 1–1 with a drawn round → an extra round; drawn extra rounds go on; finished early level → draw; finished early 1–0 → winner). `flutter test` all pass. Nothing new on the phone yet, except the result text naming a score win.
 - **Next:** Task 2.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/game/quick_draw_judge.dart`: on the same frame the higher score wins (`QuickDrawVerdict.byScore`); the same score or a score not found (`null`) is a draw. `verdictText`: "Player 2 wins on score: …"; a draw now says "…on the same frame with the same score."
+  - `lib/scoring/quick_draw_match.dart` (new): `QuickDrawMatch` (`rounds` = 3, `results`: each round's winner or null; `add`, `finish`; `wins`, `leader`, `roundNumber`, `isExtraRound`, `isOver`, `winner`, `draw`, `scoreText`). Pure Dart: it takes a round's winner, not the `QuickDrawVerdict`, so `lib/scoring/` doesn't depend on `lib/game/`.
+  - `TargetModel.ikthof()` → **`TargetModel.katta()`** (`lib/providers.dart`, the tests, `tool/locate_target.dart`, `tool/printable_target.dart`, `tool/reference_board.dart`); doc comments name KATTA, the same rings as IKTHOF. Scores unchanged.
+- **Verified by:** `flutter test`: 689 passed (22 new), `flutter analyze`: no issues. Nothing new on the phone: the recorded clip has no same-frame finish, so its result is unchanged. The match appears in Task 2.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 1)
+- **New:** `test/scoring/quick_draw_match_test.dart` (17: a table of 9 matches (2–1; 2–0 not over, the third thrown; 3–0; 1–1 plus a drawn round, level; three drawn rounds; an extra round won; a drawn extra round goes on; 1–0 and two draws); the round number and extra rounds; nothing added once over; wins, score and leader; finishing early (ahead wins; level is a draw; level in extra rounds; not before the first round; nothing added after)). `quick_draw_judge_test.dart` (5: the same frame, the higher score wins, either player; one score not found, a draw; a bounce-out on the same frame still loses; "wins on score" in the result line).
+- **Updated:** the judge's same-frame draw cases and the live screen's draw test now use equal scores; `TargetModel.katta` everywhere.
+- **Results:** 689 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 1)
+- [[Design Decisions]] → Quick Draw: Go, False Starts and the Winner (an update: the score tie-break, the three-round match, extra rounds, finishing early, the Duel Cup); → Throwing Sport (KATTA UK in the table; the rename).
+- [[Glossary]]: `QuickDrawMatch`; `QuickDrawVerdict.byScore`.
+- [[Common Tasks]] and the web pages (`tool/web_docs/content.py`, rebuilt): `TargetModel.katta()`.
+- The rest (Instructions, the Quick draw concept, flows, device checks) comes in Task 3.
 
 ### Task 2: The live Quick draw as a three-round match
 - **Setup:** Task 1.

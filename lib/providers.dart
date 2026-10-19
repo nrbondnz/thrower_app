@@ -22,7 +22,7 @@ import 'vision/throw_classifier.dart';
 
 /// Wiring for the app's layers. Tests override any of these with fakes.
 
-final targetModelProvider = Provider<TargetModel>((ref) => TargetModel.ikthof());
+final targetModelProvider = Provider<TargetModel>((ref) => TargetModel.katta());
 
 /// Normalised radii of the ring boundaries inside the target (every ring's
 /// outer edge except the outermost), which the ring finder looks for.

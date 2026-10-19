@@ -73,7 +73,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`QuickDrawWatcher`** (`lib/game/quick_draw_watcher.dart`), on the `RecordingAnalysisFeed` (since Task 4; was the picture's frames), or on the live camera with `queue: true`: `start`: per board a `CroppedCamera` (`cropRadii` 4, side rounded to even) + `TargetCalibration.within` (the crop's size) + (`queue`: a `QueuedCamera`) + `ThrowWatcher(interval: zero)`
   - `states`: each board's `WatchState`; `queues`: each board's `QueuedCamera` (when `queue`)
   - `throws`: each player's first stuck or bounce-out event as a **`QuickDrawThrow`** (`impact` = `MotionEpisode.impact`, `stuck`, `score` via `TargetMapping` → `TargetModel.scoreAt`); `dispose`
-- **`judgeQuickDraw(throws, go)`** (`lib/game/quick_draw_judge.dart`): the winner rule → a **`QuickDrawVerdict`** (`players`, `winner`, `draw`)
+- **`judgeQuickDraw(throws, go)`** (`lib/game/quick_draw_judge.dart`): a round's winner rule → a **`QuickDrawVerdict`** (`players`, `winner`, `draw`, `byScore`: the same frame, decided by the higher score)
   - per player a **`JudgedThrow`**: `result` (**`QuickDrawResult`**: `none`, `falseStart`, `bounced`, `stuck`), `afterGo` (impact − go), `score` (stuck only)
   - `winner`: the stuck player with the smallest `afterGo`; equal times → `draw`; nobody stuck → null
   - `judgedText(JudgedThrow)`: "0.82 s · 5", "0.85 s · bounced", "false start", "no throw" (`afterGoText`: "0.82 s")
@@ -137,6 +137,8 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
   - the screen: `BoardChoosing.addBoard` → `playTargetsProvider`; camera to 1×; `BoardMarksPainter`; `boardMessage`; `boardsStateText`
+- **`QuickDrawMatch`** (`lib/scoring/quick_draw_match.dart`): a Quick draw match of three rounds ([[story-checkpoint-quick-draw-match]])
+  - `add(winner)` (null: a drawn round), `finish()`; `results`, `wins`, `leader`, `roundNumber`, `isExtraRound`, `isOver`, `winner`, `draw`, `scoreText`
 - **`TargetModel`** (`lib/scoring/target_model.dart`)
   - `scoreAt(point, bladeHalfWidth)` with a `LineTouchRule`
 - **Test data**: `SyntheticTarget` (flat, affine), `SyntheticScene` (3D ray tracer), `PhotoBoardTexture` (reference photo as the board face, knives removed); tools `render_camera_views`, `locate_target`, `printable_target`

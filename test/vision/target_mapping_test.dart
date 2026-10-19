@@ -78,7 +78,7 @@ void main() {
     });
 
     test('scores follow the painted rings, not the ideal ones', () {
-      final model = TargetModel.ikthof();
+      final model = TargetModel.katta();
       // 0.21 of the outer radius: inside the painted bull (0.22) although
       // outside the ideal one (0.2), so it scores 5.
       expect(model.scoreAt(mapping.toTarget(Point2(500, 400 + 200 * 0.21))), 5);
@@ -100,7 +100,7 @@ void main() {
     // Rendered by tool/render_camera_views.dart with known entry points and
     // scores (scored against the board's painted rings).
     final truth = jsonDecode(File('test/fixtures/camera-views/truth.json').readAsStringSync()) as Map<String, dynamic>;
-    final model = TargetModel.ikthof();
+    final model = TargetModel.katta();
     for (final name in truth.keys) {
       final knives = (truth[name] as Map<String, dynamic>)['knives'] as List;
       if (knives.isEmpty) continue;

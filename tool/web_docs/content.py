@@ -291,7 +291,7 @@ COMPONENTS = {
         body=[
             'The line-touch rule decides a blade exactly on a line: the higher ring (IKTHOF, used today) or the lower (WATL). Per-sport rules are backlog #3.',
         ],
-        functions=[('scoreAt(point, bladeHalfWidth)', 'the ring score, with a LineTouchRule'), ('TargetModel.ikthof()', 'ideal radii 0.2 / 0.4 / 0.6 / 0.8 / 1.0')],
+        functions=[('scoreAt(point, bladeHalfWidth)', 'the ring score, with a LineTouchRule'), ('TargetModel.katta()', 'ideal radii 0.2 / 0.4 / 0.6 / 0.8 / 1.0')],
         flows=['scoring-a-point', 'play', 'quick-draw-recording'],
     ),
     'game-session': dict(

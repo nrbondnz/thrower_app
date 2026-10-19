@@ -36,7 +36,11 @@ void main() {
   Future<TappedTargetsResult> fakeLocate(_, Point2 tap) async {
     taps.add(tap);
     final b = boardAtCentre(tap.x * 8, tap.y * 6);
-    return TappedTargetsResult([TargetFound(boundaries: b.boundaries, outer: b.outer, confidence: 0.8, boundaryPoints: const {})], 8, 6);
+    return TappedTargetsResult(
+      [TargetFound(boundaries: b.boundaries, outer: b.outer, confidence: 0.8, boundaryPoints: const {})],
+      8,
+      6,
+    );
   }
 
   setUp(() {
@@ -45,45 +49,65 @@ void main() {
     sounds = FakeSignalSounds();
     soundsReleased = 0;
     clock = Duration.zero;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'SystemChrome.setEnabledSystemUIMode') systemUiModes.add(call.arguments as String);
-      return null;
-    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'SystemChrome.setEnabledSystemUIMode') systemUiModes.add(call.arguments as String);
+        return null;
+      },
+    );
   });
-  tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+  tearDown(
+    () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    ),
+  );
 
   /// The app from Home, with the live Quick draw's camera replaced by [camera]
   /// (a recording stands in: tests have no camera).
   Future<void> pumpHome(WidgetTester tester, Future<TargetCamera> Function() camera) async {
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        liveQuickDrawCameraProvider.overrideWith((ref) => camera()),
-        // Play's camera never starts in a test.
-        cameraProvider.overrideWith((ref) => Completer<TargetCamera>().future),
-        tapLocatorProvider.overrideWithValue(fakeLocate),
-        // As the app's provider: auto-disposed, counting releases.
-        signalSoundsProvider.overrideWith((ref) {
-          ref.onDispose(() => soundsReleased++);
-          return sounds;
-        }),
-        // A fixed pause of 1.5 s: go at 5.5 s after Start.
-        startScheduleProvider.overrideWithValue(() => StartSchedule(const Duration(milliseconds: 1500))),
-      ],
-      child: const MaterialApp(home: HomeScreen()),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          liveQuickDrawCameraProvider.overrideWith((ref) => camera()),
+          // Play's camera never starts in a test.
+          cameraProvider.overrideWith((ref) => Completer<TargetCamera>().future),
+          tapLocatorProvider.overrideWithValue(fakeLocate),
+          // As the app's provider: auto-disposed, counting releases.
+          signalSoundsProvider.overrideWith((ref) {
+            ref.onDispose(() => soundsReleased++);
+            return sounds;
+          }),
+          // A fixed pause of 1.5 s: go at 5.5 s after Start.
+          startScheduleProvider.overrideWithValue(() => StartSchedule(const Duration(milliseconds: 1500))),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
   }
 
   Future<RecordedCamera> stillCamera() async {
-    final c = RecordedCamera(greyPack(), recording: const Recording(name: 'Test', description: '', asset: ''),
-        autoTick: false, clock: () => Duration.zero, decoder: decodeFramePureDart);
+    final c = RecordedCamera(
+      greyPack(),
+      recording: const Recording(name: 'Test', description: '', asset: ''),
+      autoTick: false,
+      clock: () => Duration.zero,
+      decoder: decodeFramePureDart,
+    );
     addTearDown(c.dispose);
     return c;
   }
 
   /// A still recording on the test's [clock].
   Future<RecordedCamera> clockCamera() async {
-    final c = RecordedCamera(greyPack(), recording: const Recording(name: 'Test', description: '', asset: ''),
-        autoTick: false, clock: () => clock, decoder: decodeFramePureDart);
+    final c = RecordedCamera(
+      greyPack(),
+      recording: const Recording(name: 'Test', description: '', asset: ''),
+      autoTick: false,
+      clock: () => clock,
+      decoder: decodeFramePureDart,
+    );
     addTearDown(c.dispose);
     return c;
   }
@@ -172,22 +196,25 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('at go: the lights go out and the go beep sounds, with nothing else on screen; both boards are watched from 1 s before', (tester) async {
-      await pumpHome(tester, clockCamera);
-      await lockBoth(tester);
-      await tester.tap(find.byKey(const Key('quickDrawStart')));
-      await tester.pump();
-      await wait(tester, const Duration(seconds: 4)); // The 5th beep.
-      expect(find.byKey(const Key('quickDrawWatchDebug')), findsNothing);
-      await wait(tester, const Duration(milliseconds: 500)); // Go is at 5.5 s (pause 1.5 s).
-      expect(find.byKey(const Key('quickDrawWatchDebug')), findsOneWidget, reason: 'watching from 4.5 s');
-      await wait(tester, const Duration(seconds: 1));
-      expect(find.byKey(const Key('quickDrawLights')), findsNothing);
-      expect(find.text('GO!'), findsNothing, reason: 'the long beep is the signal (Nigel, 2026-10-16)');
-      expect(sounds.played.last, 'go');
-      expect(instruction(tester), 'Watching…');
-      await wait(tester, const Duration(seconds: 5)); // Past the result window.
-    });
+    testWidgets(
+      'at go: the lights go out and the go beep sounds, with nothing else on screen; both boards are watched from 1 s before',
+      (tester) async {
+        await pumpHome(tester, clockCamera);
+        await lockBoth(tester);
+        await tester.tap(find.byKey(const Key('quickDrawStart')));
+        await tester.pump();
+        await wait(tester, const Duration(seconds: 4)); // The 5th beep.
+        expect(find.byKey(const Key('quickDrawWatchDebug')), findsNothing);
+        await wait(tester, const Duration(milliseconds: 500)); // Go is at 5.5 s (pause 1.5 s).
+        expect(find.byKey(const Key('quickDrawWatchDebug')), findsOneWidget, reason: 'watching from 4.5 s');
+        await wait(tester, const Duration(seconds: 1));
+        expect(find.byKey(const Key('quickDrawLights')), findsNothing);
+        expect(find.text('GO!'), findsNothing, reason: 'the long beep is the signal (Nigel, 2026-10-16)');
+        expect(sounds.played.last, 'go');
+        expect(instruction(tester), 'Watching…');
+        await wait(tester, const Duration(seconds: 5)); // Past the result window.
+      },
+    );
 
     testWidgets('with no throws, the result after the window: no winner, in large type, with a chime', (tester) async {
       await pumpHome(tester, clockCamera);
@@ -290,10 +317,18 @@ void main() {
   });
 
   group('the result panel', () {
-    Future<void> show(WidgetTester tester, QuickDrawVerdict v, {bool skipped = false}) =>
-        tester.pumpWidget(MaterialApp(home: Scaffold(body: QuickDrawResultPanel(verdict: v, framesSkipped: skipped))));
-    QuickDrawThrow at(int ms, {bool stuck = true, int score = 5}) =>
-        QuickDrawThrow(impact: Duration(milliseconds: 2800 + ms), stuck: stuck, score: stuck ? score : null);
+    Future<void> show(WidgetTester tester, QuickDrawVerdict v, {bool skipped = false}) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: QuickDrawResultPanel(verdict: v, framesSkipped: skipped),
+        ),
+      ),
+    );
+    QuickDrawThrow at(int ms, {bool stuck = true, int score = 5}) => QuickDrawThrow(
+      impact: Duration(milliseconds: 2800 + ms),
+      stuck: stuck,
+      score: stuck ? score : null,
+    );
     const go = Duration(milliseconds: 2800);
 
     testWidgets("names the winner, and each player's time after go and score", (tester) async {
@@ -305,7 +340,7 @@ void main() {
     });
 
     testWidgets('a draw', (tester) async {
-      await show(tester, judgeQuickDraw([at(817, score: 3), at(817)], go));
+      await show(tester, judgeQuickDraw([at(817, score: 3), at(817, score: 3)], go));
       expect(tester.widget<Text>(find.byKey(const Key('quickDrawHeadline'))).data, 'A draw');
     });
 

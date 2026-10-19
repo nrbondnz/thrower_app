@@ -38,7 +38,7 @@ void main() {
         final truth = (c['entryPixel'] as List).cast<num>();
         final error = math.sqrt(math.pow(estimate!.point.x - truth[0], 2) + math.pow(estimate.point.y - truth[1], 2));
         final radius = (calibration.outer.semiMajor + calibration.outer.semiMinor) / 2;
-        final score = TargetModel.ikthof().scoreAt(TargetMapping(calibration).toTarget(estimate.point));
+        final score = TargetModel.katta().scoreAt(TargetMapping(calibration).toTarget(estimate.point));
         // ignore: avoid_print
         print('$name: entry ${estimate.point} vs truth (${truth[0]}, ${truth[1]}): '
             '${error.toStringAsFixed(1)} px = ${(error / radius * 100).toStringAsFixed(1)}% of the target radius; '

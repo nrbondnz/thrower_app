@@ -30,7 +30,7 @@ void main(List<String> args) {
     rgb.setPixel(p.x, p.y, p.r.toInt(), p.g.toInt(), p.b.toInt());
   }
 
-  final model = TargetModel.ikthof();
+  final model = TargetModel.katta();
   final locator = buildTargetLocator([for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius]);
   final stopwatch = Stopwatch()..start();
   final result = locator.locate(rgb);

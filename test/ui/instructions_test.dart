@@ -11,8 +11,8 @@ String allText(GameSession rules, TargetModel target, {InstructionTarget kind = 
     [for (final s in instructionSections(rules, target, kind: kind)) ...[s.heading, ...s.points]].join('\n');
 
 void main() {
-  final text = allText(const GameSession(), TargetModel.ikthof());
-  final paper = allText(const GameSession(), TargetModel.ikthof(), kind: InstructionTarget.paper);
+  final text = allText(const GameSession(), TargetModel.katta());
+  final paper = allText(const GameSession(), TargetModel.katta(), kind: InstructionTarget.paper);
 
   test('states the game length from the rules: 9 rounds of 3 throws', () {
     expect(text, contains('A game is 9 rounds of 3 throws for each player.'));
@@ -20,7 +20,7 @@ void main() {
   });
 
   test('follows the rules if they change', () {
-    final changed = allText(const GameSession(maxRounds: 5, throwsPerRound: 2), TargetModel.ikthof());
+    final changed = allText(const GameSession(maxRounds: 5, throwsPerRound: 2), TargetModel.katta());
     expect(changed, contains('A game is 5 rounds of 2 throws for each player.'));
     expect(changed, contains('After 2 throws the round is complete.'));
   });
@@ -31,7 +31,7 @@ void main() {
 
   test('the line-touch rule comes from the target model', () {
     expect(text, contains('scores the higher ring'));
-    expect(allText(const GameSession(), TargetModel.ikthof(lineTouchRule: LineTouchRule.lower)),
+    expect(allText(const GameSession(), TargetModel.katta(lineTouchRule: LineTouchRule.lower)),
         contains('scores the lower ring'));
   });
 
@@ -54,7 +54,7 @@ void main() {
   });
 
   test('has the sections testers need, in order', () {
-    expect([for (final s in instructionSections(const GameSession(), TargetModel.ikthof())) s.heading], [
+    expect([for (final s in instructionSections(const GameSession(), TargetModel.katta())) s.heading], [
       'Setting up',
       'Calibrating the target',
       'Playing a game',
@@ -222,8 +222,8 @@ void main() {
 
     test('the same game rules and sections as the real board', () {
       expect(paper, contains('A game is 9 rounds of 3 throws for each player.'));
-      expect([for (final s in instructionSections(const GameSession(), TargetModel.ikthof(), kind: InstructionTarget.paper)) s.heading],
-          [for (final s in instructionSections(const GameSession(), TargetModel.ikthof())) s.heading]);
+      expect([for (final s in instructionSections(const GameSession(), TargetModel.katta(), kind: InstructionTarget.paper)) s.heading],
+          [for (final s in instructionSections(const GameSession(), TargetModel.katta())) s.heading]);
     });
   });
 

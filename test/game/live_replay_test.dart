@@ -55,7 +55,7 @@ Future<List<Detected>> replay(Recording recording) async {
   final pack = FramePack.parse(File(recording.asset).readAsBytesSync());
   var now = Duration.zero;
   final camera = RecordedCamera(pack, recording: recording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
-  final model = TargetModel.ikthof();
+  final model = TargetModel.katta();
   final radii = [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius];
   // Calibrated on the first frame, as the Live test does.
   final found = buildTargetLocator(radii).locate(frameToRgb(frameOf(pack, 0), maxSide: 1920)!) as TargetFound;

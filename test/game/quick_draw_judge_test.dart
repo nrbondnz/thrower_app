@@ -5,7 +5,12 @@ import 'package:thrower_app/game/quick_draw_watcher.dart';
 const go = Duration(milliseconds: 2800);
 
 /// A throw reaching its board [ms] after go (negative: before it).
-QuickDrawThrow stuck(int ms, [int score = 5]) => QuickDrawThrow(impact: go + Duration(milliseconds: ms), stuck: true, score: score);
+QuickDrawThrow stuck(int ms, [int score = 5]) => QuickDrawThrow(
+  impact: go + Duration(milliseconds: ms),
+  stuck: true,
+  score: score,
+);
+QuickDrawThrow stuckUnscored(int ms) => QuickDrawThrow(impact: go + Duration(milliseconds: ms), stuck: true);
 QuickDrawThrow bounced(int ms) => QuickDrawThrow(impact: go + Duration(milliseconds: ms), stuck: false);
 
 void main() {
@@ -14,7 +19,13 @@ void main() {
   final cases = <(String, List<QuickDrawThrow?>, int?, bool)>[
     ('both stick: the faster wins', [stuck(850), stuck(817)], 1, false),
     ('both stick, Player 1 faster', [stuck(700, 2), stuck(817)], 0, false),
-    ('both stick on the same frame: a draw', [stuck(817), stuck(817)], null, true),
+    ('both stick on the same frame with the same score: a draw', [stuck(817), stuck(817)], null, true),
+    // The tie-break (Nigel's brother, 2026-10-19): the same frame, the higher
+    // score wins; a score that wasn't found can't decide.
+    ('the same frame: the higher score wins', [stuck(817, 3), stuck(817, 4)], 1, false),
+    ('the same frame: Player 1 higher', [stuck(817, 5), stuck(817, 2)], 0, false),
+    ('the same frame, one score not found: a draw', [stuck(817, 5), stuckUnscored(817)], null, true),
+    ('the same frame, a bounce-out still loses', [bounced(817), stuck(817, 1)], 1, false),
     ('one bounces: the other wins, even if slower', [bounced(700), stuck(900)], 1, false),
     ('the Quick draw clip: Player 1 bounced, Player 2 stuck', [bounced(850), stuck(817)], 1, false),
     ('both bounce: no winner', [bounced(800), bounced(810)], null, false),
@@ -38,18 +49,31 @@ void main() {
 
   group('the result line', () {
     test('names the winner, their score and time, and what happened to the other', () {
-      expect(verdictText(judgeQuickDraw([bounced(850), stuck(817)], go)),
-          'Player 2 wins: stuck 5, 0.82 s after go. Player 1 bounced out.');
+      expect(
+        verdictText(judgeQuickDraw([bounced(850), stuck(817)], go)),
+        'Player 2 wins: stuck 5, 0.82 s after go. Player 1 bounced out.',
+      );
     });
 
     test('a draw', () {
-      expect(verdictText(judgeQuickDraw([stuck(817, 4), stuck(817)], go)),
-          'A draw: both stuck on the same frame. Player 1: 4, 0.82 s after go. Player 2: 5, 0.82 s after go.');
+      expect(
+        verdictText(judgeQuickDraw([stuck(817, 4), stuck(817, 4)], go)),
+        'A draw: both stuck on the same frame with the same score. Player 1: 4, 0.82 s after go. Player 2: 4, 0.82 s after go.',
+      );
+    });
+
+    test('a win on score says so', () {
+      expect(
+        verdictText(judgeQuickDraw([stuck(817, 4), stuck(817)], go)),
+        'Player 2 wins on score: stuck 5, 0.82 s after go. Player 1: 4, 0.82 s after go.',
+      );
     });
 
     test('no winner, with a false start', () {
-      expect(verdictText(judgeQuickDraw([stuck(-100), bounced(800)], go)),
-          'No winner. Player 1: false start. Player 2 bounced out.');
+      expect(
+        verdictText(judgeQuickDraw([stuck(-100), bounced(800)], go)),
+        'No winner. Player 1: false start. Player 2 bounced out.',
+      );
     });
   });
 }

@@ -34,7 +34,7 @@ void main() {
     final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
     var now = Duration.zero;
     final camera = RecordedCamera(pack, recording: quickDrawRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
-    final model = TargetModel.ikthof();
+    final model = TargetModel.katta();
     final radii = [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius];
     final first = decodeToRgb(pack.jpeg(0))!;
     // Each board as found from a tap on its centre (the same taps as the

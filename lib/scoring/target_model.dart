@@ -19,8 +19,8 @@ class TargetPoint {
 
 /// How a blade that touches the line between two rings is scored.
 ///
-/// The sports disagree (see Design Decisions → Throwing Sport): IKTHOF awards
-/// the higher ring, WATL the lower. IATF's "majority of the blade" rule needs
+/// The sports disagree (see Design Decisions → Throwing Sport): KATTA (as
+/// IKTHOF) awards the higher ring, WATL the lower. IATF's "majority of the blade" rule needs
 /// the blade's extent, so it is left for the scoring-by-hit-point backlog item.
 enum LineTouchRule { higher, lower }
 
@@ -36,20 +36,22 @@ class Ring {
 /// Maps a [TargetPoint] to a score.
 class TargetModel {
   TargetModel({required List<Ring> rings, this.lineTouchRule = LineTouchRule.higher})
-      : rings = List.unmodifiable([...rings]..sort((a, b) => a.outerRadius.compareTo(b.outerRadius)));
+    : rings = List.unmodifiable([...rings]..sort((a, b) => a.outerRadius.compareTo(b.outerRadius)));
 
-  /// IKTHOF layout: rings 10 / 20 / 30 / 40 / 50 cm in diameter, scoring
-  /// 5 / 4 / 3 / 2 / 1 from the centre outwards.
-  factory TargetModel.ikthof({LineTouchRule lineTouchRule = LineTouchRule.higher}) => TargetModel(
-        rings: const [
-          Ring(outerRadius: 0.2, score: 5),
-          Ring(outerRadius: 0.4, score: 4),
-          Ring(outerRadius: 0.6, score: 3),
-          Ring(outerRadius: 0.8, score: 2),
-          Ring(outerRadius: 1.0, score: 1),
-        ],
-        lineTouchRule: lineTouchRule,
-      );
+  /// KATTA (the UK's Knife Axe and Tomahawk Throwing Association; the
+  /// European face): rings 10 / 20 / 30 / 40 / 50 cm in diameter, scoring
+  /// 5 / 4 / 3 / 2 / 1 from the centre outwards, a line counting as the higher
+  /// ring. IKTHOF's octagon face has the same sizes and scores.
+  factory TargetModel.katta({LineTouchRule lineTouchRule = LineTouchRule.higher}) => TargetModel(
+    rings: const [
+      Ring(outerRadius: 0.2, score: 5),
+      Ring(outerRadius: 0.4, score: 4),
+      Ring(outerRadius: 0.6, score: 3),
+      Ring(outerRadius: 0.8, score: 2),
+      Ring(outerRadius: 1.0, score: 1),
+    ],
+    lineTouchRule: lineTouchRule,
+  );
 
   /// Rings ordered from the centre outwards.
   final List<Ring> rings;

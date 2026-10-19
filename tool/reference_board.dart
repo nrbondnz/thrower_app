@@ -38,7 +38,7 @@ class ReferenceBoard {
   final List<double> boundaries;
 
   static ReferenceBoard build() {
-    final model = TargetModel.ikthof();
+    final model = TargetModel.katta();
     final boundaries = [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius];
     final photo = decodeToRgb(File('docs/thrower/reference/target-example.png').readAsBytesSync())!;
     final fit = buildTargetLocator(boundaries).locate(photo);

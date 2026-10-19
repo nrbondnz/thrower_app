@@ -56,7 +56,7 @@ void main() {
 
   setUpAll(() async {
     final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
-    final model = TargetModel.ikthof();
+    final model = TargetModel.katta();
     final radii = [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius];
     final first = decodeToRgb(pack.jpeg(0))!;
     final calibrations = [

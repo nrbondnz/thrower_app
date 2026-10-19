@@ -28,7 +28,7 @@ Future<List<QuickDrawThrow?>> replay({int step = 1}) async {
   final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
   var now = Duration.zero;
   final camera = RecordedCamera(pack, recording: quickDrawRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
-  final model = TargetModel.ikthof();
+  final model = TargetModel.katta();
   final radii = [for (final r in model.rings.take(model.rings.length - 1)) r.outerRadius];
   final first = frameToRgb(frameOf(pack, 0), maxSide: 1920)!;
   // Taps on each board's centre (tapped_target_locator_test.dart), Player 1's first.

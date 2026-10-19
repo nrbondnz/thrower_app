@@ -73,7 +73,7 @@ Both must be clean before any commit (Test Agent rule).
 dart run tool/printable_target.dart
 ```
 
-Writes `docs/thrower/reference/printable/target-A4.pdf`, `target-A3.pdf`, `target-A1-full-size.pdf` and `target-A4.jpg` (300 dpi, 2480 × 3508; JPEGs carry no physical size, so print it "fit to page"). Files already up to date are skipped, so a PDF left open in a viewer doesn't block a run. Ring sizes come from `TargetModel.ikthof()`, so rerun this after changing the rings. Print at **100% / actual size** and measure the 100 mm bar to confirm the scale.
+Writes `docs/thrower/reference/printable/target-A4.pdf`, `target-A3.pdf`, `target-A1-full-size.pdf` and `target-A4.jpg` (300 dpi, 2480 × 3508; JPEGs carry no physical size, so print it "fit to page"). Files already up to date are skipped, so a PDF left open in a viewer doesn't block a run. Ring sizes come from `TargetModel.katta()`, so rerun this after changing the rings. Print at **100% / actual size** and measure the 100 mm bar to confirm the scale.
 
 ## Remake the Quick Draw Sounds
 

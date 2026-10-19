@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 
 void main() {
-  group('TargetModel.ikthof scores a point with no blade width', () {
-    final model = TargetModel.ikthof();
+  group('TargetModel.katta scores a point with no blade width', () {
+    final model = TargetModel.katta();
     const cases = <(String, TargetPoint, int)>[
       ('centre', TargetPoint(0, 0), 5),
       ('inside bull', TargetPoint(0.1, 0.1), 5),
@@ -23,16 +23,16 @@ void main() {
 
   group('A point exactly on a line', () {
     test('scores the higher ring with the higher rule', () {
-      expect(TargetModel.ikthof().scoreAt(const TargetPoint(0.2, 0)), 5);
+      expect(TargetModel.katta().scoreAt(const TargetPoint(0.2, 0)), 5);
     });
 
     test('scores the lower ring with the lower rule', () {
-      final model = TargetModel.ikthof(lineTouchRule: LineTouchRule.lower);
+      final model = TargetModel.katta(lineTouchRule: LineTouchRule.lower);
       expect(model.scoreAt(const TargetPoint(0.2, 0)), 4);
     });
 
     test('on the outer edge scores 0 with the lower rule', () {
-      final model = TargetModel.ikthof(lineTouchRule: LineTouchRule.lower);
+      final model = TargetModel.katta(lineTouchRule: LineTouchRule.lower);
       expect(model.scoreAt(const TargetPoint(1.0, 0)), 0);
     });
   });
@@ -42,20 +42,20 @@ void main() {
     const point = TargetPoint(0.22, 0);
 
     test('scores the higher ring with the higher rule', () {
-      expect(TargetModel.ikthof().scoreAt(point, bladeHalfWidth: 0.03), 5);
+      expect(TargetModel.katta().scoreAt(point, bladeHalfWidth: 0.03), 5);
     });
 
     test('scores the lower ring with the lower rule', () {
-      final model = TargetModel.ikthof(lineTouchRule: LineTouchRule.lower);
+      final model = TargetModel.katta(lineTouchRule: LineTouchRule.lower);
       expect(model.scoreAt(const TargetPoint(0.38, 0), bladeHalfWidth: 0.03), 3);
     });
 
     test('that does not reach the line scores its own ring', () {
-      expect(TargetModel.ikthof().scoreAt(const TargetPoint(0.3, 0), bladeHalfWidth: 0.03), 4);
+      expect(TargetModel.katta().scoreAt(const TargetPoint(0.3, 0), bladeHalfWidth: 0.03), 4);
     });
 
     test('touching the outer edge from outside scores 1 with the higher rule', () {
-      expect(TargetModel.ikthof().scoreAt(const TargetPoint(1.02, 0), bladeHalfWidth: 0.03), 1);
+      expect(TargetModel.katta().scoreAt(const TargetPoint(1.02, 0), bladeHalfWidth: 0.03), 1);
     });
   });
 
