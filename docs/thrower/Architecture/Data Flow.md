@@ -288,7 +288,7 @@ On the live camera, both boards are watched at once from 1 s before the start si
 │                                  ▼                                  │
 │   Debug builds (_WatchDebugLine): "1: watching · 2: motion ·        │
 │   0.03 s behind" (· N dropped); frames/s label top left             │
-│   Next duel, Stop, Choose boards again: watcher disposed. The duel: │
+│   Next round, Stop, Choose boards again: watcher disposed. The duel:│
 │   next section                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -333,7 +333,9 @@ Once the boards are locked, **Start** runs a duel (Tasks 3–4 of [[story-checkp
 │                                  ▼                                  │
 │   _Result panel: "Player 2 wins" (52 pt), then each player's        │
 │   line (34 pt), "2:  0.82 s · 5"; the chime (SignalSounds.result)   │
-│   Next duel: the watcher disposed, the boards kept, ready to Start  │
+│   QuickDrawMatch.add(winner): "Round 2 of 3", "Player 2 leads 1–0"  │
+│   Next round / Extra round: the watcher disposed, boards kept;      │
+│   Finish match (asks) or the match over: "Player 2 wins the match"  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 

@@ -566,7 +566,7 @@ FLOWS = {
             ('game', 'QuickDrawWatcher(queue: true)', ['ThrowWatcher per board, every frame'], 'quick-draw-watcher', 'onGo, at go'),
             ('sound', 'go beep (long, higher) · lights out', ['nothing shown for go: the beep is the signal', 'goAt = camera.now: the clock frames are stamped with'], 'signal-sounds', 'each throw timed from goAt'),
             ('game', 'judgeQuickDraw(throws, goAt)', ['both throws in, or 4 s after go with the queues caught up', '(15 s at the latest)'], 'quick-draw-judge', 'QuickDrawVerdict'),
-            ('ui', 'Result panel + chime', ['"Player 2 wins" (52 pt), each player\'s line (34 pt)', 'Next duel keeps the boards'], 'screens', None),
+            ('ui', 'Result panel + chime', ['"Player 2 wins" (52 pt), each player\'s line (34 pt)', 'the match: three rounds (QuickDrawMatch), extra rounds if level', 'Next round keeps the boards · Finish match · New match'], 'screens', None),
         ],
         caption='Untested on a phone so far: 60 fps, heat over ten duels, beep latency and reading the result from 4 m (Device Test Plan → Quick Draw Checks).',
         files=['lib/ui/live_quick_draw_screen.dart', 'lib/game/start_signal.dart', 'lib/camera/queued_camera.dart', 'lib/sound/signal_sounds.dart'],

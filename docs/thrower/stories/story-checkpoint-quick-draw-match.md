@@ -7,7 +7,7 @@ Quick draw follows the rules Nigel's brother plays to (Nigel, 2026-10-19): **"Th
 4 (Large): rules (pure Dart) → the live Quick draw screen → instructions (3 layers), and branches: the score tie-break, extra rounds, finishing early (1).
 
 ## Status
-IN PROGRESS: Task 1 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Plan approved ("commit this and start task 1", `df1e1d5`).
+IN PROGRESS: Task 2 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Plan approved ("commit this and start task 1", `df1e1d5`); Task 1 committed (`d6809c0`).
 
 ## Research (2026-10-19)
 - **KATTA UK** (knifethrowing.co.uk; its *Guide to different Targets*, from the club files on ebthrowers.co.uk) uses the **European target face**: a 50 cm circle of 5 concentric rings, **10 / 20 / 30 / 40 / 50 cm** across, scoring **5 / 4 / 3 / 2 / 1**. The guide says it is "practically the same" as the IKTHOF target (octagons of the same sizes, about 1% larger). The European rules (eurothrowers.org) say "The best ring that is cut will be counted", which is the **higher** score on a line. A throw counts only if the tip **sticks**.
@@ -53,7 +53,7 @@ IN PROGRESS: Task 1 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Pla
   - `TargetModel.ikthof()` renamed **`TargetModel.katta()`**, with a doc comment that it's the same as the IKTHOF and European faces.
 - **Verify:** tests: a table of round cases (stick vs bounce, same frame with higher, equal or unknown scores, false starts, no throws); matches (2–1; 2–0 then the third thrown; 1–1 with a drawn round → an extra round; drawn extra rounds go on; finished early level → draw; finished early 1–0 → winner). `flutter test` all pass. Nothing new on the phone yet, except the result text naming a score win.
 - **Next:** Task 2.
-- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **Status:** COMPLETE (2026-10-19); Nigel: "commit this and continue to task 2" (`d6809c0`)
 - **What changed:**
   - `lib/game/quick_draw_judge.dart`: on the same frame the higher score wins (`QuickDrawVerdict.byScore`); the same score or a score not found (`null`) is a draw. `verdictText`: "Player 2 wins on score: …"; a draw now says "…on the same frame with the same score."
   - `lib/scoring/quick_draw_match.dart` (new): `QuickDrawMatch` (`rounds` = 3, `results`: each round's winner or null; `add`, `finish`; `wins`, `leader`, `roundNumber`, `isExtraRound`, `isOver`, `winner`, `draw`, `scoreText`). Pure Dart: it takes a round's winner, not the `QuickDrawVerdict`, so `lib/scoring/` doesn't depend on `lib/game/`.
@@ -81,6 +81,41 @@ IN PROGRESS: Task 1 of 3 complete (2026-10-19), awaiting Nigel's checkpoint. Pla
   - The recorded Quick draw shows the round rule's result (its single round).
 - **Verify:** widget tests: three rounds to a winner; an extra round when level; Finish match. **Nigel:** Live test → Quick draw shows the new round result. The live match needs the camera: device checks for Nigel's brother (Task 3).
 - **Next:** Task 3.
+- **Status:** COMPLETE (2026-10-19), awaiting Nigel's checkpoint
+- **What changed:**
+  - `lib/ui/live_quick_draw_screen.dart`: the screen keeps a `QuickDrawMatch` (`_match`); each result adds the round's winner (a round ended with Stop doesn't count).
+    - **Buttons:** after a round, **Next round**, or **Extra round** when level after three (`quickDrawNextRound`), plus **Finish match** (`quickDrawFinishMatch`; also between rounds, never before the first). `confirmFinishMatch` asks: "Finish the match now? It ends on the rounds won so far; if they are level, it is a draw." At the end, **New match** (`quickDrawNewMatch`): no rounds won, boards kept. Start is hidden once the match is over.
+    - **The line between rounds:** "Round 2 of 3 (Player 1 leads 1–0). Throwers ready? Tap Start: …"; "Extra round (Level 1–1). …".
+    - **`QuickDrawResultPanel(verdict, match)`:**
+      - "Round 2 of 3" / "Extra round" (`roundLabel`, 24 pt);
+      - the headline (52 pt; "Player 2 wins on score");
+      - each player's line (34 pt);
+      - the match (`matchText`, 34 pt): "Player 2 leads 1–0" / "Level 1–1"; at the end, "Player 2 wins the match 2–1" / "Match drawn 1–1", green at 44 pt (the leader's wins first).
+      - With no verdict (finished between rounds), only the match result.
+      - It wraps to the screen's width and scales down if still too tall: the longest panel overflowed by 138 px on an upright phone before this.
+    - **Choose boards again** keeps the match; leaving ends it.
+  - `lib/ui/instructions.dart`: "…then tap Next round." (the button's new name; the full match text is Task 3).
+- **Verified by:** `flutter test`: 701 passed (12 new), `flutter analyze`: no issues. **Not seen on a phone:** the live screen needs two boards and the live camera. Live test → Quick draw (the recording) is unchanged: one duel, judged by the new round rule.
+- **Checkpoint saved:** 2026-10-19
+
+#### Test Report — 2026-10-19 (Task 2)
+- **New** (`test/ui/live_quick_draw_screen_test.dart`, through the screen with rounds of no throws):
+  - the result names the round (Round 1 of 3) and the match (Level 0–0), with Next round;
+  - Next round shows Start and the line "Round 2 of 3 (Level 0–0)…";
+  - level after three rounds → Extra round, and the line "Extra round (Level 0–0)…";
+  - Finish match: not before the first round; asks; "Match drawn 0–0", no Next round or Start; New match starts again;
+  - Finish match between rounds shows only the match result;
+  - Cancel keeps the match going.
+- **New** (the panel): "wins on score"; the match so far (Round 2 of 3, Level 1–1); the leader's wins first; the match result green at ≥ 40 pt; an extra round; fits a phone upright (390 × 844) and sideways (844 × 390) with the longest lines.
+- **Updated:** Next duel → Next round; the panel takes the match; `instructions_test.dart` ("then tap Next round.").
+- **Results:** 701 passed, 0 failed.
+
+#### Doc Update — 2026-10-19 (Task 2)
+- [[Design Decisions]] → Quick Draw: the Live Duel (an update: the match, the panel, the buttons, fitting any way up, Choose boards again keeps the match).
+- [[Glossary]] → `LiveQuickDrawScreen` (`_match`, `_nextRound`, `confirmFinishMatch`, `roundLabel`, `matchText`, `QuickDrawResultPanel`).
+- [[Data Flow]] → the live Quick draw (the match after the result).
+- Web pages: the live Quick draw flow (rebuilt).
+- **Left for Task 3:** the Instructions' match text; [[Device Test Plan]] Q6 (still says Next duel) and new match checks; [[Common Tasks]]' button list; [[Mac Handoff]]. **Drift:** [[Data Flow]] still calls the panel `_Result`; it's `QuickDrawResultPanel`.
 
 ### Task 3: Instructions, docs, device checks, traceability
 - **Setup:** Task 2.

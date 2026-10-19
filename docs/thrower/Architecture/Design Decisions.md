@@ -669,6 +669,12 @@ Each tone fades in and out over 5 ms so it doesn't click. Generated rather than 
 
 **Readable from the throwing line (`_Result`):** a dark panel in the middle of the screen, the headline **"Player 2 wins"** / **"A draw"** / **"No winner"** at **52 pt** (green), then each player's line at **34 pt** (`judgedText`): "1:  0.85 s · bounced", "2:  0.82 s · 5", "false start" or "no throw", the winner's in white, the other dimmer. Chosen over a sentence like the recording's (`verdictText`), which is too small at 4 m. The instruction line hides while it shows.
 
+**Update (2026-10-19, [[story-checkpoint-quick-draw-match]] Task 2): a match of three rounds.** `LiveQuickDrawScreen` keeps a `QuickDrawMatch`; each result adds the round's winner (`add(verdict.winner)`; a round ended with Stop doesn't count).
+- **The panel** (`QuickDrawResultPanel(verdict, match)`): "Round 2 of 3" or "Extra round" (`roundLabel`, 24 pt), the round's headline (52 pt; "Player 2 wins on score" when the score broke a same-frame tie), each player's line (34 pt), then **the match** (`matchText`, 34 pt): "Player 2 leads 1–0" / "Level 1–1"; at the end, **"Player 2 wins the match 2–1"** / "Match drawn 1–1" in green at 44 pt (the leader's wins first).
+- **Fits any way up:** the panel wraps to the screen's width and, if still too tall (a phone held sideways), scales down rather than overflowing (`FittedBox`, as Play's corrections row).
+- **Buttons:** after a round, **Next round** (or **Extra round** when level after three) and **Finish match**; between rounds, Start and Finish match; at the end, **New match** (no rounds won, boards kept). Finish match asks first (`confirmFinishMatch`: "It ends on the rounds won so far; if they are level, it is a draw"), like Finish game. The line between rounds: "Round 2 of 3 (Player 1 leads 1–0). Throwers ready? Tap Start: …".
+- **Choose boards again keeps the match** (a board moved mid-match can be chosen again without losing the rounds); leaving Quick draw ends it (nothing is kept: Quick draw isn't in History).
+
 **Next duel is a tap,** not detected (Plan Changes Log, 2026-10-15): the plan suggested waiting to see both boards visited (knives collected), but a tap after collecting is simpler and can't misfire; the boards stay locked, so no re-tapping.
 
 **False starts:** a knife between go − 1 s and go is a false start (impact before go). One thrown earlier is already in the board when watching starts, so it isn't timed: an obvious false start the throwers can see for themselves.

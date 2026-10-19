@@ -163,7 +163,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
             'Both on the same frame is a draw. Times are measured from go to the knife reaching the board.',
         'The result shows in large type with a chime, a moment after the throws: read it from where you stand. '
             'No one needs to go to the phone during a duel.',
-        'Collect your knives together, then tap Next duel. The boards stay locked.',
+        'Collect your knives together, then tap Next round. The boards stay locked.',
         "Quick draw is for experienced throwers only, under your venue's rules for throwing side by side. "
             'Use separate lanes, each thrower at their own line.',
         'Go only means start. It never means the lanes are clear, and neither do the chime and the result: '

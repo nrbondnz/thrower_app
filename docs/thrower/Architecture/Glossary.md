@@ -44,10 +44,11 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - boards chosen with `BoardChoosing` and `BoardsOverlay`; Lock boards → `lock`; Choose boards again → `_endDuel` + `clear`
   - `_start` (Start, once locked): a `StartSignal` (`startScheduleProvider`, `signalSoundsProvider`, `clock` = `camera.now`); `onWatch` (go − 1 s) → a `QuickDrawWatcher(queue: true)` on both boards; `onGo` → `_checkResult` every 250 ms (nothing shown at go: the beep is the signal)
   - `_checkResult`: once both throws are in, or `resultWindow` (4 s) after go with every queue caught up → `judgeQuickDraw(throws, goAt)`, the `result` chime, `_Result`
-  - `_endDuel`: stops the signal, watcher and result; **Stop** (countdown) and **Next duel** (result) → `_nextDuel` (boards kept)
+  - `_endDuel`: stops the signal, watcher and result; **Stop** (countdown) and **Next round** / **Extra round** (result) → `_nextRound` (boards kept)
+  - `_match` (a `QuickDrawMatch`): each result → `add(verdict.winner)`; **Finish match** → `confirmFinishMatch` → `finish`; **New match** → `_newMatch`; `roundLabel`, `matchText` ("Player 2 leads 1–0", "Player 2 wins the match 2–1")
   - `_line`: "Boards locked. Throwers ready? Tap Start: …", "Wait for the long beep…", "Watching…"
   - `_Lights`: the 5 start lights, red as each beep sounds (countdown only)
-  - `_Result`: the result panel, readable from the throwing line: `headline` ("Player 2 wins" / "A draw" / "No winner", 52 pt) and each player's `judgedText` (34 pt)
+  - `QuickDrawResultPanel(verdict, match)`: the result panel, readable from the throwing line: the round (`roundLabel`), `headline` ("Player 2 wins" / "Player 2 wins on score" / "A draw" / "No winner", 52 pt), each player's `judgedText` (34 pt) and `matchText` (44 pt, green, at the end); scales down to fit
   - `_WatchDebugLine` (debug builds, while watching): each board's state and how far behind, "1: watching · 2: motion · 0.03 s behind" ("· N dropped" if any)
 - **`quick_draw_boards.dart`** (`lib/ui/`): shared by both Quick draw screens
   - **`BoardChoosing`** (mixin on the screen's state): `findBoardAt(camera, tap)` → `tapLocatorProvider` → `boardAt` → `quickDrawTargetsProvider.add`; `searching`, `missed`; `choosingInstruction` ("Tap the centre of Player 1's board.", "No board found there. …", "Both boards found: …")

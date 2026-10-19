@@ -137,7 +137,7 @@ void main() {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
       expect(text, contains('tap Choose boards again'));
       expect(text, contains('Tap Quick draw on the home screen.'));
-      expect(text, contains('then tap Next duel.'));
+      expect(text, contains('then tap Next round.'));
     });
 
     // The Safety Report on the live Quick draw (Tasks 3–5, 2026-10-15).

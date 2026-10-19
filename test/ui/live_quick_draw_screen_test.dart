@@ -11,6 +11,7 @@ import 'package:thrower_app/game/quick_draw_judge.dart';
 import 'package:thrower_app/game/quick_draw_watcher.dart';
 import 'package:thrower_app/game/start_signal.dart';
 import 'package:thrower_app/providers.dart';
+import 'package:thrower_app/scoring/quick_draw_match.dart';
 import 'package:thrower_app/ui/camera_view.dart';
 import 'package:thrower_app/ui/home_screen.dart';
 import 'package:thrower_app/ui/live_quick_draw_screen.dart';
@@ -233,20 +234,100 @@ void main() {
       expect(sounds.played.last, 'result');
     });
 
-    testWidgets('Next duel keeps the boards and shows Start', (tester) async {
-      await pumpHome(tester, clockCamera);
-      await lockBoth(tester);
+    /// Start, then a round with no throws, to its result.
+    Future<void> playRound(WidgetTester tester) async {
       await tester.tap(find.byKey(const Key('quickDrawStart')));
       await tester.pump();
       await wait(tester, const Duration(milliseconds: 5500));
       for (var i = 0; i < 20; i++) {
         await wait(tester, const Duration(milliseconds: 250));
       }
-      await tester.tap(find.byKey(const Key('quickDrawNextDuel')));
+    }
+
+    String text(WidgetTester tester, String key) => tester.widget<Text>(find.byKey(Key(key))).data!;
+
+    testWidgets('Next round keeps the boards and shows Start, with the round and the match so far', (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      await playRound(tester);
+      await tester.tap(find.byKey(const Key('quickDrawNextRound')));
       await tester.pump();
       expect(find.byKey(const Key('quickDrawResult')), findsNothing);
       expect(find.byKey(const Key('quickDrawStart')), findsOneWidget);
+      expect(instruction(tester), startsWith('Round 2 of 3 (Level 0–0). Throwers ready?'));
+    });
+
+    // The match (Nigel's brother, 2026-10-19): always three rounds; level
+    // after three → extra rounds (Nigel).
+    testWidgets("the result names the round, and the match so far", (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      await playRound(tester);
+      expect(text(tester, 'quickDrawRound'), 'Round 1 of 3');
+      expect(text(tester, 'quickDrawMatch'), 'Level 0–0');
+      expect(find.widgetWithText(FilledButton, 'Next round'), findsOneWidget);
+    });
+
+    testWidgets('level after three rounds: an extra round', (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      for (var round = 0; round < 3; round++) {
+        if (round > 0) {
+          await tester.tap(find.byKey(const Key('quickDrawNextRound')));
+          await tester.pump();
+        }
+        await playRound(tester);
+      }
+      expect(text(tester, 'quickDrawRound'), 'Round 3 of 3');
+      expect(find.widgetWithText(FilledButton, 'Extra round'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('quickDrawNextRound')));
+      await tester.pump();
+      expect(instruction(tester), startsWith('Extra round (Level 0–0).'));
+    });
+
+    testWidgets('Finish match asks, then ends the match on the rounds so far; New match starts again', (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      expect(find.byKey(const Key('quickDrawFinishMatch')), findsNothing, reason: 'not before the first round');
+      await playRound(tester);
+      await tester.tap(find.byKey(const Key('quickDrawFinishMatch')));
+      await tester.pumpAndSettle();
+      expect(find.text('Finish the match now?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('quickDrawFinishConfirm')));
+      await tester.pumpAndSettle();
+      expect(text(tester, 'quickDrawMatch'), 'Match drawn 0–0');
+      expect(find.byKey(const Key('quickDrawNextRound')), findsNothing);
+      expect(find.byKey(const Key('quickDrawStart')), findsNothing);
+      await tester.tap(find.byKey(const Key('quickDrawNewMatch')));
+      await tester.pump();
+      expect(find.byKey(const Key('quickDrawResult')), findsNothing);
       expect(instruction(tester), startsWith('Boards locked.'));
+    });
+
+    testWidgets('Finish match between rounds shows the match result', (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      await playRound(tester);
+      await tester.tap(find.byKey(const Key('quickDrawNextRound')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('quickDrawFinishMatch')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('quickDrawFinishConfirm')));
+      await tester.pumpAndSettle();
+      expect(text(tester, 'quickDrawMatch'), 'Match drawn 0–0');
+      expect(find.byKey(const Key('quickDrawHeadline')), findsNothing);
+      expect(find.byKey(const Key('quickDrawNewMatch')), findsOneWidget);
+    });
+
+    testWidgets('Cancel keeps the match going', (tester) async {
+      await pumpHome(tester, clockCamera);
+      await lockBoth(tester);
+      await playRound(tester);
+      await tester.tap(find.byKey(const Key('quickDrawFinishMatch')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('quickDrawNextRound')), findsOneWidget);
     });
 
     // Review Agent and Traceability Agent, 2026-10-15: the sounds were
@@ -317,13 +398,18 @@ void main() {
   });
 
   group('the result panel', () {
-    Future<void> show(WidgetTester tester, QuickDrawVerdict v, {bool skipped = false}) => tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: QuickDrawResultPanel(verdict: v, framesSkipped: skipped),
-        ),
-      ),
-    );
+    Future<void> show(WidgetTester tester, QuickDrawVerdict? v, {bool skipped = false, QuickDrawMatch? match}) =>
+        tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: QuickDrawResultPanel(
+                verdict: v,
+                match: match ?? QuickDrawMatch(results: [v?.winner]),
+                framesSkipped: skipped,
+              ),
+            ),
+          ),
+        );
     QuickDrawThrow at(int ms, {bool stuck = true, int score = 5}) => QuickDrawThrow(
       impact: Duration(milliseconds: 2800 + ms),
       stuck: stuck,
@@ -342,6 +428,55 @@ void main() {
     testWidgets('a draw', (tester) async {
       await show(tester, judgeQuickDraw([at(817, score: 3), at(817, score: 3)], go));
       expect(tester.widget<Text>(find.byKey(const Key('quickDrawHeadline'))).data, 'A draw');
+    });
+
+    testWidgets('a win on score says so', (tester) async {
+      await show(tester, judgeQuickDraw([at(817, score: 3), at(817, score: 4)], go));
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawHeadline'))).data, 'Player 2 wins on score');
+    });
+
+    testWidgets('the match so far', (tester) async {
+      await show(tester, judgeQuickDraw([at(850), at(817)], go), match: const QuickDrawMatch(results: [0, 1]));
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawRound'))).data, 'Round 2 of 3');
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawMatch'))).data, 'Level 1–1');
+    });
+
+    testWidgets("the leader's wins first", (tester) async {
+      await show(tester, judgeQuickDraw([at(850), at(817)], go), match: const QuickDrawMatch(results: [1]));
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawMatch'))).data, 'Player 2 leads 1–0');
+    });
+
+    for (final (name, size) in [('upright', Size(390, 844)), ('sideways', Size(844, 390))]) {
+      testWidgets('fits a phone held $name, with the longest lines', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await show(
+          tester,
+          judgeQuickDraw([at(817, score: 3), at(817, score: 4)], go),
+          skipped: true,
+          match: const QuickDrawMatch(results: [0, 1, null, 1]),
+        );
+        expect(tester.takeException(), isNull);
+        final panel = tester.getRect(find.byKey(const Key('quickDrawResult')));
+        expect(panel.left, greaterThanOrEqualTo(0));
+        expect(panel.right, lessThanOrEqualTo(size.width));
+        expect(panel.bottom, lessThanOrEqualTo(size.height));
+      });
+    }
+
+    testWidgets('the match result, large and green', (tester) async {
+      await show(tester, judgeQuickDraw([at(850), at(817)], go), match: const QuickDrawMatch(results: [1, 0, 1]));
+      final line = tester.widget<Text>(find.byKey(const Key('quickDrawMatch')));
+      expect(line.data, 'Player 2 wins the match 2–1');
+      expect(line.style!.fontSize, greaterThanOrEqualTo(40), reason: 'readable from the throwing line');
+      expect(line.style!.color, Colors.greenAccent);
+    });
+
+    testWidgets('an extra round', (tester) async {
+      await show(tester, judgeQuickDraw([at(850), at(817)], go), match: const QuickDrawMatch(results: [0, 1, null, 1]));
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawRound'))).data, 'Extra round');
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawMatch'))).data, 'Player 2 wins the match 2–1');
     });
 
     testWidgets('says so when frames were skipped (release builds have no debug line)', (tester) async {
