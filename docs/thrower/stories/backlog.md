@@ -2,7 +2,7 @@
 
 Stories not yet started, in rough priority order. Each becomes a `story-checkpoint-<slug>.md` when it starts.
 
-**Priorities (Nigel, 2026-10-18, updated 2026-10-19):** next is the **Quick draw match** ([[story-checkpoint-quick-draw-match]]: three rounds, the score as the tie-break, KATTA naming, from his brother's feedback), then #4 stage 1 (named players); #10 is welcome. Not wanted for now: #3 (line-touch rules), #6 (store-release hygiene, until a store build is near), #8 (full-screen Play). #7 (axes) waits until knives work 100%.
+**Priorities (Nigel, 2026-10-18, updated 2026-10-19):** next is the **Quick draw match** ([[story-checkpoint-quick-draw-match]]: three rounds, the score as the tie-break, KATTA naming, from his brother's feedback), then #4 stage 1 (named players: planned 2026-10-19 as [[story-checkpoint-named-players]]); #10 is welcome. Not wanted for now: #3 (line-touch rules), #6 (store-release hygiene, until a store build is near), #8 (full-screen Play). #7 (axes) waits until knives work 100%.
 
 | # | Story | Notes | Depends on |
 |---|---|---|---|

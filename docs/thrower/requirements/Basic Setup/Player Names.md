@@ -17,10 +17,7 @@ Players can be named, not just "Player 1" and "Player 2" (Nigel, 2026-10-19): **
 - `AuthService` exists as an interface only (`lib/auth/`); no sign-in yet.
 
 ## Open Questions
-- Remember recent names to pick from, rather than typing each time?
-- The app user's own seat: "Me", or their name, by default?
-- Up to how many players on one target?
-- Names in Quick draw too?
+- Answered 2026-10-19 ([[story-checkpoint-named-players]]): the last names are kept on the phone and filled in; a blank seat is Player 1 / Player 2; still 1 or 2 players (more players is its own story); Quick draw uses the same names.
 
 ## Related
 - [[Accounts Roadmap]] → Stage 1 (named players: a name on each seat, `GameRecord` version 2) and Stage 3 (friends)

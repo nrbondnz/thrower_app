@@ -51,3 +51,6 @@ app.*.map.json
 /docs/thrower/reference/sequences/
 
 __pycache__/
+
+# Obsidian: per-user window state (changes whenever a note is opened)
+docs/.obsidian/workspace.json
