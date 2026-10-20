@@ -28,7 +28,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 
 ## Across the App
 - [[Instructions and Safety|In-app instructions and safety]] ✅ (Home → Instructions; the safety points that guard every screen)
-- [[Website]] 🟡 (knifeandaxethrower.com: the domain, branches and a starter page; hosting to connect)
+- [[Website]] 🟡 (knifeandaxethrower.com: the domain, branches and a starter page; domain going live)
 - [[Accounts and Sign-In|Accounts and sign-in]] 🟡 (email sign-in deployed; Google, Apple, the backup and Delete account written, waiting for secrets)
 
 ## Game Centre

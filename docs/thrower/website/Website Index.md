@@ -4,7 +4,7 @@ tags: [website, index]
 
 # Website Index
 
-The public website for the Thrower App, at **knifeandaxethrower.com** (Nigel, 2026-10-20). Requirement: [[Website]]. Decision: [[Design Decisions#Website: Astro, Orphan Branches, Its Own Amplify App (2026-10-20)]].
+The public website for the Thrower App, at **knifeandaxethrower.com** (Nigel, 2026-10-20). Requirement: [[Website]]. Decision: [[Design Decisions#Website: Astro, Orphan Branches, in the Same Amplify App (2026-10-20)]].
 
 ## At a Glance
 
@@ -15,7 +15,7 @@ The public website for the Thrower App, at **knifeandaxethrower.com** (Nigel, 20
 | Stack | Astro 7 + TypeScript, static |
 | Production branch | `website` |
 | Development branch | `website-dev` |
-| Amplify app | `knifeandaxethrower-website` (to create) |
+| Amplify app | `thrower_app` (`d1yhmpx84pdvnh`), with `main` |
 
 ## Branches and Domains
 
@@ -43,28 +43,26 @@ The site has its own folder on the PC, a **git worktree** next to the app, so sw
 - `amplify.yml`: **frontend only**, no backend phase, so a website build can never deploy or change the app's backend.
 - `README.md`: a short pointer back to this page.
 
-## Hosting: Setup Steps
+## Hosting
 
-### 1. Create the Amplify app (Nigel, in the console)
-The app has to be connected to GitHub once, which only the console can do.
-1. AWS console, region **London (`eu-west-2`)** → **AWS Amplify → Create new app**.
-2. **GitHub** → repository **`nrbondnz/thrower_app`** → branch **`website`**.
-3. App name: **`knifeandaxethrower-website`**.
-4. Amplify finds `amplify.yml`. No service role is needed (no backend). **Save and deploy.**
+The website branches are **branches of the existing `thrower_app` Amplify app** (`d1yhmpx84pdvnh`, London), next to `main` (Nigel, 2026-10-20). Each branch builds from its own `amplify.yml`: the website's has no backend phase, so a website build never deploys or changes the app's backend.
 
-### 2. Connect `website-dev` and the domain (Claude, by CLI)
-Once the app exists:
-1. Connect the `website-dev` branch (`aws amplify create-branch`, stage Development).
-2. Add the domain (`aws amplify create-domain-association`):
-   - the root and `www` → `website`;
-   - `dev` → `website-dev`.
-3. The domain's hosted zone is in the same AWS account, so Amplify adds the DNS records and the SSL certificates itself. It takes up to about 30 minutes.
+- **`website`:** stage Production; `https://website.d1yhmpx84pdvnh.amplifyapp.com`; first build OK 2026-10-20.
+- **`website-dev`:** stage Development; `https://website-dev.d1yhmpx84pdvnh.amplifyapp.com`; first build OK 2026-10-20.
+- Both auto-build on push. Added by CLI (`aws amplify create-branch`, framework Astro).
+
+### Custom domain
+`knifeandaxethrower.com` is attached to the app (`aws amplify create-domain-association`, 2026-10-20):
+- the root and `www` → `website`;
+- `dev` → `website-dev`.
+
+The hosted zone is in the same AWS account, so Amplify adds the DNS records and the SSL certificate itself (up to about 30 minutes; it shows as "Available" under **Hosting → Custom domains**).
 
 ### Status
 - [x] Domain registered, hosted zone made (2026-10-20)
 - [x] Branches `website-dev` and `website` pushed with the Astro starter (2026-10-20)
-- [ ] Amplify app created (Nigel)
-- [ ] `website-dev` connected; domains added (Claude)
+- [x] Both branches added to the `thrower_app` Amplify app and built (2026-10-20)
+- [ ] Domain live (Amplify is creating the certificate and DNS records)
 
 ## Content
 

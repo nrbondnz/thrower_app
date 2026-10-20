@@ -159,7 +159,7 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
 ---
 
 ## 4. The Public Site and Store Listings
-- **The website:** `knifeandaxethrower.com` (Route 53, registered 2026-10-20), its own Amplify app and branches; setup in [[Website Index]].
+- **The website:** `knifeandaxethrower.com` (Route 53, registered 2026-10-20), branches `website` and `website-dev` of the `thrower_app` Amplify app; setup in [[Website Index]].
 - `web_public/` is the backend app's holding page, at `https://main.d1yhmpx84pdvnh.amplifyapp.com`.
 - **Privacy policy:** [[Privacy Policy (Draft)]] → `knifeandaxethrower.com/privacy` once Nigel approves it. Its URL goes in App Store Connect and Google Play, with the privacy labels it lists.
 

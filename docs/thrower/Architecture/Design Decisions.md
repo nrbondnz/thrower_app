@@ -112,7 +112,7 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Confirmed:** 2026-10-04.
 
-## Website: Astro, Orphan Branches, Its Own Amplify App (2026-10-20)
+## Website: Astro, Orphan Branches in the Same Amplify App (2026-10-20)
 
 Requirement: [[Website]]. Details and setup: [[Website Index]].
 
@@ -121,7 +121,7 @@ Requirement: [[Website]]. Details and setup: [[Website Index]].
   - **Flutter web:** a multi-megabyte engine before the first page, poor for search, awkward for text-heavy pages;
   - **Next.js:** more than a mostly-content site needs, with server rendering to run and maintain.
 - **Orphan branches** in the same repo: they hold only the site, never the Flutter app or `amplify/`. Never merged with `main`. On the PC the site has its own git worktree (`..	hrower_app-website`).
-- **Its own Amplify app** (`knifeandaxethrower-website`), not a branch of `thrower_app`'s. Its `amplify.yml` is frontend only. *Why:* a website build can never deploy or break the app's backend, and the site doesn't share the app's settings and secrets. Nigel chose this over connecting the branches to the existing app ("architectural purity").
+- **Branches of the existing `thrower_app` Amplify app**, next to `main` (Nigel: "in addition to main there would be website and website-dev"). Their `amplify.yml` is frontend only, so a website build never deploys or changes the app's backend. *Considered:* a separate Amplify app for the site (keeps the app's settings and secrets list apart); Nigel preferred one app with all the branches.
 - **The privacy policy moves to the website** (`/privacy`), instead of `web_public/privacy.html` on the backend app's default domain: the stores get a stable URL on the app's own domain. `web_public/` stays as the backend app's holding page.
 
 **Confirmed:** 2026-10-20.
