@@ -14,6 +14,7 @@ import 'history/game_history.dart';
 import 'history/game_record.dart';
 import 'history/synced_game_history.dart';
 import 'scoring/game_session.dart';
+import 'scoring/game_type.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
 import 'settings/player_names_store.dart';
@@ -223,6 +224,18 @@ class GameLengthNotifier extends Notifier<int> {
 
 final gameLengthProvider = NotifierProvider<GameLengthNotifier, int>(GameLengthNotifier.new);
 
+/// Which game Play plays (the setup screen; more-game-types story, Nigel
+/// 2026-10-20): Scoring unless chosen. Kept for the session, like
+/// [playModeProvider].
+class GameTypeNotifier extends Notifier<GameType> {
+  @override
+  GameType build() => GameType.scoring;
+
+  void choose(GameType type) => state = type;
+}
+
+final gameTypeProvider = NotifierProvider<GameTypeNotifier, GameType>(GameTypeNotifier.new);
+
 /// Where the player names last used are kept (the app's support folder).
 final playerNamesStoreProvider =
     Provider<PlayerNamesStore>((ref) => FilePlayerNamesStore(getApplicationSupportDirectory));
@@ -305,26 +318,29 @@ class GameNotifier extends Notifier<Match> {
   String? _kept;
 
   /// A new game whenever the camera (live camera ↔ a recording), the play
-  /// mode or the game length changes. Renaming the players renames this game
+  /// mode, the game type or the game length changes (a length the type
+  /// doesn't offer is its [GameType.defaultRounds]). Renaming the players renames this game
   /// without restarting it.
   @override
   Match build() {
     ref.watch(recordingChoiceProvider);
     final mode = ref.watch(playModeProvider);
-    final rounds = ref.watch(gameLengthProvider);
+    final type = ref.watch(gameTypeProvider);
+    final length = ref.watch(gameLengthProvider);
+    final rounds = type.roundChoices.contains(length) ? length : type.defaultRounds;
     ref.listen(playerNamesProvider, (_, names) => state = state.withNames(names));
     _knives.clear();
     _finishedAt = null;
     _kept = null;
-    return Match(mode, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider));
+    return Match(mode, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider), type: type);
   }
 
-  /// The same mode, length and names, from the start.
+  /// The same mode, type, length and names, from the start.
   void newGame() {
     _knives.clear();
     _finishedAt = null;
     _kept = null;
-    state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds), names: state.names);
+    state = Match(state.mode, rules: GameSession(maxRounds: state.maxRounds), names: state.names, type: state.type);
   }
 
   /// Score corrections (Nigel, 2026-10-17): [player]'s throw [throwIndex]

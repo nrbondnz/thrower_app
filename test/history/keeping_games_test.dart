@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/history/game_history.dart';
 import 'package:thrower_app/providers.dart';
+import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/vision/throw_classifier.dart';
 
@@ -29,6 +30,37 @@ void main() {
   tearDown(() => container.dispose());
 
   GameNotifier game() => container.read(gameProvider.notifier);
+
+  // More-game-types story, Task 1.
+  group('game types', () {
+    test('Precision always plays 7 rounds, whatever length Scoring last used', () {
+      container.read(gameTypeProvider.notifier).choose(GameType.precision);
+      expect(container.read(gameProvider).maxRounds, 7);
+    });
+
+    test('Three targets plays the length chosen (3)', () {
+      container.read(gameTypeProvider.notifier).choose(GameType.threeTargets);
+      expect(container.read(gameProvider).type, GameType.threeTargets);
+      expect(container.read(gameProvider).maxRounds, 3);
+    });
+
+    test('a hand-scored game is kept, with its type, when its last knife is added', () async {
+      container.read(gameTypeProvider.notifier).choose(GameType.threeTargets);
+      for (var i = 0; i < 9; i++) {
+        game().addThrow(4);
+      }
+      await pumpEventQueue();
+      expect(history.games.single.type, GameType.threeTargets);
+      expect(history.games.single.totals, [36]);
+    });
+
+    test('New game keeps the type', () {
+      container.read(gameTypeProvider.notifier).choose(GameType.precision);
+      game().addThrow(5);
+      game().newGame();
+      expect(container.read(gameProvider).type, GameType.precision);
+    });
+  });
 
   /// [n] bull's-eyes (5 each) on [board], each a new knife, collecting
   /// after every 3rd.

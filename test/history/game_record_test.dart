@@ -135,8 +135,8 @@ void main() {
       expect(() => GameRecord.fromJson(wrongType), throwsFormatException);
     });
 
-    test('the format is version 2', () {
-      expect(GameRecord.version, 2);
+    test('the format is version 3 (more-game-types story: the game type)', () {
+      expect(GameRecord.version, 3);
     });
   });
 }

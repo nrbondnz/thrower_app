@@ -1,4 +1,5 @@
 import 'game_session.dart';
+import 'game_type.dart';
 import 'target_model.dart';
 
 /// How Play is played, chosen on the setup screen after Home → Play (Nigel,
@@ -54,16 +55,21 @@ typedef ThrowSlot = ({int player, int round, int index});
 ///   draw.
 /// - Players may have [names] (a label on a seat, nothing more: Nigel,
 ///   2026-10-19); [nameOf] gives the name or "Player N".
+/// - The [type] of game (Scoring, Precision, Three targets) changes only
+///   where knives are thrown from, or at; the rules above are the same.
 class Match {
-  Match(this.mode, {GameSession rules = const GameSession(), List<String?> names = const []})
+  Match(this.mode,
+      {GameSession rules = const GameSession(), List<String?> names = const [], this.type = GameType.scoring})
       : players = List.unmodifiable(List.filled(mode.players, rules)),
         names = _fitted(names, mode.players),
         turn = 0,
         turnThrows = 0;
 
-  const Match._(this.mode, this.players, this.names, this.turn, this.turnThrows);
+  const Match._(this.mode, this.type, this.players, this.names, this.turn, this.turnThrows);
 
   final PlayMode mode;
+
+  final GameType type;
 
   /// Each player's name, or null for none ([cleanName]), Player 1 first.
   final List<String?> names;
@@ -72,7 +78,7 @@ class Match {
   String nameOf(int player) => names[player] ?? playerNumber(player);
 
   /// The same match with players named [names] (scores unchanged).
-  Match withNames(List<String?> names) => Match._(mode, players, _fitted(names, players.length), turn, turnThrows);
+  Match withNames(List<String?> names) => Match._(mode, type, players, _fitted(names, players.length), turn, turnThrows);
 
   /// [names] cleaned, one per player (missing ones null).
   static List<String?> _fitted(List<String?> names, int players) =>
@@ -90,6 +96,27 @@ class Match {
   int get throwsPerRound => players.first.throwsPerRound;
   int get maxRounds => players.first.maxRounds;
 
+  /// Precision: where the next throw is thrown from, in metres (by the
+  /// player who throws it: [nextThrowerAt]). Null for the other types, or
+  /// once the match is over.
+  int? get nextDistance => isOver ? null : type.distanceOf(_nextRoundOf(nextThrowerAt(0)));
+
+  /// Three targets: which target (1 to 3) the next throw goes at. Null for
+  /// the other types, or once the match is over.
+  int? get nextTarget => isOver ? null : type.targetOf(_nextIndexOf(nextThrowerAt(0)));
+
+  /// The round (from 0) [player]'s next throw goes in.
+  int _nextRoundOf(int player) {
+    final g = players[player];
+    return g.rounds.isEmpty ? 0 : (g.roundComplete ? g.rounds.length : g.rounds.length - 1);
+  }
+
+  /// The throw (from 0) within its round that [player]'s next throw is.
+  int _nextIndexOf(int player) {
+    final g = players[player];
+    return g.rounds.isEmpty || g.roundComplete ? 0 : g.rounds.last.throws.length;
+  }
+
   /// No throws yet by anyone.
   bool get isEmpty => players.every((p) => p.rounds.isEmpty);
 
@@ -100,7 +127,7 @@ class Match {
 
   /// Ends the match now for every player (Finish game): a round in progress
   /// counts with the throws made so far.
-  Match finish() => Match._(mode, List.unmodifiable([for (final p in players) p.finish()]), names, turn, turnThrows);
+  Match finish() => Match._(mode, type, List.unmodifiable([for (final p in players) p.finish()]), names, turn, turnThrows);
 
   /// The rounds the result is judged on: as many as every player has played
   /// (Nigel, 2026-10-17: finished early, two players are judged on equal
@@ -185,7 +212,7 @@ class Match {
     if (isOver) return this;
     // Thrown on without collecting: the turn already had all its knives.
     final m = turnComplete ? _passTurn() : this;
-    return Match._(mode, _replaced(m.players, m.turn, add(m.players[m.turn])), names, m.turn, m.turnThrows + 1);
+    return Match._(mode, type, _replaced(m.players, m.turn, add(m.players[m.turn])), names, m.turn, m.turnThrows + 1);
   }
 
   /// One target: this turn has all its throws; the knives are to be
@@ -206,7 +233,7 @@ class Match {
   /// Ends this turn: its round is closed, and [nextTurn] has the turn.
   Match _passTurn() {
     final closed = _replaced(players, turn, players[turn].boardVisited());
-    return Match._(mode, closed, names, _nextAfter(closed), 0);
+    return Match._(mode, type, closed, names, _nextAfter(closed), 0);
   }
 
   int _nextAfter(List<GameSession> closed) {
@@ -218,7 +245,7 @@ class Match {
   }
 
   Match _with(int player, GameSession game) =>
-      Match._(mode, _replaced(players, player, game), names, turn, turnThrows);
+      Match._(mode, type, _replaced(players, player, game), names, turn, turnThrows);
 
   static List<GameSession> _replaced(List<GameSession> players, int index, GameSession game) =>
       List.unmodifiable([...players]..[index] = game);

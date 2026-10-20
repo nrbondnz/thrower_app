@@ -1,10 +1,12 @@
+import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 
 /// One finished game of Play, as kept in the history (game-history story,
 /// Nigel 2026-10-16): when it ended, how it was played and each player's
 /// round totals. Totals and the winner are worked out from the rounds, so
 /// they can't disagree with them. Since version 2 (named-players story,
-/// 2026-10-19) also each player's name, if they had one. Immutable.
+/// 2026-10-19) also each player's name, if they had one; since version 3
+/// (more-game-types story, 2026-10-20) the [type] of game. Immutable.
 class GameRecord {
   const GameRecord({
     required this.id,
@@ -14,6 +16,7 @@ class GameRecord {
     required this.players,
     this.names = const [],
     this.recording,
+    this.type = GameType.scoring,
   });
 
   /// [match], finished at [at]; [recording] names the Live test recording it
@@ -28,18 +31,19 @@ class GameRecord {
         ],
         names: match.names,
         recording: recording,
+        type: match.type,
       );
 
   /// The format [toJson] writes; [fromJson] reads this version and earlier
-  /// ones (version 1 had no names).
-  static const version = 2;
+  /// ones (version 1 had no names; versions 1 and 2 only Scoring games).
+  static const version = 3;
 
   /// Unique within the history (when it finished, in microseconds).
   final String id;
   final DateTime finishedAt;
   final PlayMode mode;
 
-  /// The game's length (3, 5 or 9).
+  /// The game's length in rounds (one of [GameType.roundChoices]).
   final int rounds;
 
   /// Each player's round totals, Player 1 first.
@@ -51,6 +55,9 @@ class GameRecord {
 
   /// The Live test recording it was played on, or null for the camera.
   final String? recording;
+
+  /// Which game it was: Scoring for games kept before version 3.
+  final GameType type;
 
   /// [player]'s name, or "Player N" without one.
   String nameOf(int player) => names.elementAtOrNull(player) ?? playerNumber(player);
@@ -89,6 +96,9 @@ class GameRecord {
         'players': players,
         if (names.any((n) => n != null)) 'names': names,
         if (recording != null) 'recording': recording,
+        // Written only for the newer types, so a Scoring game stays as
+        // version 2 wrote it.
+        if (type != GameType.scoring) 'type': type.name,
       };
 
   /// Throws [FormatException] if [json] isn't a record this version can
@@ -116,6 +126,12 @@ class GameRecord {
         [for (final n in list) cleanName(n as String?)],
       _ => throw const FormatException('"names" is not a name (or null) per player'),
     };
+    final type = switch (json['type']) {
+      null => GameType.scoring,
+      final String name => GameType.values.where((t) => t.name == name).firstOrNull ??
+          (throw FormatException('unknown game type "$name"')),
+      _ => throw const FormatException('"type" is not a game type'),
+    };
     return GameRecord(
       id: field<String>('id'),
       finishedAt: DateTime.tryParse(field<String>('finishedAt'))?.toLocal() ??
@@ -125,6 +141,7 @@ class GameRecord {
       players: players,
       names: names,
       recording: json['recording'] is String ? json['recording'] as String : null,
+      type: type,
     );
   }
 }
