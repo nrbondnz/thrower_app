@@ -333,6 +333,40 @@ For [[story-checkpoint-more-game-types]]: two more games on Play, **Precision** 
   - **Do:** Signed in, finish a Precision game → Account
   - **Look for:** It's backed up ("Your games and player names are backed up." or "Backed up: 1 game sent…"); on another phone (or after clearing the app's data and signing in) it comes back as Precision, with its distances
 
+## Board Finding Checks (added 2026-10-21)
+
+For [[story-checkpoint-gapped-rings]] (requirement [[Board Finding]]): Mark's stencilled boards (rings painted in arcs with gaps) are found by **Tap the board** on Play's Calibrate. Nigel on the Samsung for BF0–BF7, with a picture of Mark's boards on the PC monitor; BF8 is for Mark on his real boards. Named **BF**n.
+
+**Setup:** open `test/fixtures/marks_boards/frame-1s.jpg` full-screen on the PC monitor (three boards on a fence, the middle one near the picture's centre). Put the phone on a stand facing the monitor, so the picture of the boards fills most of the camera view. No knives needed: nothing is thrown at a monitor.
+
+- **BF0**
+  - **Do:** Home → Play (1 player, 1 target) → Calibrate → **Find target**
+  - **Look for:** "Target not found: … Try Tap the board." or "Not sure about the target (…) … or tap the board.", or an outline in the wrong place (the net, or the wrong board). Either is expected: Find target alone doesn't read these boards
+- **BF1**
+  - **Do:** Look at the buttons before tapping anything else
+  - **Look for:** **Tap the board** shows beside Find target (and Lock target, if an outline is shown)
+- **BF2**
+  - **Do:** Tap **Tap the board**
+  - **Look for:** The outline disappears; the status says "Tap the middle of the board in the picture."; the "only when no one is throwing" note shows; Find target is greyed out; the button now says **Cancel tap**
+- **BF3**
+  - **Do:** Tap **Cancel tap**, then Tap the board again
+  - **Look for:** Cancel returns to the previous status (no search runs); the second Tap the board waits for a tap again
+- **BF4**
+  - **Do:** Tap the **middle board's red bull** on the picture
+  - **Look for:** A short search, then an outline whose rings sit on the paint: the red bull, then the two broken black rings. Note the time the status shows (ms)
+- **BF5**
+  - **Do:** Drag the outline a little if needed, then **Lock target**; tap the picture on the red bull, the inner black ring, the outer black ring, and the wood beyond it
+  - **Look for:** Red = 5, inner black = 3, outer black = 1, beyond the outer black = 0 (wood between the black rings: 4 and 2)
+- **BF6**
+  - **Do:** Re-calibrate → Tap the board → tap the **right board's** bull (in shade); then try again tapping a little to the right of its bull
+  - **Look for:** On the bull: an outline on its rings. A little to the right: may be wrong (a known limit, [[Known Issues]] → Stencilled Boards); dragging the outline, or tapping again on the bull, fixes it
+- **BF7**
+  - **Do:** Close the picture. Play → Live test (one of Nigel's recordings) → Calibrate → **Find target**
+  - **Look for:** Found as before, with no tap: Nigel's own boards are unchanged. Also try Tap the board on its bull: found the same
+- **BF8 (Mark, on his real boards)**
+  - **Do:** Phone on a stand beside the lane, out of the line of throw, with the whole of the board being thrown at in view. Play → Calibrate → Find target; if it isn't found, **Tap the board** and tap the middle of that board. Only when no one is throwing. Lock, then throw a round
+  - **Look for:** The outline on the rings of the board tapped (not a neighbour); throws score red 5, wood 4, inner black 3, wood 2, outer black 1. A screenshot of the outline before locking, and of any wrong score
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

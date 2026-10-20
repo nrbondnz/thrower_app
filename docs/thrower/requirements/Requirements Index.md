@@ -15,6 +15,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 - [[Scoring Rules|Rules of scoring]] ✅ (KATTA)
 - [[Number of Rounds|Setting number of rounds]] ✅
 - [[Game Type|Setting game type (scoring, quick draw, Precision, Three targets)]] ✅ (Precision and Three targets scored by hand for now; their camera planned)
+- [[Board Finding|Finding the board (calibration)]] 🟡 (automatic on most boards; stencilled boards with broken rings by Tap the board, 2026-10-21)
 
 ## Basic Play
 - [[Round Play|Round play]] ✅

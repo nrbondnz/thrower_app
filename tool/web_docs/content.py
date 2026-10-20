@@ -238,28 +238,31 @@ COMPONENTS = {
         name='Ring finder', lane='vision', type='Locator chain',
         files=['lib/vision/locate_in_frame.dart', 'lib/vision/coarse_to_fine_locator.dart', 'lib/vision/contrast_normalising_locator.dart',
                'lib/vision/colour_ring_locator.dart', 'lib/vision/ellipse.dart', 'lib/vision/frame_to_rgb.dart'],
-        trigger='Find target (Calibrate), and each Quick draw tap',
+        trigger='Find target (Calibrate), Tap the board (Calibrate), and each Quick draw tap',
         dek='Finds the painted rings in a frame as ellipses, one per ring edge, in a background isolate.',
         body=[
             '<code>locateInFrame</code> turns the frame upright (<code>frameToRgb</code>), then a rough pass on a shrunk picture finds the board, and a close-up pass at full resolution fits the rings. If nothing is found, each pass is tried again with the contrast stretched.',
             '<code>ColourRingLocator</code> learns the board\'s two colours from the picture (the bull\'s and the next ring\'s), casts rays out from a candidate centre, and fits an ellipse to each colour edge with RANSAC, which outvotes rays spoiled by handles or cuts.',
+            'A tapped board none of that reads (stencilled rings painted in arcs on speckled wood: Mark\'s boards, 2026-10-21): <code>_alignedStarts</code> scores centres round the tap by how sharply the rings line up (the colour change averaged over every direction, by distance), takes the 3 best with a size from the bull\'s 1–4× multiples, then reads the edges with that size fixed. Only after a tap: Find target on its own is unchanged. Any fit with a bull under 6 working px is rejected as "Target too small".',
         ],
         functions=[
             ('locateInFrame', 'frameToRgb → buildTargetLocator().locate'),
             ('CoarseToFineLocator', 'rough pass (retry at 1200 px) → close-up pass → moved back'),
             ('ContrastNormalisingLocator', 'as-is, then normaliseContrast'),
             ('ColourRingLocator', 'learn two colours → rays → fitEllipseRansac per edge'),
+            ('_alignedStarts (after a tap only)', '_radialProfile round the tap → 3 sharpest centres + size → _edgePoints(fixedScale)'),
         ],
         flows=['calibration', 'choosing-boards'],
     ),
     'tapped-target-locator': dict(
         name='Tapped board finder', lane='vision', type='Functions',
         files=['lib/vision/tapped_target_locator.dart', 'lib/game/quick_draw_targets.dart'],
-        trigger='A tap on a board in Quick draw',
+        trigger='A tap on a board in Quick draw, or Tap the board on Calibrate',
         dek='Finds the board the user tapped. There may be more boards in the picture than players, so the user picks them, Player 1 then Player 2.',
         body=[
             'The tap is a fraction of the upright picture, turned into pixels only after the frame is turned upright, so a sideways Android frame and an upright recording are treated alike.',
             'Only a square window around the tap is searched (0.45 × the picture\'s shorter side), enlarged 3×, with the tap tried first as the centre. Searching the whole picture found the wrong board: boards side by side can be painted differently.',
+            'Calibrate\'s <b>Tap the board</b> (2026-10-21) uses it too, at the camera\'s current zoom, when Find target can\'t find the rings or finds the wrong board.',
         ],
         functions=[
             ('locateAtTap', 'the camera\'s next frame → compute(locateTappedInFrame)'),
@@ -268,7 +271,7 @@ COMPONENTS = {
             ('boardAt', 'result → TargetCalibration or null'),
             ('QuickDrawTargets', 'the boards in tap order; add, clear, lock; replace (a dragged board), unlock (Adjust boards)'),
         ],
-        flows=['choosing-boards'],
+        flows=['calibration', 'choosing-boards'],
     ),
     'target-calibration': dict(
         name='TargetCalibration', lane='vision', type='Data + notifier',
@@ -515,8 +518,8 @@ FLOWS = {
             ('vision', 'locateInFrame', ['frameToRgb: upright, full resolution', 'rough pass at 600 px (retry 1200) → close-up pass', 'as-is, then with the contrast stretched', 'ColourRingLocator: two colours → rays → RANSAC ellipses'], 'ring-locator', 'found, or the rejected attempt'),
             ('wiring', 'calibrationProvider', ['start → adjust (drag the rings) → lock', 'kept for the session'], 'target-calibration', None),
         ],
-        caption='If the rings are wrong, the user drags them; once locked, Play scores against them.',
-        files=['lib/ui/calibration_screen.dart', 'lib/vision/locate_in_frame.dart', 'lib/providers.dart'],
+        caption='If the rings are wrong, the user drags them; once locked, Play scores against them. If Find target can\'t find the rings (stencilled rings with gaps) or finds the wrong board, Tap the board, then tap the board\'s middle: locateTappedInFrame looks there, at the current zoom.',
+        files=['lib/ui/calibration_screen.dart', 'lib/vision/locate_in_frame.dart', 'lib/vision/tapped_target_locator.dart', 'lib/providers.dart'],
     ),
     'play': dict(
         title='A throw → a score (Play)', cat='flow', lane='game',

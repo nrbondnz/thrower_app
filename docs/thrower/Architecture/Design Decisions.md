@@ -881,6 +881,8 @@ Each tone fades in and out over 5 ms so it doesn't click. Generated rather than 
 
 ## Ring Finding on Real Boards: Colour Edges, Any Paint (2026-10-11)
 
+> **Later (2026-10-21):** stencilled boards whose rings are painted in arcs with gaps (Mark's) aren't read by this; a tapped fallback finds them. See **Boards With Broken Rings: Tap the Board** below.
+
 **Problem:** the two Live test boards (see Live Test above) are painted in **several colours on wood**:
 - board 1: dark bull, wood, red, wood, red
 - board 2: red bull, wood, red, wood, dark green
@@ -914,3 +916,61 @@ On top of that, they are small (a 140 px crop, bull radius about 8.5 px) and blu
 - **Paint vs wood by colour distance.** Board 1's inner wood ring comes out pinkish: about 47 from the wood and 52 from the red, so no single cut-off separates them.
 - **Picking boundaries from piles of edges across rays.** The speckled wood of board 2 drowned the piles.
 - **Expected sizes from the outer estimate.** Hand-painted ring widths and a wrong bull estimate shifted the windows.
+
+## Boards With Broken Rings: Tap the Board (2026-10-21)
+
+Requirement: [[Board Finding]]. Story: [[story-checkpoint-gapped-rings]].
+
+**Problem:** Mark (Nigel's brother) couldn't get Play's **Calibrate → Find target** to fix on his boards (2026-10-20). They are stencilled:
+- a sprayed red bull, bare wood, a **black ring painted in four arcs with gaps**, wood, a second broken black ring, then wood to the bark;
+- speckled wood, red dots and cracks;
+- three boards side by side on a fence, with a net above them, all in one picture.
+
+Before any change (a frame at 1 s of his video): the middle and right boards gave "Rings too unclear", the left a wrong, tiny fit, and the whole picture "found" a target in the net.
+
+**Measured truth** (the middle board, 120 rays from the bull, an ellipse fitted per edge; corrected after an overlay check):
+- edges at 27 / 56 / 84.5 / 113 / 141 px, i.e. **0.19 / 0.40 / 0.60 / 0.80** of the outer edge: IKTHOF's spacing after all (an earlier rough reading of 0.16 / 0.33 / 0.58 / 0.74 was taken off-centre);
+- the answer key is `test/fixtures/marks_boards/truth.json`; the middle board's soft 0.4 edge (speckle to black) is allowed 10%.
+
+**What actually fails** (traced on the middle board): from its true centre the usual edge reading already fits the rings, so the gaps alone weren't the problem. What fails is **where the search starts and how big it thinks the board is**:
+- no single-colour region is centred on a board whose rings are arcs on speckled wood, so no candidate centre is near the middle;
+- from a start a few px off, the size comes from the first colour change, which is a speck;
+- each ray measures the rings from its own bull edge, which on a sprayed, speckled bull is noise.
+
+### Decision: a fallback for a tapped board, by ring alignment
+`ColourRingLocator` step 6 (in its doc comment), only when a seed (a tap) is given and the usual search found nothing plausible:
+1. **Ring alignment** (`_alignedStarts`): from the true centre every ring edge is at one distance all round, so the colour change averaged over every direction, by distance (`_radialProfile`, 72 rays) has sharp peaks; from a little off it smears, speckle never lines up, and gaps only lower a peak. Centres within `_alignReach` (8% of the shorter side) round the tap are scored by the sum of their profile's 6 highest values, on a copy shrunk to ~`_alignSize` (360) px for speed: a coarse grid, then a finer one round each of the `_alignStarts` (3) best, kept apart.
+2. **Size:** for each of the 3 starts, the bull radius whose 1×, 2×, 3× and 4× multiples (the boundary ratios) land on the strongest peaks.
+3. **Edges with the size fixed:** the usual edge reading (`_edgePoints(fixedScale: true)`), with every ray measuring from the known bull size rather than its own bull edge, and keeping rays whose bull edge isn't seen.
+4. **The fit must be big enough:** its outer radius at least 10% of the searched window's shorter side (`_alignMinShare`): grass under a tap made a 6% fit. Mark's middle board is ~29%, the Quick draw boards ~19%.
+
+**The tap fallback's fits only:** a bull radius under 6 working px (`_minBullRadius`) is "Target too small". Edges are measured over ~8–16% of the bull's radius, so a smaller bull is grain or speckle that happens to look like rings. *Not* applied to the usual search (changed after the Traceability review, 2026-10-21): there a small, distant board's rejected fit still guides `CoarseToFineLocator`'s close-up, and a "too small" rejection would hide it and stop the 1200 px retry.
+
+### Decision: Tap the board on Play's calibration
+- `CalibrationScreen` has a **Tap the board** button until the target is locked ("Cancel tap" while waiting).
+- In tap mode the outline is hidden and the status says *"Tap the middle of the board in the picture."*. The next tap runs `locateTappedInFrame` at that point (as Quick draw does), **at the camera's current zoom**: zooming would move the board from under the tap.
+- The result starts the calibration as Find target's does: adjust, then Lock target.
+- Find target's not-found texts now suggest tapping the board. The same tap picks one board when several are in the picture.
+- **Safety** ([[Instructions and Safety]]; Review Agent §7): the "only when no one is throwing" note shows in tap mode too, and the Instructions (Calibrating the target) say to tap only when no one is throwing.
+
+### Decision: no automatic fallback
+Find target with no tap behaves exactly as before. The alignment fallback was tried from the picture's middle with no tap, on Live test board 2: it turned frames the usual search couldn't read into near misses (a ring 10–20% off), with confidence overlapping Mark's real fits, so no cut-off could separate them. A wrong outline that looks right is worse than "not found" plus a tap.
+
+### Tried and rejected
+Each broke boards that work today, or didn't help:
+- **Gaps counted as neutral in the confidence:** the rays through a gap find wood grain, not nothing.
+- **Dropping weak edges.**
+- **Centre votes along edge gradients:** a broad hill, not a peak.
+- **A size from the averaged edge profile as a third reading,** even only as a fallback: Live test board 2 went from 2 to 5 wrong frames.
+- **The alignment fallback with no tap,** from the picture's middle (see above).
+- **Other ring proportions** (planned as Task 3): not needed. Measured properly, Mark's rings are IKTHOF's.
+
+### Results
+- **Middle board**, tapped on its bull or 7–10 px off (4 taps): found, the rings on the paint (28 / 55 / 86 / 112 / 140 px vs measured 27 / 56 / 84.5 / 113 / 141).
+- **Right board** (in shade, against the sky): found tapped on its bull or 10 px above. Taps 10 px right or (−7, 7) give a wrong fit: a known limit; drag the outline, or tap again ([[Known Issues]]).
+- **Left board:** cut off by the picture's edge; not a usable view.
+- **A tap on the fence** finds nothing.
+- **Unchanged:** every earlier fixture (the Live test recordings, the Quick draw taps including "a tap on the grass finds nothing", the ring locator's tests).
+- Guarded by `test/vision/marks_boards_test.dart` and `test/ui/calibration_screen_test.dart`. Device checks: [[Device Test Plan]] → Board Finding Checks.
+
+**Confirmed:** 2026-10-21 (Nigel approved the plan; Mark's scoring: red 5, wood 4, inner black 3, wood 2, outer black 1).

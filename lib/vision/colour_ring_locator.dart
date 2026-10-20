@@ -130,10 +130,15 @@ class ColourRingLocator implements TargetLocator {
           // A tapped board fills a fair share of the window searched round
           // the tap (Mark's middle board ~29%, the Quick draw boards ~19%);
           // grass under a tap made a 6% one, 2026-10-21.
+          // And a bull under [_minBullRadius] is speckle that happens to
+          // look like rings (edges are measured over ~8–16% of the bull's
+          // radius). Only here: the usual search keeps small, distant boards
+          // (a rejected small fit still guides [CoarseToFineLocator]).
           final outerRadius = fit.ellipses[boundaryRadii.last]!.semiMajor / boundaryRadii.last;
           final problem = fit.confidence < minConfidence
               ? 'Rings too unclear'
-              : outerRadius < math.min(work.width, work.height) * _alignMinShare
+              : outerRadius < math.min(work.width, work.height) * _alignMinShare ||
+                      fit.ellipses[boundaryRadii.first]!.semiMajor < _minBullRadius
                   ? 'Target too small'
                   : _implausible(fit.ellipses);
           if (problem == null) {
@@ -549,7 +554,7 @@ class ColourRingLocator implements TargetLocator {
   /// See [_fitPoints].
   static const _strayCentre = 0.05;
 
-  /// See [_implausible]: in working-image pixels.
+  /// The tap fallback's least bull radius, in working-image pixels.
   static const _minBullRadius = 6.0;
   static const _centresDisagree = 'Ring centres disagree';
   static const _predictedSlack = 0.12;
@@ -617,11 +622,6 @@ class ColourRingLocator implements TargetLocator {
   /// the proportion check is loose; scoring uses the measured boundaries.
   String? _implausible(Map<double, Ellipse> ellipses) {
     final outer = ellipses[boundaryRadii.last]!;
-    // Edges are measured over ~8–16% of the bull's radius, so a smaller bull
-    // is grain or speckle that happens to look like rings (Mark's speckled
-    // boards, 2026-10-21). Real bulls on the working image: ≥ ~9 px (a board
-    // from 2 m in a whole phone picture; the Live test crops ~25 px).
-    if (ellipses[boundaryRadii.first]!.semiMajor < _minBullRadius) return 'Target too small';
     var previous = 0.0;
     for (final r in boundaryRadii) {
       final e = ellipses[r]!;

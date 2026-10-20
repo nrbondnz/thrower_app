@@ -96,7 +96,11 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `_paletteLabels` (k-means), then candidate centres: `seed` first if set, then `_regionCentresNear(seed)` (`_regionAt` under and around it), then `_candidateCentres` (largest single-colour regions)
   - `_learnColours`: colour A (bull), colour B (next ring)
   - `_fitFrom`: rays → A/B runs (gaps skipped) → boundary points
-  - `fitEllipseRansac` per boundary; `_implausible` sanity check; confidence
+  - `fitEllipseRansac` per boundary; `_implausible` sanity check; confidence (the tap fallback also rejects a bull radius under `_minBullRadius`, 6 working px: "Target too small")
+  - **Step 6, a tapped board nothing else reads** (2026-10-21, [[story-checkpoint-gapped-rings]]): `_alignedStarts(tap)` → `_radialProfile` per candidate centre round the tap (`_alignReach` 8%, on a ~`_alignSize` 360 px copy) → the `_alignStarts` (3) sharpest, each `_refinedStart` (finer grid, bull size from the 1–4× multiples) → `_fitReading(..., fixedScale: true)` → `_edgePoints(fixedScale:)`; the fit's outer radius ≥ `_alignMinShare` (10%) of the window
+- **`CalibrationScreen`** (`lib/ui/calibration_screen.dart`): Play's Calibrate; `CalibrationControls` (Find target, **Tap the board** / Cancel tap, Lock target, Re-calibrate)
+  - `_find`: Find target (zoom, `locateInFrame`)
+  - **`_findAt(camera, at)`** (Tap the board, 2026-10-21): the next frame → `compute(locateTappedInFrame)` at the tap, at the current zoom → `calibrationFrom` → `calibrationProvider.start`; status `tapTheBoardStatus` while waiting
 - **`CalibrationEditor`** (`lib/ui/calibration_editor.dart`): the single target's outline, dragged (`handleReach` 32 px); the drag rules, shared with `BoardsEditor`:
   - **`grabAt(calibration, point, reach)`** → **`CalibrationGrab`** (`move`, `major`, `minor`) or null: the nearer handle within reach, unless the finger is nearer the centre (small targets); else `move` if inside the outer ring (× 1.1)
   - **`dragged(calibration, grab, delta:, at:)`**: `moved`, `withMajorHandleAt` or `withMinorHandleAt`
@@ -291,7 +295,16 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Used by:** `CroppedCamera`, `TargetCalibration.within`, `QuickDrawWatcher`
 - **Seed (tap) centre**
   - **Meaning:** Where the user says a board's centre is, by tapping it. Tried first as the centre, then snapped to the colour regions under and around it (the bull, or the ring tapped, is centred on the board). Lets the user pick which boards count when more are in the picture. The tap is a fraction of the upright picture, turned into pixels after the frame is turned upright.
-  - **Used by:** `ColourRingLocator.seed`, `locateTargetAt`, `BoardsOverlay`
+  - **Used by:** `ColourRingLocator.seed`, `locateTargetAt`, `BoardsOverlay`, `CalibrationScreen` (Tap the board)
+- **Tap the board**
+  - **Meaning:** On Play's Calibrate, when Find target can't find the rings or finds the wrong board: the user taps the middle of their board in the picture and the rings are looked for there (a seed centre), at the camera's current zoom. Picks one board out of several, and lets the ring-alignment fallback run. Only when no one is throwing. Requirement: [[Board Finding]].
+  - **Used by:** `CalibrationScreen`, `CalibrationControls`, `locateTappedInFrame`
+- **Stencilled (broken) rings**
+  - **Meaning:** Rings sprayed through a stencil, so each ring is a few arcs with gaps of bare wood between them (Mark's boards: a red bull, two black rings in four arcs, speckled wood). Rays through a gap see no ring edge, and no single-colour region sits on the board's centre, so the usual search finds no start. Found after a tap by ring alignment.
+  - **Used by:** `ColourRingLocator` (step 6), `test/vision/marks_boards_test.dart`
+- **Ring alignment (radial profile)**
+  - **Meaning:** The colour change at each distance from a candidate centre, averaged over every direction. From the board's true centre every ring edge is at one distance all round, so the profile has sharp peaks; from a little off they smear, speckle never lines up, and gaps only lower a peak. The sharpest centre is the board's, and the bull size whose 1–4× multiples land on the peaks is its size.
+  - **Used by:** `_radialProfile`, `_alignedStarts`, `_refinedStart` (`ColourRingLocator`)
 - **Ducking**
   - **Meaning:** Turning other apps' audio down while ours plays, rather than stopping it.
   - **Used by:** `AssetRecordingSound.audioContext`, `AssetSignalSounds`

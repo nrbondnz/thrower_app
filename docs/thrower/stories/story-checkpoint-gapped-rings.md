@@ -56,7 +56,42 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, start on Mark's boards"); run whole
 - **Plan (changed):** on Calibrate, when Find target can't find the rings, say so and let the user **tap the middle of the board**; the tap uses `locateTargetAt` (as Quick draw), which now has the fallback. Works for a picture with several boards too (the tap picks the board).
 
 ## Task 5: Instructions, docs, traceability, a build
-- **Status:** IN PROGRESS
+- **Status:** COMPLETE (2026-10-21); device checks BF0–BF8 to come ([[Device Test Plan]])
+
+#### Traceability Report — 2026-10-21 (Traceability Agent)
+- **Coverage:** R1 (Mark's boards calibrate in Play), R2 (boards that work keep working), R5 (Instructions and safety) covered by code and tests; R3 (several boards: pick one) partly; R4 (scoring follows the painted rings) had no test. No orphan code.
+- **Also:** two-target Play and Quick draw use `locateTappedInFrame` too, so they gain the fallback.
+- **Findings and what was done:**
+  1. Tap the board ran at the zoom Find target left, which may have zoomed past the right board. **Fixed:** entering tap mode zooms back to 1× first (`_toggleTapMode`).
+  2. A search that throws (camera released, app in the background) left the buttons disabled. **Fixed:** `_find` and `_findAt` reset `_searching` in `finally`.
+  3. A failed tapped search leaves an earlier outline (and Lock target) in place. **Accepted:** the status says it wasn't found; Find again or adjust.
+  4. No scoring test. **Added:** "middle board, tapped: points in each painted ring score 5, 4, 3, 2, 1, then 0 beyond".
+  5. Time: `locateTargetAt` on the 1080 × 1920 frame 1.4 s found, 3.1 s not found (PC, in a background isolate). **To check** on the Samsung (BF checks).
+  6. `_minBullRadius` applied to every fit could hide a small, distant board (a "too small" rejection stops the coarse pass's retry). **Fixed:** only the tap fallback applies it.
+  7. Nothing pinned Find target on the whole picture. **Added:** "Find target on the whole picture: if it finds a target, it is one of the boards".
+- **Verified by:** `flutter test`: 875 passed; `flutter analyze`: no issues; the regression set (Mark's, the Live test recordings, Quick draw taps, the ring locator) passes.
+
+### Doc Update — 2026-10-21
+
+#### Files Created
+- `requirements/Basic Setup/Board Finding.md`: the requirement (stencilled boards, several boards in view), what exists (Find target, Tap the board), open questions (off-centre taps on dark boards, gapped rings without a tap, a board cut off by the picture's edge); linked from `Requirements Index.md` (🟡).
+
+#### Files Updated
+- `Architecture/Design Decisions.md`: new section **Boards With Broken Rings: Tap the Board (2026-10-21)** (problem, measured truth, the tapped fallback by ring alignment, the 6 px bull minimum, Tap the board on Calibrate, why no automatic fallback, rejected attempts, results); a pointer from Ring Finding on Real Boards.
+- `Architecture/Glossary.md`: `ColourRingLocator` step 6 (`_alignedStarts`, `_radialProfile`, `_refinedStart`, `fixedScale`, `_minBullRadius`); a `CalibrationScreen` entry (`_findAt`, Tap the board); concepts **Tap the board**, **Stencilled (broken) rings**, **Ring alignment (radial profile)**; Seed (tap) centre's "used by".
+- `Architecture/Data Flow.md`: Tap the board under A Frame → a Calibration.
+- `Architecture/System Diagram.md`: the calibration flow's tap path.
+- `tool/web_docs/content.py` + `docs/web/` rebuilt: Ring finder (step 6), Tapped board finder (used by Calibrate), Finding and locking the target (the tap).
+- `Operations/Device Test Plan.md`: **Board Finding Checks** BF0–BF8 (Nigel with `frame-1s.jpg` on the monitor; BF8 for Mark on his boards).
+- `Troubleshooting/Known Issues.md`: Stencilled Boards: Find Target Can't Find Rings Painted With Gaps.
+- `Operations/Common Tasks.md`: Add a Real Board From a Video as a Test Fixture (ffmpeg from `imageio_ffmpeg`, crop, measure, check the key, test).
+- `requirements/Instructions and Safety.md`: the safety note in tap mode.
+- `CLAUDE.md`, `docs/working-with-nigel.md`: this story built 2026-10-21 (device checks to come); Virtual thrower paused at Task 2.
+
+#### Drift Items (not fixed)
+- `CalibrationScreen` had no entry in the Glossary's component tree before this (added now with only `_find` / `_findAt`); its other functions (tap-to-score, knife entry, `lockedStatus`, `calibrationStatus`) are still undocumented there.
+- `requirements/Basic Setup/Game Type.md` and others weren't checked for the virtual thrower story (no requirement page names it; backlog #19 only).
+- The Device Test Plan's intro still describes only the iPhone/TestFlight field test, while most sections since are Nigel's Samsung checks.
 
 ---
 

@@ -91,7 +91,25 @@ Writes `assets/sounds/beep.wav` (each countdown beep, 1 kHz, 0.2 s), `go.wav` (1
 dart run tool/locate_target.dart path/to/photo.jpg [out.png]
 ```
 
-Prints each fitted ring edge and the confidence, and writes the photo with the edge points (yellow) and ellipses drawn on it (blue if found, magenta for a rejected attempt). For a new real-board photo that matters, also copy it into `test/fixtures/targets/` and add a test case.
+Prints each fitted ring edge and the confidence, and writes the photo with the edge points (yellow) and ellipses drawn on it (blue if found, magenta for a rejected attempt). For a new real-board photo that matters, also copy it into `test/fixtures/targets/` and add a test case. For a board from someone's video, see the next section.
+
+## Add a Real Board From a Video as a Test Fixture
+
+How Mark's boards became `test/fixtures/marks_boards/` (2026-10-21, [[story-checkpoint-gapped-rings]]). Use it when someone's board isn't found and they send a video.
+
+1. **Get the original file** (AirDrop, iCloud link, cable), not a copy from a messaging app (smaller and recompressed).
+2. **Take a still** from a moment with nobody in front of the board and no knives in it. ffmpeg comes with `imageio_ffmpeg` (`pip install imageio-ffmpeg`); on Nigel's PC it is `C:\Users\nigel\AppData\Roaming\Python\Python314\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe`:
+   - `<ffmpeg> -ss 1 -i video.MOV -frames:v 1 -q:v 2 frame-1s.jpg`
+   - Keep the original size (no scaling): it's what the phone saw.
+3. **Crop each board** at full resolution, with some wood round it: `<ffmpeg> -i frame-1s.jpg -vf crop=W:H:X:Y middle.jpg`. Write each crop's size and position in the fixture's `README.md`.
+4. **Measure the answer key** by hand into `truth.json`:
+   - each board's centre (the bull's middle), in the whole picture's pixels;
+   - for the clearest board, each painted edge's radius, e.g. read along many rays from the bull and an ellipse fitted per edge;
+   - for boards in shade or low contrast, at least a centre and the outer ring's rough size;
+   - the scoring as painted (ask the board's owner which ring scores what).
+5. **Check the key** by drawing it over the picture (as `dart run tool/locate_target.dart` draws a fit) before trusting it: Mark's first key had one edge and a centre wrong.
+6. **Write the test** in `test/vision/` (as `marks_boards_test.dart`): taps on each board (on the bull and a few px off), the edges within a stated tolerance, and a tap on the background finding nothing. Mark any that can't pass yet `skip:` with the reason.
+7. Run the whole suite: a change for the new board must leave every earlier fixture (the Live test recordings, the Quick draw taps) unchanged.
 
 ## Render Camera Views (Test Pictures with Known Answers)
 

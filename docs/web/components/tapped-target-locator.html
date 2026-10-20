@@ -22,12 +22,13 @@
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Functions</dd></div>
     <div><dt>Defined in</dt><dd><code>lib/vision/tapped_target_locator.dart</code><br><code>lib/game/quick_draw_targets.dart</code><br></dd></div>
-    <div><dt>Used when</dt><dd>A tap on a board in Quick draw</dd></div>
+    <div><dt>Used when</dt><dd>A tap on a board in Quick draw, or Tap the board on Calibrate</dd></div>
   </dl>
 
   <div class="detail-body">
     <p>The tap is a fraction of the upright picture, turned into pixels only after the frame is turned upright, so a sideways Android frame and an upright recording are treated alike.</p>
     <p>Only a square window around the tap is searched (0.45 × the picture's shorter side), enlarged 3×, with the tap tried first as the centre. Searching the whole picture found the wrong board: boards side by side can be painted differently.</p>
+    <p>Calibrate's <b>Tap the board</b> (2026-10-21) uses it too, at the camera's current zoom, when Find target can't find the rings or finds the wrong board.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -41,6 +42,12 @@
 
   <h2 class="section-heading">Used in</h2>
   <div class="used-in-grid">
+    <a class="flow-card" href="../flows/calibration.html">
+      <div class="cat"><span class="swatch" style="background:var(--vision)"></span>Core mechanism</div>
+      <h3>Finding and locking the target</h3>
+      <p>Find the rings once in a background isolate, drag to adjust, lock for the session.</p>
+      <span class="more">Open →</span>
+    </a>
     <a class="flow-card" href="../flows/choosing-boards.html">
       <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
       <h3>Choosing two boards by tapping (Quick draw, two-target Play)</h3>

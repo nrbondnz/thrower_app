@@ -62,6 +62,11 @@ Quick draw's analysis uses a third `TargetCamera`, `RecordingAnalysisFeed`: ever
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+**Tap the board** (2026-10-21, [[story-checkpoint-gapped-rings]]; requirement [[Board Finding]]): when Find target can't find the rings or finds the wrong board, the user taps **Tap the board**, then the board's middle in the picture.
+1. `CalibrationScreen._findAt`: the camera's next frame, at the **current zoom** (no zooming: it would move the board from under the tap).
+2. Background isolate: `locateTappedInFrame` → `locateTargetAt` (a window round the tap, `ColourRingLocator` with the tap as its seed). If the usual search finds nothing plausible there, step 6 runs: ring alignment round the tap (`_alignedStarts`) → the edge reading with the size fixed.
+3. `calibrationFrom` → `calibrationProvider.start`, then adjust and lock as above.
+
 ## A Point → a Score
 
 The same mapping scores a tap on the locked target and a knife's entry point.

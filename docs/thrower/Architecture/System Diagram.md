@@ -169,13 +169,15 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     CALIBRATION FLOW (once per session)             │
 │                                                                     │
-│   User taps "Find target"                                           │
+│   User taps "Find target", or "Tap the board" then the board        │
 │          │                                                          │
 │          ▼                                                          │
 │   ┌─────────────┐  frame   ┌──────────────────────────────────────┐ │
 │   │TargetCamera │─────────▶│  background isolate (compute)        │ │
 │   │  .frames()  │          │  locateInFrame: upright RGB, coarse  │ │
 │   └─────────────┘          │  pass, close-up pass, ring ellipses  │ │
+│                            │  (a tap: locateTappedInFrame round   │ │
+│                            │  it; ring alignment if nothing else) │ │
 │                            └──────────────────┬───────────────────┘ │
 │                                               ▼                     │
 │                     ┌───────────────────────────────────────────┐   │

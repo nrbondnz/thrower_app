@@ -22,12 +22,13 @@
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Locator chain</dd></div>
     <div><dt>Defined in</dt><dd><code>lib/vision/locate_in_frame.dart</code><br><code>lib/vision/coarse_to_fine_locator.dart</code><br><code>lib/vision/contrast_normalising_locator.dart</code><br><code>lib/vision/colour_ring_locator.dart</code><br><code>lib/vision/ellipse.dart</code><br><code>lib/vision/frame_to_rgb.dart</code><br></dd></div>
-    <div><dt>Used when</dt><dd>Find target (Calibrate), and each Quick draw tap</dd></div>
+    <div><dt>Used when</dt><dd>Find target (Calibrate), Tap the board (Calibrate), and each Quick draw tap</dd></div>
   </dl>
 
   <div class="detail-body">
     <p><code>locateInFrame</code> turns the frame upright (<code>frameToRgb</code>), then a rough pass on a shrunk picture finds the board, and a close-up pass at full resolution fits the rings. If nothing is found, each pass is tried again with the contrast stretched.</p>
     <p><code>ColourRingLocator</code> learns the board's two colours from the picture (the bull's and the next ring's), casts rays out from a candidate centre, and fits an ellipse to each colour edge with RANSAC, which outvotes rays spoiled by handles or cuts.</p>
+    <p>A tapped board none of that reads (stencilled rings painted in arcs on speckled wood: Mark's boards, 2026-10-21): <code>_alignedStarts</code> scores centres round the tap by how sharply the rings line up (the colour change averaged over every direction, by distance), takes the 3 best with a size from the bull's 1–4× multiples, then reads the edges with that size fixed. Only after a tap: Find target on its own is unchanged. Any fit with a bull under 6 working px is rejected as "Target too small".</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -36,6 +37,7 @@
     <div><dt><code>CoarseToFineLocator</code></dt><dd>rough pass (retry at 1200 px) → close-up pass → moved back</dd></div>
     <div><dt><code>ContrastNormalisingLocator</code></dt><dd>as-is, then normaliseContrast</dd></div>
     <div><dt><code>ColourRingLocator</code></dt><dd>learn two colours → rays → fitEllipseRansac per edge</dd></div>
+    <div><dt><code>_alignedStarts (after a tap only)</code></dt><dd>_radialProfile round the tap → 3 sharpest centres + size → _edgePoints(fixedScale)</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>

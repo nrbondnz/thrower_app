@@ -193,3 +193,11 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 - **When it matters:** only if a tester goes back to an older build. Install the latest build instead.
 - Found by the Traceability review: [[story-checkpoint-more-game-types]].
 
+## Stencilled Boards: Find Target Can't Find Rings Painted With Gaps (2026-10-21)
+- **Symptom (Mark, 2026-10-20):** on Play's Calibrate, **Find target** says "Target not found" or "Not sure about the target", or outlines the wrong thing (a net above the boards, a neighbouring board), on boards whose rings are sprayed through a stencil: each ring is a few arcs with gaps of bare wood, on speckled wood.
+- **Cause:** the automatic search starts from single-colour regions, and none sits on the centre of a board whose rings are arcs on speckled wood; from a start a few px off, the board's size comes from a speck. See [[Design Decisions]] → Boards With Broken Rings: Tap the Board.
+- **What to do:** tap **Tap the board**, then tap the **middle (the bull)** of the board being thrown at, only when no one is throwing. The rings are found round the tap by how they line up. Drag the outline if it's a little off, then Lock target. The same tap picks the right board when several are in the picture.
+- **A dark board is sensitive to where it's tapped:** Mark's right board (in shade, against the sky) is found when tapped on its bull or just above it, but a tap about 10 px to the right (on the working picture) gives a wrong outline. Tap again on the bull, or drag the outline into place.
+- **The whole board must be in view:** a board cut off by the picture's edge (Mark's left board) isn't found. Move or turn the phone so the whole board shows, keeping it out of the line of throw.
+- **Not fixed:** Find target on its own still doesn't find these boards (widening it broke boards that work). Requirement and open questions: [[Board Finding]].
+

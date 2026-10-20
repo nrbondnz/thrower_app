@@ -74,20 +74,47 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
       _searching = true;
     });
     final stopwatch = Stopwatch()..start();
-    final frame = await camera.frames().first;
-    final tapped = await compute(
-        locateTappedInFrame, (frame, camera.uprightRotation, ref.read(ringBoundaryRadiiProvider), [at]));
-    if (!mounted) return;
-    final found = FrameLocateResult(tapped.boards.single, tapped.imageWidth, tapped.imageHeight);
-    final calibration = calibrationFrom(found);
-    if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration, zoom: camera.zoom);
-    setState(() {
-      _found = found;
-      _zoom = camera.zoom;
-      _offCentre = false;
-      _searching = false;
-      _millis = stopwatch.elapsedMilliseconds;
-    });
+    try {
+      final frame = await camera.frames().first;
+      final tapped = await compute(
+          locateTappedInFrame, (frame, camera.uprightRotation, ref.read(ringBoundaryRadiiProvider), [at]));
+      if (!mounted) return;
+      final found = FrameLocateResult(tapped.boards.single, tapped.imageWidth, tapped.imageHeight);
+      final calibration = calibrationFrom(found);
+      if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration, zoom: camera.zoom);
+      setState(() {
+        _found = found;
+        _zoom = camera.zoom;
+        _offCentre = false;
+        _millis = stopwatch.elapsedMilliseconds;
+      });
+    } finally {
+      // A camera released mid-search (the app sent to the background) mustn't
+      // leave the buttons disabled.
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  /// Tap the board: back to 1× first, so a board Find target zoomed past
+  /// (it zooms in on the board it finds, which may be the wrong one) is in
+  /// the picture to tap; then waits for the tap. Pressed again: cancels.
+  Future<void> _toggleTapMode(TargetCamera camera) async {
+    if (_tapMode) {
+      setState(() => _tapMode = false);
+      return;
+    }
+    if (camera.zoom != 1) {
+      setState(() => _searching = true);
+      try {
+        await camera.setZoom(1);
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      } on Exception catch (e) {
+        debugPrint('Zoom to 1× failed: $e');
+      } finally {
+        if (mounted) setState(() => _searching = false);
+      }
+    }
+    if (mounted) setState(() => _tapMode = true);
   }
 
   void _scoreKnife(TargetCalibration calibration, EntryEstimate? entry) {
@@ -111,17 +138,20 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   Future<void> _find(TargetCamera camera) async {
     setState(() => _searching = true);
     final stopwatch = Stopwatch()..start();
-    final found = await findTarget(camera, _locate);
-    if (!mounted) return;
-    final calibration = calibrationFrom(found.found);
-    if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration, zoom: found.zoom);
-    setState(() {
-      _found = found.found;
-      _zoom = found.zoom;
-      _offCentre = found.offCentre;
-      _searching = false;
-      _millis = stopwatch.elapsedMilliseconds;
-    });
+    try {
+      final found = await findTarget(camera, _locate);
+      if (!mounted) return;
+      final calibration = calibrationFrom(found.found);
+      if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration, zoom: found.zoom);
+      setState(() {
+        _found = found.found;
+        _zoom = found.zoom;
+        _offCentre = found.offCentre;
+        _millis = stopwatch.elapsedMilliseconds;
+      });
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
   }
 
   Future<FrameLocateResult> _locate(TargetCamera camera) async {
@@ -211,7 +241,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
               locked: locked,
               tapMode: _tapMode,
               onFind: camera == null || _searching || locked ? null : () => _find(camera),
-              onTapBoard: camera == null || _searching || locked ? null : () => setState(() => _tapMode = !_tapMode),
+              onTapBoard: camera == null || _searching || locked ? null : () => _toggleTapMode(camera),
               onLock: notifier.lock,
               onUnlock: () {
                 _clearTap();

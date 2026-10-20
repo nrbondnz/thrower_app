@@ -4,11 +4,14 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/scoring/target_model.dart';
+import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/decode_image.dart';
 import 'package:thrower_app/vision/ellipse.dart';
 import 'package:thrower_app/vision/rgb_image.dart';
 import 'package:thrower_app/vision/tapped_target_locator.dart';
+import 'package:thrower_app/vision/target_calibration.dart';
 import 'package:thrower_app/vision/target_locator.dart';
+import 'package:thrower_app/vision/target_mapping.dart';
 
 /// Gapped-rings story: Mark's stencilled boards (`test/fixtures/marks_boards/`),
 /// whose black rings are painted in four arcs with gaps between them, on
@@ -93,4 +96,30 @@ void main() {
     final r = locateTargetAt(frame, const Point2(560, 1350), _radii);
     expect(r, isA<TargetNotFound>(), reason: describe(r));
   }, timeout: const Timeout(Duration(minutes: 2)));
+
+  // Traceability (2026-10-21): scoring follows the board's own painted rings
+  // (Nigel: red 5, wood 4, inner black 3, wood 2, outer black 1; beyond, 0).
+  test('middle board, tapped: points in each painted ring score 5, 4, 3, 2, 1, then 0 beyond', () {
+    final (bull, _) = key('middle');
+    final r = locateTargetAt(frame, bull, _radii) as TargetFound;
+    final mapping = TargetMapping(
+        TargetCalibration(imageWidth: frame.width, imageHeight: frame.height, boundaries: r.boundaries, outer: r.outer));
+    final model = TargetModel.katta();
+    // Mid-ring distances from the bull (measured edges 27, 56, 84.5, 113,
+    // 141 px), to the right of it, and one well outside.
+    final scores = [
+      for (final d in const [13, 41, 70, 98, 127, 165]) model.scoreAt(mapping.toTarget(Point2(bull.x + d, bull.y))),
+    ];
+    expect(scores, [5, 4, 3, 2, 1, 0]);
+  }, timeout: const Timeout(Duration(minutes: 2)));
+
+  // Find target alone may not read these boards (Tap the board is for that),
+  // but it must not lock confidently onto something that isn't a board.
+  test('Find target on the whole picture: if it finds a target, it is one of the boards', () {
+    final r = buildTargetLocator(_radii).locate(frame);
+    if (r case TargetFound(:final outer)) {
+      final boards = [for (final b in ['left', 'middle', 'right']) key(b).$1];
+      expect(boards.map((b) => dist(Point2(outer.cx, outer.cy), b)).reduce(math.min), lessThan(40), reason: describe(r));
+    }
+  }, timeout: const Timeout(Duration(minutes: 3)));
 }
