@@ -3,16 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
+import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 import 'play_screen.dart';
+import 'score_pad_screen.dart';
 import 'two_target_play_screen.dart';
 
 /// The screen after Home → Play (and Live test → Play): **how many players**,
 /// 1 or 2, and for 2, **one target** (taking turns) or **two** (throwing at
 /// the same time); and **how many rounds**, 3, 5 or 9 (Nigel, 2026-10-16);
 /// and, optionally, **each player's name** (named-players story, 2026-10-19:
-/// filled in with the last names used; blank is "Player N"). Starts with the
-/// last choice. **Start** keeps a game in progress if the choice is the
+/// filled in with the last names used; blank is "Player N"). First, **which
+/// game** (more-game-types story, 2026-10-20): Scoring, or Precision or
+/// Three targets, which are scored by hand on a score pad, on one target
+/// (two players take turns), with their own lengths. Starts with the last
+/// choice. **Start** keeps a game in progress if the choice is the
 /// same (renaming it if the names changed), and starts a new one if it
 /// changed.
 class PlaySetupScreen extends ConsumerStatefulWidget {
@@ -23,12 +28,17 @@ class PlaySetupScreen extends ConsumerStatefulWidget {
 }
 
 class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
+  late var _type = ref.read(gameTypeProvider);
+
   late var _players = ref.read(playModeProvider).players;
 
   /// With 2 players: one target or two.
   late var _targets = ref.read(playModeProvider).targets;
 
-  late var _rounds = ref.read(gameLengthProvider);
+  late var _rounds = _fit(ref.read(gameLengthProvider));
+
+  /// [rounds] if [_type] offers it, else the type's usual length.
+  int _fit(int rounds) => _type.roundChoices.contains(rounds) ? rounds : _type.defaultRounds;
 
   /// Each seat's name field, filled with the names kept on the phone.
   late final _names = [
@@ -49,17 +59,23 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
 
   PlayMode get _mode => _players == 1
       ? PlayMode.solo
-      : _targets == 1
+      : _targets == 1 || _type.handScored
           ? PlayMode.sharedTarget
           : PlayMode.twoTargets;
 
   void _start() {
     final mode = _mode;
+    final type = _type;
+    ref.read(gameTypeProvider.notifier).choose(type);
     ref.read(playModeProvider.notifier).choose(mode);
     ref.read(gameLengthProvider.notifier).choose(_rounds);
     ref.read(playerNamesProvider.notifier).set([for (final c in _names) c.text]);
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => mode == PlayMode.twoTargets ? const TwoTargetPlayScreen() : const PlayScreen(),
+      builder: (_) => type.handScored
+          ? const ScorePadScreen()
+          : mode == PlayMode.twoTargets
+              ? const TwoTargetPlayScreen()
+              : const PlayScreen(),
     ));
   }
 
@@ -80,6 +96,25 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Text('Which game?', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              key: const Key('playGame'),
+              spacing: 8,
+              children: [
+                for (final t in GameType.values)
+                  ChoiceChip(
+                    key: Key('playGame-${t.name}'),
+                    label: Text(t.label),
+                    selected: _type == t,
+                    onSelected: (_) => setState(() {
+                      _type = t;
+                      _rounds = _fit(_rounds);
+                    }),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
             Text('How many players?', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             SegmentedButton<int>(
@@ -91,7 +126,7 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
               selected: {_players},
               onSelectionChanged: (s) => setState(() => _players = s.single),
             ),
-            if (_players == 2) ...[
+            if (_players == 2 && !_type.handScored) ...[
               const SizedBox(height: 24),
               Text('How many targets?', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -119,16 +154,20 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
             const SizedBox(height: 24),
             Text('How many rounds?', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            SegmentedButton<int>(
-              key: const Key('playRounds'),
-              segments: [
-                for (final n in GameLengthNotifier.choices) ButtonSegment(value: n, label: Text('$n')),
-              ],
-              selected: {_rounds},
-              onSelectionChanged: (s) => setState(() => _rounds = s.single),
-            ),
+            if (_type.roundChoices.length > 1)
+              SegmentedButton<int>(
+                key: const Key('playRounds'),
+                segments: [
+                  for (final n in _type.roundChoices) ButtonSegment(value: n, label: Text('$n')),
+                ],
+                selected: {_rounds},
+                onSelectionChanged: (s) => setState(() => _rounds = s.single),
+              )
+            else
+              Text('${_type.defaultRounds} rounds', key: const Key('playRoundsFixed')),
             const SizedBox(height: 16),
-            Text(modeDescription(mode), key: const Key('playModeDescription')),
+            Text(_type.handScored ? typeDescription(_type, mode) : modeDescription(mode),
+                key: const Key('playModeDescription')),
             const SizedBox(height: 24),
             FilledButton(
               key: const Key('playStart'),
@@ -140,6 +179,20 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
       ),
     );
   }
+}
+
+/// What Precision and Three targets mean, under the choices.
+String typeDescription(GameType type, PlayMode mode) {
+  final turns = mode == PlayMode.sharedTarget
+      ? ' Take turns: Player 1 throws 3 knives and collects them, then Player 2.'
+      : '';
+  final how = switch (type) {
+    GameType.precision => '7 rounds of 3 knives, each round from its own distance: '
+        '${precisionDistances.map((d) => '$d').join(', ')} m.',
+    GameType.threeTargets => 'Three targets side by side: each round, one knife at each target, in order.',
+    GameType.scoring => '',
+  };
+  return '$how$turns Score each knife by hand on the score pad.';
 }
 
 /// What each way of playing means, under the choices.

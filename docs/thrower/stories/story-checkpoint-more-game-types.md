@@ -33,10 +33,21 @@ IN PROGRESS: plan approved 2026-10-20 ("ok, go"); run whole, committing per task
 - **Verified by:** `flutter test`: 833 passed; `flutter analyze`: no issues.
 
 ## Task 2: Choose and play them (setup + score pad)
-- **Status:** IN PROGRESS
+- **Status:** COMPLETE (2026-10-20); device check to come (GT checks, Task 3)
+- **What changed:**
+  - `lib/ui/play_setup_screen.dart`: **Which game?** first (chips `playGame-<type>`). Precision and Three targets: no target choice (two players take turns: `sharedTarget`); their own lengths (Precision "7 rounds", fixed; Three targets 3, 5 or 7); a length the type doesn't offer goes to its default; their description (`typeDescription`: the distances; one knife at each target; taking turns; the score pad). **Start** opens the score pad for them.
+  - `lib/ui/score_pad_screen.dart` (new): `ScorePadScreen`, no camera:
+    - large `padHeadline` ("Mark's turn", "Your turn", "Collect your knives", "Mark wins", "A draw", "Game over! 63") and `padWhere` ("Round 2 of 7: from 5 m", "Round 1 of 3: at target 2", "When no one is throwing. Then Nigel's turn.");
+    - `ScorePad`: 5, 4, 3, 2, 1 and **Miss** (from the target model's rings), feeding `GameNotifier.addThrow`;
+    - a safety line: score when no one is throwing, or have someone who isn't throwing keep score;
+    - each player's total and rounds (`padPlayerDetail`: Precision's with distances, "3 m: 12, 5 m: 9"), and Play's `ScoreCorrections` rows (tap a slot to change it);
+    - **Finish game** (asks first), **New game**; kept in History through the same `gameProvider`.
+  - `providers.dart`: a hand-scored game is never kept as a Live test game (no recording); `GameLengthNotifier.choices` now comes from `GameType.scoring`.
+- **Tests:** `test/ui/score_pad_screen_test.dart` (new, 17: the setup choices, Precision alone, Three targets for two, Finish game, a correction, the texts); `play_setup_screen_test.dart`: a taller test screen (the setup screen grew).
+- **Verified by:** `flutter test`: 850 passed; `flutter analyze`: no issues. On the Samsung: to come.
 
 ## Task 3: History, Instructions, docs, backlog, traceability
-- **Status:** NOT STARTED
+- **Status:** IN PROGRESS
 
 ---
 

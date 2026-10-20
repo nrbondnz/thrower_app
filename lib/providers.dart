@@ -214,7 +214,9 @@ final playModeProvider = NotifierProvider<PlayModeNotifier, PlayMode>(PlayModeNo
 /// one of [choices], 9 unless chosen. Kept for the session, like
 /// [playModeProvider].
 class GameLengthNotifier extends Notifier<int> {
-  static const choices = [3, 5, 9];
+  /// Scoring's lengths; the other game types have their own
+  /// ([GameType.roundChoices]).
+  static List<int> get choices => GameType.scoring.roundChoices;
 
   @override
   int build() => const GameSession().maxRounds;
@@ -423,7 +425,10 @@ class GameNotifier extends Notifier<Match> {
   /// so ([historySaveErrorProvider]).
   void _keep() {
     final at = _finishedAt ??= ref.read(clockProvider)();
-    final record = GameRecord.fromMatch(state, at: at, recording: ref.read(recordingChoiceProvider)?.name);
+    // A game scored by hand wasn't played on a recording, even if one is
+    // chosen for Live test.
+    final recording = state.type.handScored ? null : ref.read(recordingChoiceProvider)?.name;
+    final record = GameRecord.fromMatch(state, at: at, recording: recording);
     final rounds = '${record.players}';
     if (rounds == _kept) return;
     _kept = rounds;

@@ -19,6 +19,11 @@ void main() {
   late MemoryPlayerNamesStore names;
 
   Future<void> pumpSetup(WidgetTester tester, {List<String?> kept = const []}) async {
+    // Tall enough that the whole setup screen, Which game? included, is
+    // built (a ListView builds only what's near the screen).
+    tester.view.physicalSize = const Size(1080, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     names = MemoryPlayerNamesStore(kept);
     container = ProviderContainer(overrides: [
       // Play's camera never starts in a test.
