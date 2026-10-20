@@ -12,6 +12,7 @@ import '../providers.dart';
 import '../vision/ellipse.dart';
 import '../vision/entry_point.dart';
 import '../vision/locate_in_frame.dart';
+import '../vision/tapped_target_locator.dart';
 import '../vision/target_calibration.dart';
 import '../vision/target_locator.dart';
 import '../vision/target_mapping.dart';
@@ -24,6 +25,11 @@ import 'watch_status.dart';
 /// preview. Drag them into place if needed, then
 /// "Lock target". The lock lasts for the session (the camera doesn't move);
 /// "Re-calibrate" unlocks it.
+///
+/// If Find target can't find the rings (stencilled rings with gaps: Mark's
+/// boards, 2026-10-21) or finds the wrong board, **Tap the board**, then tap
+/// the board's middle: the rings are looked for there ([locateTargetAt]),
+/// at the zoom the camera has.
 class CalibrationScreen extends ConsumerStatefulWidget {
   const CalibrationScreen({super.key});
 
@@ -56,6 +62,33 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
   /// Whether the marker is a detected knife's entry (rather than a tap).
   var _knife = false;
+
+  /// Tap the board: the next tap on the picture is the board's middle.
+  var _tapMode = false;
+
+  /// Tap the board: looks for the rings around [at] (fractions of the
+  /// picture's width and height), on the camera's next frame.
+  Future<void> _findAt(TargetCamera camera, Point2 at) async {
+    setState(() {
+      _tapMode = false;
+      _searching = true;
+    });
+    final stopwatch = Stopwatch()..start();
+    final frame = await camera.frames().first;
+    final tapped = await compute(
+        locateTappedInFrame, (frame, camera.uprightRotation, ref.read(ringBoundaryRadiiProvider), [at]));
+    if (!mounted) return;
+    final found = FrameLocateResult(tapped.boards.single, tapped.imageWidth, tapped.imageHeight);
+    final calibration = calibrationFrom(found);
+    if (calibration != null) ref.read(calibrationProvider.notifier).start(calibration, zoom: camera.zoom);
+    setState(() {
+      _found = found;
+      _zoom = camera.zoom;
+      _offCentre = false;
+      _searching = false;
+      _millis = stopwatch.elapsedMilliseconds;
+    });
+  }
 
   void _scoreKnife(TargetCalibration calibration, EntryEstimate? entry) {
     if (entry == null) {
@@ -133,7 +166,19 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
           children: [
             Expanded(
               child: CameraView(
-                overlayBuilder: (context, _) => state == null
+                overlayBuilder: (context, camera) => _tapMode
+                    ? LayoutBuilder(
+                        builder: (context, constraints) => GestureDetector(
+                          key: const Key('calibrationTapArea'),
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: (d) => _findAt(
+                            camera,
+                            Point2(d.localPosition.dx / constraints.maxWidth, d.localPosition.dy / constraints.maxHeight),
+                          ),
+                          child: const SizedBox.expand(),
+                        ),
+                      )
+                    : state == null
                     ? const SizedBox.expand()
                     : CalibrationEditor(
                         calibration: state.calibration,
@@ -158,11 +203,15 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             CalibrationControls(
               status: locked
                   ? lockedStatus(_tapScore, knife: _knife)
-                  : calibrationStatus(_found,
-                      searching: _searching, millis: _millis, zoom: _zoom, offCentre: _offCentre),
-              canAdjust: state != null && !locked,
+                  : _tapMode
+                      ? tapTheBoardStatus
+                      : calibrationStatus(_found,
+                          searching: _searching, millis: _millis, zoom: _zoom, offCentre: _offCentre),
+              canAdjust: state != null && !locked && !_tapMode,
               locked: locked,
+              tapMode: _tapMode,
               onFind: camera == null || _searching || locked ? null : () => _find(camera),
+              onTapBoard: camera == null || _searching || locked ? null : () => setState(() => _tapMode = !_tapMode),
               onLock: notifier.lock,
               onUnlock: () {
                 _clearTap();
@@ -188,12 +237,18 @@ class CalibrationControls extends StatelessWidget {
     required this.onLock,
     required this.onUnlock,
     required this.findLabel,
+    this.tapMode = false,
+    this.onTapBoard,
   });
 
   final String status;
   final bool canAdjust;
   final bool locked;
   final VoidCallback? onFind;
+
+  /// Waiting for a tap on the board's middle ([onTapBoard] toggles it).
+  final bool tapMode;
+  final VoidCallback? onTapBoard;
   final VoidCallback onLock;
   final VoidCallback onUnlock;
   final String findLabel;
@@ -215,13 +270,14 @@ class CalibrationControls extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
-          if (canAdjust) ...[
+          if (canAdjust || tapMode) ...[
             const SizedBox(height: 8),
-            const Text(
-              'Drag inside the rings to move them, or drag a white handle to reshape.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70),
-            ),
+            if (canAdjust)
+              const Text(
+                'Drag inside the rings to move them, or drag a white handle to reshape.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70),
+              ),
             const SizedBox(height: 8),
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -240,7 +296,12 @@ class CalibrationControls extends StatelessWidget {
               if (locked)
                 FilledButton(onPressed: onUnlock, child: const Text('Re-calibrate'))
               else ...[
-                OutlinedButton(onPressed: onFind, child: Text(findLabel)),
+                OutlinedButton(onPressed: tapMode ? null : onFind, child: Text(findLabel)),
+                OutlinedButton(
+                  key: const Key('calibrationTapBoard'),
+                  onPressed: onTapBoard,
+                  child: Text(tapMode ? 'Cancel tap' : 'Tap the board'),
+                ),
                 if (canAdjust) FilledButton(onPressed: onLock, child: const Text('Lock target')),
               ],
             ],
@@ -275,6 +336,9 @@ TargetCalibration? calibrationFrom(FrameLocateResult found) {
   }
 }
 
+/// What to tell the user while waiting for the tap on the board.
+const tapTheBoardStatus = 'Tap the middle of the board in the picture.';
+
 /// What to tell the user once the target is locked: how to test scoring, or
 /// the score of the last tap.
 String lockedStatus(int? tapScore, {bool knife = false}) {
@@ -305,7 +369,7 @@ String calibrationStatus(
     null => 'Point the phone at the board, then tap Find target.',
     TargetFound(:final confidence) => 'Target found: confidence ${(confidence * 100).round()}%$zoomed$time$tip',
     TargetNotFound(:final reason, :final attempted) => attempted.isEmpty
-        ? 'Target not found: $reason$time'
-        : 'Not sure about the target ($reason)$time. Adjust the rings by hand, or find again.',
+        ? 'Target not found: $reason$time. Try Tap the board.'
+        : 'Not sure about the target ($reason)$time. Adjust the rings by hand, find again, or tap the board.',
   };
 }

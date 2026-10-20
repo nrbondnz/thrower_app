@@ -47,11 +47,16 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, start on Mark's boards"); run whole
 - **Status:** NOT NEEDED (2026-10-21): measured properly, Mark's rings are at 0.19 / 0.40 / 0.60 / 0.80 of the outer edge, IKTHOF's spacing; the failures were the start and the size, not the proportions.
 
 ## Task 4: Play's calibration: tap the board when Find target fails
-- **Status:** IN PROGRESS
+- **Status:** COMPLETE (2026-10-21); device check to come (Task 5)
+- **What changed:**
+  - `lib/ui/calibration_screen.dart`: a **Tap the board** button (until the target is locked; "Cancel tap" while waiting). In tap mode the outline is hidden and the next tap on the picture runs `locateTappedInFrame` (as Quick draw) at that point, at the camera's current zoom (zooming would move the board from under the tap); the result starts the calibration as Find target's does (adjust, then lock). Status: "Tap the middle of the board in the picture."; the safety note shows in tap mode too. Find target's not-found texts now suggest tapping the board.
+  - `lib/ui/instructions.dart` (Calibrating the target): when Find target can't find the rings (e.g. rings painted with gaps) or finds the wrong board, Tap the board, then tap the board's middle, only when no one is throwing.
+- **Tests:** `calibration_screen_test.dart` (+3: the not-found texts, the button until locked, tap mode's status, Cancel tap and safety note); `instructions_test.dart` (+1).
+- **Verified by:** `flutter test`: 873 passed; `flutter analyze`: no issues.
 - **Plan (changed):** on Calibrate, when Find target can't find the rings, say so and let the user **tap the middle of the board**; the tap uses `locateTargetAt` (as Quick draw), which now has the fallback. Works for a picture with several boards too (the tap picks the board).
 
 ## Task 5: Instructions, docs, traceability, a build
-- **Status:** NOT STARTED
+- **Status:** IN PROGRESS
 
 ---
 

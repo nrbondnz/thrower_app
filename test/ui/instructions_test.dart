@@ -295,4 +295,9 @@ void main() {
     expect(text, contains('Only go to the phone to score when no one is throwing'));
     expect(text, contains('Never stand in the lane to use the phone.'));
   });
+
+  // Gapped-rings story (2026-10-21).
+  test('calibrating: Tap the board when Find target cannot find the rings', () {
+    expect(text, contains('tap Tap the board, then tap the middle of your board'));
+  });
 }

@@ -59,6 +59,9 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Tap Calibrate target, then Find target. The camera zooms in on the target and the rings are outlined.',
       'If the outline is a little off, drag inside the rings to move it, or drag a white handle to reshape it. '
           'Only adjust when no one is throwing.',
+      'If Find target cannot find the rings (for example, rings painted with gaps in them), or finds the wrong '
+          'board, tap Tap the board, then tap the middle of your board in the picture. Only do this when no one '
+          'is throwing.',
       'Tap Lock target when the outline matches the rings.',
       'Calibrate again (Re-calibrate) whenever the phone or the target moves.',
     ]),
