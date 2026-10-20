@@ -298,6 +298,41 @@ For [[story-checkpoint-app-user-accounts]] (accounts on AWS Amplify, London). Na
   - **Do:** Two test accounts, A and B: A backs up a game; then B signs in on another phone (or after clearing the app's data)
   - **Look for:** B's History doesn't get A's game. **Claude checks** with the CLI that each user's rows are theirs (`allow.owner()`); this replaces the story's "tests against the sandbox" (no sandbox)
 
+## Game Type Checks (added 2026-10-20)
+
+For [[story-checkpoint-more-game-types]]: two more games on Play, **Precision** and **Three targets**, scored by hand on a score pad (no camera). Nigel on the Samsung; no board or knives needed (tap made-up scores). Named **GT**n.
+
+- **GT0**
+  - **Do:** Home → Play: tap each chip under **Which game?** in turn (Scoring, Precision, Three targets), with 2 players
+  - **Look for:** Scoring: How many targets? and 3 / 5 / 9 rounds, as before. Precision: no target choice, "7 rounds" (fixed), the distances in the description. Three targets: no target choice, 3 / 5 / 7 rounds (7 chosen), "one knife at each target"
+- **GT1**
+  - **Do:** Precision, **1 player** → Start
+  - **Look for:** The score pad (no camera): "Your turn" in large type, "Round 1 of 7: from 3 m"; buttons 5, 4, 3, 2, 1 and **Miss**; the line about scoring when no one is throwing
+- **GT2**
+  - **Do:** Tap 3 scores; then 3 more
+  - **Look for:** After 3, "Collect your knives"; the next tap starts round 2, "from 5 m"; the rounds line "Rounds: 3 m: …, 5 m: …"; the distances follow 3, 5, 7, 3, 4, 5, 7 m
+- **GT3**
+  - **Do:** Finish all 21 knives
+  - **Look for:** "Game over! N" with N the sum of the taps; **New game** shows
+- **GT4**
+  - **Do:** Home → **History**: the Precision game, then open it
+  - **Look for:** The line starts "Precision · 1 player · 7 rounds"; the game's page lists "Round 1 (3 m): …" to "Round 7 (7 m): …"; no "Live test" mark
+- **GT5**
+  - **Do:** Play → Three targets, **2 players** named (e.g. Jo, Sam), 3 rounds → Start
+  - **Look for:** "Jo's turn", "Round 1 of 3: at target 1"; after each tap the target goes 2, then 3
+- **GT6**
+  - **Do:** Tap Jo's 3 knives, then Sam's 3, and play to the end
+  - **Look for:** After Jo's third: "Collect your knives" and "When no one is throwing. Then Sam's turn."; then "Sam's turn" at target 1; at the end "Jo wins" / "Sam wins" / "A draw" matching the totals
+- **GT7**
+  - **Do:** In a new game, tap **Miss**; then tap a score in a player's row and change it
+  - **Look for:** Miss counts 0; the changed score shows light blue with ✎ and the total updates
+- **GT8**
+  - **Do:** Mid-game, **Finish game** → Cancel, then Finish game → confirm; then **New game**
+  - **Look for:** Cancel changes nothing; confirming ends the game ("Finished early: judged on N of M rounds" with two players) and keeps it in History; New game starts the same game type afresh, the names kept
+- **GT9**
+  - **Do:** Signed in, finish a Precision game → Account
+  - **Look for:** It's backed up ("Your games and player names are backed up." or "Backed up: 1 game sent…"); on another phone (or after clearing the app's data and signing in) it comes back as Precision, with its distances
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

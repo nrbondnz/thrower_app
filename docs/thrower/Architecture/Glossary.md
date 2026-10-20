@@ -123,13 +123,22 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `awaitingNextRound` (knives collected, game not over), `roundNumber` (the next round once collected), `finishedRounds` (the collected rounds); used by Play's `roundText` / `gameText`
 - **`Match`** (`lib/scoring/match.dart`) / **`PlayMode`** / **`playModeProvider`** (`lib/providers.dart`) / **`PlaySetupScreen`** (`lib/ui/play_setup_screen.dart`)
   - `PlayMode`: `solo`, `sharedTarget` (2 players taking turns), `twoTargets` (2 players at once); chosen on the setup screen after Play
-  - `gameLengthProvider` (`GameLengthNotifier`, `choices` 3 / 5 / 9, default 9): the rounds in a game, also chosen there
+  - `gameLengthProvider` (`GameLengthNotifier`, `choices` 3 / 5 / 9 = `GameType.scoring.roundChoices`, default 9): the rounds in a game, also chosen there
+  - **Which game?** (2026-10-20): `gameTypeProvider` (`GameTypeNotifier`: `choose`; Scoring unless chosen); the setup screen's chips `playGame-<type>`, `typeDescription`; hand-scored types hide the target choice (`sharedTarget`) and show their own lengths (`playRoundsFixed` for Precision)
   - Finish game: `GameSession.finish` / `finished` / `finishedEarly`; `Match.finish`, `finishedEarly`, `countedRounds`, `countedTotals` (winner and draw on equal rounds); `GameNotifier.finishGame`; Play's `gameOverText`, `confirmFinishGame`
   - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
   - Play's two-player panel (`lib/ui/play_screen.dart`, `PlayersPanel`): `turnText` ("Player 1's turn" / "Collect your knives" / "Wait for Player 2" / "Player 2 wins" / "A draw"), `turnDetail`, `playerTitle`, `playerDetail`, `matchFooter`; `eventMessage`, `paintRoundMarks`
+- **`GameType`** (`lib/scoring/game_type.dart`, pure Dart; [[story-checkpoint-more-game-types]]): `scoring`, `precision`, `threeTargets`
+  - `label` ("Scoring", "Precision", "Three targets"), `roundChoices` ([3, 5, 9], [7], [3, 5, 7]), `defaultRounds` (the longest), `handScored` (all but Scoring)
+  - `distanceOf(round)`: Precision's distance in metres (`precisionDistances` = [3, 5, 7, 3, 4, 5, 7]), else null; `targetOf(index)`: Three targets' target 1–3, else null
+  - on `Match`: `type` (kept through `withNames`, `finish` and every throw), `nextDistance`, `nextTarget` (for `nextThrowerAt`; null once over); `GameNotifier.build` fits the length to the type; `newGame` keeps the type
+- **`ScorePadScreen`** / **`ScorePad`** (`lib/ui/score_pad_screen.dart`): Precision and Three targets, scored by hand (no camera)
+  - `ScorePad(onScore)`: 5, 4, 3, 2, 1 (from `targetModelProvider`'s rings, via `scoreChoices`) and **Miss** (0), keys `pad<score>` → `GameNotifier.addThrow`
+  - `padHeadline` ("Mark's turn", "Your turn", "Collect your knives", "Mark wins", "A draw", "Game over! 63"), `padWhere` ("Round 2 of 7: from 5 m", "Round 1 of 3: at target 2", "When no one is throwing. Then Nigel's turn."), `padPlayerDetail` ("Rounds: 3 m: 12, 5 m: 9", "(not counted)")
+  - each player's `playerTitle` and `ScoreCorrections` row (the screen is a `CorrectionHost` with nothing to pause); **Finish game** (`confirmFinishGame`), **New game** (`padNewGame`); the `padSafety` line
 - **Named players** ([[story-checkpoint-named-players]]): `Match.names`, `nameOf`, `withNames`; `cleanName` (`maxNameLength` 16), `playerNumber` (`lib/scoring/match.dart`); **`PlayerNamesStore`** / **`FilePlayerNamesStore`** (`lib/settings/player_names_store.dart`: `load`, `save`); **`playerNamesProvider`** (`PlayerNamesNotifier`: `set`; `playerNamesStoreProvider`); `GameNotifier` renames the game in place (`withNames`); shown by `PlaySetupScreen` (`playName0`/`1` fields), `turnText`, `turnDetail`, `playerTitle`, `boardMessage(player, …)`, `boardMovedMessage(player)`, `boardsStateText(states, names)`, `rowLabel` (score-correction rows), History's `resultText`; Quick draw (Task 3): `BoardChoosing.playerNames`, `choosingInstruction`, `NamesButton` / `editPlayerNames`, `verdictText(names:)`, `matchText(m, names)`, `QuickDrawResultPanel(names:)`
 - **`GameRecord`** (`lib/history/game_record.dart`) / **`GameHistory`**, **`FileGameHistory`**, **`GameHistoryException`** (`lib/history/game_history.dart`) / **`gameHistoryProvider`**
-  - `GameRecord.fromMatch(match, at:, recording:)`; `names`, `nameOf` (version 2); `totals`, `winner`, `draw`, `liveTest`, `finishedEarly`, `countedRounds`, `countedTotals`; `toJson` / `fromJson` (`version` 1, `FormatException` if unreadable)
+  - `GameRecord.fromMatch(match, at:, recording:)`; `names`, `nameOf` (version 2); `type` (version 3: written only for Precision and Three targets; missing = Scoring; unknown = `FormatException`); `totals`, `winner`, `draw`, `liveTest`, `finishedEarly`, `countedRounds`, `countedTotals`; `toJson` / `fromJson` (`version` 3; reads 1 and 2; `FormatException` if unreadable)
   - `load` (newest first) · `add` · `delete(id)` · `clear`; one file, `game_history.json`, written through a `.tmp` file, one save at a time; a damaged file is set aside (`setAside`)
   - kept by `GameNotifier.onEvent` → `_keep` when the match is over: once (`_finishedAt`, `_kept`), re-saved if a knife falls out after the end; `clockProvider` (the finish time), `historySaveErrorProvider` (a failed save; Play's snack bar)
 - **`SyncedGameHistory`** (`lib/history/synced_game_history.dart`): the `GameHistory` behind `gameHistoryProvider` since accounts Task 4: `local` (the phone's `FileGameHistory`, the source of truth) and `remote` (the signed-in user's `RemoteGameStore`, or null) ([[story-checkpoint-app-user-accounts]])
@@ -145,7 +154,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`HistoryScreen`** / **`GameRecordScreen`** (`lib/ui/history_screen.dart`)
   - `HistoryScreen`: `load` → the list, newest first; "No games yet"; "Couldn't load the history" + Try again; **Clear history** (asks first) → `clear`
   - `GameRecordScreen`: `howText`, `resultText`, each player's rounds and total; **Delete** → `delete(id)`, back to the list
-  - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
+  - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"; "Precision · 2 players, taking turns · 7 rounds"), `historyRoundLabel` ("Round 2", Precision "Round 2 (5 m)"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
   - the screen: `BoardChoosing.addBoard` → `playTargetsProvider`; camera to 1×; `BoardMarksPainter`; `boardMessage`; `boardsStateText`; **Adjust boards** (`playAdjustBoards`) → `_adjustBoards`: stops watching, clears the marks, `unlock` (scores stay; locking again watches afresh)
@@ -295,8 +304,20 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **Named player**
   - **Meaning:** A name on a seat for one game ("Mark" in place of "Player 2"): a label, nothing more (Nigel, 2026-10-19). Blank is "Player N". The last names used are kept on the phone to fill in next time. Not a **friend** (another app user with a linked account: stage 3 of the [[Accounts Roadmap]]). Requirement: [[Player Names]].
   - **Used by:** `Match.nameOf`, `GameRecord.nameOf`, `playerNamesProvider`, `PlayerNamesStore`, `BoardChoosing.playerNames`, `NamesButton`
+- **Game type**
+  - **Meaning:** Which game Play plays: Scoring (rounds at one target from one place, scored by the camera), Precision or Three targets. Every type is rounds of 3 knives on 5-ring boards, KATTA-scored, the highest total winning; they differ only in the number of rounds and where each knife is thrown from or at. Not the play mode (1 or 2 players, 1 or 2 targets), and not Quick draw (a separate game on Home). Requirement: [[Game Type]].
+  - **Used by:** `GameType`, `Match.type`, `gameTypeProvider`, `PlaySetupScreen`, `GameRecord`, `howText`
+- **Precision**
+  - **Meaning:** A game of 7 rounds of 3 knives, each round thrown from its own distance (3, 5, 7, 3, 4, 5, 7 m: Nigel's guess, to confirm). In competition the set is thrown 4 times, a "marathon" of 84 knives (not built).
+  - **Used by:** `GameType.precision`, `precisionDistances`, `Match.nextDistance`, `padWhere`, `padPlayerDetail`, `historyRoundLabel`
+- **Three targets**
+  - **Meaning:** A game on three 5-ring boards side by side: each round a thrower throws one knife at each target, 1, 2 then 3; 3, 5 or 7 rounds. Nigel's name for now (in place of "Multi").
+  - **Used by:** `GameType.threeTargets`, `Match.nextTarget`, `padWhere`
+- **Score pad (hand-scored game)**
+  - **Meaning:** Scoring without the camera: after each knife someone taps its score (5 to 1, or Miss) on the phone. The same game rules, corrections and History as a camera-scored game; never marked Live test. Whoever taps goes to the phone only when no one is throwing.
+  - **Used by:** `ScorePadScreen`, `ScorePad`, `GameType.handScored`, `GameNotifier.addThrow`
 - **Kept game (game history)**
-  - **Meaning:** A finished game of Play saved on the phone: when it finished, how it was played (mode, rounds), each player's round totals, and the Live test recording if it was played on one. Only finished games are kept, once each; totals and the winner are worked out from the rounds.
+  - **Meaning:** A finished game of Play saved on the phone: when it finished, how it was played (mode, rounds, and since version 3 the game type), each player's round totals, and the Live test recording if it was played on one. Only finished games are kept, once each; totals and the winner are worked out from the rounds.
   - **Used by:** `GameRecord`, `GameNotifier`, `FileGameHistory`, `HistoryScreen`
 - **Finished early / counted rounds**
   - **Meaning:** A game ended with Finish game before its last round. A round in progress counts with the throws made so far; with two players the result is judged on the counted rounds, as many as both have played, and a round beyond them is shown but not counted.

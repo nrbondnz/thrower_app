@@ -11,8 +11,8 @@ import 'score_corrections.dart';
 /// (more-game-types story, Nigel 2026-10-20: "We can worry about the camera
 /// later"). No camera: each knife's score is tapped on a pad (5 to 1, or
 /// Miss). In large type, to read from the throwing line: whose turn it is
-/// and where they throw from (Precision: "From 5 m") or at (Three targets:
-/// "At target 2"). Below, each player's round as slots (tap one to change
+/// and where they throw from or at ([padWhere]: "Round 2 of 7: from 5 m",
+/// "Round 1 of 3: at target 2"). Below, each player's round as slots (tap one to change
 /// it: [ScoreCorrections]), their totals, and at the end the result. The
 /// game is the same [gameProvider] game as Play's, so it is kept in History
 /// (and backed up) when it ends.

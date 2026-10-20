@@ -26,7 +26,7 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Depends on:** —
 - **5**
   - **Story:** **Game modes**
-  - **Notes:** Single-player games of **9 rounds of 3 throws** with reset (done 2026-10-09, [[story-checkpoint-instructions-and-game-length]]); next: players, history, other game lengths. **Players built 2026-10-16: [[story-checkpoint-players-and-targets]]** (a setup screen after Play: 1 or 2 players; 2 players on 1 target taking turns, or on 2 targets at once; device checks M0–M9 to come). ~~Other game lengths~~: **done 2026-10-16** (3, 5 or 9 rounds on the setup screen; `gameLengthProvider`). ~~Game history~~: **built 2026-10-17 as [[story-checkpoint-game-history]]** (finished games kept on the phone, Home → History; Finish game ends a game after fewer rounds; device checks H0–H7 to come). ~~Typed names~~: **built 2026-10-19 as [[story-checkpoint-named-players]]** (names on Play's setup screen, kept on the phone, also used by Quick draw and History; device checks to come). **Still to do:** friends with accounts (#4 stage 3).
+  - **Notes:** Single-player games of **9 rounds of 3 throws** with reset (done 2026-10-09, [[story-checkpoint-instructions-and-game-length]]); next: players, history, other game lengths. **Players built 2026-10-16: [[story-checkpoint-players-and-targets]]** (a setup screen after Play: 1 or 2 players; 2 players on 1 target taking turns, or on 2 targets at once; device checks M0–M9 to come). ~~Other game lengths~~: **done 2026-10-16** (3, 5 or 9 rounds on the setup screen; `gameLengthProvider`). ~~Game history~~: **built 2026-10-17 as [[story-checkpoint-game-history]]** (finished games kept on the phone, Home → History; Finish game ends a game after fewer rounds; device checks H0–H7 to come). ~~Typed names~~: **built 2026-10-19 as [[story-checkpoint-named-players]]** (names on Play's setup screen, kept on the phone, also used by Quick draw and History; device checks to come). ~~More game types~~: **built 2026-10-20 as [[story-checkpoint-more-game-types]]** (Precision and Three targets, scored by hand on a score pad; device checks GT0–GT9 to come; follow-ups #16–#18). **Still to do:** friends with accounts (#4 stage 3).
   - **Depends on:** 2
 - **14**
   - **Story:** **Score corrections** (Nigel, 2026-10-17)
@@ -64,6 +64,18 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Story:** **Subscription payments: Apple in-app purchase on iOS, Stripe on Android** (Nigel, 2026-10-20: "stripe will be used on android")
   - **Notes:** A requirement, backlogged until the Game Centre gives a reason to pay ([[Subscriptions]]: 14 days free, then subscribe). iOS uses Apple's in-app purchase (required for digital subscriptions), with the App Store Server API key and notifications, as WhereWillWeVisit. Android uses **Stripe** (products, a subscription, a webhook function, the publishable key in the app). The cloud config and the secrets each will need: [[Cloud Config Setup]] → Future: Subscriptions. **Check first:** Google Play's payments policy normally requires Play Billing for digital subscriptions bought in the app; Stripe needs Google's alternative or user-choice billing (regional, with enrolment) or a purchase outside the app. Verify for the UK before building.
   - **Depends on:** #4 stage 2 (accounts); Game Centre
+- **16**
+  - **Story:** **Precision marathon** (Nigel, 2026-10-20)
+  - **Notes:** In competition, Precision's whole set (7 rounds of 3, one per distance) is thrown **4 times**: "a marathon", 84 knives. Today the app plays the set once ([[story-checkpoint-more-game-types]]). Questions: a choice of 1 or 4 sets on the setup screen, or a separate game; how History shows 28 rounds (per set?); whether the distances repeat in the same order each set.
+  - **Depends on:** 18 (the distances confirmed)
+- **17**
+  - **Story:** **The camera for Precision and Three targets** (Nigel, 2026-10-20: "We can worry about the camera later")
+  - **Notes:** Both are scored by hand on the score pad today ([[Design Decisions]] → More Game Types). **Precision:** one board, the thrower moving between 3 and 7 m; the camera may be able to score as Play does, if the board stays in view and calibrated (check the entry point at each distance). **Three targets:** three boards watched at once, like two-target Play's `PlayBoardsWatcher` with a third board, each knife going to the target the round says. Keep the score pad as the fallback.
+  - **Depends on:** the device checks GT0–GT9; [[story-checkpoint-entry-point]] for close and far throws
+- **18**
+  - **Story:** **Confirm Precision's distances and Three targets' name** (Nigel, 2026-10-20)
+  - **Notes:** Precision: Nigel listed eight distances (3, 5, 7, 3, 4, 5, 6, 7 m) for seven rounds; the app uses his guess, **3, 5, 7, 3, 4, 5, 7 m** (`precisionDistances`). Confirm the seven (or whether it's 8 rounds), e.g. with his brother or the KATTA rules. Three targets: "Three targets" is Nigel's name for now (in place of "Multi"); confirm the competition's real name. Both are one-line changes in `lib/scoring/game_type.dart`. **But:** kept games don't store their distances; History reads them from `precisionDistances` (`historyRoundLabel`), so changing the list would relabel the Precision games already kept. If the distances change, keep them in the record (or the old list for older games) first.
+  - **Depends on:** —
 
 ## Carry-overs from Live Test
 

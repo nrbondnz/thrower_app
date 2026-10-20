@@ -186,3 +186,10 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 **Symptom:** job 6 (commit `5b52497`, accounts Tasks 3–5) failed in the auth stack: `Custom::AmplifySecretFetcherResource … Received response status [FAILED] … Failed to retrieve backend secret`. CloudFormation rolled back (`UPDATE_ROLLBACK_COMPLETE`), so the deployed backend (email sign-in, Task 1–2) was untouched.
 **Cause:** `amplify/auth/resource.ts` reads six secrets (`secret('GOOGLE_CLIENT_ID')` …) that don't exist yet for app `d1yhmpx84pdvnh` (none under `/amplify/shared/d1yhmpx84pdvnh/`).
 **Fix:** set the six secrets ([[Cloud Config Setup]] → The Six Sign-In Secrets), then **Redeploy** the latest build in the Amplify console (or push again). Until then every build of `main` fails the same way; docs-only commits can carry `[skip-cd]` in the message so Amplify doesn't build them.
+
+## Older App Versions Read Precision and Three Targets Games as Scoring (2026-10-20)
+- **What:** History records are version 3 since the more-game-types story; a Precision or Three targets game has a `type`. A build from before that ignores `type`, so it shows such a game as a Scoring game (no distances), and a sign-in sync on that build copies it into its phone's History that way.
+- **Not affected:** the backup's own copy keeps its type, and the History file stays version 2 (readable by older builds) until a Precision or Three targets game is kept on that phone (`FileGameHistory._versionFor`). A file of version 3 is set aside whole by an older build (renamed `.damaged-…`, not deleted), as any newer file is.
+- **When it matters:** only if a tester goes back to an older build. Install the latest build instead.
+- Found by the Traceability review: [[story-checkpoint-more-game-types]].
+

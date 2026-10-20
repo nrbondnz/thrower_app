@@ -389,6 +389,48 @@ A name is a label on a seat (stage 1 of the [[Accounts Roadmap]]; requirement [[
 
 Signed out, nothing here leaves the phone. Signed in, the names are also backed up (see Backup, below).
 
+## Precision and Three Targets: the Score Pad
+
+Two games scored by hand, with no camera yet ([[story-checkpoint-more-game-types]]; requirement [[Game Type]]; why in [[Design Decisions]] → More Game Types: Precision and Three Targets). The `GameType` changes only where each knife is thrown from (Precision) or at (Three targets); the turns, rounds, corrections, Finish game and History are Play's own (`Match`, `GameSession`, `GameNotifier`).
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│     PRECISION AND THREE TARGETS: THE SETUP SCREEN → THE SCORE PAD   │
+│                                                                     │
+│   PlaySetupScreen: Which game? (playGame-<type>) → players, rounds  │
+│   (the type's own: Precision 7, Three targets 3 / 5 / 7), names     │
+│   Start → gameTypeProvider.choose · playModeProvider (2 players:    │
+│   sharedTarget, taking turns) · gameLengthProvider                  │
+│                                  │                                  │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ GameNotifier.build: Match(mode, rules, names, type); a       │  │
+│   │ length the type doesn't offer → type.defaultRounds; a new    │  │
+│   │ type starts a new game; New game keeps it                    │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │                                  │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ ScorePadScreen (no camera): padHeadline ("Mark's turn",      │  │
+│   │ "Collect your knives", "Mark wins"); padWhere ("Round 2 of   │  │
+│   │ 7: from 5 m": Match.nextDistance; "at target 2":             │  │
+│   │ Match.nextTarget)                                            │  │
+│   │ ScorePad 5, 4, 3, 2, 1, Miss → GameNotifier.addThrow →       │  │
+│   │ Match (the same turn and round rules as Play)                │  │
+│   │ ScoreCorrections: tap a slot → setScore (nothing to pause)   │  │
+│   │ Finish game (asks) → finishGame · New game → newGame         │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │  the match over                  │
+│                                  ▼                                  │
+│   GameNotifier._keep: GameRecord.fromMatch (type; recording null:   │
+│   never a Live test game) → gameHistoryProvider.add (version 3,     │
+│   "type" only for Precision / Three targets) → the backup if        │
+│   signed in                                                         │
+│   History: howText ("Precision · 2 players, taking turns ·          │
+│   7 rounds"), historyRoundLabel ("Round 2 (5 m)")                   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ## App Start: Accounts (If the Build Has Them)
 
 Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Tasks 1, 2 and 4; why in [[Design Decisions]] → User Accounts Required; requirement [[Accounts and Sign-In]]). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. Signing in happens only on Home → Account (`AccountScreen`, Amplify's screens inside an `AuthenticatedView`), never in front of the app.

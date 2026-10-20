@@ -226,7 +226,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 **Decision** ([[story-checkpoint-game-history]], Nigel: "yes to all"):
 - Finished games of Play are kept **on the phone**, in **one JSON file** (`game_history.json`) in the app's own **support folder** (`getApplicationSupportDirectory`: private to the app, not shown in the Files app; planned as the documents folder, changed because that one is meant for the user's own files). Behind the `GameHistory` interface, so a backend can keep them instead once there are accounts (backlog #4).
 - **Why a file:** small, readable, testable with a temporary folder, no new native code. `path_provider` was already in the app through `audioplayers`; it's now listed in `pubspec.yaml` at the same version (2.1.6), so the lock file changes only from "transitive" to "direct main". *Not chosen:* `shared_preferences` (for settings, a new plugin), a database (`sqflite` / `drift`: a new native plugin, far more than a list of games needs).
-- **The format:** `{"version": 1, "games": [...]}` (version 2 since 2026-10-19 adds each player's `names`: Named Players); each game has `id` (when it finished, in microseconds), `finishedAt` (UTC), `mode`, `rounds`, `players` (each player's round totals) and, for a Live test game, `recording`. Totals and the winner are worked out from the rounds, never stored, so they can't disagree.
+- **The format:** `{"version": 1, "games": [...]}` (version 2 since 2026-10-19 adds each player's `names`: Named Players; version 3 since 2026-10-20 adds the game's `type`: More Game Types); each game has `id` (when it finished, in microseconds), `finishedAt` (UTC), `mode`, `rounds`, `players` (each player's round totals) and, for a Live test game, `recording`. Totals and the winner are worked out from the rounds, never stored, so they can't disagree.
 - **Safe writes:** each save goes to `game_history.json.tmp`, then replaces the file; saves wait for each other. A file that can't be read (damaged, or from a newer version of the app) is **renamed** (`….damaged-<time>`), never deleted, and the history starts afresh; `GameHistoryException(setAside: true)` says so.
 - **Kept:** finished games only, Live test games included (marked with the recording's name), all of them (each is well under 1 KB).
 - **Privacy:** nothing is sent anywhere by the app. The file is part of the app's data, so it's in the phone's own backups (iCloud / Google, as the user has set them) and is deleted with the app.
@@ -249,6 +249,46 @@ Folders are created when their first code arrives, never empty "just in case". N
 - **The picture's marks remember which throw they are** (`RoundMarks` holds `ThrowSlot`s), and the painter reads the score from the `Match`, so a correction shows on the picture at once and the marks can't disagree with the scores.
 - **Without jogging the camera:** the controls are **below the picture, never on it**, and big enough to tap lightly. **Watching pauses** while any popup is open (`ThrowWatcher.pause` / `resume`; on resume the motion detector starts afresh, `MotionDetector.restart`, keeping the knives it knows), so a hand at the phone is never a throw; a throw made meanwhile isn't scored (the instructions say so). **Then the app checks the phone didn't move:** 0.5 s after the popup closes, on a still frame, `cameraShift` finds the shift that best lines the picture up with the one from before the popup; **2 px or more** (at the watchers' ~320 px) is a move, and Play says "The phone may have moved. If the green rings no longer line up with the board, calibrate again when no one is throwing." (two targets: the board, and "choose the boards again"). 2 px because, measured: still Live test footage shifts by up to 1 px, Nigel's sofa-arm nudge of 2026-10-09 by 1.4 px, a knife or a person added by 0; and on boards of 40–65 px radius 2 px is a sixth to a quarter of a ring. The app doesn't re-find the rings itself: the user decides, as for "the view changed".
 - **Safety (Review Agent §7):** this is the first control that invites someone to the phone mid-game. The Instructions say: only when no one is throwing (two targets: both finished), tap lightly, leave the phone where it is and never move it closer to reach it. Requirement: [[Instructions and Safety]].
+
+## More Game Types: Precision and Three Targets (2026-10-20)
+
+**Requirement:** [[Game Type]], [[Number of Rounds]]. **Story:** [[story-checkpoint-more-game-types]].
+
+**Decision (Nigel, 2026-10-20; "We can worry about the camera later"):** two more games on Play, chosen under **Which game?** on the setup screen, beside **Scoring** (Play as it was):
+- **Precision:** 7 rounds of 3 knives, each round from its own distance, `precisionDistances` = **3, 5, 7, 3, 4, 5, 7 m**. Nigel listed eight distances (3, 5, 7, 3, 4, 5, 6, 7) for seven rounds; these seven are his guess ("lets guess at 3,5,7,3,4,5,7"), to confirm. In competition the set is thrown 4 times (a marathon, 84 knives): backlogged, not built.
+- **Three targets** (Nigel's name, in place of "Multi"): three 5-ring boards; each round one knife at each target, 1, 2 then 3; 3, 5 or 7 rounds.
+- **Both:** 1 or 2 players, **taking turns** (`PlayMode.sharedTarget`: Player 1 throws 3 and collects, then Player 2); KATTA scoring (5 to 1, 0 a miss); the highest total wins.
+
+### Scored by hand first, on a score pad
+- **`ScorePadScreen`** (`lib/ui/score_pad_screen.dart`) has no camera: each knife's score is tapped on **`ScorePad`** (5, 4, 3, 2, 1 from the target model's rings, and **Miss**), which calls `GameNotifier.addThrow`.
+- **Readable from the throwing line:** `padHeadline` in large type ("Mark's turn", "Collect your knives", "Mark wins"), and `padWhere` under it ("Round 2 of 7: from 5 m", "Round 1 of 3: at target 2").
+- Each player's total and rounds (`padPlayerDetail`; Precision's with distances, "3 m: 12, 5 m: 9"), and Play's `ScoreCorrections` rows: tap a slot to change it. **Finish game** (asks first) and **New game** as on Play.
+- **Why:** Precision moves the thrower between distances (the camera would need to follow one board from several throwing lines), and Three targets needs three boards watched at once. Both are new vision work; the games are useful now without it. *Not chosen:* waiting for the camera before offering them.
+- **Safety (Review Agent §7):** scoring by hand brings someone to the phone after every knife. The screen and the Instructions say: score when no one is throwing, or have someone who isn't throwing keep score; never stand in the lane to use the phone.
+
+### The type changes only where knives are thrown from, or at
+- **`GameType`** (`lib/scoring/game_type.dart`, pure Dart): `scoring`, `precision`, `threeTargets`, each with its `label`, `roundChoices` ([3, 5, 9], [7], [3, 5, 7]), `defaultRounds` (the longest), `handScored` (all but Scoring), `distanceOf(round)` (Precision) and `targetOf(index)` (Three targets).
+- **`Match.type`** is kept through every change (`withNames`, `finish`, each throw); `Match.nextDistance` and `Match.nextTarget` say where whoever throws next (`nextThrowerAt`) throws from or at.
+- **The rules are reused unchanged:** `GameSession` (rounds of 3, finishing early, corrections) and `Match` (turns, counted rounds, winner, draw). *Not chosen:* a separate game class per type, which would have duplicated the turn and scoring rules and the history.
+- **Wiring:** `gameTypeProvider` (`GameTypeNotifier`, Scoring unless chosen, kept for the session like `playModeProvider`). `GameNotifier` builds the match with the type and a length the type offers (else its `defaultRounds`); a change of type starts a new game; **New game** keeps the type.
+- **The setup screen:** Precision and Three targets hide the target choice (two players always take turns) and show their own lengths (Precision "7 rounds", fixed); `typeDescription` explains them; **Start** opens the score pad.
+
+### History: record version 3, `type` written only for the new types
+- **`GameRecord` version 3** adds `type`. It's **written only for Precision and Three targets**, so a Scoring game is written exactly as version 2 wrote it. A missing `type` reads as Scoring, so version 1 and 2 files read as before.
+- **An unknown type is a `FormatException`:** a game from a newer app. The History file and the backup already set such games aside (renamed, never deleted).
+- **History shows the game:** `howText` leads with it ("Precision · 2 players, taking turns · 7 rounds"); `historyRoundLabel` adds Precision's distance ("Round 2 (5 m)").
+- **The backup** carries the same JSON, so it needs no change.
+- **The file's header says the oldest version that holds its games** (`FileGameHistory._versionFor`): **version 2** while every game is Scoring, so an older app (a TestFlight build before this one) still reads it; **version 3** once a Precision or Three targets game is kept, and an older app then sets the file aside (renamed, never deleted), as for any newer version. The backup's rows carry no version of their own, so there a Scoring game stays exactly as an older app expects. **Known limit:** an older app reading a Precision or Three targets game from the backup ignores `type` and shows it as a Scoring game.
+- *Not chosen:* writing `type` on every record: it changes every Scoring game's JSON for no gain.
+
+### Hand-scored games are never Live test games
+- `GameNotifier._keep` leaves `recording` empty for a hand-scored game, even if a Live test recording is chosen: nothing was played on the recording, so History mustn't mark it "Live test".
+- **Live test → Play on two targets** chooses Scoring again (a camera game), even if Precision or Three targets was played last.
+- On the score pad, adding a throw in an empty slot asks "Add a throw (0: missed the board)" (`addThrowTitle`), not "A throw the camera missed".
+
+**Instructions:** a section, *Precision and Three targets* (which game, the distances, one knife at each target, taking turns, the score pad, the safety line). Requirement: [[Instructions and Safety]].
+
+**Built:** 2026-10-20 (Tasks 1–3); device checks GT0–GT9 in [[Device Test Plan]].
 
 ## Camera: `camera` Plugin, Back Camera, No Audio
 

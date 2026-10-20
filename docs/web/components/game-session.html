@@ -21,12 +21,13 @@
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Classes (pure Dart) + notifier</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/scoring/game_session.dart</code><br><code>lib/scoring/match.dart</code><br><code>lib/providers.dart</code><br></dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/scoring/game_session.dart</code><br><code>lib/scoring/match.dart</code><br><code>lib/scoring/game_type.dart</code><br><code>lib/providers.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>Play, on each throw event</dd></div>
   </dl>
 
   <div class="detail-body">
     <p>A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).</p>
+    <p>The game type (2026-10-20, <code>GameType</code>): Scoring, Precision (7 rounds, each from its own distance: 3, 5, 7, 3, 4, 5, 7 m) or Three targets (one knife at each of three boards per round). It changes only where each knife is thrown from or at; the rules here are shared. Precision and Three targets are scored by hand on the score pad for now.</p>
     <p><code>Match</code> holds a <code>GameSession</code> per player (2026-10-16). Two players on one target take turns: 3 knives, collect, then the other player, Player 1 starting every round. On two targets each board scores for its own player. The higher total wins; equal totals are a draw.</p>
   </div>
 
@@ -39,6 +40,8 @@
     <div><dt><code>finish · countedRounds · countedTotals</code></dt><dd>Finish game: over now, a part-round counted; two players judged on equal rounds</dd></div>
     <div><dt><code>GameNotifier.onEvent</code></dt><dd>entry → TargetMapping → TargetModel → score; a finished game is kept in the history</dd></div>
     <div><dt><code>setScore · byHand · addToRound</code></dt><dd>a score set by hand (corrected), a missed throw added (0)</dd></div>
+    <div><dt><code>GameType: roundChoices · handScored · distanceOf · targetOf</code></dt><dd>each game type&#x27;s lengths, and where a knife is thrown from (Precision) or at (Three targets)</dd></div>
+    <div><dt><code>Match: type · nextDistance · nextTarget</code></dt><dd>the game type, kept through every change; where the next knife goes from or at</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -47,6 +50,12 @@
       <div class="cat"><span class="swatch" style="background:var(--game)"></span>Game flow</div>
       <h3>A throw → a score (Play)</h3>
       <p>Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/score-pad.html">
+      <div class="cat"><span class="swatch" style="background:var(--ui)"></span>Game flow</div>
+      <h3>Precision and Three targets: the score pad</h3>
+      <p>Precision and Three targets: Which game?, then each knife&#x27;s score tapped on a pad; the same turns, rounds and History.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/score-correction.html">
@@ -69,7 +78,7 @@
     </a>
   </div>
 
-  <footer class="colophon">lib/scoring/game_session.dart · lib/scoring/match.dart · lib/providers.dart</footer>
+  <footer class="colophon">lib/scoring/game_session.dart · lib/scoring/match.dart · lib/scoring/game_type.dart · lib/providers.dart</footer>
 </div>
 </body>
 </html>

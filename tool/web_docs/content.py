@@ -20,10 +20,10 @@ COMPONENTS = {
         name='Screens', lane='ui', type='Flutter widgets',
         files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
-               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart',
+               'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/score_pad_screen.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart',
                'lib/ui/account_screen.dart'],
         trigger='The user, from Home',
-        dek='Home leads to Play (rounds of 3, for 1 or 2 players), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
+        dek='Home leads to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>. Two-target Play does too. Once both boards are found, <code>BoardsEditor</code> lets each outline be dragged into place, with the single target\'s drag rules (<code>grabAt</code>, <code>dragged</code>); <strong>Adjust boards</strong> unlocks them later, keeping both (2026-10-19).',
@@ -32,7 +32,8 @@ COMPONENTS = {
         ],
         functions=[
             ('HomeScreen', 'Instructions, Play, History, Quick draw, Live test, Calibrate target, Scoring test target'),
-            ('PlaySetupScreen', 'after Play: 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once); 3, 5 or 9 rounds; a name per player (optional, filled with the last ones); Start'),
+            ('PlaySetupScreen', 'after Play: Which game? (Scoring, Precision, Three targets); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type\'s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start'),
+            ('ScorePadScreen · ScorePad', 'Precision and Three targets, no camera: whose turn and where from or at in large type (padHeadline, padWhere: "Round 2 of 7: from 5 m"); tap 5–1 or Miss; each player\'s rounds (padPlayerDetail), corrections, Finish game, New game'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('TwoTargetPlayScreen', "two players on two targets: tap and lock both boards, each board's marks, Wait for Player 2 / Collect your knives, the winner"),
@@ -40,7 +41,7 @@ COMPONENTS = {
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
             ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile'),
-            ('HistoryScreen · GameRecordScreen', 'the kept games, newest first, by name (resultText); a game\'s rounds; Delete; Clear history (asks first)'),
+            ('HistoryScreen · GameRecordScreen', 'the kept games, newest first, by name (resultText), with the game type (howText: "Precision · …"); a game\'s rounds (historyRoundLabel: "Round 2 (5 m)"); Delete; Clear history (asks first)'),
             ('NamesButton · editPlayerNames', 'Quick draw\'s Names, before Start: a field per player, the same names as Play; Save or Cancel'),
             ('BoardChoosing.playerNames', 'the names for the board texts ("Tap the centre of Jo\'s board"), Player N without'),
             ('BoardsEditor', 'both boards found, not locked: drag an outline to move, turn or stretch it (grabAt: a handle, else the board whose centre is nearest); Adjust boards unlocks, keeping both'),
@@ -48,7 +49,7 @@ COMPONENTS = {
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
             ('AccountScreen · AccountDetails', 'Home → Account (only with accounts): Amplify\'s sign-in screens inside an AuthenticatedView; then who\'s signed in, the backup line (backupText), Back up now, Sign out, Delete account (confirmAndDeleteAccount: asks first)'),
         ],
-        flows=['calibration', 'play', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup'],
+        flows=['calibration', 'play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -63,7 +64,7 @@ COMPONENTS = {
             ('quickDrawCameraProvider', 'the Quick draw clip as a RecordedCamera'),
             ('liveQuickDrawCameraProvider', 'LiveCamera.open(fps: 60), auto-disposed'),
             ('calibrationProvider (CalibrationNotifier)', 'start, adjust, lock, unlock'),
-            ('playModeProvider · gameLengthProvider', 'the setup screen\'s choices, kept for the session'),
+            ('playModeProvider · gameTypeProvider · gameLengthProvider', 'the setup screen\'s choices, kept for the session (a length the game type doesn\'t offer → its default)'),
             ('gameProvider (GameNotifier)', 'onEvent(board) → Match → a GameSession per player'),
             ('targetModelProvider · ringBoundaryRadiiProvider', 'the KATTA rings (TargetModel.katta)'),
             ('quickDrawTargetsProvider · tapLocatorProvider', 'the tapped boards, and how a tap finds one'),
@@ -76,7 +77,7 @@ COMPONENTS = {
             ('backupStatusProvider (BackupNotifier)', 'on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow'),
             ('deleteAccountProvider (deleteAccount)', 'erase the backup, then delete the account; the phone keeps its games and names'),
         ],
-        flows=['frame-sources', 'play', 'game-history', 'player-names', 'live-quick-draw', 'backup'],
+        flows=['frame-sources', 'play', 'score-pad', 'game-history', 'player-names', 'live-quick-draw', 'backup'],
     ),
     'target-camera': dict(
         name='TargetCamera', lane='camera', type='Interface', files=['lib/camera/target_camera.dart', 'lib/camera/camera_frame.dart'],
@@ -306,11 +307,12 @@ COMPONENTS = {
     ),
     'game-session': dict(
         name='GameSession and Match', lane='scoring', type='Classes (pure Dart) + notifier',
-        files=['lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/providers.dart'],
+        files=['lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/scoring/game_type.dart', 'lib/providers.dart'],
         trigger='Play, on each throw event',
         dek='A game of 3, 5 or 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.',
         body=[
             'A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).',
+            'The game type (2026-10-20, <code>GameType</code>): Scoring, Precision (7 rounds, each from its own distance: 3, 5, 7, 3, 4, 5, 7 m) or Three targets (one knife at each of three boards per round). It changes only where each knife is thrown from or at; the rules here are shared. Precision and Three targets are scored by hand on the score pad for now.',
             '<code>Match</code> holds a <code>GameSession</code> per player (2026-10-16). Two players on one target take turns: 3 knives, collect, then the other player, Player 1 starting every round. On two targets each board scores for its own player. The higher total wins; equal totals are a draw.',
         ],
         functions=[
@@ -321,8 +323,10 @@ COMPONENTS = {
             ('finish · countedRounds · countedTotals', 'Finish game: over now, a part-round counted; two players judged on equal rounds'),
             ('GameNotifier.onEvent', 'entry → TargetMapping → TargetModel → score; a finished game is kept in the history'),
             ('setScore · byHand · addToRound', 'a score set by hand (corrected), a missed throw added (0)'),
+            ('GameType: roundChoices · handScored · distanceOf · targetOf', 'each game type\'s lengths, and where a knife is thrown from (Precision) or at (Three targets)'),
+            ('Match: type · nextDistance · nextTarget', 'the game type, kept through every change; where the next knife goes from or at'),
         ],
-        flows=['play', 'score-correction', 'game-history', 'player-names'],
+        flows=['play', 'score-pad', 'score-correction', 'game-history', 'player-names'],
     ),
     'quick-draw-watcher': dict(
         name='QuickDrawWatcher', lane='game', type='Class', files=['lib/game/quick_draw_watcher.dart'],
@@ -402,19 +406,19 @@ COMPONENTS = {
         trigger='A game of Play finishing; Home → History; signing in (the backup)',
         dek='Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player\'s round totals and names.',
         body=[
-            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals, the players\' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2) and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
+            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals, the players\' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
             '<code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app\'s own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can\'t be read is renamed, never deleted, and the history starts afresh.',
             'Since accounts Task 4 (2026-10-19), <code>gameHistoryProvider</code> is a <code>SyncedGameHistory</code> around the file: the phone stays the source of truth (offline-first), and while someone is signed in each add, delete and clear also reaches their backup (a <code>RemoteGameStore</code>), without waiting. <code>sync()</code> merges both ways by game <code>id</code> on sign-in. Known limit: a game deleted while signed out comes back at the next sync. Signed out, nothing leaves the phone.',
         ],
         functions=[
             ('load · add · delete · clear', 'newest first; a game is replaced by its id'),
-            ('GameRecord.fromMatch · toJson · fromJson', 'a finished match as a record, with its names; format version 2 (version 1 still reads)'),
+            ('GameRecord.fromMatch · toJson · fromJson', 'a finished match as a record, with its names and game type; format version 3 (versions 1 and 2 still read)'),
             ('GameRecord.nameOf', 'a player\'s name, or Player N'),
             ('GameHistoryException', 'a read or write failed; setAside: a damaged file was renamed'),
             ('SyncedGameHistory: add · delete · clear · sync', 'the phone first, then the backup if signed in; sync → SyncResult (downloaded, uploaded)'),
             ('RemoteGameStore: list · put · remove', 'the backup\'s interface (AmplifyBackup; a fake in tests)'),
         ],
-        flows=['game-history', 'player-names', 'backup'],
+        flows=['game-history', 'player-names', 'score-pad', 'backup'],
     ),
     'player-names-store': dict(
         name='PlayerNamesStore', lane='history', type='Interface + file store',
@@ -530,6 +534,24 @@ FLOWS = {
         ],
         caption='A board visit (someone collecting knives) is recognised by size: people cover 4% of the region and up, knives up to 2.2%. On two targets, PlayBoardsWatcher runs this for each board on its own crop, and each board scores for its own player.',
         files=['lib/game/throw_watcher.dart', 'lib/game/throw_tracker.dart', 'lib/scoring/game_session.dart', 'lib/scoring/match.dart', 'lib/ui/play_screen.dart', 'lib/game/play_boards_watcher.dart', 'lib/ui/two_target_play_screen.dart'],
+    ),
+    'score-pad': dict(
+        title='Precision and Three targets: the score pad', cat='flow', lane='ui',
+        dek='Two more games on Play, chosen under Which game?, scored by hand for now: each knife\'s score is tapped on a pad. The game type changes only where knives are thrown from or at; the turns, rounds, corrections and History are Play\'s own.',
+        body=[
+            'Precision: 7 rounds of 3, each from its own distance (3, 5, 7, 3, 4, 5, 7 m, Nigel\'s guess, to confirm). Three targets: three boards, one knife at each per round, 3, 5 or 7 rounds. Two players take turns.',
+            'Scoring by hand brings someone to the phone after every knife: the screen says to score when no one is throwing, or to have someone who isn\'t throwing keep score.',
+        ],
+        steps=[
+            ('ui', 'PlaySetupScreen', ['Which game? → players, the type\'s lengths, names', 'Start'], 'screens', 'gameTypeProvider · playModeProvider'),
+            ('scoring', 'GameNotifier → Match(type)', ['a length the type doesn\'t offer → its default', 'New game keeps the type'], 'game-session', 'ScorePadScreen'),
+            ('ui', 'ScorePadScreen', ['"Mark\'s turn" · "Round 2 of 7: from 5 m" / "at target 2"', 'Match.nextDistance · Match.nextTarget'], 'screens', 'tap 5–1 or Miss'),
+            ('scoring', 'GameNotifier.addThrow → Match', ['the same turns and rounds as Play', 'tap a slot to change it (setScore)'], 'game-session', 'the match over'),
+            ('history', 'GameRecord (version 3)', ['type written for Precision and Three targets', 'never a Live test game · the backup if signed in'], 'game-history', 'History'),
+            ('ui', 'HistoryScreen · GameRecordScreen', ['"Precision · 2 players, taking turns · 7 rounds"', '"Round 2 (5 m)"'], 'screens', None),
+        ],
+        caption='The camera for these games is backlogged: Precision moves the thrower between distances, and Three targets needs three boards watched at once.',
+        files=['lib/scoring/game_type.dart', 'lib/scoring/match.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/score_pad_screen.dart', 'lib/history/game_record.dart', 'lib/ui/history_screen.dart'],
     ),
     'score-correction': dict(
         title='Changing a score (without jogging the camera)', cat='flow', lane='ui',
@@ -661,13 +683,14 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'score-correction', 'game-history', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
     'scoring-a-point': 'A pixel measured against the board\'s own painted edges, placed on the ideal rings, scored 5 to 0.',
     'calibration': 'Find the rings once in a background isolate, drag to adjust, lock for the session.',
     'play': 'Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.',
+    'score-pad': 'Precision and Three targets: Which game?, then each knife\'s score tapped on a pad; the same turns, rounds and History.',
     'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
     'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
     'player-names': 'A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.',

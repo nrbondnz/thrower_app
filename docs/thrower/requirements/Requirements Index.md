@@ -14,7 +14,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 - [[Player Names|Setting up player names]] ✅ (named players; backup written, not yet deployed; friends with accounts planned)
 - [[Scoring Rules|Rules of scoring]] ✅ (KATTA)
 - [[Number of Rounds|Setting number of rounds]] ✅
-- [[Game Type|Setting game type (scoring or quick draw)]] ✅
+- [[Game Type|Setting game type (scoring, quick draw, Precision, Three targets)]] ✅ (Precision and Three targets scored by hand for now; their camera planned)
 
 ## Basic Play
 - [[Round Play|Round play]] ✅

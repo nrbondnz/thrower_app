@@ -14,7 +14,9 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │              │    (AuthenticatedView), backup line, Back up   │  │
 │  │              │    now, Sign out, Delete account (asks first)  │  │
 │  │              ├─ HistoryScreen ── GameRecordScreen             │  │
-│  │              ├─ PlaySetupScreen (players, rounds, names)      │  │
+│  │              ├─ PlaySetupScreen (game, players, rounds, names)│  │
+│  │              ├─ ScorePadScreen (Precision, Three targets):    │  │
+│  │              │    ScorePad 5–1 · Miss, no camera; turns       │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
 │  │              │    └ ScoreCorrections (tap a score: 0–5 popup) │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
@@ -44,6 +46,7 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │  liveQuickDrawCameraProvider (live Quick draw's own, 60 fps)  │  │
 │  │  signalSoundsProvider           startScheduleProvider         │  │
 │  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │
+│  │  gameTypeProvider (Scoring, Precision, Three targets)         │  │
 │  │  playTargetsProvider (two-target Play's boards, session-long) │  │
 │  │  gameHistoryProvider (kept games: SyncedGameHistory)          │  │
 │  │    · historySaveErrorProvider                                 │  │
@@ -70,12 +73,12 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │ │ ├FramePack│  │ findTarget      │  │ rounds of 3│ │  AuthSer-│  │
 │  │ │ └Recording│  │ QuickDrawTargets│  │ 3, 5 or 9  │ │  vice:   │  │
 │  │ │  Sound    │  │ QuickDrawWatcher│  │ rounds     │ │  Cognito │  │
-│  │ ├Recording- │  │  └ThrowWatcher×2│  │            │ │  sign-in;│  │
-│  │ │ Analysis- │  │ judgeQuickDraw  │  │            │ │  id = sub│  │
-│  │ │ Feed      │  │  go, false start│  │            │ │null: no  │  │
-│  │ ├Cropped-   │  │  → winner       │  │            │ │settings, │  │
-│  │ │ Camera    │  │ StartSignal     │  │            │ │signed out│  │
-│  │ │           │  │  beeps, lights, │  │            │ │connect-  │  │
+│  │ ├Recording- │  │  └ThrowWatcher×2│  │GameType:   │ │  sign-in;│  │
+│  │ │ Analysis- │  │ judgeQuickDraw  │  │ Scoring,   │ │  id = sub│  │
+│  │ │ Feed      │  │  go, false start│  │ Precision, │ │null: no  │  │
+│  │ ├Cropped-   │  │  → winner       │  │ Three tar- │ │settings, │  │
+│  │ │ Camera    │  │ StartSignal     │  │ gets       │ │signed out│  │
+│  │ │           │  │  beeps, lights, │  │ Match.type │ │connect-  │  │
 │  │ │           │  │  goAt = now     │  │            │ │Accounts  │  │
 │  │ │           │  └────────┬────────┘  └────────────┘ └──────────┘  │
 │  │ └Queued-    │           │                  ▲                     │
@@ -110,8 +113,8 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │  └SyncedGameHistory (gameHistoryProvider): the phone first,    │ │
 │  │    then the backup if signed in; sync() merges by id           │ │
 │  │    ├FileGameHistory: game_history.json in the app's support    │ │
-│  │    │ folder; GameRecord v2 (when, mode, rounds, round totals,  │ │
-│  │    │ names): the source of truth                               │ │
+│  │    │ folder; GameRecord v3 (when, mode, type, rounds,          │ │
+│  │    │ round totals, names): the source of truth                 │ │
 │  │    └RemoteGameStore (interface: list, put, remove) ◀──         │ │
 │  │      AmplifyBackup (lib/auth): KeptGame rows; also the names'  │ │
 │  │      PlayerNamesStore (PlayerNameList); erase                  │ │
@@ -255,5 +258,7 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 - Vision depends on the camera layer's **data** types (`CameraFrame`) only, never on a plugin.
 - Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`; Amplify behind `AuthService`, and the backup behind `RemoteGameStore` and `PlayerNamesStore`), so tests feed recorded frames, fake sound and temporary folders.
 - Heavy work (frame conversion, ring finding, the entry search) runs off the UI thread via `compute`, using top-level functions and plain data. See [[Known Issues]] → Isolate Fails.
+
+**Precision and Three targets** (2026-10-20, [[story-checkpoint-more-game-types]]) skip the camera, game and vision layers: `ScorePadScreen` feeds hand-tapped scores straight into `GameNotifier` → `Match` (with its `GameType`), and from there into History like any game ([[Data Flow]] → Precision and Three Targets: the Score Pad).
 
 See [[Data Flow]] for one frame's path to a score, and [[Glossary]] for the component → function tree and terms.
