@@ -129,6 +129,21 @@ class PlayTargetsNotifier extends QuickDrawTargetsNotifier {
 
 final playTargetsProvider = NotifierProvider<PlayTargetsNotifier, QuickDrawTargets>(PlayTargetsNotifier.new);
 
+/// How Quick draw's boards are chosen (Mark, 2026-10-21): false, **Tap the
+/// boards** (found by their rings, scored); true, **Draw round the boards**
+/// (a finger drawn round each, timed only). Kept for the session.
+class BoardsDrawnNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void choose(bool drawn) => state = drawn;
+}
+
+final boardsDrawnProvider = NotifierProvider<BoardsDrawnNotifier, bool>(BoardsDrawnNotifier.new);
+
+/// The picture size a board drawn round by finger is in; tests replace it.
+final pictureSizerProvider = Provider<PictureSizer>((ref) => uprightPictureSize);
+
 /// Finds the board at a tap; tests replace it.
 final tapLocatorProvider = Provider<TapLocator>(
   (ref) => (camera, tap) => locateAtTap(camera, tap, ref.read(ringBoundaryRadiiProvider)),

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../camera/target_camera.dart';
 import '../vision/ellipse.dart';
+import '../vision/frame_to_rgb.dart';
 import '../vision/tapped_target_locator.dart';
 import '../vision/target_calibration.dart';
 import '../vision/target_locator.dart';
@@ -36,6 +37,15 @@ Future<TappedTargetsResult> locateAtTap(TargetCamera camera, Point2 tap, List<do
   final frame = await camera.frames().first;
   return compute(locateTappedInFrame, (frame, camera.uprightRotation, boundaryRadii, [tap]));
 }
+
+/// The size of the picture a board drawn round by finger is in: the
+/// camera's next frame turned upright, no larger than [locateTappedInFrame]'s
+/// (so drawn and tapped boards share one picture size).
+typedef PictureSizer = Future<(int, int)> Function(TargetCamera camera);
+
+/// The app's [PictureSizer].
+Future<(int, int)> uprightPictureSize(TargetCamera camera) async =>
+    uprightSizeOf(await camera.frames().first, maxSide: 1920, rotation: camera.uprightRotation);
 
 /// The board found at a tap, as a calibration; null if none was found.
 TargetCalibration? boardAt(TappedTargetsResult result) => switch (result.boards.single) {

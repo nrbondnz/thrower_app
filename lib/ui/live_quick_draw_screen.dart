@@ -183,7 +183,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
       if (targets.locked && m.results.isNotEmpty) {
         return '${roundLabel(m.roundNumber, m.rounds)} (${matchText(m, playerNames)}). $ready';
       }
-      return choosingInstruction(targets, locked: 'Boards locked. $ready');
+      return choosingInstruction(targets, locked: 'Boards locked. $ready', drawn: ref.watch(boardsDrawnProvider));
     }
     return switch (signal.phase) {
       StartPhase.countdown => 'Wait for the long beep…',
@@ -201,6 +201,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
     ref.watch(signalSoundsProvider);
     final signal = _signal, watcher = _watcher, verdict = _verdict, match = _match;
     final duelOn = signal != null;
+    final drawn = ref.watch(boardsDrawnProvider);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -210,7 +211,8 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
             camera: liveQuickDrawCameraProvider,
             overlayBuilder: (context, camera) => BoardsOverlay(
               targets: targets,
-              onTap: targets.complete || searching ? null : (tap) => findBoardAt(camera, tap),
+              onTap: targets.complete || searching || drawn ? null : (tap) => findBoardAt(camera, tap),
+              onDraw: targets.complete || searching || !drawn ? null : (loop) => addDrawnBoard(camera, loop),
               onAdjust: targets.complete && !targets.locked
                   ? ref.read(quickDrawTargetsProvider.notifier).replace
                   : null,
@@ -253,6 +255,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
                         runSpacing: 8,
                         children: [
                           if (!duelOn) const NamesButton(),
+                          if (targets.boards.isEmpty && !searching) boardsModeButton(),
                           if (targets.boards.isNotEmpty)
                             OutlinedButton(
                               key: const Key('quickDrawStartAgain'),

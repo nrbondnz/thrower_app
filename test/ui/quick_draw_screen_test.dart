@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,6 +58,7 @@ void main() {
       overrides: [
         quickDrawCameraProvider.overrideWith((ref) async => camera),
         tapLocatorProvider.overrideWithValue(fakeLocate),
+        pictureSizerProvider.overrideWithValue((_) async => (800, 600)),
       ],
       child: const MaterialApp(home: LiveTestScreen()),
     ));
@@ -137,6 +140,33 @@ void main() {
     expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its rings'));
     // Taps reach the finder as fractions of the picture.
     expect([for (final t in taps) (t.x, t.y)], [(0.75, 0.5), (0.25, 0.5)]);
+  });
+
+  // Drawn boards (story-checkpoint-quick-draw-areas, Mark 2026-10-21).
+  testWidgets('Draw round the boards: a loop round each, drawn (timed only), then Play', (tester) async {
+    await pumpLiveTest(tester);
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Draw round the boards'));
+    await tester.pump();
+    for (final fx in [0.75, 0.25]) {
+      final area = tester.getRect(find.byKey(const Key('quickDrawBoardDraw')));
+      Offset at(double t) => Offset(
+        area.left + area.width * (fx + 0.15 * math.cos(t)),
+        area.top + area.height * 0.5 + area.width * 0.15 * math.sin(t),
+      );
+      final finger = await tester.startGesture(at(0));
+      for (var i = 1; i <= 40; i++) {
+        await finger.moveTo(at(2 * math.pi * i / 40));
+        await tester.pump();
+      }
+      await finger.up();
+      await tester.pumpAndSettle();
+    }
+    final targets = ProviderScope.containerOf(tester.element(find.byType(QuickDrawScreen))).read(quickDrawTargetsProvider);
+    expect(targets.areas, {0, 1});
+    expect(taps, isEmpty);
+    await tester.tap(find.byKey(const Key('quickDrawLock')));
+    await tester.pump();
+    expect(instruction(tester), 'Boards locked. Press Play.');
   });
 
   testWidgets('a tap that finds no board says so, and asks again', (tester) async {

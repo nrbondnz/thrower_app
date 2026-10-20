@@ -98,6 +98,7 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
     final camera = ref.watch(quickDrawCameraProvider);
     final targets = ref.watch(quickDrawTargetsProvider);
     final notifier = ref.read(quickDrawTargetsProvider.notifier);
+    final drawn = ref.watch(boardsDrawnProvider);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -112,7 +113,10 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                   children: [
                     BoardsOverlay(
                       targets: targets,
-                      onTap: targets.complete || searching ? null : (tap) => findBoardAt(value, tap),
+                      onTap: targets.complete || searching || drawn ? null : (tap) => findBoardAt(value, tap),
+                      onDraw: targets.complete || searching || !drawn
+                          ? null
+                          : (loop) => addDrawnBoard(value, loop),
                       onAdjust: targets.complete && !targets.locked ? notifier.replace : null,
                       tapsOff: value.playing,
                       throws: _watcher?.throws,
@@ -163,7 +167,9 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                             listenable: Listenable.merge([watcher.throws, feed.analysed, value.position]),
                             builder: (context, _) => quickDrawLine(_progress(value, feed, watcher.throws.value)),
                           ),
-                          _ => quickDrawLine(choosingInstruction(targets, locked: 'Boards locked. Press Play.')),
+                          _ => quickDrawLine(
+                            choosingInstruction(targets, locked: 'Boards locked. Press Play.', drawn: drawn),
+                          ),
                         },
                         const SizedBox(height: 12),
                         Wrap(
@@ -172,6 +178,7 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                           runSpacing: 8,
                           children: [
                             if (_watcher == null) const NamesButton(),
+                            if (targets.boards.isEmpty && !searching) boardsModeButton(),
                             if (targets.boards.isNotEmpty)
                               OutlinedButton(
                                 key: const Key('quickDrawStartAgain'),

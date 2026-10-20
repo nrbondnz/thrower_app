@@ -7,7 +7,7 @@ Mark (Nigel's brother), 2026-10-21: in Quick draw, "draw his finger round the bo
 3 (Medium): game logic (boards, throws, judge) → UI (drawing) → docs.
 
 ## Status
-IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing per task ([[dont-ask-again]]). Task 1 complete; Task 2 next.
+IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing per task ([[dont-ask-again]]). Tasks 1 and 2 complete; Task 3 next.
 (Paused 2026-10-21 ~10:05 for a Flutter SDK repair: the IDEs' Dart analysis servers held the SDK files; see [[Known Issues]]. Resumed the same day.)
 
 ## Plan
@@ -34,8 +34,20 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing p
 - **Verified by:** tests (the screen comes in Task 2).
 
 ## Task 2: The screen
-- **Status:** NOT STARTED
-- **Notes for it:** `BoardChoosing` (`lib/ui/quick_draw_boards.dart`) and `BoardsOverlay` (taps as fractions of the picture); add a draw gesture (pan → points as fractions → × `uprightSizeOf` of the camera's next frame, `maxSide: 1920`, rotation `camera.uprightRotation` → `areaBoard` → `add(board, area: true)`). Live screen `lib/ui/live_quick_draw_screen.dart` (`findBoardAt` at ~line 209), recording screen `lib/ui/quick_draw_screen.dart` (~line 114). Not two-target Play (`two_target_play_screen.dart`).
+- **Status:** COMPLETE (2026-10-21)
+- **What changed:**
+  - Both Quick draw screens (live and the recording): **Draw round the boards** / **Tap the boards** (`boardsModeButton`, key `quickDrawBoardsMode`), shown until the first board is chosen. The choice is kept for the session (`boardsDrawnProvider`); Choose boards again keeps it.
+  - Drawing: `LoopDrawer` (in `BoardsOverlay` as `onDraw`, key `quickDrawBoardDraw`): the path follows the finger; on lift the loop (fractions of the picture) → `addDrawnBoard` → `pictureSizerProvider` (`uprightPictureSize`: the next frame upright, `maxSide` 1920, as tapped boards) → `areaBoard` → `add(board, area: true)`. Too small or flat: "That loop is too small or too flat for a board."
+  - Instruction line: "Draw a finger round the edge of Player 1's board. Any knife that sticks inside counts: the time wins, not the score."; once both: "Drag an outline to fit its board…"; while working: "Marking Player 1's board…".
+  - `BoardsPainter`: a drawn board shows only its outline (no rings). Adjust boards and dragging work as for tapped boards.
+  - Not two-target Play (it needs scores): it never shows the button.
+  - In-app Instructions, Quick draw: a point on drawing (on the screen, never at the boards; only when no one is throwing; only the time decides).
+- **Test Report:**
+  - `live_quick_draw_screen_test.dart`: +4 (switching and back; a loop round each → areas {0, 1}, picture size, centres, no ring search, lock; a tiny loop says so; the choice kept through Choose boards again).
+  - `quick_draw_screen_test.dart`: +1 (drawing on the recording, then locked).
+  - `instructions_test.dart`: the drawing point and its safety wording.
+  - `flutter analyze`: no issues. `flutter test`: 899 passed.
+- **Safety self-check (Review checklist §7):** drawing happens on the screen before anyone throws, like tapping; the Instructions say never at the boards and only when no one is throwing. No platform, permission or dependency change.
 
 ## Task 3: Docs, device checks, traceability, a build
 - **Status:** NOT STARTED

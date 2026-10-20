@@ -221,6 +221,8 @@ void main() {
 
     test('boards are chosen before anyone throws; no one goes to the phone after that', () {
       expect(text, contains('Choose and lock the boards before anyone throws.'));
+      expect(text, contains('Or tap Draw round the boards first'));
+      expect(text, contains('never at the boards; only when no one is throwing'));
       expect(text, contains('read it from where you stand. No one needs to go to the phone during a round.'));
     });
 

@@ -198,6 +198,11 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
             'stretch it), or tap Choose boards again.',
         'Between rounds, Adjust boards unlocks them to fix an outline (only when no one is throwing); the match '
             'carries on.',
+        // Drawn boards (story-checkpoint-quick-draw-areas, Mark 2026-10-21).
+        "Or tap Draw round the boards first, and draw a finger round the edge of Player 1's board, then Player "
+            "2's, on the screen (never at the boards; only when no one is throwing). Any knife that sticks inside "
+            'counts, rings or not: only the time decides, so on the same frame the round is drawn. Use it for '
+            'boards without rings the app can find.',
         'Choose and lock the boards before anyone throws. Tap Names to change the throwers\' names (the same '
             'names as Play).',
         'A third person, the starter, standing behind the throwers, taps Start. Throwers do not start their own '

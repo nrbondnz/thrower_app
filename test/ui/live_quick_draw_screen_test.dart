@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:thrower_app/camera/live_camera.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/camera/target_camera.dart';
 import 'package:thrower_app/game/quick_draw_judge.dart';
+import 'package:thrower_app/game/quick_draw_targets.dart';
 import 'package:thrower_app/game/quick_draw_watcher.dart';
 import 'package:thrower_app/game/start_signal.dart';
 import 'package:thrower_app/providers.dart';
@@ -81,6 +83,7 @@ void main() {
           // Play's camera never starts in a test.
           cameraProvider.overrideWith((ref) => Completer<TargetCamera>().future),
           tapLocatorProvider.overrideWithValue(fakeLocate),
+          pictureSizerProvider.overrideWithValue((_) async => (800, 600)),
           // As the app's provider: auto-disposed, counting releases.
           signalSoundsProvider.overrideWith((ref) {
             ref.onDispose(() => soundsReleased++);
@@ -393,6 +396,82 @@ void main() {
       await wait(tester, const Duration(seconds: 10));
       expect(sounds.played, ['beep', 'beep', 'beep']);
       expect(find.byKey(const Key('quickDrawStart')), findsOneWidget);
+    });
+  });
+
+  // Drawn boards (story-checkpoint-quick-draw-areas, Mark 2026-10-21).
+  group('Draw round the boards', () {
+    /// A finger drawn round a circle centred at ([fx], [fy]) (fractions of
+    /// the picture), of radius [fr] of the picture's width.
+    Future<void> drawLoop(WidgetTester tester, double fx, double fy, double fr) async {
+      final area = tester.getRect(find.byKey(const Key('quickDrawBoardDraw')));
+      Offset at(double t) => Offset(
+        area.left + area.width * (fx + fr * math.cos(t)),
+        area.top + area.height * fy + area.width * fr * math.sin(t),
+      );
+      final finger = await tester.startGesture(at(0));
+      for (var i = 1; i <= 40; i++) {
+        await finger.moveTo(at(2 * math.pi * i / 40));
+        await tester.pump();
+      }
+      await finger.up();
+      await tester.pumpAndSettle();
+    }
+
+    QuickDrawTargets targets(WidgetTester tester) =>
+        ProviderScope.containerOf(tester.element(find.byType(LiveQuickDrawScreen))).read(quickDrawTargetsProvider);
+
+    Future<void> openDrawing(WidgetTester tester) async {
+      await pumpHome(tester, stillCamera);
+      await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Draw round the boards'));
+      await tester.pump();
+    }
+
+    testWidgets('the button switches to drawing, and back', (tester) async {
+      await openDrawing(tester);
+      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 1's board."));
+      expect(find.byKey(const Key('quickDrawBoardTap')), findsNothing, reason: 'no taps while drawing');
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Tap the boards'));
+      await tester.pump();
+      expect(instruction(tester), "Tap the centre of Player 1's board.");
+    });
+
+    testWidgets('a loop round each board: both drawn (timed only), in the picture\'s size, then locked',
+        (tester) async {
+      await openDrawing(tester);
+      await drawLoop(tester, 0.25, 0.5, 0.15);
+      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 2's board."));
+      expect(find.widgetWithText(OutlinedButton, 'Tap the boards'), findsNothing, reason: 'chosen once begun');
+      await drawLoop(tester, 0.75, 0.5, 0.15);
+      expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its board'));
+      final t = targets(tester);
+      expect(t.areas, {0, 1});
+      expect((t.boards[0].imageWidth, t.boards[0].imageHeight), (800, 600));
+      expect(t.boards[0].outer.cx, closeTo(200, 8), reason: 'the loop round a quarter of the way across');
+      expect(t.boards[1].outer.cx, closeTo(600, 8));
+      expect(taps, isEmpty, reason: 'drawing never looks for rings');
+      await tester.tap(find.byKey(const Key('quickDrawLock')));
+      await tester.pump();
+      expect(instruction(tester), startsWith('Boards locked.'));
+    });
+
+    testWidgets('a loop too small for a board says so, and asks again', (tester) async {
+      await openDrawing(tester);
+      await drawLoop(tester, 0.5, 0.5, 0.01);
+      expect(instruction(tester), startsWith("That loop is too small or too flat for a board. Draw a finger round "
+          "the edge of Player 1's board."));
+      expect(targets(tester).boards, isEmpty);
+    });
+
+    testWidgets('the choice is kept: Choose boards again draws again', (tester) async {
+      await openDrawing(tester);
+      await drawLoop(tester, 0.25, 0.5, 0.15);
+      await tester.tap(find.byKey(const Key('quickDrawStartAgain')));
+      await tester.pump();
+      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 1's board."));
+      expect(targets(tester).areas, isEmpty);
     });
   });
 
