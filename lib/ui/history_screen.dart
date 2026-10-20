@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../history/game_history.dart';
 import '../history/game_record.dart';
 import '../providers.dart';
+import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 
 /// Home → History (game-history story, Task 3): the finished games kept on
@@ -169,7 +170,9 @@ class GameRecordScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    r < game.countedRounds ? 'Round ${r + 1}: $total' : 'Round ${r + 1}: $total (not counted)',
+                    r < game.countedRounds
+                        ? '${roundLabel(game, r)}: $total'
+                        : '${roundLabel(game, r)}: $total (not counted)',
                     key: Key('historyRound-$p-$r'),
                   ),
                 ),
@@ -212,16 +215,26 @@ String whenText(DateTime at) =>
     '${at.day} ${_months[at.month - 1]}, ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
 
 /// "2 players, 1 target · 5 rounds" ("2 of 5 rounds" if finished early),
-/// with "Live test: Target 1" for a game played on a recording.
+/// with "Live test: Target 1" for a game played on a recording. Precision
+/// and Three targets lead with the game ("Precision · 2 players, taking
+/// turns · 7 rounds").
 String howText(GameRecord game) => [
+      if (game.type != GameType.scoring) game.type.label,
       switch (game.mode) {
         PlayMode.solo => '1 player',
+        PlayMode.sharedTarget when game.type != GameType.scoring => '2 players, taking turns',
         PlayMode.sharedTarget => '2 players, 1 target',
         PlayMode.twoTargets => '2 players, 2 targets',
       },
       game.finishedEarly ? '${_played(game)} of ${game.rounds} rounds' : '${game.rounds} rounds',
       if (game.recording case final name?) 'Live test: $name',
     ].join(' · ');
+
+/// "Round 2", or for Precision with its distance, "Round 2 (5 m)".
+String roundLabel(GameRecord game, int round) => switch (game.type.distanceOf(round)) {
+      final d? => 'Round ${round + 1} ($d m)',
+      null => 'Round ${round + 1}',
+    };
 
 /// The most rounds anyone played (a finished-early game).
 int _played(GameRecord game) => game.players.map((p) => p.length).reduce((a, b) => a > b ? a : b);

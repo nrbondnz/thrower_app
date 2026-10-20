@@ -62,6 +62,7 @@ void main() {
       'Two players on two targets',
       'Scoring',
       'Changing a score',
+      'Precision and Three targets',
       'Resetting',
       'History',
       'Your account',
@@ -281,5 +282,17 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: InstructionsScreen())));
     await tester.scrollUntilVisible(find.text('Reporting problems'), 300);
     expect(find.text('Reporting problems'), findsOneWidget);
+  });
+
+  // More-game-types story (2026-10-20).
+  test('explains Precision with its distances, and Three targets', () {
+    expect(text, contains('Precision: 7 rounds of 3 knives'));
+    expect(text, contains('3, 5, 7, 3, 4, 5, 7 m'));
+    expect(text, contains('throw one knife at each target'));
+  });
+
+  test('scoring by hand: only when no one is throwing, never in the lane', () {
+    expect(text, contains('Only go to the phone to score when no one is throwing'));
+    expect(text, contains('Never stand in the lane to use the phone.'));
   });
 }

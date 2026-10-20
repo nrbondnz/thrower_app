@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
 import '../scoring/game_session.dart';
+import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 import '../scoring/target_model.dart';
 
@@ -142,6 +143,19 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'While a score is open nothing is watched, so nothing thrown then is scored.',
       'If the app says the phone may have moved, check the green rings still line up with the board. If not, '
           'calibrate again (on two targets, choose the boards again).',
+    ]),
+    InstructionSection('Precision and Three targets', [
+      'Two more games, chosen under Which game? when you tap Play. For now they are scored by hand: the camera '
+          'is not used.',
+      'Precision: 7 rounds of 3 knives, each round from its own distance: '
+          '${precisionDistances.map((d) => '$d').join(', ')} m. The screen shows the distance for the next knife.',
+      'Three targets: three boards side by side. Each round, throw one knife at each target, 1, 2 then 3. '
+          'Choose 3, 5 or 7 rounds.',
+      'With two players, take turns: Player 1 throws 3 knives and collects them, then Player 2.',
+      'After each knife, tap its score on the score pad: 5 to 1, or Miss. Tap a score in a round to change it.',
+      'Only go to the phone to score when no one is throwing, or have someone who is not throwing keep score. '
+          'Never stand in the lane to use the phone.',
+      'The highest total wins. Finish game ends it early, and every game is kept in History.',
     ]),
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',

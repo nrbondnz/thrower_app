@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/game_history.dart';
 import 'package:thrower_app/history/game_record.dart';
 import 'package:thrower_app/providers.dart';
+import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/history_screen.dart';
 
@@ -196,6 +197,46 @@ void main() {
       ));
       expect(tester.widget<Text>(find.byKey(const Key('historyPlayer-0'))).data, 'Jo: 10');
       expect(tester.widget<Text>(find.byKey(const Key('historyPlayer-1'))).data, 'Player 2: 12');
+    });
+  });
+
+  // More-game-types story (2026-10-20).
+  group('game types', () {
+    GameRecord typed(GameType type, PlayMode mode, List<List<int>> players, {int? rounds}) => GameRecord(
+          id: '9',
+          finishedAt: DateTime(2026, 10, 20, 15),
+          mode: mode,
+          rounds: rounds ?? type.defaultRounds,
+          players: players,
+          type: type,
+        );
+
+    test('Precision leads with the game, and two players take turns', () {
+      final g = typed(GameType.precision, PlayMode.sharedTarget, [List.filled(7, 9), List.filled(7, 8)]);
+      expect(howText(g), 'Precision · 2 players, taking turns · 7 rounds');
+    });
+
+    test('Three targets for one player', () {
+      final g = typed(GameType.threeTargets, PlayMode.solo, [List.filled(3, 9)], rounds: 3);
+      expect(howText(g), 'Three targets · 1 player · 3 rounds');
+    });
+
+    test('a Scoring game reads as before', () {
+      final g = typed(GameType.scoring, PlayMode.sharedTarget, [List.filled(3, 9), List.filled(3, 9)], rounds: 3);
+      expect(howText(g), '2 players, 1 target · 3 rounds');
+    });
+
+    test('Precision rounds show their distance: "Round 2 (5 m)"', () {
+      final g = typed(GameType.precision, PlayMode.solo, [List.filled(7, 9)]);
+      expect([for (var r = 0; r < 7; r++) roundLabel(g, r)], [
+        'Round 1 (3 m)', 'Round 2 (5 m)', 'Round 3 (7 m)', 'Round 4 (3 m)', 'Round 5 (4 m)', 'Round 6 (5 m)',
+        'Round 7 (7 m)',
+      ]);
+    });
+
+    test('other games have no distance on their rounds', () {
+      final g = typed(GameType.threeTargets, PlayMode.solo, [List.filled(3, 9)], rounds: 3);
+      expect(roundLabel(g, 0), 'Round 1');
     });
   });
 }
