@@ -72,9 +72,21 @@ The hosted zone is in the same AWS account, so Amplify adds the DNS records and 
 ### Now
 - **Home:** what the app does, its main features, "coming soon" to the stores, and the safety line (keep the phone and yourself out of the line of throw).
 
+### Store pages (on `website-dev` 2026-10-20; to `website` once Nigel approves)
+Modelled on WhereWillWeVisit's site (its `master` branch: `web/privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`), written for Thrower. Markdown files in `src/pages/`, laid out by `src/layouts/Page.astro`; every page links to them all in the footer.
+- **`/privacy`:** Privacy Policy, from [[Privacy Policy (Draft)]], expanded: camera on the phone only, games and names on the phone, the optional account (email, Cognito ID, the backup, AWS London), Google and Apple sign-in, no ads, analytics or tracking, retention, rights (UK ICO, NZ Privacy Commissioner), children, changes.
+- **`/terms`:** Terms of Service, with a **safety** section (the app can't tell the lane is clear; phone out of the line of throw), venue rules first, age, liability (injury, wrong scores, lost data), NZ law.
+- **`/support`:** contact email and common questions.
+- **`/delete-account`:** in the app (person icon → Delete account) or by email; what's deleted and kept. **Google Play's "account deletion URL".**
+- **`/delete-data`:** deleting games (History) or names without deleting the account.
+- **Assumed (Nigel to confirm before production):** the operator **Bond Consultancy Ltd, Whangaparaoa, Auckland** (as WhereWillWeVisit), and the contact **kaat-support@knifeandaxethrower.com** (WorkMail organisation `kaat`, us-east-1).
+- **Not needed:** `app-ads.txt` (WhereWillWeVisit's is for AdMob; Thrower has no ads).
+
+### Which URL goes where
+- **App Store Connect:** Privacy Policy URL `https://knifeandaxethrower.com/privacy`; Support URL `https://knifeandaxethrower.com/support`; Marketing URL (optional) `https://knifeandaxethrower.com`.
+- **Google Play Console:** Privacy policy `…/privacy`; Data safety → Account deletion URL `…/delete-account`; (optional) data deletion URL `…/delete-data`; contact email `kaat-support@knifeandaxethrower.com`; website `https://knifeandaxethrower.com`.
+
 ### Planned
-- **Privacy policy:** `/privacy`, from [[Privacy Policy (Draft)]] once Nigel approves it. Its URL goes in App Store Connect and Google Play.
-- **Support:** a contact page (both stores want a support URL).
 - **How to play:** setup, the rules (KATTA), Quick draw; it can follow the in-app Instructions.
 - **Later:** store badges once the app is live; the [[Rankings|Game Centre]] (leaderboards), which would read the app's backend.
 
