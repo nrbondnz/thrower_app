@@ -80,6 +80,10 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Story:** **Virtual thrower: rendered games to test the camera** (Nigel, 2026-10-20: option A, "fake pictures"; recordings for tests only; one board first). **In progress:** [[story-checkpoint-virtual-thrower]].
   - **Notes:** Whole games rendered on the PC (`SyntheticScene`) as Live test recordings with an answer key, replayed through the real camera path in tests. Later: random games from a seed (a "virtual thrower"), then three boards and 3–7 m for #17. Not in the app (size).
   - **Depends on:** —
+- **20**
+  - **Story:** **Board outlines at the wrong scale on stencilled boards** (Mark's Quick draw recordings, 2026-10-21)
+  - **Notes:** On Mark's boards (red bull, wood, black ring, wood, black ring) the ring finder sometimes fits a plausible set of rings at twice or half the painted size, which passes the sanity checks, so the tap fallback never runs, and scores are wrong. Ideas: check the fit against the board's own edge; when tapped, compare the usual fit with the alignment fallback's and keep the one whose rings sit on the strongest edges; an "outline looks wrong? Tap the board" hint in Quick draw. **Needs:** Mark's original camera footage (not screen recordings) with his reading of each throw; Mark on a build with this week's changes (build 9, from the Mac). [[story-checkpoint-gapped-rings]] → Follow-up.
+  - **Depends on:** the footage
 
 ## Carry-overs from Live Test
 

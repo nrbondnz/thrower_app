@@ -95,5 +95,16 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, start on Mark's boards"); run whole
 
 ---
 
+## Follow-up: Mark's Quick draw screen recordings (2026-10-21)
+Three screen recordings from Mark's iPhone (`6bcea39e…`, `c20d7167…` (two copies), `ec74fdff…` in Nigel's Downloads), sent through a messaging app: **384 × 848**, ~60 fps, 26 s / 44 s / 80 s. Mark is on **build 8** (single duels, "Next duel"; Calibrate target and Scoring test target on Home): none of this week's changes.
+- **Board outlines the wrong size on his boards** (Quick draw, tapped):
+  - Night, duel 1: board 2's rings about **twice** the painted size (its innermost ring on the inner black ring, not the red bull); board 1's oversized and skewed.
+  - Night, later duel: board 2's rings too **small** (ending about the inner black ring).
+  - Day (the gapped fence boards): board 2's outline a thin, flat ellipse above board 1 (a wrong fit); board 1 right. Player 2's throw then can't be seen ("no throw").
+- **Why it matters:** a fit that is plausible but at the wrong scale (×2 or ×½) passes the sanity checks, so the new tap fallback (which runs only when nothing plausible is found) never runs; and scores are wrong (a knife in a black ring scored as if nearer the bull).
+- **Results shown:** "No winner, 1: no throw, 2: 1.51 s bounced" (no knife left in either board afterwards); "Player 2 wins, 1: 1.52 s · 4, 2: 1.48 s · 0" (a stuck knife scored 0); "Player 1 wins 1.52 s · 3 / 1.54 s · 5, 2: no throw" (board 2 mis-fitted); "No winner, no throw / no throw" (not checkable at this size).
+- **Not usable as fixtures:** too small, and the app's outlines are drawn over the boards. Needed: the **original camera footage** (AirDrop / iCloud link, as the first video), and Mark's own reading of each throw.
+- Backlog: #20.
+
 ## Plan Changes Log
 - **2026-10-21:** Task 2 became a tapped-board fallback (automatic search unchanged: every attempt to widen it broke boards that work); Task 3 dropped (Mark's rings are in IKTHOF proportion); Task 4 became "tap the board when Find target fails" in Play's calibration (covers several boards in the picture too).
