@@ -1,0 +1,48 @@
+---
+// Layout for the Markdown pages in src/pages (privacy, terms, support...).
+// Each page's frontmatter gives `title`, `description` and `updated`.
+import Base from './Base.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description: string;
+    updated?: string;
+  };
+}
+
+const { title, description, updated } = Astro.props.frontmatter;
+---
+
+<Base title={`${title} | Knife and Axe Thrower`} description={description}>
+  <article>
+    <h1>{title}</h1>
+    {updated && <p class="updated">Last updated: {updated}</p>}
+    <slot />
+  </article>
+</Base>
+
+<style>
+  .updated {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  article :global(h2) {
+    margin-top: 2rem;
+    font-size: 1.25rem;
+  }
+  article :global(h3) {
+    font-size: 1.05rem;
+  }
+  article :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  article :global(th),
+  article :global(td) {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+  }
+</style>

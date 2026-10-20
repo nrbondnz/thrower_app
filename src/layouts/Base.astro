@@ -24,7 +24,14 @@ const { title, description } = Astro.props;
       <slot />
     </main>
     <footer>
-      <p>© {new Date().getFullYear()} Knife and Axe Thrower</p>
+      <nav aria-label="Legal and support">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+        <a href="/support">Support</a>
+        <a href="/delete-account">Delete Account</a>
+        <a href="/delete-data">Delete Data</a>
+      </nav>
+      <p>© {new Date().getFullYear()} Bond Consultancy Ltd. All rights reserved.</p>
     </footer>
   </body>
 </html>
@@ -67,5 +74,16 @@ const { title, description } = Astro.props;
   footer {
     color: var(--muted);
     font-size: 0.875rem;
+    border-top: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+    margin-top: 2rem;
+  }
+  footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    padding-top: 0.5rem;
+  }
+  a {
+    color: var(--accent);
   }
 </style>
