@@ -367,6 +367,36 @@ For [[story-checkpoint-gapped-rings]] (requirement [[Board Finding]]): Mark's st
   - **Do:** Phone on a stand beside the lane, out of the line of throw, with the whole of the board being thrown at in view. Play → Calibrate → Find target; if it isn't found, **Tap the board** and tap the middle of that board. Only when no one is throwing. Lock, then throw a round
   - **Look for:** The outline on the rings of the board tapped (not a neighbour); throws score red 5, wood 4, inner black 3, wood 2, outer black 1. A screenshot of the outline before locking, and of any wrong score
 
+## Drawn Board Checks (added 2026-10-21)
+
+For [[story-checkpoint-quick-draw-areas]] (from build 9; requirement [[Game Type]], Quick draw): Quick draw's boards **drawn round by finger**, timed only, never scored (Mark's request). Nigel can do QA0–QA4 on the Samsung with Live test → Quick draw (the recording); QA5–QA7 need the live camera, on **paper** (pens pressed on by hand, as in Q4–Q5) unless it says real knives. Named **QA**n. Drawing is on the screen, never at the boards, and only when no one is throwing.
+
+- **QA0**
+  - **Do:** Live test → Quick draw. Before tapping anything, look at the buttons; tap **Draw round the boards**
+  - **Look for:** The button shows before any board is chosen; it now says **Tap the boards**; the line says "Draw a finger round the edge of Player 1's board. Any knife that sticks inside counts: the time wins, not the score."
+- **QA1**
+  - **Do:** Drag a finger round the left board, just outside its outer ring; lift; then round the right board
+  - **Look for:** A light blue path follows the finger; on lift it becomes an outline round the board with **no rings** inside, and player number 1 above it; then the same for 2; "Both boards found. Drag an outline to fit its board…"
+- **QA2**
+  - **Do:** Choose boards again; make a tiny loop (a small flick) on board 1, then a long thin stroke
+  - **Look for:** Each time: "That loop is too small or too flat for a board. Draw a finger round…"; no outline added; a proper loop then works
+- **QA3**
+  - **Do:** With both drawn, drag one outline inside to move it, and a white handle to stretch it; Lock boards; then **Adjust boards** and drag again; Lock
+  - **Look for:** The drawn outlines move and stretch as tapped ones do, still with no rings; they stay drawn (no rings appear) after Adjust boards
+- **QA4**
+  - **Do:** Lock boards → Play
+  - **Look for:** Under each board only a time ("0.82 s"), no score; the bottom line "Player 2 wins: stuck, 0.82 s after go. Player 1 bounced out." (no "stuck 5")
+- **QA5**
+  - **Do:** Leave Quick draw (back), then Home → Quick draw (live); and Choose boards again there
+  - **Look for:** Still in drawing mode (the button says **Tap the boards**): the choice is kept for the session. After closing and reopening the app it's back to tapping
+- **QA6**
+  - **Do:** Live: draw round both boards, Lock, Start; after the long beep press a pen onto both boards **at the same moment** (two people, or one hand each), a few rounds
+  - **Look for:** Times only on the result panel; when both land on the same frame, **"A draw"** (no score to break it), and the round counts for neither
+- **QA7**
+  - **Do:** Home → Play → 2 players, 2 targets → choose the boards
+  - **Look for:** **No** Draw round the boards button: two-target Play still taps the boards and scores the rings, as before
+- **Mark, on his real boards (with QM6's safety: separate lanes, a starter behind the throwers):** draw round each board, play a match. Do the times and winners match what he sees? A screenshot of the drawn outlines before locking.
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

@@ -21,7 +21,7 @@
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Functions</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/vision/tapped_target_locator.dart</code><br><code>lib/game/quick_draw_targets.dart</code><br></dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/vision/tapped_target_locator.dart</code><br><code>lib/game/quick_draw_targets.dart</code><br><code>lib/game/area_board.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>A tap on a board in Quick draw, or Tap the board on Calibrate</dd></div>
   </dl>
 
@@ -29,6 +29,7 @@
     <p>The tap is a fraction of the upright picture, turned into pixels only after the frame is turned upright, so a sideways Android frame and an upright recording are treated alike.</p>
     <p>Only a square window around the tap is searched (0.45 × the picture's shorter side), enlarged 3×, with the tap tried first as the centre. Searching the whole picture found the wrong board: boards side by side can be painted differently.</p>
     <p>Calibrate's <b>Tap the board</b> (2026-10-21) uses it too, at the camera's current zoom, when Find target can't find the rings or finds the wrong board.</p>
+    <p>Quick draw can skip the search (2026-10-21): a finger drawn round a board becomes the board through <code>areaBoard</code>, the ellipse fitted to the loop, kept in <code>QuickDrawTargets.areas</code> as timed only. A loop under 8 points, smaller than 3% of the picture's shorter side, bigger than it, or flatter than 0.35 (minor ÷ major) is refused.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -37,7 +38,8 @@
     <div><dt><code>locateTappedInFrame</code></dt><dd>frameToRgb → tap × size → locateTargetAt</dd></div>
     <div><dt><code>locateTargetAt</code></dt><dd>window → ColourRingLocator(seed: tap)</dd></div>
     <div><dt><code>boardAt</code></dt><dd>result → TargetCalibration or null</dd></div>
-    <div><dt><code>QuickDrawTargets</code></dt><dd>the boards in tap order; add, clear, lock; replace (a dragged board), unlock (Adjust boards)</dd></div>
+    <div><dt><code>QuickDrawTargets</code></dt><dd>the boards in tap order; add(board, area:), clear, lock; replace (a dragged board), unlock (Adjust boards); areas: the drawn boards</dd></div>
+    <div><dt><code>areaBoard · uprightPictureSize</code></dt><dd>a drawn loop → fitEllipse → a TargetCalibration (rings never scored), or null · the picture size it&#x27;s in</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -56,7 +58,7 @@
     </a>
   </div>
 
-  <footer class="colophon">lib/vision/tapped_target_locator.dart · lib/game/quick_draw_targets.dart</footer>
+  <footer class="colophon">lib/vision/tapped_target_locator.dart · lib/game/quick_draw_targets.dart · lib/game/area_board.dart</footer>
 </div>
 </body>
 </html>

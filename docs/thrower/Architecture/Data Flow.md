@@ -205,6 +205,35 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+**Or draw round the boards** (Quick draw only, 2026-10-21, [[story-checkpoint-quick-draw-areas]]; why in [[Design Decisions]] → Quick Draw: Draw Round the Boards): a finger drawn round each board becomes the board, timed only. The rest of the flow (dragging, Lock, the watchers, the judge) is unchanged; a drawn board's throws carry no score, so `judgedText` shows only the time and a same-frame finish is a draw.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│           QUICK DRAW: DRAW ROUND THE BOARDS (2026-10-21)            │
+│                                                                     │
+│   Draw round the boards (boardsModeButton → boardsDrawnProvider:    │
+│   true, kept for the session; Quick draw screens only)              │
+│          │  LoopDrawer: the finger's path, drawn as it moves;       │
+│          │  on lift, the loop as fractions of the picture           │
+│          ▼                                                          │
+│   BoardChoosing.addDrawnBoard(camera, loop)                         │
+│     1. pictureSizerProvider → uprightPictureSize: the camera's next │
+│        frame's upright size, at most 1920 px (as tapped boards)     │
+│     2. loop × picture size = upright pixels                         │
+│     3. areaBoard: fitEllipse(loop) → TargetCalibration (outer = the │
+│        fit; rings = the fit × 0.2 … 0.8, never scored)              │
+│        null: < 8 points, smaller radius < 3% of the shorter side,   │
+│        larger > the shorter side, minor ÷ major < 0.35              │
+│          │                                                          │
+│          ▼                                                          │
+│   found: quickDrawTargetsProvider.add(board, area: true) → areas    │
+│   null: "That loop is too small or too flat for a board."           │
+│   then as tapped boards: drag, Lock, Adjust boards (areas kept)     │
+│   BoardsPainter: a drawn board's outline only, no rings             │
+│   QuickDrawWatcher(areas:): those players' throws timed, not scored │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ## Quick Draw: a Throw per Board, and the Winner
 
 Once the boards are locked, Play watches each board on its own crop with the single-board throw detection, at every frame of the clip, then judges the race (Tasks 3 and 4 of [[story-checkpoint-quick-draw]]). The watchers don't look at the picture's frames: a phone that can't keep up skips some of those. They get every frame, in order, from `RecordingAnalysisFeed`, so the result can come a little after the picture. Why, and the measurements, in [[Design Decisions]] → Quick Draw: Timing and Scoring Each Board, Quick Draw: Analysing Every Frame, Reporting Late, and Quick Draw: Go, False Starts and the Winner.
@@ -536,6 +565,9 @@ Signed in, the kept games (scores, modes, dates, names) and the names go to AWS 
 - **Tap (Quick draw)**
   - **Where:** `BoardsOverlay` → `TapLocator`
   - **Notes:** A **fraction** of the upright picture, 0–1 each way (since 2026-10-15). `locateTappedInFrame` multiplies it by the upright image's size after `frameToRgb`, so a sideways live frame and an upright recording are treated alike
+- **Drawn loop (Quick draw)**
+  - **Where:** `LoopDrawer` → `BoardChoosing.addDrawnBoard` → `areaBoard`
+  - **Notes:** Fractions of the picture, 0–1 each way, like a tap (2026-10-21); multiplied by `uprightPictureSize` (the next frame upright, at most 1920 px) into upright pixels before the ellipse is fitted
 - **Board crop (Quick draw)**
   - **Where:** `CroppedCamera` frames
   - **Notes:** A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner). The frames themselves are cut in the camera's **sensor layout** (`sensorRect`; live Quick draw Task 2): a sideways live crop stays sideways, carrying the source's `uprightRotation` (fixed when the crop is made: each duel, 1 s before go), and is turned upright by whoever reads it; a recording's (rotation 0) is the rectangle as it is

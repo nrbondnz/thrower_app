@@ -7,7 +7,7 @@ Mark (Nigel's brother), 2026-10-21: in Quick draw, "draw his finger round the bo
 3 (Medium): game logic (boards, throws, judge) → UI (drawing) → docs.
 
 ## Status
-IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing per task ([[dont-ask-again]]). Tasks 1 and 2 complete; Task 3 next.
+BUILT 2026-10-21, device checks to come (Drawn Board Checks QA0–QA7, [[Device Test Plan]]; Mark on build 9 from the Mac). Plan approved 2026-10-21 ("yes, go ahead"); run whole, committing per task ([[dont-ask-again]]).
 (Paused 2026-10-21 ~10:05 for a Flutter SDK repair: the IDEs' Dart analysis servers held the SDK files; see [[Known Issues]]. Resumed the same day.)
 
 ## Plan
@@ -50,7 +50,45 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing p
 - **Safety self-check (Review checklist §7):** drawing happens on the screen before anyone throws, like tapping; the Instructions say never at the boards and only when no one is throwing. No platform, permission or dependency change.
 
 ## Task 3: Docs, device checks, traceability, a build
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-10-21); device checks to come.
+
+### Traceability Report — 2026-10-21
+- 10 acceptance points; 7 fully covered at first, 3 partly; no orphan code; no bugs found.
+- Gaps, all fixed:
+  1. `uprightSizeOf` untested and a copy of `frameToRgb`'s sizing: `frameToRgb` now sizes its picture with `uprightSizeOf` (shared `_step`, `_scaledSize`), and `frame_to_rgb_test.dart` checks the two agree (under and over `maxSide`, all four rotations).
+  2. Outline-only painting untested: `live_quick_draw_screen_test.dart` checks one path for a drawn board, five for a tapped one.
+  3. Result panel with drawn boards untested: a same-frame finish shows "A draw" and times only ("1:  0.82 s"), and decides nothing in the match.
+  4. Thresholds with no design record: in Design Decisions (Docs Agent).
+  5. `QuickDrawThrow.toString` printed "stuck null" for a drawn board: now "stuck".
+- Noted, not new: `addDrawnBoard` (like `findBoardAt`) waits for a frame with no timeout.
+- `flutter analyze`: no issues. `flutter test`: 909 passed.
+
+### Android build — 2026-10-21
+- `flutter build apk --release` (155.6 MB), installed on the test phone with `adb install -r` (history kept).
+
+
+### Doc Update — 2026-10-21
+
+**Files updated:**
+- `requirements/Basic Setup/Game Type.md`: What Exists Today, Quick draw: Draw round the boards (timed only, the same frame a draw, kept for the session, not two-target Play; QA0–QA7); Related.
+- `requirements/Basic Setup/Board Finding.md`: drawn boards as Quick draw's way round rings the app can't find (backlog #20); Related.
+- `requirements/Instructions and Safety.md`: the story's Instructions point and the on-screen drawing line; Related.
+- `requirements/Requirements Index.md`: Game Type and Board Finding notes.
+- `Architecture/Design Decisions.md`: new **Quick Draw: Draw Round the Boards (2026-10-21)**. Timed only; the ellipse fitted to the loop and why; the thresholds (`minLoopPoints` 8, `minAreaRadius` 0.03, larger radius ≤ shorter side, `minRoundness` 0.35) and their reasons; the same frame is a draw; not two-target Play; the options; safety; tests. Links [[Game Type]], [[Board Finding]] and [[Instructions and Safety]].
+- `Architecture/Glossary.md`:
+  - component tree: `addDrawnBoard`, `boardsModeButton`, the drawn instruction lines, `BoardsOverlay.onDraw`, `LoopDrawer`, `BoardsPainter` (outline only), `QuickDrawTargets.areas` / `add(board, {area})`, `areaBoard`, `PictureSizer` / `uprightPictureSize` / `pictureSizerProvider`, `boardsDrawnProvider`, `QuickDrawThrow.scored`, `JudgedThrow.scored`;
+  - new concept **Drawn board (area board)**; the Quick draw concept updated.
+- `Architecture/Data Flow.md`: a "Quick Draw: Draw Round the Boards" diagram under Choosing the Boards; the "Drawn loop (Quick draw)" coordinate entry.
+- `Architecture/System Diagram.md`: drawing in `quick_draw_boards`; `boardsDrawnProvider`, `pictureSizerProvider` and `areas` in the wiring; the live Quick draw note.
+- `tool/web_docs/content.py`, then `python tool/web_docs/build.py`: Screens, Providers, Tapped board finder (now cites `lib/game/area_board.dart`), QuickDrawWatcher and judgeQuickDraw components; the Choosing two boards flow.
+- `Operations/Device Test Plan.md`: new **Drawn Board Checks** (QA0–QA7, plus a line for Mark on his real boards).
+- `Operations/Mac Handoff.md`: a build 9 bullet (no new plugins or permissions; `flutter test` 899 on the PC); QA added to the checks to send Mark.
+- `stories/backlog.md`: #20 notes drawn boards as the workaround for Quick draw.
+- `Troubleshooting/Known Issues.md` → Quick Draw: a Board Isn't Found: removed the stale "no drag-to-adjust per board yet"; it now points to Adjust boards and Draw round the boards.
+- `CLAUDE.md`, `docs/working-with-nigel.md`: the story in the overview (built 2026-10-21, device checks to come).
+
+**Drift items (not fixed here):**
+- The interactive Thrower Field Test artifact (Device Test Plan header) wasn't checked for the QA checks (or BF). If they're missing, add them before sending build 9's checks to Mark.
 
 ---
 

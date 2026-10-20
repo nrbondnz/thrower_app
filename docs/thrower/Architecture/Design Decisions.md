@@ -879,6 +879,50 @@ Each tone fades in and out over 5 ms so it doesn't click. Generated rather than 
 
 **Confirmed:** 2026-10-15 (built; Nigel's device check pending: [[Device Test Plan]] → Quick Draw Checks).
 
+## Quick Draw: Draw Round the Boards (2026-10-21)
+
+Requirement: [[Game Type]] (Quick draw), [[Board Finding]]. Story: [[story-checkpoint-quick-draw-areas]].
+
+**Problem:** on Mark's stencilled boards the tapped search sometimes puts the outline at the wrong scale (backlog #20). Mark (Nigel's brother), 2026-10-21, asked to *"draw his finger round the board as a single hit point, not worrying about rings for scoring, just relying on hit time in the area he draws"*.
+
+### Decision: a board drawn round by finger, timed only
+- Both Quick draw screens (the live one and the recording) have **Draw round the boards** / **Tap the boards** (`boardsModeButton`, key `quickDrawBoardsMode`), shown until the first board is chosen. Tapping stays the default.
+- Drawn: drag a finger round Player 1's board, then Player 2's. `LoopDrawer` draws the path as the finger moves; on lift the loop (fractions of the picture) goes to `BoardChoosing.addDrawnBoard`.
+- **Timed, never scored:** any knife that sticks inside the board's watched region counts. The line under a board shows only the time ("0.82 s"); the result says "Player 2 wins: stuck, 0.82 s after go."
+- **The same frame is a drawn round:** with no score, nothing breaks the tie (the judge already treats a missing score as a draw: Quick Draw: Go, False Starts and the Winner). Level after three: extra rounds, as usual.
+- **Kept for the session** (`boardsDrawnProvider`, not auto-disposed): Choose boards again, and leaving and coming back to Quick draw, keep the choice until the app is closed.
+- **Not two-target Play:** Play needs the rings to score each throw, so it never shows the button.
+
+### Decision: the ellipse fitted to the loop
+`areaBoard` (`lib/game/area_board.dart`): the loop, in the upright picture's pixels → `fitEllipse` → a `TargetCalibration` whose outer ring is that ellipse and whose rings are the same ellipse scaled 0.2 … 0.8.
+- **Why an ellipse, not the raw loop:** a board seen from the side is an ellipse, and everything downstream already works on one: the board's crop (`cropRadii`), the watched region (`WatchRegion.fromCalibration`), the outline editor (dragging, Adjust boards) and `TargetCalibration.within`. A loop of any shape would need its own version of each. The fit also smooths a wobbly finger.
+- **Why rings at all:** the entry-point code needs a centre ring. They're never scored (`QuickDrawTargets.areas`) and never drawn (`BoardsPainter` shows only the outline).
+- **The picture's size** comes from `pictureSizerProvider` (`uprightPictureSize`): the camera's next frame turned upright, at most **1920 px** (`uprightSizeOf`), the size tapped boards are found in, so drawn and tapped boards share one picture.
+
+**Thresholds** (a loop that fails one → "That loop is too small or too flat for a board."):
+- **`minLoopPoints` 8:** fewer is a tap or a flick, not a loop, and too few for a fair fit.
+- **`minAreaRadius` 0.03:** the smaller radius at least 3% of the picture's shorter side. Smaller is a slip of the finger, and too small a board for the throw detection to see a knife on.
+- **Larger radius at most the shorter side:** anything bigger isn't one board.
+- **`minRoundness` 0.35** (minor ÷ major): a board seen from the side is about 0.5, so 0.35 leaves room; flatter is a line or a scribble, whose fit isn't a board.
+
+**Throws:** `QuickDrawWatcher(areas:)` (both screens pass `targets.areas`) gives those players' throws `QuickDrawThrow.scored` false and no score; `JudgedThrow.scored`, `judgedText` and `verdictText` show times only ("A draw: both stuck on the same frame.").
+
+**Options (architectural purity over the quick option):**
+- **Quick, not chosen:** a free-shape "hit area" with its own crop, region and watcher path. It would duplicate the crop, watched-region and editor code.
+- **Chosen:** the loop becomes an ordinary `TargetCalibration`, marked unscored per player (`QuickDrawTargets.areas`), so the existing machinery is reused unchanged.
+
+**Safety (Review Agent §7):** drawing is on the screen, before anyone throws, like tapping. The in-app Instructions (Quick draw) say on the screen, never at the boards, only when no one is throwing, and that only the time decides. Requirement: [[Instructions and Safety]]. No platform, permission or dependency change.
+
+**Checked by:**
+- `test/game/area_board_test.dart`: circle, oval, picture size and rings, wobbly loop; too few points, too small, too big, too flat, a straight line → null
+- `quick_draw_targets_test.dart`: areas kept through replace, lock and unlock; clear forgets them
+- `quick_draw_judge_test.dart`: times only; the same frame a draw
+- `quick_draw_replay_test.dart`: the Quick draw recording with both boards drawn: the same throws on the same frames, no scores, Player 2 still wins
+- `live_quick_draw_screen_test.dart`, `quick_draw_screen_test.dart`: switching, drawing both, a tiny loop, the choice kept
+- Device checks: [[Device Test Plan]] → Drawn Board Checks (QA0–QA7)
+
+**Confirmed:** 2026-10-21 (built; device checks to come).
+
 ## Ring Finding on Real Boards: Colour Edges, Any Paint (2026-10-11)
 
 > **Later (2026-10-21):** stencilled boards whose rings are painted in arcs with gaps (Mark's) aren't read by this; a tapped fallback finds them. See **Boards With Broken Rings: Tap the Board** below.

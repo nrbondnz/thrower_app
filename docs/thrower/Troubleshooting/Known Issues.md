@@ -113,7 +113,7 @@
 
 - **Symptom:** on Quick draw, a tap says "No board found there.", or the outline drawn doesn't match the board (a ring too small or too big, or off centre).
 - **Cause:** the ring finder starts from the tap, and fits only start well from near the board's centre. Measured on the Quick draw clip's 16 still frames (2026-10-14): a tap on the centre finds the left (red on wood) board on 16 and the right (green and red) board on 15–16; a tap **15–30 px off centre** finds the green and red board on only **10–12** (the left still 15–16). It isn't resolution or compression: the right board fails as often on the uncompressed original at full size. See [[Design Decisions]] → Quick Draw: Choosing the Boards by Tapping.
-- **What to do:** tap the **bull** (the middle of the board), not a ring. If the outline is wrong, press **Choose boards again** (it also rewinds the clip to its still first frame) and tap again. There's no drag-to-adjust per board yet ([[story-checkpoint-quick-draw]] Task 2).
+- **What to do:** tap the **bull** (the middle of the board), not a ring. If the outline is wrong, press **Choose boards again** (it also rewinds the clip to its still first frame) and tap again. Since 2026-10-19 a wrong outline can also be dragged into place ([[story-checkpoint-adjust-boards]]). If the rings still can't be found (e.g. stencilled boards, outlines at the wrong scale), use **Draw round the boards** (2026-10-21, [[story-checkpoint-quick-draw-areas]]): draw a finger round each board on the screen; only the time decides, no scores.
 
 ## Quick Draw: Dropped Frames Make Times Coarser
 

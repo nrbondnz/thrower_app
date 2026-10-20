@@ -39,7 +39,8 @@
     <div><dt><code>playModeProvider · gameTypeProvider · gameLengthProvider</code></dt><dd>the setup screen&#x27;s choices, kept for the session (a length the game type doesn&#x27;t offer → its default)</dd></div>
     <div><dt><code>gameProvider (GameNotifier)</code></dt><dd>onEvent(board) → Match → a GameSession per player</dd></div>
     <div><dt><code>targetModelProvider · ringBoundaryRadiiProvider</code></dt><dd>the KATTA rings (TargetModel.katta)</dd></div>
-    <div><dt><code>quickDrawTargetsProvider · tapLocatorProvider</code></dt><dd>the tapped boards, and how a tap finds one</dd></div>
+    <div><dt><code>quickDrawTargetsProvider · tapLocatorProvider</code></dt><dd>the tapped (or drawn) boards, and how a tap finds one</dd></div>
+    <div><dt><code>boardsDrawnProvider · pictureSizerProvider</code></dt><dd>Quick draw&#x27;s boards drawn round (true) or tapped, kept for the session; the picture size a drawn loop is in (the next frame upright, at most 1920 px)</dd></div>
     <div><dt><code>playTargetsProvider</code></dt><dd>two-target Play&#x27;s boards, kept for the session</dd></div>
     <div><dt><code>signalSoundsProvider · startScheduleProvider</code></dt><dd>the beeps, and a new random pause each duel</dd></div>
     <div><dt><code>gameHistoryProvider · historySaveErrorProvider · clockProvider</code></dt><dd>the kept games (SyncedGameHistory: the phone first, then the backup), a failed save, when a game finished</dd></div>

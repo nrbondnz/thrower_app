@@ -28,6 +28,8 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │              └─ DebugTargetScreen                             │  │
 │  │  quick_draw_boards (Quick draw screens, two-target Play):     │  │
 │  │    BoardChoosing (tap → find → outline) · BoardsOverlay       │  │
+│  │    Quick draw: or draw round each (LoopDrawer → areaBoard;    │  │
+│  │      timed only) · boardsModeButton                           │  │
 │  │    ── BoardsPainter · boardLines · quickDrawLine              │  │
 │  │    BoardsEditor (drag each outline; Adjust boards → unlock)   │  │
 │  │    playerNames (Play's names) · NamesButton ─▶                │  │
@@ -42,7 +44,9 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │  gameProvider (GameNotifier)    targetModelProvider           │  │
 │  │  ringBoundaryRadiiProvider      authServiceProvider           │  │
 │  │  quickDrawTargetsProvider       tapLocatorProvider            │  │
-│  │    (add · replace · lock · unlock · clear)                    │  │
+│  │    (add · replace · lock · unlock · clear; areas: drawn)      │  │
+│  │  boardsDrawnProvider (Quick draw: draw round the boards)      │  │
+│  │  pictureSizerProvider (uprightPictureSize, at most 1920 px)   │  │
 │  │  liveQuickDrawCameraProvider (live Quick draw's own, 60 fps)  │  │
 │  │  signalSoundsProvider           startScheduleProvider         │  │
 │  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │
@@ -248,7 +252,8 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │   after go, false start and winner (story complete). The live       │
 │   game is Home → Quick draw: LiveQuickDrawScreen on the live        │
 │   camera (liveQuickDrawCameraProvider, 60 fps asked), boards chosen │
-│   the same way (quick_draw_boards), then each board watched on      │
+│   the same way (quick_draw_boards; or drawn round, timed only),     │
+│   then each board watched on                                        │
 │   every frame (CroppedCamera → QueuedCamera → ThrowWatcher) from    │
 │   1 s before the start signal's go; the result in large type        │
 │   (see Data Flow)                                                   │

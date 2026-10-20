@@ -17,6 +17,7 @@ Part of [[Requirements Index]] → Basic setup. **Status:** 🟡 Partly built (m
 - **Find target** (Play → Calibrate): finds the rings automatically on Nigel's boards, the reference photo, the A4 printout and the Live test recordings ([[Design Decisions]] → Ring Finding on Real Boards; Find Roughly, Then Look Closely). Then drag to adjust and Lock target.
 - **Tap the board** (2026-10-21, [[story-checkpoint-gapped-rings]]): when Find target can't find the rings, or finds the wrong board, the user taps **Tap the board**, then the middle of their board in the picture. The rings are looked for round the tap, at the camera's current zoom; the outline can then be adjusted and locked as usual. This also picks one board out of several.
 - **Stencilled rings:** found after a tap by how sharply the rings line up round it ([[Design Decisions]] → Boards With Broken Rings: Tap the Board). On Mark's middle board the outline lands on the paint (within a few px of the measured edges).
+- **Quick draw: Draw round the boards** (2026-10-21, [[story-checkpoint-quick-draw-areas]]): Quick draw doesn't need the rings (the time decides), so its boards can be drawn round by finger instead of found: the ellipse fitted to the loop is the board, timed only, never scored ([[Design Decisions]] → Quick Draw: Draw Round the Boards). A workaround for boards whose outlines come out at the wrong scale (backlog #20). Device checks QA0–QA7.
 - **Instructions:** Calibrating the target says to use Tap the board when Find target can't find the rings (for example, rings painted with gaps) or finds the wrong board, only when no one is throwing ([[Instructions and Safety]]).
 - **Tests:** `test/vision/marks_boards_test.dart` (Mark's boards from his video, `test/fixtures/marks_boards/`), `test/ui/calibration_screen_test.dart`.
 - **Device checks to come:** [[Device Test Plan]] → Board Finding Checks (BF0–BF8).
@@ -28,6 +29,6 @@ Part of [[Requirements Index]] → Basic setup. **Status:** 🟡 Partly built (m
 - Other ring patterns still untested: axes boards, boards with numbers painted in the rings, very worn paint.
 
 ## Related
-- [[Design Decisions]] → Boards With Broken Rings: Tap the Board; Ring Finding on Real Boards; Adjust and Lock the Calibration; Quick Draw: Choosing the Boards by Tapping
+- [[Design Decisions]] → Boards With Broken Rings: Tap the Board; Ring Finding on Real Boards; Adjust and Lock the Calibration; Quick Draw: Choosing the Boards by Tapping; Quick Draw: Draw Round the Boards
 - [[Glossary]] → Ring alignment (radial profile), Tap the board, Stencilled rings, Seed (tap) centre
 - [[Scoring Rules]], [[Instructions and Safety]]

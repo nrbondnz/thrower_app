@@ -17,6 +17,7 @@ import 'package:thrower_app/scoring/quick_draw_match.dart';
 import 'package:thrower_app/ui/camera_view.dart';
 import 'package:thrower_app/ui/home_screen.dart';
 import 'package:thrower_app/ui/live_quick_draw_screen.dart';
+import 'package:thrower_app/ui/quick_draw_boards.dart';
 import 'package:thrower_app/ui/play_screen.dart';
 import 'package:thrower_app/ui/play_setup_screen.dart';
 import 'package:thrower_app/vision/ellipse.dart';
@@ -475,6 +476,13 @@ void main() {
     });
   });
 
+  test('a drawn board is painted as its outline only; a tapped board with its rings', () {
+    final b = boardAtCentre(100, 200);
+    void Function(Canvas) painted(QuickDrawTargets t) => (canvas) => BoardsPainter(t).paint(canvas, const Size(720, 1280));
+    expect(painted(QuickDrawTargets(boards: [b], areas: const {0})), paintsExactlyCountTimes(#drawPath, 1));
+    expect(painted(QuickDrawTargets(boards: [b])), paintsExactlyCountTimes(#drawPath, 5));
+  });
+
   testWidgets('choose boards again forgets the boards', (tester) async {
     await pumpHome(tester, stillCamera);
     await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
@@ -533,6 +541,18 @@ void main() {
     testWidgets('a draw', (tester) async {
       await show(tester, judgeQuickDraw([at(817, score: 3), at(817, score: 3)], go));
       expect(tester.widget<Text>(find.byKey(const Key('quickDrawHeadline'))).data, 'A draw');
+    });
+
+    // Drawn boards (story-checkpoint-quick-draw-areas): times only.
+    testWidgets('drawn boards on the same frame: a draw, with times and no scores', (tester) async {
+      QuickDrawThrow drawn(int ms) =>
+          QuickDrawThrow(impact: Duration(milliseconds: 2800 + ms), stuck: true, scored: false);
+      final v = judgeQuickDraw([drawn(817), drawn(817)], go);
+      await show(tester, v);
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawHeadline'))).data, 'A draw');
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawResultPlayer0'))).data, '1:  0.82 s');
+      expect(tester.widget<Text>(find.byKey(const Key('quickDrawResultPlayer1'))).data, '2:  0.82 s');
+      expect(QuickDrawMatch(results: [v.winner]).isOver, isFalse, reason: 'a drawn round decides nothing');
     });
 
     testWidgets('a win on score says so', (tester) async {

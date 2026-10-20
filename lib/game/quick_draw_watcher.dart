@@ -38,7 +38,8 @@ class QuickDrawThrow {
   final bool scored;
 
   @override
-  String toString() => 'QuickDrawThrow(${impact.inMilliseconds} ms, ${stuck ? 'stuck $score' : 'bounce-out'})';
+  String toString() =>
+      'QuickDrawThrow(${impact.inMilliseconds} ms, ${stuck ? (scored ? 'stuck $score' : 'stuck') : 'bounce-out'})';
 }
 
 /// Watches each Quick draw board with the single-board throw detection

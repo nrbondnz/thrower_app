@@ -86,6 +86,21 @@ List<List<int>> reds(RgbImage img) => [
     ];
 
 void main() {
+  // Drawn boards (story-checkpoint-quick-draw-areas) are sized by
+  // uprightSizeOf; they must be in the same pixels as frameToRgb's picture.
+  group('uprightSizeOf matches frameToRgb', () {
+    final small = RgbImage.blank(40, 30), large = RgbImage.blank(400, 300);
+    for (final (name, img, maxSide) in [('under maxSide', small, 100), ('over maxSide', large, 120)]) {
+      for (final rotation in const [0, 90, 180, 270]) {
+        test('$name, turned $rotation°', () {
+          final frame = bgraFrame(img);
+          final rgb = frameToRgb(frame, maxSide: maxSide, rotation: rotation)!;
+          expect(uprightSizeOf(frame, maxSide: maxSide, rotation: rotation), (rgb.width, rgb.height));
+        });
+      }
+    }
+  });
+
   group('frameRotation', () {
     const cases = <(int, int, int)>[(90, 0, 90), (90, 90, 0), (90, 180, 270), (90, 270, 180), (270, 0, 270), (0, 0, 0)];
     for (final (sensor, device, expected) in cases) {

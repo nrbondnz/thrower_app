@@ -5,11 +5,19 @@ import 'rgb_image.dart';
 /// larger than [maxSide]: the picture a board's pixels are in, when a board
 /// is drawn by finger rather than found in a converted frame.
 (int, int) uprightSizeOf(CameraFrame frame, {int maxSide = 600, int rotation = 0}) {
-  final longest = frame.width > frame.height ? frame.width : frame.height;
-  final step = longest <= maxSide ? 1.0 : longest / maxSide;
-  final w = (frame.width / step).floor(), h = (frame.height / step).floor();
+  final (w, h) = _scaledSize(frame, _step(frame, maxSide));
   return rotation == 90 || rotation == 270 ? (h, w) : (w, h);
 }
+
+/// Source pixels per output pixel (≥ 1; never upscales).
+double _step(CameraFrame frame, int maxSide) {
+  final longest = frame.width > frame.height ? frame.width : frame.height;
+  return longest <= maxSide ? 1.0 : longest / maxSide;
+}
+
+/// [frame]'s size downscaled by [step], before turning upright.
+(int, int) _scaledSize(CameraFrame frame, double step) =>
+    ((frame.width / step).floor(), (frame.height / step).floor());
 
 /// Converts a camera frame to an upright [RgbImage] no larger than [maxSide]
 /// on its long side, sampling (not averaging) to keep it fast. Supports BGRA
@@ -18,12 +26,10 @@ RgbImage? frameToRgb(CameraFrame frame, {int maxSide = 600, int rotation = 0}) {
   final sample = _sampler(frame);
   if (sample == null) return null;
 
-  final longest = frame.width > frame.height ? frame.width : frame.height;
-  // Source pixels per output pixel (≥ 1; never upscales).
-  final step = longest <= maxSide ? 1.0 : longest / maxSide;
-  final w = (frame.width / step).floor(), h = (frame.height / step).floor();
-  final swap = rotation == 90 || rotation == 270;
-  final out = RgbImage.blank(swap ? h : w, swap ? w : h);
+  final step = _step(frame, maxSide);
+  final (w, h) = _scaledSize(frame, step);
+  final (outW, outH) = uprightSizeOf(frame, maxSide: maxSide, rotation: rotation);
+  final out = RgbImage.blank(outW, outH);
 
   for (var oy = 0; oy < out.height; oy++) {
     for (var ox = 0; ox < out.width; ox++) {
