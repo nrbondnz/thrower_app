@@ -1,0 +1,11 @@
+{
+  "note": "Pixels in each crop. Radii are the fitted ellipse's mean semi-axis. Middle: measured along 120 rays (black edges) and by eye (the sprayed red bull's edge). Left and right: by eye, in shade.",
+  "middle": {
+    "centre": [230, 201],
+    "bullRadius": 26,
+    "edges": {"0.4": 61, "0.6": 84.5, "0.8": 113, "1.0": 141.5},
+    "fullFrameOffset": [260, 810]
+  },
+  "left": {"centre": [125, 247], "outerRadius": 150},
+  "right": {"centre": [195, 160], "outerRadius": 122}
+}
