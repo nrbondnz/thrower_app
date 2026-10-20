@@ -278,7 +278,7 @@ For [[story-checkpoint-app-user-accounts]] (accounts on AWS Amplify, London). Na
   - **Look for:** Still signed in after reopening
 - **ACC3**
   - **Do:** (After Task 3 deploys) Person icon → **Sign in with Google**
-  - **Look for:** Google's page says **Thrower**, then back in the app signed in
+  - **Look for:** Google's page says **Thrower**, then back in the app signed in; done 2026-10-20 ("google sign in works", Samsung, job 7)
 - **ACC4**
   - **Do:** (After Task 3, iPhone) **Sign in with Apple**
   - **Look for:** Apple's sheet, then signed in

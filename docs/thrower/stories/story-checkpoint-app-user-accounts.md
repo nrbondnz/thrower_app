@@ -310,7 +310,7 @@ Read as: do it as WhereWillWeVisit does.
 - **AC2: Home → Account: sign up, in, out (email, Google, Apple)**
   - **Implementation:** `HomeScreen` `homeAccount`, `AccountScreen`, `AccountDetails`, `AmplifyAuthService`; `auth/resource.ts`, `backend.ts` domains, the `throwerapp` link
   - **Test:** `account_screen_test.dart` (4)
-  - **Status:** ✅ Email (device ACC1 ✅). ⛔ Google and Apple: secrets, deploy, Xcode
+  - **Status:** ✅ Email (device ACC1 ✅); ✅ Google (device ACC3 ✅, 2026-10-20). ⛔ Apple: Xcode on the Mac (ACC4)
 - **AC3: backed up; kept on the phone without signal and sent later**
   - **Implementation:** `SyncedGameHistory`, `PlayerNamesNotifier.set`/`syncWith`, `BackupNotifier`, `AmplifyBackup.put`/`save`
   - **Test:** `synced_game_history_test.dart` (signed in ×5; providers)
@@ -358,6 +358,12 @@ Read as: do it as WhereWillWeVisit does.
   - a new Services ID and key in Thrower's team `QCQ64RLD77`;
   - later, Thrower's own IAP key and Stripe account.
 - It's also a settled answer in both repos' `docs/dont-ask-again.md`.
+
+#### Deployed (2026-10-20)
+- Nigel created the Apple pieces with Claude in Chrome: Sign In with Apple on the App ID `nz.nrbond.thrower`; the Services ID **`nz.nrbond.thrower.signin`** ("Thrower", primary App ID Thrower's, both Cognito domains and `idpresponse` URLs); the key "Thrower Sign in with Apple" (Nigel downloaded the `.p8`). The Google client was made by Nigel.
+- All six secrets set in Amplify (names checked, not values). **Job 7 succeeded**: the pool has Google and SignInWithApple, domain `throwerapp`.
+- Managed Login branding created for the app client (`50cm62sqhgdihkh4l5vf9d4f6n`). Outputs regenerated (GOOGLE, SIGN_IN_WITH_APPLE); release APK installed with `adb install -r`.
+- **ACC3 ✅:** Nigel: "google sign in works".
 
 #### Still open in Task 5 (needs Nigel or the deploy)
 - Approve and publish the privacy policy; the store privacy labels.

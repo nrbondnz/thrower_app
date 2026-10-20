@@ -81,14 +81,14 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
 
 ### Summary
 
-| # | Secret | Source |
-|---|---|---|
-| 1 | `GOOGLE_CLIENT_ID` | New Thrower Google project |
-| 2 | `GOOGLE_CLIENT_SECRET` | The same new client |
-| 3 | `APPLE_TEAM_ID` | Thrower's team, `QCQ64RLD77` |
-| 4 | `APPLE_CLIENT_ID` | New Services ID |
-| 5 | `APPLE_KEY_ID` | New Sign in with Apple key |
-| 6 | `APPLE_PRIVATE_KEY` | That new key's `.p8` |
+| #   | Secret                 | Source                       |
+| --- | ---------------------- | ---------------------------- |
+| 1   | `GOOGLE_CLIENT_ID`     | New Thrower Google project   |
+| 2   | `GOOGLE_CLIENT_SECRET` | The same new client          |
+| 3   | `APPLE_TEAM_ID`        | Thrower's team, `QCQ64RLD77` |
+| 4   | `APPLE_CLIENT_ID`      | New Services ID              |
+| 5   | `APPLE_KEY_ID`         | New Sign in with Apple key   |
+| 6   | `APPLE_PRIVATE_KEY`    | That new key's `.p8`         |
 
 ### 1. `GOOGLE_CLIENT_ID`
 - **What:** the Google OAuth client's ID (ends `….apps.googleusercontent.com`).
