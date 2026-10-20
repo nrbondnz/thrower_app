@@ -1,0 +1,9 @@
+{
+  "description": "One player, 3 rounds of 3 on the reference board, from 2 m at 45°: knives in every ring, some 3% from a ring's edge, and a bounce-out. Collected after every round.",
+  "seed": 1,
+  "rounds": [
+    [{"score": 5}, {"score": 4, "at": "outer"}, {"score": 3}],
+    [{"score": 2}, {"bounce": true}, {"score": 4, "at": "inner"}],
+    [{"score": 1}, {"score": 3, "at": "outer"}, {"score": 5, "at": "outer"}]
+  ]
+}

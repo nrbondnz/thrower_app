@@ -76,6 +76,10 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Story:** **Confirm Precision's distances and Three targets' name** (Nigel, 2026-10-20)
   - **Notes:** Precision: Nigel listed eight distances (3, 5, 7, 3, 4, 5, 6, 7 m) for seven rounds; the app uses his guess, **3, 5, 7, 3, 4, 5, 7 m** (`precisionDistances`). Confirm the seven (or whether it's 8 rounds), e.g. with his brother or the KATTA rules. Three targets: "Three targets" is Nigel's name for now (in place of "Multi"); confirm the competition's real name. Both are one-line changes in `lib/scoring/game_type.dart`. **But:** kept games don't store their distances; History reads them from `precisionDistances` (`historyRoundLabel`), so changing the list would relabel the Precision games already kept. If the distances change, keep them in the record (or the old list for older games) first.
   - **Depends on:** —
+- **19**
+  - **Story:** **Virtual thrower: rendered games to test the camera** (Nigel, 2026-10-20: option A, "fake pictures"; recordings for tests only; one board first). **In progress:** [[story-checkpoint-virtual-thrower]].
+  - **Notes:** Whole games rendered on the PC (`SyntheticScene`) as Live test recordings with an answer key, replayed through the real camera path in tests. Later: random games from a seed (a "virtual thrower"), then three boards and 3–7 m for #17. Not in the app (size).
+  - **Depends on:** —
 
 ## Carry-overs from Live Test
 

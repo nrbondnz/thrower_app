@@ -1,0 +1,163 @@
+{
+ "description": "One player, 3 rounds of 3 on the reference board, from 2 m at 45°: knives in every ring, some 3% from a ring's edge, and a bounce-out. Collected after every round.",
+ "script": "solo_3_rounds.json",
+ "fps": 15,
+ "frameSize": [
+  640,
+  360
+ ],
+ "durationSeconds": 56.6,
+ "camera": {
+  "x": 1.414,
+  "y": 0.0,
+  "z": 1.414
+ },
+ "paintedRingRadii": [
+  0.21819289554590665,
+  0.395200685374765,
+  0.6190091810499325,
+  0.8,
+  1.0
+ ],
+ "roundTotals": [
+  12,
+  6,
+  9
+ ],
+ "stuckScores": [
+  5,
+  4,
+  3,
+  2,
+  4,
+  1,
+  3,
+  5
+ ],
+ "events": [
+  {
+   "round": 1,
+   "throw": 1,
+   "kind": "stuck",
+   "time": 3.05,
+   "settled": 3.35,
+   "score": 5,
+   "entryNormalised": [
+    0.0896820697727426,
+    0.062122148046841255
+   ]
+  },
+  {
+   "round": 1,
+   "throw": 2,
+   "kind": "stuck",
+   "time": 6.55,
+   "settled": 6.85,
+   "score": 4,
+   "entryNormalised": [
+    -0.38901773671362544,
+    0.026072300116488634
+   ]
+  },
+  {
+   "round": 1,
+   "throw": 3,
+   "kind": "stuck",
+   "time": 10.05,
+   "settled": 10.35,
+   "score": 3,
+   "entryNormalised": [
+    -0.0029236707193299257,
+    -0.5070965050538464
+   ]
+  },
+  {
+   "round": 1,
+   "kind": "visit",
+   "time": 12.9,
+   "settled": 17.9,
+   "knivesRemoved": 3
+  },
+  {
+   "round": 2,
+   "throw": 1,
+   "kind": "stuck",
+   "time": 21.05,
+   "settled": 21.35,
+   "score": 2,
+   "entryNormalised": [
+    0.04985516395588131,
+    0.7077508223965072
+   ]
+  },
+  {
+   "round": 2,
+   "throw": 2,
+   "kind": "bounceOut",
+   "time": 24.55,
+   "score": 0
+  },
+  {
+   "round": 2,
+   "throw": 3,
+   "kind": "stuck",
+   "time": 28.650000000000002,
+   "settled": 28.950000000000003,
+   "score": 4,
+   "entryNormalised": [
+    0.18614545867809595,
+    -0.123707384557021
+   ]
+  },
+  {
+   "round": 2,
+   "kind": "visit",
+   "time": 31.5,
+   "settled": 36.5,
+   "knivesRemoved": 2
+  },
+  {
+   "round": 3,
+   "throw": 1,
+   "kind": "stuck",
+   "time": 39.65,
+   "settled": 39.95,
+   "score": 1,
+   "entryNormalised": [
+    -0.15669078475488918,
+    0.8862550411551389
+   ]
+  },
+  {
+   "round": 3,
+   "throw": 2,
+   "kind": "stuck",
+   "time": 43.15,
+   "settled": 43.45,
+   "score": 3,
+   "entryNormalised": [
+    -0.149325296579628,
+    -0.5938072350744666
+   ]
+  },
+  {
+   "round": 3,
+   "throw": 3,
+   "kind": "stuck",
+   "time": 46.65,
+   "settled": 46.95,
+   "score": 5,
+   "entryNormalised": [
+    0.2106857521593814,
+    -0.020149750604915088
+   ]
+  },
+  {
+   "round": 3,
+   "kind": "visit",
+   "time": 49.5,
+   "settled": 54.5,
+   "knivesRemoved": 3
+  }
+ ]
+}

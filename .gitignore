@@ -62,3 +62,8 @@ node_modules/
 .amplify/
 amplify_outputs.json
 assets/config/amplify_outputs.json
+
+# Virtual thrower renders (story-checkpoint-virtual-thrower): deterministic,
+# ~40 MB each; regenerate with `dart run tool/render_game.dart <script.json>`.
+test/fixtures/virtual_games/*/game.tfrm
+test/fixtures/virtual_games/*/preview.gif
