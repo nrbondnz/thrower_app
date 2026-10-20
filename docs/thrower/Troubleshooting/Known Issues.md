@@ -148,7 +148,19 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 
 **Symptom:** `flutter build apk` warns: "Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): amplify_analytics_pinpoint, amplify_auth_cognito, amplify_db_common, amplify_secure_storage. Future versions of Flutter will fail to build…".
 **Cause:** Amplify Flutter 2.16 (the newest at the time) still applies KGP. Flutter 3.47 only warns about it.
-**Fix:** none needed yet. Before upgrading Flutter, check the Amplify Flutter changelog for "Built-in Kotlin" support and upgrade it first. `amplify_analytics_pinpoint` comes in with `amplify_flutter`, but the app never adds the analytics plugin, so nothing is collected.
+**Fix:** none needed yet. Before upgrading Flutter, check the Amplify Flutter changelog for "Built-in Kotlin" support and upgrade it first. `amplify_analytics_pinpoint` comes in with `amplify_auth_cognito` (a transitive dependency in `pubspec.lock`), but the app never adds the analytics plugin and its Amplify settings have no analytics section, so nothing is collected (checked 2026-10-21: the privacy policy's "no analytics" holds).
+
+## Build Warning: "A restricted method in java.lang.System has been called" (2026-10-21)
+
+**Symptom:** at the start of `flutter build apk` / `flutter run`: "WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader … Use --enable-native-access=ALL-UNNAMED … Restricted methods will be blocked in a future release".
+**Cause:** Gradle 9.3.1's own native library loader on a newer Java (22+ warns about native access). Nothing to do with the app's code.
+**Fix:** none needed; it goes when Flutter / Android Studio move to a Gradle that enables native access. The build and the app are unaffected.
+
+## Build Warning: "SDK XML versions up to 3 but … version 4" (2026-10-21)
+
+**Symptom:** "Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered."
+**Cause:** Android Studio's SDK Manager wrote newer SDK metadata than the older Android SDK command-line tools the build reads it with.
+**Fix (optional, harmless either way):** Android Studio → Settings → Languages & Frameworks → Android SDK → **SDK Tools** → tick **Android SDK Command-line Tools (latest)** → Apply.
 
 ## Release Builds Need INTERNET in the App's Manifest (2026-10-19)
 
