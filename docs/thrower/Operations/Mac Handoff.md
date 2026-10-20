@@ -25,6 +25,15 @@ From [[story-checkpoint-app-user-accounts]]. Build 9 can still go out without ac
 - **Adjust each board** ([[story-checkpoint-adjust-boards]], backlog #10, 2026-10-19): on Quick draw and two-target Play, either board's outline can be dragged into place before locking; **Adjust boards** unlocks them, keeping both.
 - **No new plugins, permissions or assets.** `flutter test`: 766 pass on the PC.
 
+### Also in it since then (updated 2026-10-21): Nigel wants build 9 for Mark
+Nigel (2026-10-21): rather than ask Mark for better videos, give him **the latest version**. Mark's screen recordings on build 8 ([[story-checkpoint-gapped-rings]] → Follow-up): scores mostly right, but one stuck knife missed, one stuck knife called a bounce-out, and on his stencilled boards Quick draw's outlines sometimes at the wrong size (backlog #20).
+- **Adjust boards** (above) is the immediate help for Mark: if an outline doesn't sit on the painted rings, drag it into place before locking.
+- **More game types** ([[story-checkpoint-more-game-types]]): **Which game?** on Play's setup: Scoring, **Precision** (7 rounds from 3, 5, 7, 3, 4, 5, 7 m) and **Three targets**, both scored by hand on a score pad. History record **version 3** (written only once a new-type game is kept).
+- **Tap the board** in Calibrate ([[story-checkpoint-gapped-rings]]): when Find target can't find the rings (Mark's stencilled boards), tap the board's middle; the ring finder's new fallback reads gapped rings from there. (Quick draw's own taps get the fallback too.)
+- **Accounts** ([[story-checkpoint-app-user-accounts]]): sign-in (email, Google, Apple) and the backup, on AWS London. **A choice for Nigel:** build 9 **without** the settings file runs signed out exactly as before (simplest for Mark; no Xcode capability needed); **with** it needs section 00000 first (`pod install`, Sign in with Apple capability). Either way `pod install` is needed: the Amplify plugins are in `pubspec.yaml`.
+- **Plugins since build 8:** `amplify_flutter`, `amplify_auth_cognito`, `amplify_api`, `amplify_authenticator` (pods). Permissions: none new on iOS (Android gained INTERNET for release builds). `flutter test`: 875 pass on the PC (2026-10-21).
+- **Checks to send Mark** (with QM, N and A above): [[Device Test Plan]] → Board Finding Checks **BF8** (his real boards), and the Game Type Checks (GT0–GT9) if he plays them.
+
 ### Then
 Nigel sends his brother [[Device Test Plan]] → **Quick Draw Match Checks** (QM0–QM6), **Named Players Checks** (N0–N6) and **Adjust Boards Checks** (A0–A5), with whatever of Q0–Q8, M0–M9, H0–H7 and C0–C7 is still to do from build 8.
 
