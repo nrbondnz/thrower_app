@@ -51,10 +51,13 @@ The website branches are **branches of the existing `thrower_app` Amplify app** 
 - **`website-dev`:** stage Development; `https://website-dev.d1yhmpx84pdvnh.amplifyapp.com`; first build OK 2026-10-20.
 - Both auto-build on push. Added by CLI (`aws amplify create-branch`, framework Astro).
 
-### Custom domain
-`knifeandaxethrower.com` is attached to the app (`aws amplify create-domain-association`, 2026-10-20):
-- the root and `www` → `website`;
-- `dev` → `website-dev`.
+### Custom domains
+Two domain entries on the app (`aws amplify create-domain-association`, 2026-10-20), each with an Amplify-managed certificate:
+- **`knifeandaxethrower.com`:** the root and `www` → `website`.
+- **`dev.knifeandaxethrower.com`:** the root and `www` → `website-dev`, so `www.dev.` works too.
+  - *Why its own entry:* Amplify doesn't accept a two-level prefix (`www.dev`) under the main domain, and a certificate for `*.knifeandaxethrower.com` doesn't cover `www.dev.`.
+- **Redirect** (the app's custom rules, first match wins): `https://www.dev.knifeandaxethrower.com` → `https://dev.knifeandaxethrower.com` (301). The rule after it, `/<*>` → `/index.html` (404-200), was already there for `main`. `update-app --custom-rules` replaces the whole list, so keep both.
+- **Not done:** `www.` → the root as a redirect (both serve the same site; add a rule like the one above if wanted).
 
 The hosted zone is in the same AWS account, so Amplify adds the DNS records and the SSL certificate itself (up to about 30 minutes; it shows as "Available" under **Hosting → Custom domains**).
 
