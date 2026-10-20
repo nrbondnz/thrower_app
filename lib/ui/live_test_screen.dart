@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../camera/recorded_camera.dart';
 import '../providers.dart';
+import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 import 'calibration_screen.dart';
 import 'play_setup_screen.dart';
@@ -86,6 +87,9 @@ class LiveTestScreen extends ConsumerWidget {
                 key: const Key('liveTestTwoTargets'),
                 onPressed: () {
                   ref.read(recordingChoiceProvider.notifier).use(quickDrawRecording);
+                  // A camera game: Scoring, even if Precision or Three
+                  // targets was played last (they're scored by hand).
+                  ref.read(gameTypeProvider.notifier).choose(GameType.scoring);
                   ref.read(playModeProvider.notifier).choose(PlayMode.twoTargets);
                   open(const TwoTargetPlayScreen());
                 },

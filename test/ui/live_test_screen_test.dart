@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/camera/target_camera.dart';
 import 'package:thrower_app/providers.dart';
+import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/camera_view.dart';
 import 'package:thrower_app/ui/home_screen.dart';
@@ -126,5 +127,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(camera.playing.value, isFalse);
     expect(camera.current.value!.index, 0);
+  });
+
+  // Traceability (more game types, 2026-10-20): Play on two targets is a
+  // camera game, so Scoring, even after Precision.
+  testWidgets('Play on two targets after a Precision game plays Scoring, on the recording', (tester) async {
+    final container = await pump(tester, const LiveTestScreen());
+    container.read(gameTypeProvider.notifier).choose(GameType.precision);
+    final button = find.byKey(const Key('liveTestTwoTargets'));
+    await tester.scrollUntilVisible(button, 100, scrollable: find.byType(Scrollable).first);
+    await tester.tap(button);
+    await tester.pump();
+    expect(container.read(gameTypeProvider), GameType.scoring);
+    expect(container.read(gameProvider).type, GameType.scoring);
   });
 }

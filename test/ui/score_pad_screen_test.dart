@@ -9,6 +9,7 @@ import 'package:thrower_app/scoring/game_session.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/play_setup_screen.dart';
+import 'package:thrower_app/ui/score_corrections.dart';
 import 'package:thrower_app/ui/score_pad_screen.dart';
 
 import '../history/memory_game_history.dart';
@@ -227,5 +228,12 @@ void main() {
       }
       expect((padHeadline(m), padWhere(m)), ('Game over! 18', null));
     });
+  });
+
+  // Traceability (2026-10-20): the add-a-throw popup doesn't mention a
+  // camera on the score pad.
+  test('adding a throw: "the camera missed" on Play, plain on the score pad', () {
+    expect(addThrowTitle(Match(PlayMode.solo)), contains('camera'));
+    expect(addThrowTitle(Match(PlayMode.solo, type: GameType.precision)), 'Add a throw (0: missed the board)');
   });
 }

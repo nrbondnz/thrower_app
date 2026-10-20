@@ -228,7 +228,7 @@ void main() {
 
     test('Precision rounds show their distance: "Round 2 (5 m)"', () {
       final g = typed(GameType.precision, PlayMode.solo, [List.filled(7, 9)]);
-      expect([for (var r = 0; r < 7; r++) roundLabel(g, r)], [
+      expect([for (var r = 0; r < 7; r++) historyRoundLabel(g, r)], [
         'Round 1 (3 m)', 'Round 2 (5 m)', 'Round 3 (7 m)', 'Round 4 (3 m)', 'Round 5 (4 m)', 'Round 6 (5 m)',
         'Round 7 (7 m)',
       ]);
@@ -236,7 +236,7 @@ void main() {
 
     test('other games have no distance on their rounds', () {
       final g = typed(GameType.threeTargets, PlayMode.solo, [List.filled(3, 9)], rounds: 3);
-      expect(roundLabel(g, 0), 'Round 1');
+      expect(historyRoundLabel(g, 0), 'Round 1');
     });
   });
 }

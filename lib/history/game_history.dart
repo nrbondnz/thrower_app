@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../scoring/game_type.dart';
 import 'game_record.dart';
 
 /// The finished games kept on the phone (game-history story). An interface,
@@ -120,13 +121,20 @@ class FileGameHistory implements GameHistory {
     }
   }
 
+  /// The oldest format that holds [games]: version 2 while every game is
+  /// Scoring (its format didn't change), so an older build of the app can
+  /// still read the file; [GameRecord.version] once a Precision or Three
+  /// targets game is in it.
+  static int _versionFor(List<GameRecord> games) =>
+      games.any((g) => g.type != GameType.scoring) ? GameRecord.version : 2;
+
   Future<void> _write(List<GameRecord> games) async {
     final file = await _file;
     final temp = File('${file.path}.tmp');
     try {
       await file.parent.create(recursive: true);
       await temp.writeAsString(
-        jsonEncode({'version': GameRecord.version, 'games': [for (final g in games) g.toJson()]}),
+        jsonEncode({'version': _versionFor(games), 'games': [for (final g in games) g.toJson()]}),
         flush: true,
       );
       await temp.rename(file.path);

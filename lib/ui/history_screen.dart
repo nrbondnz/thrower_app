@@ -171,8 +171,8 @@ class GameRecordScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     r < game.countedRounds
-                        ? '${roundLabel(game, r)}: $total'
-                        : '${roundLabel(game, r)}: $total (not counted)',
+                        ? '${historyRoundLabel(game, r)}: $total'
+                        : '${historyRoundLabel(game, r)}: $total (not counted)',
                     key: Key('historyRound-$p-$r'),
                   ),
                 ),
@@ -231,7 +231,7 @@ String howText(GameRecord game) => [
     ].join(' · ');
 
 /// "Round 2", or for Precision with its distance, "Round 2 (5 m)".
-String roundLabel(GameRecord game, int round) => switch (game.type.distanceOf(round)) {
+String historyRoundLabel(GameRecord game, int round) => switch (game.type.distanceOf(round)) {
       final d? => 'Round ${round + 1} ($d m)',
       null => 'Round ${round + 1}',
     };

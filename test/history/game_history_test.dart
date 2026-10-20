@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/game_history.dart';
 import 'package:thrower_app/history/game_record.dart';
+import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 
 /// A record finished on 16 Oct 2026 at 14:[minute], one player.
@@ -105,7 +106,7 @@ void main() {
     await expectLater(broken.add(game(10)), throwsA(isA<GameHistoryException>()));
   });
 
-  test('a history kept before names (version 1) still reads, and is written as the current version', () async {
+  test('a history kept before names (version 1) still reads, and is written as version 2', () async {
     file().writeAsStringSync(
       '{"version": 1, "games": [{"id": "g1", "finishedAt": "2026-10-16T01:32:00.000Z", "mode": "sharedTarget", '
       '"rounds": 1, "players": [[7], [12]]}]}',
@@ -113,7 +114,29 @@ void main() {
     final games = await history.load();
     expect([games.single.nameOf(0), games.single.nameOf(1)], ['Player 1', 'Player 2']);
     await history.add(game(40));
-    expect(file().readAsStringSync(), startsWith('{"version":${GameRecord.version}'));
+    expect(file().readAsStringSync(), startsWith('{"version":2'));
     expect((await history.load()).length, 2);
+  });
+
+  // More-game-types story (Traceability, 2026-10-20): an older build of the
+  // app sets aside a file with a newer version, so the file says version 3
+  // only once it holds a game that needs it.
+  test('only Scoring games: written as version 2, which older builds can read', () async {
+    await history.add(game(10));
+    expect(file().readAsStringSync(), startsWith('{"version":2'));
+  });
+
+  test('a Precision game in it: written as version 3', () async {
+    final g = game(20);
+    await history.add(GameRecord(
+      id: g.id,
+      finishedAt: g.finishedAt,
+      mode: g.mode,
+      rounds: 7,
+      players: g.players,
+      type: GameType.precision,
+    ));
+    expect(file().readAsStringSync(), startsWith('{"version":3'));
+    expect((await history.load()).single.type, GameType.precision);
   });
 }

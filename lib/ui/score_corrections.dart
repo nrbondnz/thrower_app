@@ -22,6 +22,11 @@ abstract interface class CorrectionHost {
   void addedByHand(int board, ThrowSlot slot, {required bool newRound});
 }
 
+/// The popup title for adding a throw: one the camera missed, or, on the
+/// score pad (no camera), just a throw.
+String addThrowTitle(Match match) =>
+    match.type.handScored ? 'Add a throw (0: missed the board)' : 'A throw the camera missed (0: missed the board)';
+
 /// The scores a throw can have: 0 and each ring's score, lowest first.
 List<int> scoreChoices(Iterable<int> ringScores) => {0, ...ringScores}.toList()..sort();
 
@@ -149,7 +154,7 @@ class ScoreCorrections extends ConsumerWidget {
   }
 
   Future<void> _add(BuildContext context, WidgetRef ref) async {
-    final score = await _pick(context, ref, 'A throw the camera missed (0: missed the board)');
+    final score = await _pick(context, ref, addThrowTitle(ref.read(gameProvider)));
     if (score == null || !context.mounted) return;
     final before = ref.read(gameProvider);
     final newRound = before.nextThrowStartsRound(board: board);
@@ -242,7 +247,7 @@ class _RoundEditor extends ConsumerWidget {
                           ? () async {
                               final s = await showScorePicker(
                                 context,
-                                title: 'A throw the camera missed (0: missed the board)',
+                                title: addThrowTitle(ref.read(gameProvider)),
                                 scores: scores,
                               );
                               if (s != null && context.mounted) notifier.addToRound(player, round, s);
