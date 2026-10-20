@@ -1,11 +1,11 @@
 {
-  "note": "Pixels in each crop. Radii are the fitted ellipse's mean semi-axis. Middle: measured along 120 rays (black edges) and by eye (the sprayed red bull's edge). Left and right: by eye, in shade.",
+  "note": "Pixels in each crop (add fullFrameOffset for frame-1s.jpg). Radii: the mean semi-axis. Middle: the black edges measured along 120 rays from the bull and checked by eye on an overlay (the 0.4 edge corrected from 61 to 56, 2026-10-21); the sprayed red bull by eye. Right (in shade): centre and outer edge checked by eye on an overlay. Left: cut off by the picture's edge, not a usable calibration view.",
   "middle": {
-    "centre": [230, 201],
-    "bullRadius": 26,
-    "edges": {"0.4": 61, "0.6": 84.5, "0.8": 113, "1.0": 141.5},
+    "centre": [231, 202],
+    "bullRadius": 27,
+    "edges": {"0.4": 56, "0.6": 84.5, "0.8": 113, "1.0": 141},
     "fullFrameOffset": [260, 810]
   },
-  "left": {"centre": [125, 247], "outerRadius": 150},
-  "right": {"centre": [195, 160], "outerRadius": 122}
+  "right": {"centre": [204, 169], "outerRadius": 122, "fullFrameOffset": [600, 676]},
+  "left": {"centre": [125, 247], "outerRadius": 150, "fullFrameOffset": [0, 580], "note": "cut off at the left of the picture"}
 }

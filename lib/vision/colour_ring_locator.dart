@@ -27,6 +27,10 @@ import 'target_locator.dart';
 ///    knife handles or cuts are outvoted. Re-centre on the fit and repeat.
 /// 5. Keep the candidate whose rings pass the sanity checks with the highest
 ///    confidence.
+/// 6. A tapped board none of that reads (stencilled rings painted in arcs on
+///    speckled wood: Mark's boards, 2026-10-21): find the centre and size
+///    from how well the rings line up round the tap, then read the edges
+///    with that size fixed ([_alignedStarts]).
 ///
 /// The outermost ring's outer edge is never used: on a log board it is the
 /// irregular bark edge.
@@ -110,6 +114,38 @@ class ColourRingLocator implements TargetLocator {
       }
     }
 
+    // A tapped board the usual search can't read (rings painted in arcs on
+    // speckled wood: Mark's boards, 2026-10-21): centre and size from the
+    // rings' alignment around the tap ([_alignedStarts]), then the edge
+    // reading from there. Only from a tap: tried without one (from the
+    // picture's middle) on the Live test's board 2, it turned frames the
+    // usual search couldn't read into near misses (a ring 10–20% off).
+    if (best == null && s != null) {
+      for (final start in _alignedStarts(s, work)) {
+        // The edge reading needs only the size, not the ring colours.
+        const none = _Rgb(0, 0, 0);
+        final fit = _fitReading(start.centre, work, _Colours(none, none, start.outerRadius), _Reading.edges,
+            fixedScale: true);
+        if (fit != null) {
+          // A tapped board fills a fair share of the window searched round
+          // the tap (Mark's middle board ~29%, the Quick draw boards ~19%);
+          // grass under a tap made a 6% one, 2026-10-21.
+          final outerRadius = fit.ellipses[boundaryRadii.last]!.semiMajor / boundaryRadii.last;
+          final problem = fit.confidence < minConfidence
+              ? 'Rings too unclear'
+              : outerRadius < math.min(work.width, work.height) * _alignMinShare
+                  ? 'Target too small'
+                  : _implausible(fit.ellipses);
+          if (problem == null) {
+            if (best == null || fit.confidence > best.confidence) best = fit;
+          } else if (bestRejected == null || fit.confidence > bestRejected.confidence) {
+            bestRejected = fit;
+            rejection = problem;
+          }
+        }
+      }
+    }
+
     if (best == null) {
       if (bestRejected == null) return const TargetNotFound('No two-colour ring pattern found');
       return TargetNotFound(
@@ -164,13 +200,13 @@ class ColourRingLocator implements TargetLocator {
   /// them from a fit let a wrong one drift further out each pass. Returns the
   /// best plausible pass (re-centring can make a good fit worse), else the
   /// last.
-  _Fit? _fitReading(Point2 start, RgbImage img, _Colours colours, _Reading reading) {
+  _Fit? _fitReading(Point2 start, RgbImage img, _Colours colours, _Reading reading, {bool fixedScale = false}) {
     var centre = start;
     _Fit? last, bestPlausible;
     for (var pass = 0; pass < 3; pass++) {
       final next = reading == _Reading.twoColour
           ? _fitFrom(centre, img, colours)
-          : _fitPoints(_edgePoints(centre, img, colours.outerRadius), centre);
+          : _fitPoints(_edgePoints(centre, img, colours.outerRadius, fixedScale: fixedScale), centre);
       if (next == null) break;
       last = next;
       if (_implausible(next.ellipses) == null && (bestPlausible == null || next.confidence > bestPlausible.confidence)) {
@@ -180,6 +216,123 @@ class ColourRingLocator implements TargetLocator {
       centre = Point2(e.cx, e.cy);
     }
     return bestPlausible ?? last;
+  }
+
+  /// Where a tapped board's rings may centre, and their size, from the rings'
+  /// alignment: from the true centre every ring edge is at one distance all
+  /// round, so the colour change averaged over every direction, by distance
+  /// ([_radialProfile]), has sharp peaks; from a little off it smears, and
+  /// speckle never lines up (gaps only lower a peak). Centres within
+  /// [_alignReach] of the image's shorter side around [tap] are scored by
+  /// their profile's peaks (on a copy shrunk to ~[_alignSize] px, for
+  /// speed); the [_alignStarts] best, each with the bull radius whose
+  /// multiples (the boundaries' ratios: IKTHOF 1, 2, 3, 4) land on its
+  /// strongest peaks.
+  List<({Point2 centre, double outerRadius})> _alignedStarts(Point2 tap, RgbImage img) {
+    final f = math.min(1.0, _alignSize / math.max(img.width, img.height));
+    final small = f < 1 ? img.downscaled(_alignSize) : img;
+    final k = small.width / img.width;
+    final t = Point2(tap.x * k, tap.y * k);
+    final maxT = (math.min(small.width, small.height) * 0.5).floor();
+    final reach = math.min(small.width, small.height) * _alignReach;
+    double sharpness(List<double> profile) {
+      final sorted = [...profile]..sort();
+      return sorted.reversed.take(6).fold(0.0, (a, b) => a + b);
+    }
+
+    // A coarse grid round the tap, then a finer one round each of its
+    // [_alignStarts] best points (apart from each other).
+    final coarse = reach / 6;
+    final scored = <(Point2, double)>[
+      for (var dy = -reach; dy <= reach + 1e-9; dy += coarse)
+        for (var dx = -reach; dx <= reach + 1e-9; dx += coarse)
+          () {
+            final c = Point2(t.x + dx, t.y + dy);
+            return (c, sharpness(_radialProfile(c, small, maxT, rays: 72)));
+          }(),
+    ]..sort((a, b) => b.$2.compareTo(a.$2));
+    final picked = <Point2>[];
+    for (final (c, _) in scored) {
+      if (picked.length == _alignStarts) break;
+      if (picked.any((p) => _dist(p, c) < coarse * 1.5)) continue;
+      picked.add(c);
+    }
+    return [for (final around in picked) ?_refinedStart(around, small, maxT, coarse / 3, k, sharpness)];
+  }
+
+  static double _dist(Point2 a, Point2 b) => math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2));
+
+  /// [_alignedStarts]: the sharpest centre on a fine grid round [around] (on
+  /// the shrunk copy [small], [k] of the original), and its size.
+  ({Point2 centre, double outerRadius})? _refinedStart(
+      Point2 around, RgbImage small, int maxT, double step, double k, double Function(List<double>) sharpness) {
+    Point2? best;
+    var bestScore = 0.0;
+    List<double>? bestProfile;
+    for (var dy = -step * 3; dy <= step * 3 + 1e-9; dy += step) {
+      for (var dx = -step * 3; dx <= step * 3 + 1e-9; dx += step) {
+        final c = Point2(around.x + dx, around.y + dy);
+        final profile = _radialProfile(c, small, maxT, rays: 72);
+        final score = sharpness(profile);
+        if (score > bestScore) {
+          bestScore = score;
+          best = c;
+          bestProfile = profile;
+        }
+      }
+    }
+    if (best == null || bestProfile == null) return null;
+    final ratios = [for (final r in boundaryRadii) r / boundaryRadii.first];
+    double? bestBull;
+    var bestFit = 0.0;
+    for (var bull = 3.0; bull * ratios.last * 1.1 <= maxT; bull += 0.25) {
+      var score = 0.0;
+      for (final m in ratios) {
+        var peak = 0.0;
+        for (var i = (m * bull * 0.93).floor(); i <= (m * bull * 1.07).ceil() && i <= maxT; i++) {
+          peak = math.max(peak, bestProfile[i]);
+        }
+        score += peak;
+      }
+      if (score > bestFit) {
+        bestFit = score;
+        bestBull = bull;
+      }
+    }
+    if (bestBull == null) return null;
+    return (centre: Point2(best.x / k, best.y / k), outerRadius: bestBull / k / boundaryRadii.first);
+  }
+
+  /// See [_alignedStarts]; [_alignMinShare]: the least outer radius a
+  /// fallback fit may have, as a share of the window's shorter side.
+  static const _alignSize = 360;
+  static const _alignReach = 0.08;
+  static const _alignStarts = 3;
+  static const _alignMinShare = 0.1;
+
+  /// The colour change along [rays] rays from [centre], at each distance up
+  /// to [maxT], averaged over the rays (measured as [_edgePoints] does, over
+  /// a couple of pixels each side).
+  static List<double> _radialProfile(Point2 centre, RgbImage img, int maxT, {required int rays}) {
+    final profile = List<double>.filled(maxT + 1, 0);
+    const reach = 2;
+    for (var i = 0; i < rays; i++) {
+      final theta = 2 * math.pi * i / rays;
+      final dx = math.cos(theta), dy = math.sin(theta);
+      final samples = <_Rgb?>[
+        for (var t = 0; t <= maxT + 2 * reach; t++)
+          () {
+            final x = (centre.x + dx * t).round(), y = (centre.y + dy * t).round();
+            return img.contains(x, y) ? _rgbAt(img, x, y) : null;
+          }(),
+      ];
+      for (var t = 2 * reach; t <= maxT; t++) {
+        final b1 = samples[t - reach], b2 = samples[t - 2 * reach], a1 = samples[t + reach], a2 = samples[t + 2 * reach];
+        if (b1 == null || b2 == null || a1 == null || a2 == null) continue;
+        profile[t] += _Rgb.mean(a1, a2).distanceTo(_Rgb.mean(b1, b2)) / rays;
+      }
+    }
+    return profile;
   }
 
   /// Boundary points from colour edges, whatever the colours:
@@ -195,7 +348,7 @@ class ColourRingLocator implements TargetLocator {
   ///    2, 3, 4), beyond the previous one. Measuring from the ray's own bull
   ///    edge cancels perspective, which scales a whole ray. Nigel's recorded
   ///    boards measure 1.94, 2.94–3.0 and 3.82.
-  Map<double, List<Point2>> _edgePoints(Point2 centre, RgbImage img, double outerRadius) {
+  Map<double, List<Point2>> _edgePoints(Point2 centre, RgbImage img, double outerRadius, {bool fixedScale = false}) {
     final points = {for (final r in boundaryRadii) r: <Point2>[]};
     final bullRadius = outerRadius * boundaryRadii.first;
     final maxT = (outerRadius * 1.3).ceil();
@@ -229,11 +382,14 @@ class ColourRingLocator implements TargetLocator {
       }
 
       final bull = strongest((t) => t >= bullRadius * 0.6 && t <= bullRadius * 1.5);
-      if (bull == null) continue;
-      points[boundaryRadii.first]!.add(Point2(centre.x + dx * bull, centre.y + dy * bull));
-      var after = bull;
+      if (bull == null && !fixedScale) continue;
+      if (bull != null) points[boundaryRadii.first]!.add(Point2(centre.x + dx * bull, centre.y + dy * bull));
+      var after = bull ?? 0;
       for (var k = 1; k < boundaryRadii.length; k++) {
-        final expected = bull * boundaryRadii[k] / boundaryRadii.first;
+        // [fixedScale]: the board's size is known ([_alignedStarts]), so every
+        // ray measures from it rather than its own bull edge, which on a
+        // sprayed, speckled bull is too noisy to anchor on.
+        final expected = (fixedScale ? bullRadius : bull!) * boundaryRadii[k] / boundaryRadii.first;
         final next = strongest(
             (t) => t > after && t >= expected * (1 - _ratioSlack) && t <= expected * (1 + _ratioSlack));
         if (next == null) continue;
@@ -392,6 +548,9 @@ class ColourRingLocator implements TargetLocator {
 
   /// See [_fitPoints].
   static const _strayCentre = 0.05;
+
+  /// See [_implausible]: in working-image pixels.
+  static const _minBullRadius = 6.0;
   static const _centresDisagree = 'Ring centres disagree';
   static const _predictedSlack = 0.12;
 
@@ -458,6 +617,11 @@ class ColourRingLocator implements TargetLocator {
   /// the proportion check is loose; scoring uses the measured boundaries.
   String? _implausible(Map<double, Ellipse> ellipses) {
     final outer = ellipses[boundaryRadii.last]!;
+    // Edges are measured over ~8–16% of the bull's radius, so a smaller bull
+    // is grain or speckle that happens to look like rings (Mark's speckled
+    // boards, 2026-10-21). Real bulls on the working image: ≥ ~9 px (a board
+    // from 2 m in a whole phone picture; the Live test crops ~25 px).
+    if (ellipses[boundaryRadii.first]!.semiMajor < _minBullRadius) return 'Target too small';
     var previous = 0.0;
     for (final r in boundaryRadii) {
       final e = ellipses[r]!;

@@ -30,14 +30,25 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, start on Mark's boards"); run whole
 - **Measured** (middle board, 120 rays from the bull, an ellipse per edge): black edges at 61 / 84.5 / 113 / 141.5 px, i.e. **0.43 / 0.60 / 0.80** of the outer edge; the red bull's sprayed edge by eye ~24–28 px (~0.18–0.20). So the board is close to IKTHOF after all (the earlier rough 0.16 / 0.33 / 0.58 / 0.74 was off-centre): the failures are the gaps and the clutter, not the proportions. Task 3 may not be needed.
 - **Today** (all 5 fail): middle, right and the whole picture "Rings too unclear"; left a wrong, tiny fit at (309, 86).
 
-## Task 2: Allow the gaps
-- **Status:** NOT STARTED
+## Task 2: Allow the gaps (became: a tapped-board fallback)
+- **Status:** COMPLETE (2026-10-21)
+- **What was found** (traced on the middle board): from its true centre the usual edge reading already fits the rings right (0.42), so the gaps alone weren't the problem. What fails is **where it starts and how big it thinks the board is**: no single-colour region is centred on a board whose rings are arcs on speckled wood, and from a start a few px off, the size comes from the first colour change, a speck. And each ray measures the rings from its own bull edge, which on a sprayed, speckled bull is noise.
+- **Tried and rejected** (each broke boards that work today, or didn't help): gaps counted as neutral in the confidence (the gap rays find grain, not nothing); dropping weak edges; centre votes along edge gradients (a broad hill, not a peak); a size from the averaged edge profile as a third reading, even as a fallback (Live test board 2: 2 → 5 wrong frames); the fallback below with no tap, from the picture's middle (Live test board 2: near misses, a ring 10–20% off, confidence overlapping Mark's).
+- **What changed** (`ColourRingLocator`, step 6 in its doc):
+  - **A tapped board the usual search can't read:** `_alignedStarts` scores centres round the tap by how sharply the rings line up (the colour change averaged over every direction, by distance: `_radialProfile`), keeps the 3 best, each with the bull size whose 1×–4× multiples land on the strongest rings; then the edge reading **with that size fixed** for every ray (`_edgePoints(fixedScale:)`, which also keeps rays whose bull edge is unseen). The fit must be at least 10% of the searched window (`_alignMinShare`: grass under a tap made a 6% one).
+  - **Any fit:** a bull under 6 working px is "Target too small" (`_minBullRadius`): speckle that looks like rings.
+  - Only after a tap: Find target with no tap behaves as before on every board.
+- **Results:** middle board, tapped on its bull or 7–10 px off (4 taps): found, rings on the paint (28 / 55 / 86 / 112 / 140 px vs measured 27 / 56 / 84.5 / 113 / 141; overlay checked). Right board (in shade, against the sky): found tapped on its bull or 10 px above; taps 10 px right or (−7, 7) give a wrong fit (a known limit: drag the outline, or tap again). Left board: cut off by the picture's edge, not a usable view. Every earlier fixture unchanged (Live test recordings, Quick draw taps incl. "a tap on the grass finds nothing", the ring locator's tests).
+- **Answer key corrected** after the overlay: the middle board's 0.4 edge is 56 px (not 61), the right board's centre (204, 169). The middle's soft 0.4 edge (speckle to black) is allowed 10%.
+- **Tests:** `marks_boards_test.dart` (rewritten: 6 taps on the whole picture, the middle board's edges, a tap on the fence finds nothing; no longer skipped).
+- **Verified by:** `flutter test`: 869 passed; `flutter analyze`: no issues.
 
 ## Task 3: Allow other ring sizes
-- **Status:** NOT STARTED
+- **Status:** NOT NEEDED (2026-10-21): measured properly, Mark's rings are at 0.19 / 0.40 / 0.60 / 0.80 of the outer edge, IKTHOF's spacing; the failures were the start and the size, not the proportions.
 
-## Task 4: A picture with several boards
-- **Status:** NOT STARTED
+## Task 4: Play's calibration: tap the board when Find target fails
+- **Status:** IN PROGRESS
+- **Plan (changed):** on Calibrate, when Find target can't find the rings, say so and let the user **tap the middle of the board**; the tap uses `locateTargetAt` (as Quick draw), which now has the fallback. Works for a picture with several boards too (the tap picks the board).
 
 ## Task 5: Instructions, docs, traceability, a build
 - **Status:** NOT STARTED
@@ -45,4 +56,4 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, start on Mark's boards"); run whole
 ---
 
 ## Plan Changes Log
-- (none yet)
+- **2026-10-21:** Task 2 became a tapped-board fallback (automatic search unchanged: every attempt to widen it broke boards that work); Task 3 dropped (Mark's rings are in IKTHOF proportion); Task 4 became "tap the board when Find target fails" in Play's calibration (covers several boards in the picture too).
