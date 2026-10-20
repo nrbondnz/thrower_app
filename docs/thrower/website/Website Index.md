@@ -62,7 +62,7 @@ The hosted zone is in the same AWS account, so Amplify adds the DNS records and 
 - [x] Domain registered, hosted zone made (2026-10-20)
 - [x] Branches `website-dev` and `website` pushed with the Astro starter (2026-10-20)
 - [x] Both branches added to the `thrower_app` Amplify app and built (2026-10-20)
-- [ ] Domain live (Amplify is creating the certificate and DNS records)
+- [x] Domain live with an Amplify-managed certificate (2026-10-20): `https://knifeandaxethrower.com`, `www.` and `dev.` all serve the site
 
 ## Content
 
