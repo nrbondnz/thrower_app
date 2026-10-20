@@ -19,7 +19,7 @@ const quickDrawLeadIn = Duration(seconds: 1);
 
 /// One player's throw in a Quick draw.
 class QuickDrawThrow {
-  const QuickDrawThrow({required this.impact, required this.stuck, this.score});
+  const QuickDrawThrow({required this.impact, required this.stuck, this.score, this.scored = true});
 
   /// When the knife reached the board: the frame with the largest moving
   /// shape on the target (`MotionEpisode.impact`), on the camera's clock
@@ -33,6 +33,10 @@ class QuickDrawThrow {
   /// found).
   final int? score;
 
+  /// False on a board drawn round by finger (`QuickDrawTargets.areas`): a
+  /// stuck knife there is a hit, timed, with no score.
+  final bool scored;
+
   @override
   String toString() => 'QuickDrawThrow(${impact.inMilliseconds} ms, ${stuck ? 'stuck $score' : 'bounce-out'})';
 }
@@ -42,7 +46,8 @@ class QuickDrawThrow {
 /// at **every** frame (timing needs it), and keeps each player's first throw
 /// (stuck or bounce-out) in [throws], in player order.
 class QuickDrawWatcher {
-  QuickDrawWatcher(this.camera, this.boards, {required this.model, this.cropRadii = 4, this.queue = false})
+  QuickDrawWatcher(this.camera, this.boards,
+      {required this.model, this.cropRadii = 4, this.queue = false, this.areas = const {}})
       : throws = ValueNotifier(List.filled(boards.length, null));
 
   final TargetCamera camera;
@@ -50,6 +55,10 @@ class QuickDrawWatcher {
   /// The locked boards, in player order, in the camera's upright picture.
   final List<TargetCalibration> boards;
   final TargetModel model;
+
+  /// The players whose board was drawn round (`QuickDrawTargets.areas`):
+  /// their knives are timed, not scored.
+  final Set<int> areas;
 
   /// Each crop's side in board radii ([cropToBoard]).
   final double cropRadii;
@@ -88,11 +97,13 @@ class QuickDrawWatcher {
     if (throws.value[player] != null || (kind != ThrowOutcomeKind.stuck && kind != ThrowOutcomeKind.bounceOut)) return;
     final entry = event.entry;
     final stuck = kind == ThrowOutcomeKind.stuck;
+    final scored = !areas.contains(player);
     final next = [...throws.value];
     next[player] = QuickDrawThrow(
       impact: event.episode.impact ?? event.episode.start,
       stuck: stuck,
-      score: stuck && entry != null ? model.scoreAt(TargetMapping(calibration).toTarget(entry.point)) : null,
+      score: scored && stuck && entry != null ? model.scoreAt(TargetMapping(calibration).toTarget(entry.point)) : null,
+      scored: scored,
     );
     throws.value = next;
   }

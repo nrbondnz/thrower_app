@@ -50,7 +50,8 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
       final feed = RecordingAnalysisFeed(camera, from: go == null ? Duration.zero : go - quickDrawLeadIn);
       setState(() {
         _feed = feed;
-        _watcher = QuickDrawWatcher(feed, targets.boards, model: ref.read(targetModelProvider))..start();
+        _watcher = QuickDrawWatcher(feed, targets.boards, model: ref.read(targetModelProvider), areas: targets.areas)
+          ..start();
       });
     }
     camera.restart();
@@ -105,28 +106,34 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
           Center(
             child: switch (camera) {
               AsyncData(:final value) => RecordedPreview(
-                  camera: value,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      BoardsOverlay(
-                        targets: targets,
-                        onTap: targets.complete || searching ? null : (tap) => findBoardAt(value, tap),
-                        onAdjust: targets.complete && !targets.locked ? notifier.replace : null,
-                        tapsOff: value.playing,
-                        throws: _watcher?.throws,
-                        go: value.recording.go ?? Duration.zero,
-                      ),
-                      if (value.recording.go case final go?) _GoFlash(camera: value, go: go),
-                      if (kDebugMode)
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(padding: const EdgeInsets.all(8), child: FrameRateLabel(source: value)),
+                camera: value,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    BoardsOverlay(
+                      targets: targets,
+                      onTap: targets.complete || searching ? null : (tap) => findBoardAt(value, tap),
+                      onAdjust: targets.complete && !targets.locked ? notifier.replace : null,
+                      tapsOff: value.playing,
+                      throws: _watcher?.throws,
+                      go: value.recording.go ?? Duration.zero,
+                    ),
+                    if (value.recording.go case final go?) _GoFlash(camera: value, go: go),
+                    if (kDebugMode)
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: FrameRateLabel(source: value),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-              AsyncError(:final error) => Text("The Quick draw clip couldn't load: $error", style: const TextStyle(color: Colors.white)),
+              ),
+              AsyncError(:final error) => Text(
+                "The Quick draw clip couldn't load: $error",
+                style: const TextStyle(color: Colors.white),
+              ),
               _ => const CircularProgressIndicator(),
             },
           ),
@@ -153,9 +160,9 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                       children: [
                         switch ((_watcher, _feed)) {
                           (final watcher?, final feed?) => ListenableBuilder(
-                              listenable: Listenable.merge([watcher.throws, feed.analysed, value.position]),
-                              builder: (context, _) => quickDrawLine(_progress(value, feed, watcher.throws.value)),
-                            ),
+                            listenable: Listenable.merge([watcher.throws, feed.analysed, value.position]),
+                            builder: (context, _) => quickDrawLine(_progress(value, feed, watcher.throws.value)),
+                          ),
                           _ => quickDrawLine(choosingInstruction(targets, locked: 'Boards locked. Press Play.')),
                         },
                         const SizedBox(height: 12),
@@ -168,7 +175,10 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
                             if (targets.boards.isNotEmpty)
                               OutlinedButton(
                                 key: const Key('quickDrawStartAgain'),
-                                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.black54),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.black54,
+                                ),
                                 onPressed: () {
                                   setState(_stopWatching);
                                   notifier.clear();

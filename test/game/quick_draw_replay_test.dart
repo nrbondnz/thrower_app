@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/frame_pack.dart';
 import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/camera/recording_analysis_feed.dart';
+import 'package:thrower_app/game/area_board.dart';
 import 'package:thrower_app/game/quick_draw_judge.dart';
 import 'package:thrower_app/game/quick_draw_watcher.dart';
 import 'package:thrower_app/scoring/target_model.dart';
@@ -24,7 +26,10 @@ import 'live_replay_test.dart' show frameOf;
 ///
 /// Playback moves on [step] frames per tick: more than 1 is a phone that
 /// can't keep up (the screen skips frames); analysis must still see them all.
-Future<List<QuickDrawThrow?>> replay({int step = 1}) async {
+///
+/// [drawn]: each board drawn round by finger instead (a loop just outside
+/// its outer ring, `areaBoard`), so the throws are timed, not scored.
+Future<List<QuickDrawThrow?>> replay({int step = 1, bool drawn = false}) async {
   final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
   var now = Duration.zero;
   final camera = RecordedCamera(pack, recording: quickDrawRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
@@ -40,9 +45,20 @@ Future<List<QuickDrawThrow?>> replay({int step = 1}) async {
         TargetNotFound(:final reason) => throw StateError('board at $tap not found: $reason'),
       },
   ];
+  final drawnBoards = [
+    for (final b in boards)
+      areaBoard([
+        for (var i = 0; i < 40; i++) b.outer.scaled(1.05).pointAt(2 * math.pi * i / 40),
+      ], imageWidth: pack.width, imageHeight: pack.height)!,
+  ];
   // As the app does: from a second before go.
   final feed = RecordingAnalysisFeed(camera, from: quickDrawRecording.go! - quickDrawLeadIn);
-  final watcher = QuickDrawWatcher(feed, boards, model: model)..start();
+  final watcher = QuickDrawWatcher(
+    feed,
+    drawn ? drawnBoards : boards,
+    model: model,
+    areas: drawn ? const {0, 1} : const {},
+  )..start();
   await pumpEventQueue();
   camera.restart();
   // The whole clip, then a second of its last frame.
@@ -110,5 +126,17 @@ void main() {
       expect(skipped[p]?.stuck, throws[p]!.stuck, reason: 'Player ${p + 1}');
       expect(skipped[p]!.impact, throws[p]!.impact, reason: 'Player ${p + 1}');
     }
+  }, timeout: const Timeout(Duration(minutes: 5)));
+
+  // Drawn boards (Mark, 2026-10-21): the same knives, found and timed the
+  // same, with no score.
+  test('with both boards drawn round: the same throws on the same frames, no scores, Player 2 still wins', () async {
+    final drawn = await replay(drawn: true);
+    for (var p = 0; p < 2; p++) {
+      expect(drawn[p]?.stuck, throws[p]!.stuck, reason: 'Player ${p + 1}');
+      expect(drawn[p]!.impact, throws[p]!.impact, reason: 'Player ${p + 1}');
+      expect((drawn[p]!.scored, drawn[p]!.score), (false, null), reason: 'Player ${p + 1}');
+    }
+    expect(judgeQuickDraw(drawn, quickDrawRecording.go!).winner, 1);
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

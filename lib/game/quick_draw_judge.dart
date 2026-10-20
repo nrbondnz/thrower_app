@@ -18,7 +18,7 @@ enum QuickDrawResult {
 
 /// One player's throw, judged against "go".
 class JudgedThrow {
-  const JudgedThrow(this.result, {this.afterGo, this.score});
+  const JudgedThrow(this.result, {this.afterGo, this.score, this.scored = true});
 
   final QuickDrawResult result;
 
@@ -28,6 +28,9 @@ class JudgedThrow {
 
   /// A stuck knife's score (null if its entry wasn't found).
   final int? score;
+
+  /// False on a board drawn round by finger: no score, only the time.
+  final bool scored;
 }
 
 /// Who won a Quick draw, and how each player's throw went.
@@ -52,8 +55,9 @@ class QuickDrawVerdict {
 /// stick wins**. A bounce-out loses, and so does a knife that reaches its
 /// board before [go] (a false start). If both stick, the one that reached its
 /// board first wins; on the same frame the higher score wins (Nigel's brother,
-/// 2026-10-19), and the same score, or a score that wasn't found, is a draw.
-/// If neither sticks, nobody wins.
+/// 2026-10-19), and the same score, or a score that wasn't found, is a draw
+/// (so a same-frame finish on a board drawn round by finger, which has no
+/// score, is a draw). If neither sticks, nobody wins.
 QuickDrawVerdict judgeQuickDraw(List<QuickDrawThrow?> throws, Duration go) {
   final players = [
     for (final t in throws)
@@ -68,6 +72,7 @@ QuickDrawVerdict judgeQuickDraw(List<QuickDrawThrow?> throws, Duration go) {
               : QuickDrawResult.bounced,
           afterGo: t.impact - go,
           score: t.stuck ? t.score : null,
+          scored: t.scored,
         ),
   ];
   final counted = [
@@ -92,7 +97,7 @@ String judgedText(JudgedThrow p) => switch (p.result) {
   QuickDrawResult.none => 'no throw',
   QuickDrawResult.falseStart => 'false start',
   QuickDrawResult.bounced => '${afterGoText(p.afterGo!)} · bounced',
-  QuickDrawResult.stuck => '${afterGoText(p.afterGo!)} · ${p.score ?? '?'}',
+  QuickDrawResult.stuck => p.scored ? '${afterGoText(p.afterGo!)} · ${p.score ?? '?'}' : afterGoText(p.afterGo!),
 };
 
 /// The result line, e.g. "Player 2 wins: stuck 5, 0.82 s after go. Player 1
@@ -106,7 +111,9 @@ String verdictText(QuickDrawVerdict v, {List<String?> names = const []}) {
       QuickDrawResult.none => '${player(i)}: no throw seen.',
       QuickDrawResult.falseStart => '${player(i)}: false start.',
       QuickDrawResult.bounced => '${player(i)} bounced out.',
-      QuickDrawResult.stuck => '${player(i)}: ${p.score ?? '?'}, ${afterGoText(p.afterGo!)} after go.',
+      QuickDrawResult.stuck => p.scored
+          ? '${player(i)}: ${p.score ?? '?'}, ${afterGoText(p.afterGo!)} after go.'
+          : '${player(i)}: stuck, ${afterGoText(p.afterGo!)} after go.',
     };
   }
 
@@ -115,9 +122,15 @@ String verdictText(QuickDrawVerdict v, {List<String?> names = const []}) {
       if (i != v.winner) what(i),
   ].join(' ');
   final winner = v.winner;
-  if (v.draw) return 'A draw: both stuck on the same frame with the same score. $others';
+  if (v.draw) {
+    final unscored = v.players.any((p) => p.result == QuickDrawResult.stuck && !p.scored);
+    return unscored
+        ? 'A draw: both stuck on the same frame. $others'
+        : 'A draw: both stuck on the same frame with the same score. $others';
+  }
   if (winner == null) return 'No winner. $others';
   final w = v.players[winner];
   final how = v.byScore ? 'wins on score' : 'wins';
-  return '${player(winner)} $how: stuck ${w.score ?? '?'}, ${afterGoText(w.afterGo!)} after go. $others';
+  final stuck = w.scored ? 'stuck ${w.score ?? '?'}' : 'stuck';
+  return '${player(winner)} $how: $stuck, ${afterGoText(w.afterGo!)} after go. $others';
 }

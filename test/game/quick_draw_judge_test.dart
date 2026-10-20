@@ -11,6 +11,9 @@ QuickDrawThrow stuck(int ms, [int score = 5]) => QuickDrawThrow(
   score: score,
 );
 QuickDrawThrow stuckUnscored(int ms) => QuickDrawThrow(impact: go + Duration(milliseconds: ms), stuck: true);
+/// A knife stuck in a board drawn round by finger: timed, never scored.
+QuickDrawThrow stuckInArea(int ms) =>
+    QuickDrawThrow(impact: go + Duration(milliseconds: ms), stuck: true, scored: false);
 QuickDrawThrow bounced(int ms) => QuickDrawThrow(impact: go + Duration(milliseconds: ms), stuck: false);
 
 void main() {
@@ -83,5 +86,36 @@ void main() {
         'Sam wins: stuck 5, 0.82 s after go. Jo bounced out.');
     expect(verdictText(judgeQuickDraw([bounced(850), stuck(817)], go), names: ['Jo', null]),
         'Player 2 wins: stuck 5, 0.82 s after go. Jo bounced out.');
+  });
+
+  // Drawn boards (Mark, 2026-10-21): only the time counts.
+  group('boards drawn round by finger', () {
+    test('the faster wins', () {
+      final v = judgeQuickDraw([stuckInArea(850), stuckInArea(817)], go);
+      expect((v.winner, v.draw, v.byScore), (1, false, false));
+    });
+
+    test('the same frame is a draw: no score to break it', () {
+      final v = judgeQuickDraw([stuckInArea(817), stuckInArea(817)], go);
+      expect((v.winner, v.draw), (null, true));
+    });
+
+    test('a throw shows only its time', () {
+      expect(judgedText(judgeQuickDraw([stuckInArea(817), null], go).players[0]), '0.82 s');
+    });
+
+    test('the result line has no scores', () {
+      expect(
+        verdictText(judgeQuickDraw([stuckInArea(850), stuckInArea(817)], go)),
+        'Player 2 wins: stuck, 0.82 s after go. Player 1: stuck, 0.85 s after go.',
+      );
+    });
+
+    test('a draw says so without mentioning a score', () {
+      expect(
+        verdictText(judgeQuickDraw([stuckInArea(817), stuckInArea(817)], go)),
+        'A draw: both stuck on the same frame. Player 1: stuck, 0.82 s after go. Player 2: stuck, 0.82 s after go.',
+      );
+    });
   });
 }

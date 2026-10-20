@@ -8,8 +8,10 @@ import '../vision/target_locator.dart';
 
 /// Quick draw's boards, in the order they were tapped: Player 1's first.
 /// Locked once both are found; throws are then timed and scored against them.
+/// A board drawn round by finger ([areas]: Mark, 2026-10-21) is timed only,
+/// never scored.
 class QuickDrawTargets {
-  const QuickDrawTargets({this.boards = const [], this.locked = false});
+  const QuickDrawTargets({this.boards = const [], this.locked = false, this.areas = const {}});
 
   /// Two players, one board each.
   static const players = 2;
@@ -18,6 +20,10 @@ class QuickDrawTargets {
   final bool locked;
 
   bool get complete => boards.length == players;
+
+  /// The players (indexes) whose board was drawn round (`areaBoard`), not
+  /// found by its rings.
+  final Set<int> areas;
 }
 
 /// Finds the board at [tap] on the camera's next frame. [tap] is a fraction

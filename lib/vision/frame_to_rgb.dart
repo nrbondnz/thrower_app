@@ -1,6 +1,16 @@
 import '../camera/camera_frame.dart';
 import 'rgb_image.dart';
 
+/// The size [frameToRgb] gives [frame] turned upright by [rotation] and no
+/// larger than [maxSide]: the picture a board's pixels are in, when a board
+/// is drawn by finger rather than found in a converted frame.
+(int, int) uprightSizeOf(CameraFrame frame, {int maxSide = 600, int rotation = 0}) {
+  final longest = frame.width > frame.height ? frame.width : frame.height;
+  final step = longest <= maxSide ? 1.0 : longest / maxSide;
+  final w = (frame.width / step).floor(), h = (frame.height / step).floor();
+  return rotation == 90 || rotation == 270 ? (h, w) : (w, h);
+}
+
 /// Converts a camera frame to an upright [RgbImage] no larger than [maxSide]
 /// on its long side, sampling (not averaging) to keep it fast. Supports BGRA
 /// (iOS) and YUV420 (Android); returns null for other formats.

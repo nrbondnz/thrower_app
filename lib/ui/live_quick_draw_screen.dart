@@ -81,7 +81,7 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
   /// Start: run the start signal; watch from 1 s before go.
   void _start(TargetCamera camera) {
     _endDuel();
-    final boards = ref.read(quickDrawTargetsProvider).boards;
+    final targets = ref.read(quickDrawTargetsProvider);
     final sounds = ref.read(signalSoundsProvider);
     late final StartSignal signal;
     signal =
@@ -92,9 +92,13 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
           onWatch: () {
             if (!mounted) return;
             setState(
-              () =>
-                  _watcher = QuickDrawWatcher(camera, boards, model: ref.read(targetModelProvider), queue: true)
-                    ..start(),
+              () => _watcher = QuickDrawWatcher(
+                camera,
+                targets.boards,
+                model: ref.read(targetModelProvider),
+                queue: true,
+                areas: targets.areas,
+              )..start(),
             );
           },
           onGo: (goAt) {
@@ -207,7 +211,9 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
             overlayBuilder: (context, camera) => BoardsOverlay(
               targets: targets,
               onTap: targets.complete || searching ? null : (tap) => findBoardAt(camera, tap),
-              onAdjust: targets.complete && !targets.locked ? ref.read(quickDrawTargetsProvider.notifier).replace : null,
+              onAdjust: targets.complete && !targets.locked
+                  ? ref.read(quickDrawTargetsProvider.notifier).replace
+                  : null,
               throws: watcher?.throws,
               go: signal?.goAt ?? Duration.zero,
             ),

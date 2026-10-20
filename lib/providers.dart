@@ -83,9 +83,14 @@ class QuickDrawTargetsNotifier extends Notifier<QuickDrawTargets> {
   @override
   QuickDrawTargets build() => const QuickDrawTargets();
 
-  /// The next player's board. Ignored once both are found.
-  void add(TargetCalibration board) {
-    if (!state.complete) state = QuickDrawTargets(boards: [...state.boards, board]);
+  /// The next player's board ([area]: drawn round by finger, timed only).
+  /// Ignored once both are found.
+  void add(TargetCalibration board, {bool area = false}) {
+    if (state.complete) return;
+    state = QuickDrawTargets(
+      boards: [...state.boards, board],
+      areas: {...state.areas, if (area) state.boards.length},
+    );
   }
 
   /// "Choose boards again": forget the boards (and the lock).
@@ -95,14 +100,14 @@ class QuickDrawTargetsNotifier extends Notifier<QuickDrawTargets> {
   /// locked.
   void replace(int index, TargetCalibration board) {
     if (state.locked || index >= state.boards.length) return;
-    state = QuickDrawTargets(boards: [...state.boards]..[index] = board);
+    state = QuickDrawTargets(boards: [...state.boards]..[index] = board, areas: state.areas);
   }
 
   /// "Adjust boards": unlock, keeping both boards, so they can be adjusted.
-  void unlock() => state = QuickDrawTargets(boards: state.boards);
+  void unlock() => state = QuickDrawTargets(boards: state.boards, areas: state.areas);
 
   void lock() {
-    if (state.complete) state = QuickDrawTargets(boards: state.boards, locked: true);
+    if (state.complete) state = QuickDrawTargets(boards: state.boards, locked: true, areas: state.areas);
   }
 }
 

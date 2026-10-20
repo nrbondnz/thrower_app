@@ -7,8 +7,8 @@ Mark (Nigel's brother), 2026-10-21: in Quick draw, "draw his finger round the bo
 3 (Medium): game logic (boards, throws, judge) → UI (drawing) → docs.
 
 ## Status
-IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing per task ([[dont-ask-again]]).
-**Paused 2026-10-21 ~10:05:** the Flutter SDK on the PC needs to re-download its Dart SDK (`C:\dev\flutter\bin\cache\engine-dart-sdk.stamp` missing; "Unable to update Dart SDK … The process cannot access the file because it is being used by another process"). Android Studio and IntelliJ's Dart analysis servers hold the files. Nigel is closing the IDEs and restarting, then will ask to continue.
+IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing per task ([[dont-ask-again]]). Task 1 complete; Task 2 next.
+(Paused 2026-10-21 ~10:05 for a Flutter SDK repair: the IDEs' Dart analysis servers held the SDK files; see [[Known Issues]]. Resumed the same day.)
 
 ## Plan
 - **Task 1: area boards (logic, tested).** A finger-drawn loop → a board: the ellipse fitted to the loop (`areaBoard`), its rings the same ellipse scaled (0.2 … 0.8, needed by the entry-point code; never scored). Drawn boards are timed only: the result shows "1.52 s", no score; a same-frame finish is a drawn round (the judge already treats an unknown score as a draw), then an extra round if level. Any knife stuck in the board's watched region counts (as today).
@@ -18,20 +18,20 @@ IN PROGRESS: plan approved 2026-10-21 ("yes, go ahead"); run whole, committing p
 ---
 
 ## Task 1: Area boards (logic)
-- **Status:** IN PROGRESS: code written, **not yet analyzed or tested** (the SDK problem above), not committed.
-- **Written (uncommitted):**
-  - `lib/game/area_board.dart` (new): `areaBoard(loop, imageWidth:, imageHeight:)` → `TargetCalibration?` (`fitEllipse`; null if under `minLoopPoints` 8, radius under `minAreaRadius` 3% of the shorter side or over the shorter side, or flatter than `minRoundness` 0.35).
-  - `lib/game/quick_draw_targets.dart`: `QuickDrawTargets.areas` (`Set<int>` of players whose board was drawn).
-  - `lib/providers.dart`: `QuickDrawTargetsNotifier.add(board, {area})`; `replace`, `unlock`, `lock` keep `areas`.
-  - `lib/game/quick_draw_watcher.dart`: `QuickDrawThrow.scored` (default true); `QuickDrawWatcher(areas:)`: no score for those players.
-  - `lib/game/quick_draw_judge.dart`: `JudgedThrow.scored`; `judgedText` shows only the time for unscored; `verdictText` "stuck, 1.52 s after go" and "A draw: both stuck on the same frame." for unscored.
-  - `lib/vision/frame_to_rgb.dart`: `uprightSizeOf(frame, maxSide:, rotation:)` (the picture size a drawn board's pixels are in; use `maxSide: 1920` as `locateTappedInFrame`).
-  - The edit script: `C:\Users\nigel\AppData\Local\Temp\claude\…\scratchpad\area_edits.py` (already applied; don't rerun).
-- **Next, when the SDK works:**
-  1. `flutter --version` (re-downloads the Dart SDK), then `flutter analyze`.
-  2. Pass `areas: targets.areas` where `QuickDrawWatcher` is created: `lib/ui/live_quick_draw_screen.dart` (~line 96) and `lib/ui/quick_draw_screen.dart` (~line 53).
-  3. Tests: `areaBoard` (a circle of points → the right ellipse; too few / tiny / flat → null); the notifier keeps `areas` through replace/unlock/lock, clear resets; the watcher gives no score for an area player; the judge's texts and the same-frame draw for unscored throws.
-  4. Full suite, commit Task 1, then Task 2.
+- **Status:** COMPLETE (2026-10-21)
+- **What changed:**
+  - `lib/game/area_board.dart` (new): `areaBoard(loop, imageWidth:, imageHeight:)` → `TargetCalibration?`: the ellipse fitted to the loop (`fitEllipse`), rings the same ellipse scaled 0.2 … 0.8. Null if under `minLoopPoints` (8), the smaller radius under `minAreaRadius` (3% of the picture's shorter side), the larger over the shorter side, or flatter than `minRoundness` (0.35).
+  - `QuickDrawTargets.areas` (players whose board was drawn); `QuickDrawTargetsNotifier.add(board, {area})`, kept by `replace`, `unlock`, `lock`; `clear` forgets them.
+  - `QuickDrawWatcher(areas:)` → `QuickDrawThrow.scored` false and no score for those players; both Quick draw screens pass `targets.areas`.
+  - `JudgedThrow.scored`; `judgedText` shows only the time ("0.82 s"); `verdictText` "Player 2 wins: stuck, 0.82 s after go." and "A draw: both stuck on the same frame." A same-frame finish on drawn boards is a draw (no score to break it).
+  - `uprightSizeOf(frame, maxSide:, rotation:)` in `lib/vision/frame_to_rgb.dart`, for Task 2.
+- **Test Report:**
+  - New `test/game/area_board_test.dart`: 9 (circle, oval, picture size and rings, wobbly loop; too few points, too small, too big, too flat, a straight line → null).
+  - `quick_draw_targets_test.dart`: +4 (area by player; kept through replace/lock/unlock; a third board ignored; clear forgets).
+  - `quick_draw_judge_test.dart`: +5 (faster wins, same frame a draw, the throw's text, the result line, the draw line).
+  - `quick_draw_replay_test.dart`: +1, Mark's recording with both boards drawn (a loop just outside each outer ring): the same throws on the same frames, no scores, Player 2 still wins.
+  - `flutter analyze`: no issues. `flutter test`: 894 passed.
+- **Verified by:** tests (the screen comes in Task 2).
 
 ## Task 2: The screen
 - **Status:** NOT STARTED

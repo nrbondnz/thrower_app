@@ -2,7 +2,7 @@
 
 ## "The camera couldn't start" After Adding the Camera Plugin
 
-- **Symptom:** the Camera screen shows the generic "The camera couldn't start" message, there are no CameraX lines in logcat, and no permission prompt appears.
+- **Symptom:** the Camera screen shows the generic "The camera couldn't start" message, there are no Camera\cache\artifacts lines in logcat, and no permission prompt appears.
 - **Seen:** 2026-10-05, Samsung SM A065F (Android 16), the first run after `camera` was added.
 - **Likely cause:** the app was still running from a session started before the native plugin was built in (a hot reload/restart doesn't add native code). Not confirmed: a fresh `flutter run` worked, including the first-time permission prompt.
 - **Fix:** stop the app fully and re-run it. In debug builds the error view now shows the underlying exception, so if this recurs the cause is on screen. See [[Common Tasks#Run the App on a Phone]].
@@ -55,7 +55,7 @@
 
 ## Camera Plugin Declares Unused Android Permissions
 
-- `camera_android_camerax` declares `RECORD_AUDIO` and `WRITE_EXTERNAL_STORAGE` (which implies `READ_EXTERNAL_STORAGE`). Our `AndroidManifest.xml` removes all three with `tools:node="remove"`. **Re-check the merged manifest after upgrading the plugin** (`build/app/intermediates/merged_manifest/debug/.../AndroidManifest.xml`), in case it adds new permissions.
+- `camera_android_camerax` declares `RECORD_AUDIO` and `WRITE_E\cache\artifactsTERNAL_STORAGE` (which implies `READ_E\cache\artifactsTERNAL_STORAGE`). Our `AndroidManifest.xml` removes all three with `tools:node="remove"`. **Re-check the merged manifest after upgrading the plugin** (`build/app/intermediates/merged_manifest/debug/.../AndroidManifest.xml`), in case it adds new permissions.
 
 ## "Someone at the Board" / "The View Changed" With Nobody There
 
@@ -118,7 +118,7 @@
 ## Quick Draw: Dropped Frames Make Times Coarser
 
 - **Status: resolved 2026-10-15 by the analysis feed** ([[story-checkpoint-quick-draw]] Task 4; Nigel's device check pending). The watchers now get **every** frame of the clip, in order, from `RecordingAnalysisFeed`, each timed by its place in the clip, so the times no longer depend on which frames the screen showed. The cost: the result can **lag the picture**. While it does, the line at the bottom says **"Analysing… x s behind the picture."**, then the verdict. On a slow phone that can be a second or more at the throws; that's expected, not a hang. Why and how: [[Design Decisions]] → Quick Draw: Analysing Every Frame, Reporting Late. The history below is from before the fix.
-- **Seen 2026-10-15 on Nigel's Samsung SM-A065F:** Quick draw played at **11–12 frames a second**, and a couple of runs gave both players the same time. **2026-10-15 on Nigel's iPhone** (debug build from Xcode): about **42 frames a second**, and still "quite often" the same time for both.
+- **Seen 2026-10-15 on Nigel's Samsung SM-A065F:** Quick draw played at **11–12 frames a second**, and a couple of runs gave both players the same time. **2026-10-15 on Nigel's iPhone** (debug build from \cache\artifactscode): about **42 frames a second**, and still "quite often" the same time for both.
 - **Symptom:** on a slow phone, Quick draw's times under the boards jump in steps bigger than a frame (17 ms), or both boards show the **same** time.
 - **Cause:** the clip is 720 × 1280 at **60 fps**, and `RecordedCamera` skips to the newest frame when decoding can't keep up (see Live Test Playback Jumps and Freezes on a Slower Android above). Each board's `ThrowWatcher` looks at every frame it's given (Quick draw sets `interval` to zero), so frames the camera skipped are never seen, and an impact is timed to the next frame that was delivered. The two knives on the clip land **2 frames (about 33 ms) apart**, so they can land in one delivered frame.
 - **Still fair:** both boards are crops of the **same** frames (`CroppedCamera`), so a dropped frame delays both alike and the order can't be swapped; at worst it becomes a tie.
@@ -126,7 +126,7 @@
 
 ## Live Quick Draw: 60 fps Is Asked For, Not Guaranteed
 
-- **What:** the live Quick draw asks the camera for 60 frames a second (`LiveCamera.open(fps: 60)`). iOS picks the nearest rate its 720p formats offer; Android's CameraX does its best and may stay at 30, or change the stream size. Neither throws, so the "open again at the default rate" fallback only covers real errors. (Review Agent, 2026-10-15; [[story-checkpoint-live-quick-draw]] Task 2.)
+- **What:** the live Quick draw asks the camera for 60 frames a second (`LiveCamera.open(fps: 60)`). iOS picks the nearest rate its 720p formats offer; Android's Camera\cache\artifacts does its best and may stay at 30, or change the stream size. Neither throws, so the "open again at the default rate" fallback only covers real errors. (Review Agent, 2026-10-15; [[story-checkpoint-live-quick-draw]] Task 2.)
 - **Check:** the debug frames/s label (top left of the live Quick draw) shows what the phone delivers. At 30, two knives 33 ms apart can land in one frame: a draw.
 - **Dim light:** a fixed 60 fps caps exposure at 1/60 s, so frames get darker and noisier indoors; the motion detector learns the noise, but test in the dimmest lighting you expect.
 - **Heat:** while the boards are locked, both boards' crops are analysed on every frame on the UI thread. On a slow phone, watch "s behind" in the debug line over 10+ minutes; if it climbs or the phone gets hot, the fix is a long-lived worker isolate. The queue is capped at 75 MB a board (frames dropped past it are counted in the debug line).
@@ -150,15 +150,27 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 **Cause:** Amplify Flutter 2.16 (the newest at the time) still applies KGP. Flutter 3.47 only warns about it.
 **Fix:** none needed yet. Before upgrading Flutter, check the Amplify Flutter changelog for "Built-in Kotlin" support and upgrade it first. `amplify_analytics_pinpoint` comes in with `amplify_auth_cognito` (a transitive dependency in `pubspec.lock`), but the app never adds the analytics plugin and its Amplify settings have no analytics section, so nothing is collected (checked 2026-10-21: the privacy policy's "no analytics" holds).
 
+## Flutter Upgrade Fails: "being used by another process" (2026-10-21)
+
+- **Symptom:** after a Flutter upgrade, every `flutter` command tries to re-download part of the SDK and fails. Either the Dart SDK ("Unable to update Dart SDK … being used by another process") or the engine artifacts ("Flutter failed to write to a file at `…\bin\cache\artifacts\engine\windows-x64\icudtl.dat`", OS error 1224, "a user-mapped section open"). The IDE then can't build or run the app.
+- **Cause:** Windows won't replace a file another process has open. Two holders were found:
+  - the IDEs' Dart analysis servers (`dart.exe` under `bin\cache\dart-sdk`), holding the Dart SDK;
+  - leftover `flutter_tester.exe` processes from old `flutter test` runs that never exited (ten, from 15–16 October), holding the engine's `icudtl.dat`.
+- **Fix:**
+  1. List the holders: `Get-Process dart, flutter_tester | Select Id, Path, StartTime` (PowerShell).
+  2. Stale `flutter_tester` processes can simply be stopped: `Get-Process flutter_tester | Stop-Process -Force`.
+  3. For the Dart SDK, close Android Studio and IntelliJ (their analysis servers restart with them).
+  4. Run `flutter --version` (and `flutter precache` if the engine was the one that failed), then `flutter pub get` and `flutter analyze`.
+
 ## Build Warning: "A restricted method in java.lang.System has been called" (2026-10-21)
 
 **Symptom:** at the start of `flutter build apk` / `flutter run`: "WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader … Use --enable-native-access=ALL-UNNAMED … Restricted methods will be blocked in a future release".
 **Cause:** Gradle 9.3.1's own native library loader on a newer Java (22+ warns about native access). Nothing to do with the app's code.
 **Fix:** none needed; it goes when Flutter / Android Studio move to a Gradle that enables native access. The build and the app are unaffected.
 
-## Build Warning: "SDK XML versions up to 3 but … version 4" (2026-10-21)
+## Build Warning: "SDK \cache\artifactsML versions up to 3 but … version 4" (2026-10-21)
 
-**Symptom:** "Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered."
+**Symptom:** "Warning: SDK processing. This version only understands SDK \cache\artifactsML versions up to 3 but an SDK \cache\artifactsML file of version 4 was encountered."
 **Cause:** Android Studio's SDK Manager wrote newer SDK metadata than the older Android SDK command-line tools the build reads it with.
 **Fix (optional, harmless either way):** Android Studio → Settings → Languages & Frameworks → Android SDK → **SDK Tools** → tick **Android SDK Command-line Tools (latest)** → Apply.
 

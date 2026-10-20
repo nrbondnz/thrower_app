@@ -79,5 +79,40 @@ void main() {
       expect(state().boards, isEmpty);
       expect(state().locked, isFalse);
     });
+
+    // Drawn boards (Mark, 2026-10-21): timed only, never scored.
+    test('a drawn board is marked as an area, by its player', () {
+      notifier()
+        ..add(boardAtCentre(100, 400))
+        ..add(boardAtCentre(300, 400), area: true);
+      expect(state().areas, {1});
+    });
+
+    test('the areas are kept through adjusting, locking and unlocking', () {
+      notifier()
+        ..add(boardAtCentre(100, 400), area: true)
+        ..add(boardAtCentre(300, 400), area: true)
+        ..replace(0, boardAtCentre(120, 400));
+      expect(state().areas, {0, 1}, reason: 'after replace');
+      notifier().lock();
+      expect(state().areas, {0, 1}, reason: 'after lock');
+      notifier().unlock();
+      expect(state().areas, {0, 1}, reason: 'after unlock');
+    });
+
+    test("a third, drawn board is ignored: no area for a player who isn't there", () {
+      notifier()
+        ..add(boardAtCentre(100, 400))
+        ..add(boardAtCentre(300, 400))
+        ..add(boardAtCentre(500, 400), area: true);
+      expect(state().areas, isEmpty);
+    });
+
+    test('choosing again forgets the areas', () {
+      notifier()
+        ..add(boardAtCentre(100, 400), area: true)
+        ..clear();
+      expect(state().areas, isEmpty);
+    });
   });
 }
