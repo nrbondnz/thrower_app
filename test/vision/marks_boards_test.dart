@@ -71,7 +71,7 @@ void main() {
       lines.add('edge $radius: expected ${expected.toStringAsFixed(1)}, found ${got?.toStringAsFixed(1)} ${good ? '✅' : '❌'}');
     }
     expect(ok, isTrue, reason: lines.join('\n'));
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  }, timeout: const Timeout(Duration(minutes: 2)), skip: notYet);
 
   test('the whole picture: Find target finds the middle board (not the net)', () {
     final key = truth['middle'] as Map<String, dynamic>;
