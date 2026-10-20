@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Knife and Axe Thrower"
+  description="An app for iPhone and Android that scores knife and axe throws with your phone's camera."
+>
+  <h1>Score every throw</h1>
+  <p>
+    Knife and Axe Thrower is an app for iPhone and Android. Set your phone on a mount to the
+    side of the lane, point it at your board, and it scores each knife or axe throw for you.
+  </p>
+  <ul>
+    <li>Play on your own or with a friend, on one board or two.</li>
+    <li>Quick draw: two throwers on a countdown; the first knife to stick wins.</li>
+    <li>Your games are kept on your phone, with an optional account to back them up.</li>
+  </ul>
+  <p><strong>Coming soon</strong> to the App Store and Google Play.</p>
+  <p class="safety">
+    Keep your phone, and yourself, out of the line of throw. The app can't tell whether the
+    lane is clear.
+  </p>
+</Base>
+
+<style>
+  .safety {
+    border-left: 4px solid var(--accent);
+    padding-left: 0.75rem;
+    color: var(--muted);
+  }
+</style>

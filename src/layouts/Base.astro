@@ -1,0 +1,71 @@
+---
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="brand">Knife and Axe Thrower</a>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <p>© {new Date().getFullYear()} Knife and Axe Thrower</p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #faf6f0;
+    --text: #1f1a17;
+    --muted: #6b625b;
+    --accent: #b3261e;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171412;
+      --text: #f2ece6;
+      --muted: #a89f97;
+      --accent: #ef6a5f;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+  }
+  header,
+  main,
+  footer {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+  .brand {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  footer {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+</style>
