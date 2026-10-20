@@ -27,7 +27,7 @@ Stage 2 of the [[Accounts Roadmap]], [[story-checkpoint-app-user-accounts]]. Why
 ## Open Questions
 - **Age:** are accounts adults only (an age check at sign-up), or are under-18s allowed with care? ([[Accounts Roadmap]] → Open Decisions)
 - **The app user's own seat:** "Me", or their name, by default, once they're signed in? ([[Accounts Roadmap]] → Stage 1)
-- **The privacy policy:** approve, add the contact email and owner name, publish (`web_public/privacy.html`); then the store privacy labels.
+- **The privacy policy:** approve, add the contact email and owner name, publish on the website (`knifeandaxethrower.com/privacy`); then the store privacy labels.
 - **The Apple button's style** (Guideline 4): check before any store build; WhereWillWeVisit's own button was rejected.
 - **Deletes while signed out come back** at the next sign-in (no tombstones). Fine for now?
 

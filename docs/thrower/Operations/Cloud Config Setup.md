@@ -159,8 +159,9 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
 ---
 
 ## 4. The Public Site and Store Listings
-- `web_public/` is served by Amplify Hosting at `https://main.d1yhmpx84pdvnh.amplifyapp.com`. A custom domain can come later.
-- **Privacy policy:** [[Privacy Policy (Draft)]] → `web_public/privacy.html` once Nigel approves it. Its URL goes in App Store Connect and Google Play, with the privacy labels it lists.
+- **The website:** `knifeandaxethrower.com` (Route 53, registered 2026-10-20), its own Amplify app and branches; setup in [[Website Index]].
+- `web_public/` is the backend app's holding page, at `https://main.d1yhmpx84pdvnh.amplifyapp.com`.
+- **Privacy policy:** [[Privacy Policy (Draft)]] → `knifeandaxethrower.com/privacy` once Nigel approves it. Its URL goes in App Store Connect and Google Play, with the privacy labels it lists.
 
 ---
 

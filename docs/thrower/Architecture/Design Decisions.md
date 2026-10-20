@@ -61,7 +61,7 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 - **`authServiceProvider` is `Provider<AuthService?>`: null means no accounts.** `main` calls `connectAccounts` and overrides the provider only when Amplify is configured. Null is never a gate: everything that works today works signed out (scoring, Quick draw, History). It used to throw "not chosen yet".
 - **The user ID is the Cognito `sub`** (`AppUser.id` = Amplify's `userId`), never the email or a hash of it. *Why:* WhereWillWeVisit's "known incident": Sign in with Apple's relay email isn't stable, and a second account was created silently. Starting with the `sub` avoids a migration later. The display name is the email.
 - **`AmplifyAuthService implements AuthService`** (`lib/auth/amplify_accounts.dart`): it follows the Hub's `signedIn`, `signedOut`, `sessionExpired` and `userDeleted` events. The rest of the app still sees only `AuthService`.
-- **`web_public/` is the hosting frontend.** The app is a phone app, so Amplify Hosting serves only a small public site: a holding page now, and the **privacy policy** the stores need (Task 5).
+- **`web_public/` is the hosting frontend.** The app is a phone app, so Amplify Hosting serves only a small public site: a holding page. (The **privacy policy** the stores need was planned here; since 2026-10-20 it goes on the website instead: [[#Website: Astro, Orphan Branches, Its Own Amplify App (2026-10-20)]].)
 - **Android declares `INTERNET`.** Flutter adds it to debug builds only, and the Amplify plugins don't, so a release build couldn't sign in without it ([[Known Issues]]).
 
 **Task 2 (2026-10-19, deployed; Nigel signed up and in on the Samsung): Home → Account.** Requirement: [[Accounts and Sign-In]].
@@ -98,7 +98,7 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 - **The phone keeps its games and names.** They were the user's before any account; deleting the app or Clear history removes them.
 - **The account isn't deleted with the app** (as both stores expect: the account is the user's).
 - **Instructions:** a new section, **Your account** (after History): optional, what's backed up, Delete account keeps the phone's games. History's privacy line: "…sends it nowhere unless you sign in".
-- **A privacy policy draft** ([[Privacy Policy (Draft)]]): camera pictures never sent; the phone's games; the optional account (email, Cognito, the backup, AWS London); no ads or analytics; deletion. For Nigel to approve, then published as `web_public/privacy.html` for the stores. The store privacy labels follow from it.
+- **A privacy policy draft** ([[Privacy Policy (Draft)]]): camera pictures never sent; the phone's games; the optional account (email, Cognito, the backup, AWS London); no ads or analytics; deletion. For Nigel to approve, then published on the website, `knifeandaxethrower.com/privacy` ([[Website Index]]), for the stores. The store privacy labels follow from it.
 
 **Confirmed:** 2026-10-04 (accounts needed); 2026-10-19 (AWS Amplify, and Task 1's choices above; Task 2 checked by Nigel on the Samsung). Tasks 3–5 are written on the story's assumptions while Nigel was away; device checks AC0–AC8 in [[Device Test Plan]].
 
@@ -108,9 +108,23 @@ Each entry: **Decision**, **Rationale**, **Trade-off**, and the date Nigel confi
 
 **Repo:** `thrower_app`, **private**.
 
-**Branch model:** `main` only for now. Add a dev/prod split when there's a backend or release pipeline that needs one. **Update (2026-10-19):** the backend exists (AWS Amplify, above), so `main` is production and a `dev` branch is for development. `dev` is created when Nigel connects the Amplify app; it doesn't exist yet.
+**Branch model:** `main` only for now. Add a dev/prod split when there's a backend or release pipeline that needs one. **Update (2026-10-19):** the backend exists (AWS Amplify, above), so `main` is production and a `dev` branch is for development. `dev` is created when Nigel connects the Amplify app; it doesn't exist yet. **Update (2026-10-20):** two orphan branches for the website, `website` and `website-dev` (next section).
 
 **Confirmed:** 2026-10-04.
+
+## Website: Astro, Orphan Branches, Its Own Amplify App (2026-10-20)
+
+Requirement: [[Website]]. Details and setup: [[Website Index]].
+
+**Decision (Nigel, 2026-10-20):** a public website at `knifeandaxethrower.com` (branch `website`) and `dev.knifeandaxethrower.com` (branch `website-dev`).
+- **Astro + TypeScript, a static site.** *Why:* fast pages with little JavaScript, read well by search engines, content in Markdown or components, and room for interactive parts and the app's backend later (the Game Centre). *Not chosen:*
+  - **Flutter web:** a multi-megabyte engine before the first page, poor for search, awkward for text-heavy pages;
+  - **Next.js:** more than a mostly-content site needs, with server rendering to run and maintain.
+- **Orphan branches** in the same repo: they hold only the site, never the Flutter app or `amplify/`. Never merged with `main`. On the PC the site has its own git worktree (`..	hrower_app-website`).
+- **Its own Amplify app** (`knifeandaxethrower-website`), not a branch of `thrower_app`'s. Its `amplify.yml` is frontend only. *Why:* a website build can never deploy or break the app's backend, and the site doesn't share the app's settings and secrets. Nigel chose this over connecting the branches to the existing app ("architectural purity").
+- **The privacy policy moves to the website** (`/privacy`), instead of `web_public/privacy.html` on the backend app's default domain: the stores get a stable URL on the app's own domain. `web_public/` stays as the backend app's holding page.
+
+**Confirmed:** 2026-10-20.
 
 ## Vision and Timing Pipeline: On-Device, Separate from Scoring
 

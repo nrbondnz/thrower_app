@@ -1,6 +1,6 @@
 # Privacy Policy (Draft)
 
-**Status:** DRAFT for Nigel to approve (written 2026-10-19, accounts Task 5). Not published. Once approved, it goes on the public site as `web_public/privacy.html` (Amplify Hosting serves `web_public/`), and its URL goes in App Store Connect and Google Play. **To fill in before publishing:** the contact email, the business or owner name, and the date.
+**Status:** DRAFT for Nigel to approve (written 2026-10-19, accounts Task 5). Not published. Once approved, it goes on the website as `knifeandaxethrower.com/privacy` ([[Website Index]]), and its URL goes in App Store Connect and Google Play. **To fill in before publishing:** the contact email, the business or owner name, and the date.
 
 Related: [[story-checkpoint-app-user-accounts]] (Task 5), [[Instructions and Safety]], [[Subscriptions]] (a later version must cover payments).
 
