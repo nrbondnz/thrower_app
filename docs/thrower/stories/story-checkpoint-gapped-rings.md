@@ -107,6 +107,14 @@ Three screen recordings from Mark's iPhone (`6bcea39e…`, `c20d7167…` (two co
 - **Mark's own reading** (via Nigel, 2026-10-21): the knives it picked up were **usually scored correctly**; it **missed one knife that stuck**, and **called another a bounce-out when it stuck**. Nigel: the boards aren't clearly painted, which must be an issue. Same weakness as the virtual thrower's first result (stuck knives seen at an angle mostly missed: [[story-checkpoint-virtual-thrower]] Task 2).
 - **Next (Nigel's decision):** no request for better videos this time; Mark gets the **latest version** (build 9 from the Mac, with the three-round match, named players, Adjust boards, Tap the board in Calibrate) and tries again.
 - Backlog: #20.
+- **Build 9 sent** (2026-10-21, `2b14cab`): uploaded from the Mac, in Field testers and External testers ("Testing" at once, no review wait), with What to Test notes on drawn boards, Adjust boards and Tap the board.
+
+### Mark's TestFlight screenshot feedback (build 8, iPhone 16, iOS 26.6.1, read 2026-10-21)
+Three screenshots with notes, sent from TestFlight on 2026-10-20, all of the fence with three round-log boards:
+- **"Doesn't find the target"** (Calibrate target): "Not sure about the target (Rings too unclear)"; the suggested rings a loose blue tangle over the middle board, not its rings. Build 9's **Tap the board** and dragging the outline are the answer to try.
+- **"Messy when moved"** (Calibrate target, after locking): the green locked rings sit over the **left** board, smaller than it and not centred on it. Likely the outline dragged off, or locked on a wrong fit; build 9's Adjust boards and Tap the board.
+- **"Going in via duel cup doesn't help"** (Quick draw): "No board found there. Tap the centre of Player 1's board." on the same boards. Build 9's **Draw round the boards** is the workaround (timed only).
+- All three are the gapped/unclear-ring weakness above (backlog #20); none is new.
 
 ## Plan Changes Log
 - **2026-10-21:** Task 2 became a tapped-board fallback (automatic search unchanged: every attempt to widen it broke boards that work); Task 3 dropped (Mark's rings are in IKTHOF proportion); Task 4 became "tap the board when Find target fails" in Play's calibration (covers several boards in the picture too).
