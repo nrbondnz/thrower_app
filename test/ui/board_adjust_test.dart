@@ -132,4 +132,54 @@ void main() {
       );
     });
   });
+
+  // Four-cornered boards (story-checkpoint-board-outlines, 2026-10-21).
+  group('a four-cornered board', () {
+    // A square from (140, 240) to (260, 360): its corners are its handles.
+    final square = TargetCalibration(
+      imageWidth: 720,
+      imageHeight: 1280,
+      boundaries: board.boundaries,
+      outer: board.outer,
+      outline: const [Point2(140, 240), Point2(260, 240), Point2(260, 360), Point2(140, 360)],
+    );
+
+    final grabs = <(String, Point2, CalibrationGrab?)>[
+      ('on a corner', const Point2(258, 358), CalibrationGrab.corner2),
+      ('inside, in a corner beyond the circle', const Point2(150, 250), CalibrationGrab.move),
+      ('outside', const Point2(300, 300), null),
+    ];
+    for (final (name, at, grab) in grabs) {
+      test('grabAt $name: $grab', () => expect(grabAt(square, at, 8), grab));
+    }
+
+    test('dragging a corner moves that corner only', () {
+      final b = dragged(square, CalibrationGrab.corner1, delta: const Point2(0, 0), at: const Point2(280, 230));
+      expect([for (final p in b.outline!) (p.x, p.y)], [(140.0, 240.0), (280.0, 230.0), (260.0, 360.0), (140.0, 360.0)]);
+    });
+
+    test('a corner dragged across the outline (folding it) is refused', () {
+      final b = dragged(square, CalibrationGrab.corner1, delta: const Point2(0, 0), at: const Point2(100, 300));
+      expect(identical(b, square), isTrue);
+    });
+
+    test('dragging inside moves the whole outline', () {
+      final b = dragged(square, CalibrationGrab.move, delta: const Point2(10, 0), at: const Point2(0, 0));
+      expect(b.outline!.first.x, 150);
+    });
+
+    test('painted as its outline, with a handle on each corner', () {
+      void Function(Canvas) painted(bool handles) =>
+          (canvas) => BoardsPainter(QuickDrawTargets(boards: [square], areas: const {0}), handles: handles)
+              .paint(canvas, const Size(720, 1280));
+      expect(painted(false), paintsExactlyCountTimes(#drawPath, 1));
+      // Two circles per handle (fill, rim) and the player's number disc.
+      expect(painted(true), paintsExactlyCountTimes(#drawCircle, 4 * 2 + 1));
+    });
+  });
+
+  test('isConvex', () {
+    expect(isConvex(const [Point2(0, 0), Point2(10, 0), Point2(10, 10), Point2(0, 10)]), isTrue);
+    expect(isConvex(const [Point2(0, 0), Point2(10, 0), Point2(2, 2), Point2(0, 10)]), isFalse);
+  });
 }

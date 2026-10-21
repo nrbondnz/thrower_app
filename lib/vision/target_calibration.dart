@@ -78,6 +78,23 @@ class TargetCalibration {
     return _transform(majorFactor: 1, minorFactor: reach / outer.semiMinor, turn: 0);
   }
 
+  /// The outline's corner [index] dragged to [to] (Adjust boards on a
+  /// four-cornered board). Ignored if it would fold the outline (no longer
+  /// convex) or there is no outline.
+  TargetCalibration withCornerAt(int index, Point2 to) {
+    final corners = outline;
+    if (corners == null || index < 0 || index >= corners.length) return this;
+    final next = [...corners]..[index] = to;
+    if (!isConvex(next)) return this;
+    return TargetCalibration(
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
+      boundaries: boundaries,
+      outer: outer,
+      outline: next,
+    );
+  }
+
   /// The same rings in the [w] × [h] part of the image whose top-left corner
   /// is ([x], [y]) (Quick draw watches each board in its own crop).
   TargetCalibration within(int x, int y, int w, int h) => TargetCalibration(
@@ -125,4 +142,19 @@ class TargetCalibration {
         outer: newOuter,
         outline: outline == null ? null : [for (final p in outline!) corner(p)],
       );
+}
+
+/// Whether [corners], in order, turn the same way at every corner (a convex
+/// outline, which `OutlineShape.reach` needs).
+bool isConvex(List<Point2> corners) {
+  var sign = 0;
+  for (var i = 0; i < corners.length; i++) {
+    final a = corners[i], b = corners[(i + 1) % corners.length], c = corners[(i + 2) % corners.length];
+    final turn = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+    if (turn == 0) continue;
+    final s = turn > 0 ? 1 : -1;
+    if (sign != 0 && s != sign) return false;
+    sign = s;
+  }
+  return sign != 0;
 }

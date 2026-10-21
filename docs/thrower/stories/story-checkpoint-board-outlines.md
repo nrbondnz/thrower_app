@@ -40,7 +40,16 @@ IN PROGRESS: plan approved 2026-10-21 ("yes", the architectural-purity option); 
   - `flutter analyze`: no issues. `flutter test`: 939 passed.
 
 ## Task 3: The screen, docs, checks
-- **Status:** NOT STARTED
+- **Status:** IN PROGRESS (screen done; docs, traceability, build to come)
+- **What changed:**
+  - `BoardsPainter`: a four-cornered board is painted as its outline, with a handle on each corner while adjusting; the player's number and result line sit on its box (`_span`; round boards as before).
+  - `CalibrationGrab.corner0`…`corner3` (`corners`, `corner`); `grabAt` on an outline: the nearest corner within reach (unless the touch is nearer the centre), else inside the outline (`reach` ≤ 1.1) moves it; `dragged` → `TargetCalibration.withCornerAt`, which refuses a corner that would fold the outline (`isConvex`). `BoardsEditor` ranks boards by `shape.reach`.
+  - Instruction line: "Draw a finger round the edge of Player 1's board (round, square or rectangular)."; in-app Instructions: a round board stays round; a square or rectangular one gets four corners to drag into place.
+- **Test Report:**
+  - `board_adjust_test.dart`: +9 (grab a corner, inside a corner beyond the circle, outside; drag a corner; folding refused; move; painted as one outline with 4 corner handles; `isConvex`).
+  - `live_quick_draw_screen_test.dart`: +1 (a square drawn on the screen → four corners); instruction texts updated.
+  - `instructions_test.dart`: the four-corner sentence.
+  - `flutter analyze`: no issues. `flutter test`: 948 passed.
 
 ---
 

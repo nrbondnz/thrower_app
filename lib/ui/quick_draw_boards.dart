@@ -103,7 +103,7 @@ mixin BoardChoosing<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     }
     if (drawn) {
       final again = missed ? 'That loop is too small or too flat for a board. ' : '';
-      return "${again}Draw a finger round the edge of $next's board. "
+      return "${again}Draw a finger round the edge of $next's board (round, square or rectangular). "
           'Any knife that sticks inside counts: the time wins, not the score.';
     }
     final again = missed ? 'No board found there. ' : '';
@@ -292,7 +292,7 @@ class _BoardsEditorState extends State<BoardsEditor> {
       final grab = grabAt(board, p, reach);
       if (grab == null) continue;
       // A handle beats a body; between bodies, the one whose centre is nearest.
-      final rank = grab == CalibrationGrab.move ? 1 + board.outer.normalisedRadius(p) : 0.0;
+      final rank = grab == CalibrationGrab.move ? 1 + board.shape.reach(p) : 0.0;
       if (rank < bestRank) (best, bestRank) = ((i, grab), rank);
     }
     _drag = best;
@@ -352,12 +352,17 @@ class BoardsPainter extends CustomPainter {
       ..strokeWidth = 2;
     for (final (i, board) in targets.boards.indexed) {
       final scale = size.width / board.imageWidth;
-      for (final e in [if (!targets.areas.contains(i)) ...board.boundaries.values, board.outer]) {
-        canvas.drawPath(_path(e.rescaled(scale)), stroke);
+      final corners = board.outline;
+      if (corners != null) {
+        canvas.drawPath(Path()..addPolygon([for (final p in corners) Offset(p.x * scale, p.y * scale)], true), stroke);
+      } else {
+        for (final e in [if (!targets.areas.contains(i)) ...board.boundaries.values, board.outer]) {
+          canvas.drawPath(_path(e.rescaled(scale)), stroke);
+        }
       }
       _label(canvas, board, scale, '${i + 1}', colour);
       if (handles) {
-        for (final h in [board.majorHandle, board.minorHandle]) {
+        for (final h in corners ?? [board.majorHandle, board.minorHandle]) {
           final at = Offset(h.x * scale, h.y * scale);
           canvas.drawCircle(at, 12, Paint()..color = Colors.white);
           canvas.drawCircle(at, 12, stroke);
@@ -367,24 +372,34 @@ class BoardsPainter extends CustomPainter {
     }
   }
 
+  /// The board's middle across, and its top and bottom: a round board's
+  /// widest radius about its centre, as always; a four-cornered one's box.
+  (double, double, double) _span(TargetCalibration board) {
+    if (board.outline == null) {
+      final o = board.outer, r = math.max(o.semiMajor, o.semiMinor);
+      return (o.cx, o.cy - r, o.cy + r);
+    }
+    final shape = board.shape;
+    final halfHeight = shape.halfExtent.halfHeight;
+    return (shape.centre.x, shape.centre.y - halfHeight, shape.centre.y + halfHeight);
+  }
+
   /// [text] in a dark box just below the board.
   void _result(Canvas canvas, TargetCalibration board, double scale, String text) {
-    final o = board.outer;
-    final bottom = o.cy + math.max(o.semiMajor, o.semiMinor);
+    final (cx, _, bottom) = _span(board);
     final painter = TextPainter(
       text: TextSpan(text: text, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
       textDirection: TextDirection.ltr,
     )..layout();
-    final at = Offset(o.cx * scale - painter.width / 2, bottom * scale + 8);
+    final at = Offset(cx * scale - painter.width / 2, bottom * scale + 8);
     canvas.drawRect((at - const Offset(6, 3)) & Size(painter.width + 12, painter.height + 6), Paint()..color = Colors.black87);
     painter.paint(canvas, at);
   }
 
   /// The player number in a disc just above the board.
   void _label(Canvas canvas, TargetCalibration board, double scale, String text, Color colour) {
-    final o = board.outer;
-    final top = o.cy - math.max(o.semiMajor, o.semiMinor);
-    final at = Offset(o.cx * scale, top * scale - 16);
+    final (cx, top, _) = _span(board);
+    final at = Offset(cx * scale, top * scale - 16);
     canvas.drawCircle(at, 12, Paint()..color = colour);
     final painter = TextPainter(
       text: TextSpan(text: text, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold)),

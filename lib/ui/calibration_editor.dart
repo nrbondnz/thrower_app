@@ -38,7 +38,21 @@ class CalibrationEditor extends StatefulWidget {
 
 /// What a drag on a calibration's outline picks up: the whole target, or
 /// one of its outer ring's handles.
-enum CalibrationGrab { move, major, minor }
+enum CalibrationGrab {
+  move,
+  major,
+  minor,
+  // A four-cornered board's corners (story-checkpoint-board-outlines).
+  corner0,
+  corner1,
+  corner2,
+  corner3;
+
+  static const corners = [corner0, corner1, corner2, corner3];
+
+  /// Which corner, or null for the other grabs.
+  int? get corner => index >= corner0.index ? index - corner0.index : null;
+}
 
 /// What a touch at [at] (image pixels) picks up on [c]: the nearer handle
 /// within [reach] (image pixels), unless the touch is nearer the target's
@@ -46,8 +60,22 @@ enum CalibrationGrab { move, major, minor }
 /// overlap, and the middle should move it); else the target if the touch is
 /// inside its outer ring (or just outside it); null for neither. Shared by
 /// [CalibrationEditor] and the two-board editor.
+///
+/// A four-cornered board ([TargetCalibration.outline]) has a handle on each
+/// corner instead, and is moved from inside its outline.
 CalibrationGrab? grabAt(TargetCalibration c, Point2 at, double reach) {
   double distance(Point2 p) => math.sqrt((at.x - p.x) * (at.x - p.x) + (at.y - p.y) * (at.y - p.y));
+  if (c.outline case final corners?) {
+    final shape = c.shape;
+    var nearest = 0;
+    for (var i = 1; i < corners.length && i < CalibrationGrab.corners.length; i++) {
+      if (distance(corners[i]) < distance(corners[nearest])) nearest = i;
+    }
+    final toCorner = distance(corners[nearest]);
+    final inside = shape.reach(at) <= 1.1;
+    if (toCorner <= reach && (!inside || toCorner < distance(shape.centre))) return CalibrationGrab.corners[nearest];
+    return inside ? CalibrationGrab.move : null;
+  }
   final toMajor = distance(c.majorHandle), toMinor = distance(c.minorHandle);
   final handle = toMajor <= toMinor ? (CalibrationGrab.major, toMajor) : (CalibrationGrab.minor, toMinor);
   final inside = c.outer.normalisedRadius(at) <= 1.1;
@@ -62,6 +90,7 @@ TargetCalibration dragged(TargetCalibration c, CalibrationGrab grab, {required P
       CalibrationGrab.move => c.moved(delta.x, delta.y),
       CalibrationGrab.major => c.withMajorHandleAt(at),
       CalibrationGrab.minor => c.withMinorHandleAt(at),
+      _ => c.withCornerAt(grab.corner!, at),
     };
 
 class _CalibrationEditorState extends State<CalibrationEditor> {

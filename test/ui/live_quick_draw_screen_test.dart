@@ -432,7 +432,7 @@ void main() {
 
     testWidgets('the button switches to drawing, and back', (tester) async {
       await openDrawing(tester);
-      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 1's board."));
+      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 1's board (round, square or rectangular)."));
       expect(find.byKey(const Key('quickDrawBoardTap')), findsNothing, reason: 'no taps while drawing');
       await tester.tap(find.widgetWithText(OutlinedButton, 'Tap the boards'));
       await tester.pump();
@@ -443,7 +443,7 @@ void main() {
         (tester) async {
       await openDrawing(tester);
       await drawLoop(tester, 0.25, 0.5, 0.15);
-      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 2's board."));
+      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 2's board (round, square or rectangular)."));
       expect(find.widgetWithText(OutlinedButton, 'Tap the boards'), findsNothing, reason: 'chosen once begun');
       await drawLoop(tester, 0.75, 0.5, 0.15);
       expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its board'));
@@ -458,11 +458,30 @@ void main() {
       expect(instruction(tester), startsWith('Boards locked.'));
     });
 
+    testWidgets('a square drawn round a board gets four corners', (tester) async {
+      await openDrawing(tester);
+      final area = tester.getRect(find.byKey(const Key('quickDrawBoardDraw')));
+      // A square 30% of the picture's width across, a quarter of the way in.
+      final side = area.width * 0.3;
+      final topLeft = Offset(area.left + area.width * 0.1, area.top + area.height * 0.5 - side / 2);
+      final corners = [topLeft, topLeft + Offset(side, 0), topLeft + Offset(side, side), topLeft + Offset(0, side)];
+      final finger = await tester.startGesture(corners.first);
+      for (var c = 0; c < 4; c++) {
+        for (var i = 1; i <= 10; i++) {
+          await finger.moveTo(Offset.lerp(corners[c], corners[(c + 1) % 4], i / 10)!);
+          await tester.pump();
+        }
+      }
+      await finger.up();
+      await tester.pumpAndSettle();
+      expect(targets(tester).boards.single.outline, hasLength(4));
+    });
+
     testWidgets('a loop too small for a board says so, and asks again', (tester) async {
       await openDrawing(tester);
       await drawLoop(tester, 0.5, 0.5, 0.01);
       expect(instruction(tester), startsWith("That loop is too small or too flat for a board. Draw a finger round "
-          "the edge of Player 1's board."));
+          "the edge of Player 1's board (round, square or rectangular)."));
       expect(targets(tester).boards, isEmpty);
     });
 
@@ -471,7 +490,7 @@ void main() {
       await drawLoop(tester, 0.25, 0.5, 0.15);
       await tester.tap(find.byKey(const Key('quickDrawStartAgain')));
       await tester.pump();
-      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 1's board."));
+      expect(instruction(tester), startsWith("Draw a finger round the edge of Player 1's board (round, square or rectangular)."));
       expect(targets(tester).areas, isEmpty);
     });
   });
