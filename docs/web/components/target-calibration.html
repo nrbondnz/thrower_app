@@ -21,18 +21,22 @@
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Data + notifier</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/vision/target_calibration.dart</code><br><code>lib/providers.dart</code><br></dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/vision/target_calibration.dart</code><br><code>lib/vision/board_shape.dart</code><br><code>lib/providers.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>After the rings are found</dd></div>
   </dl>
 
   <div class="detail-body">
     <p>The camera doesn't move, so the rings are found once and locked. Taps and later throws are scored against them. Quick draw keeps one calibration per board; <code>within</code> moves the rings into a board crop's coordinates.</p>
+    <p>Throw detection asks the board's <code>shape</code> (a <code>BoardShape</code>, 2026-10-21), not its outer ring: an <code>EllipseShape</code> for a ring board, an <code>OutlineShape</code> for a drawn square or rectangular board (<code>outline</code>, its corners). <code>reach</code> is 0 at the centre and 1 on the edge, as an ellipse's normalised radius, so the watched region, the crop, the knife search and the touch test work alike on both, and a knife in a square board's corner counts.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
     <div><dt><code>moved · withMajorHandleAt · withMinorHandleAt</code></dt><dd>drag all the rings together</dd></div>
     <div><dt><code>within(x, y, w, h)</code></dt><dd>the same rings in a crop&#x27;s coordinates</dd></div>
+    <div><dt><code>outline · shape</code></dt><dd>a drawn board&#x27;s corners (or null) · the board&#x27;s edge as a BoardShape</dd></div>
+    <div><dt><code>withCornerAt · isConvex</code></dt><dd>drag a corner; refused if the outline would fold</dd></div>
+    <div><dt><code>BoardShape</code></dt><dd>reach, centre, halfExtent, area, meanRadius; EllipseShape, OutlineShape</dd></div>
     <div><dt><code>CalibrationNotifier</code></dt><dd>start, adjust (ignored when locked), lock, unlock</dd></div>
   </dl>
 
@@ -52,7 +56,7 @@
     </a>
   </div>
 
-  <footer class="colophon">lib/vision/target_calibration.dart · lib/providers.dart</footer>
+  <footer class="colophon">lib/vision/target_calibration.dart · lib/vision/board_shape.dart · lib/providers.dart</footer>
 </div>
 </body>
 </html>

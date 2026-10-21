@@ -83,6 +83,12 @@ void main() {
       expect(square.meanRadius, 5);
     });
 
+    test('corners all on one line enclose nothing', () {
+      final flat = OutlineShape(const [Point2(0, 0), Point2(5, 0), Point2(10, 0), Point2(20, 0)]);
+      expect(flat.reach(const Point2(100, 100)), greaterThan(1));
+      expect(flat.reach(const Point2(5, 0)), greaterThan(1));
+    });
+
     test('rescaled and moved', () {
       final moved = square.rescaled(2).translated(1, 0) as OutlineShape;
       expect(moved.corners[2], isA<Point2>().having((p) => (p.x, p.y), 'corner', (21.0, 20.0)));
@@ -125,6 +131,35 @@ void main() {
       final (:camera, :calibration) = cropToBoard(_StillCamera(), b);
       expect((camera.x + camera.width / 2, camera.y + camera.height / 2), (100, 100));
       expect(calibration.outline, isNotNull);
+    });
+
+    test('a corner dragged past the picture\'s edge stops at it', () {
+      final b = squareBoard().withCornerAt(0, const Point2(-50, -50));
+      expect((b.outline!.first.x, b.outline!.first.y), (0.0, 0.0));
+    });
+
+    test('a long, thin board\'s crop holds its whole watched region', () {
+      // 3:1, 180 × 60 px, in a 400 × 400 picture.
+      final long = TargetCalibration(
+        imageWidth: 400,
+        imageHeight: 400,
+        boundaries: squareBoard().boundaries,
+        outer: const Ellipse(cx: 200, cy: 200, semiMajor: 90, semiMinor: 30, angle: 0),
+        outline: const [Point2(110, 170), Point2(290, 170), Point2(290, 230), Point2(110, 230)],
+      );
+      final (:camera, :calibration) = cropToBoard(_StillCamera(), long);
+      // The region is 1.5 × the half-width (90) either side of the centre.
+      expect(camera.width, greaterThanOrEqualTo(270));
+    });
+
+    test('a round board\'s crop is as before (4 radii)', () {
+      final round = TargetCalibration(
+        imageWidth: 200,
+        imageHeight: 200,
+        boundaries: squareBoard().boundaries,
+        outer: squareBoard().outer,
+      );
+      expect(cropToBoard(_StillCamera(), round).camera.width, 160);
     });
 
     test('the smallest knife is a share of the outline\'s area', () {

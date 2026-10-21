@@ -205,7 +205,7 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-**Or draw round the boards** (Quick draw only, 2026-10-21, [[story-checkpoint-quick-draw-areas]]; why in [[Design Decisions]] → Quick Draw: Draw Round the Boards): a finger drawn round each board becomes the board, timed only. The rest of the flow (dragging, Lock, the watchers, the judge) is unchanged; a drawn board's throws carry no score, so `judgedText` shows only the time and a same-frame finish is a draw.
+**Or draw round the boards** (Quick draw only, 2026-10-21, [[story-checkpoint-quick-draw-areas]]; why in [[Design Decisions]] → Quick Draw: Draw Round the Boards): a finger drawn round each board becomes the board, timed only: an oval, or four corners if the loop has them ([[story-checkpoint-board-outlines]], 2026-10-21; [[Design Decisions]] → Quick Draw: Round or Four-Cornered Boards). The rest of the flow (dragging, Lock, the watchers, the judge) is unchanged; a drawn board's throws carry no score, so `judgedText` shows only the time and a same-frame finish is a draw.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -220,16 +220,25 @@ On Quick draw the user picks each player's board by tapping its centre (Task 2 o
 │     1. pictureSizerProvider → uprightPictureSize: the camera's next │
 │        frame's upright size, at most 1920 px (as tapped boards)     │
 │     2. loop × picture size = upright pixels                         │
-│     3. areaBoard: fitEllipse(loop) → TargetCalibration (outer = the │
-│        fit; rings = the fit × 0.2 … 0.8, never scored)              │
+│     3. areaBoard: the loop cut at the picture's edge →              │
+│        fitEllipse(loop) → TargetCalibration (outer = the fit;       │
+│        rings = the fit × 0.2 … 0.8, never scored)                   │
 │        null: < 8 points, smaller radius < 3% of the shorter side,   │
 │        larger > the shorter side, minor ÷ major < 0.35              │
+│     4. boardOutline (2026-10-21): convexHull → the 4 hull points    │
+│        enclosing the most area; kept as `outline` when the loop's   │
+│        mean miss from them + 0.01 < its miss from the oval;         │
+│        else round (outline null). Corners stay where drawn          │
 │          │                                                          │
 │          ▼                                                          │
 │   found: quickDrawTargetsProvider.add(board, area: true) → areas    │
 │   null: "That loop is too small or too flat for a board."           │
 │   then as tapped boards: drag, Lock, Adjust boards (areas kept)     │
 │   BoardsPainter: a drawn board's outline only, no rings             │
+│   four-cornered: painted as its outline; Adjust boards drags its    │
+│   corners (withCornerAt; a fold refused, isConvex)                  │
+│   detection asks TargetCalibration.shape (BoardShape): the          │
+│   watched region, crop, knife search and touch test                 │
 │   QuickDrawWatcher(areas:): those players' throws timed, not scored │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -567,10 +576,10 @@ Signed in, the kept games (scores, modes, dates, names) and the names go to AWS 
   - **Notes:** A **fraction** of the upright picture, 0–1 each way (since 2026-10-15). `locateTappedInFrame` multiplies it by the upright image's size after `frameToRgb`, so a sideways live frame and an upright recording are treated alike
 - **Drawn loop (Quick draw)**
   - **Where:** `LoopDrawer` → `BoardChoosing.addDrawnBoard` → `areaBoard`
-  - **Notes:** Fractions of the picture, 0–1 each way, like a tap (2026-10-21); multiplied by `uprightPictureSize` (the next frame upright, at most 1920 px) into upright pixels before the ellipse is fitted
+  - **Notes:** Fractions of the picture, 0–1 each way, like a tap (2026-10-21); multiplied by `uprightPictureSize` (the next frame upright, at most 1920 px) into upright pixels, clamped into the picture, before the ellipse (and any four corners, `TargetCalibration.outline`, kept in these upright picture pixels) is fitted
 - **Board crop (Quick draw)**
   - **Where:** `CroppedCamera` frames
-  - **Notes:** A square of the upright picture around one board; `TargetCalibration.within` moves the rings into it (subtract the crop's top-left corner). The frames themselves are cut in the camera's **sensor layout** (`sensorRect`; live Quick draw Task 2): a sideways live crop stays sideways, carrying the source's `uprightRotation` (fixed when the crop is made: each duel, 1 s before go), and is turned upright by whoever reads it; a recording's (rotation 0) is the rectangle as it is
+  - **Notes:** A square of the upright picture around one board; `TargetCalibration.within` moves the rings (and a drawn board's corners) into it (subtract the crop's top-left corner); its side is `cropRadii` × the board's `shape.meanRadius`, centred on `shape.centre`. The frames themselves are cut in the camera's **sensor layout** (`sensorRect`; live Quick draw Task 2): a sideways live crop stays sideways, carrying the source's `uprightRotation` (fixed when the crop is made: each duel, 1 s before go), and is turned upright by whoever reads it; a recording's (rotation 0) is the rectangle as it is
 - **Preview widget**
   - **Where:** `CalibrationEditor`
   - **Notes:** Upright image × (preview width ÷ image width); drawn as `CameraPreview`'s (or `RecordedPreview`'s) child so it lines up

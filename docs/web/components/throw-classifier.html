@@ -27,7 +27,7 @@
 
   <div class="detail-body">
     <p>It is a board visit if someone stood there, if 10% or more of the region changed at once, or if one shape covering 3% or more of the region moved. People are 4% and up; knives are up to 2.2%. A visit closes the round, and the known knives are forgotten.</p>
-    <p><code>findNewObject</code> looks for a connected changed shape touching the target, and checks it against the knives already in the board, so a knife falling out isn't taken for a new one.</p>
+    <p><code>findNewObject</code> looks for a connected changed shape touching the board (its <code>shape</code>: the outer ring, or a drawn board's four corners), and checks it against the knives already in the board, so a knife falling out isn't taken for a new one.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>

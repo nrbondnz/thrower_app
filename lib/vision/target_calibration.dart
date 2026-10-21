@@ -78,13 +78,14 @@ class TargetCalibration {
     return _transform(majorFactor: 1, minorFactor: reach / outer.semiMinor, turn: 0);
   }
 
-  /// The outline's corner [index] dragged to [to] (Adjust boards on a
-  /// four-cornered board). Ignored if it would fold the outline (no longer
-  /// convex) or there is no outline.
+  /// The outline's corner [index] dragged to [to], kept inside the picture
+  /// (Adjust boards on a four-cornered board). Ignored if it would fold the
+  /// outline (no longer convex) or there is no outline.
   TargetCalibration withCornerAt(int index, Point2 to) {
     final corners = outline;
     if (corners == null || index < 0 || index >= corners.length) return this;
-    final next = [...corners]..[index] = to;
+    final inPicture = Point2(to.x.clamp(0, imageWidth).toDouble(), to.y.clamp(0, imageHeight).toDouble());
+    final next = [...corners]..[index] = inPicture;
     if (!isConvex(next)) return this;
     return TargetCalibration(
       imageWidth: imageWidth,

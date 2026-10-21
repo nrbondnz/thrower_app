@@ -55,9 +55,10 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **`BoardChoosing`** (mixin on the screen's state): `findBoardAt(camera, tap)` → `tapLocatorProvider` → `boardAt` → `quickDrawTargetsProvider.add`; **`addDrawnBoard(camera, loop)`** (Quick draw, drawn boards: `pictureSizerProvider` → loop × picture size → `areaBoard` → `add(board, area: true)`; null → missed); **`boardsModeButton()`** (**Draw round the boards** / **Tap the boards**, key `quickDrawBoardsMode`, Quick draw screens only, until the first board is chosen) → `boardsDrawnProvider.choose`; `searching`, `missed`; **`playerNames`** (the names from `playerNamesProvider`, "Player N" without one; also two-target Play's); `choosingInstruction` ("Tap the centre of Player 1's board." / "… of Jo's board.", "No board found there. …", "Both boards found. Drag an outline to fit its rings if needed (only when no one is throwing), then lock them."; drawn (`drawn: true`): "Draw a finger round the edge of Player 1's board. Any knife that sticks inside counts: the time wins, not the score.", "That loop is too small or too flat for a board. …", "Marking Player 1's board…", and "… fit its board …" once both are drawn)
   - **`NamesButton`** (Quick draw's **Names**, before Start, on both Quick draw screens) → **`editPlayerNames(context, ref)`**: a dialog (`_NamesDialog`, which owns its fields so they outlive its closing animation) with a field per player, filled with the current names; Save → `playerNamesProvider.set`; Cancel changes nothing
   - **`BoardsOverlay`**: `BoardsPainter` over the picture; taps → **fractions** of the picture's width and height (`onTap`), ignored while `tapsOff`; **`onDraw`** (drawn boards) → a `LoopDrawer` in place of taps; `throws` → `boardLines`; **`onAdjust`** (set while both boards are found and not locked) → the `BoardsEditor` in place of taps
-  - **`BoardsEditor`** (2026-10-19, [[story-checkpoint-adjust-boards]]): both boards draggable; a touch → `grabAt` on each board (a handle beats a body; between bodies, the board whose centre is nearest) → `dragged` → `onAdjust(player, board)`
+  - **`BoardsEditor`** (2026-10-19, [[story-checkpoint-adjust-boards]]): both boards draggable; a touch → `grabAt` on each board (a handle beats a body; between bodies, the board whose centre is nearest; boards ranked by `shape.reach` since 2026-10-21) → `dragged` → `onAdjust(player, board)`
   - **`LoopDrawer`** (2026-10-21, [[story-checkpoint-quick-draw-areas]]; key `quickDrawBoardDraw`): a finger drawn round a board; the path (`_TrailPainter`) follows the finger, and on lift `onDraw` gets the loop as fractions of the picture each way
   - **`BoardsPainter`**: each board's rings (a drawn board, in `QuickDrawTargets.areas`: its outline only), scaled from its own image size, and its player number (blue while choosing, green once locked); `results`: each player's line under their board; `handles`: each board's two handles (while adjustable)
+  - `BoardsPainter` on a four-cornered board (2026-10-21, [[story-checkpoint-board-outlines]]): its outline, with a handle on each corner while adjustable; the number and result line placed on its box (`_span`)
   - `boardLines(throws, go)`: the line under each board, via `judgeQuickDraw` → `judgedText` ("0.82 s · 5", "0.85 s · bounced", "false start"); null before the throw is in
   - `quickDrawLine(text)`: the instruction or result line at the bottom
 - **`CameraView`** (`lib/ui/camera_view.dart`): a camera's preview with errors, release in the background and re-open handled; `camera:` the provider to show (default `cameraProvider`; Quick draw: `liveQuickDrawCameraProvider`); `overlayBuilder`
@@ -74,6 +75,8 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - made by **`tool/make_signal_sounds.dart`**: sine tones with 5 ms fades, written as WAV (mono, 16-bit, 22.05 kHz)
 - **`QuickDrawTargets`** (`lib/game/quick_draw_targets.dart`): the boards in tap order, `players` (2), `complete`, `locked`, **`areas`** (the players whose board was drawn round: timed, never scored; 2026-10-21); `QuickDrawTargetsNotifier` (`lib/providers.dart`): `add(board, {area})`, `clear`, `lock`, **`replace(index, board)`** (a dragged board; ignored once locked), **`unlock`** (Adjust boards: keeps both boards); `replace`, `lock` and `unlock` keep `areas`, `clear` forgets them
   - **`areaBoard(loop, imageWidth:, imageHeight:)`** (`lib/game/area_board.dart`): a loop drawn round a board (upright picture pixels) → `fitEllipse` → a `TargetCalibration` (outer = the fit, rings the same ellipse × 0.2 … 0.8, never scored); null under `minLoopPoints` (8), a smaller radius under `minAreaRadius` (0.03 of the shorter side), a larger over the shorter side, or flatter than `minRoundness` (0.35)
+    - since 2026-10-21 ([[story-checkpoint-board-outlines]]): the loop is first **cut at the picture's edge** (each point clamped into it); after the oval, **`boardOutline(loop, oval)`** → `TargetCalibration.outline` (four corners) or null (round)
+    - **`boardOutline`**: `convexHull(loop)` (Andrew's monotone chain) → `_largestQuad` (the four hull points enclosing the most area) → kept when the loop's mean miss from the corners (`|reach − 1|`) + **`cornerMargin`** (0.01) is under its mean miss from the oval
   - **`PictureSizer`** / **`uprightPictureSize(camera)`**: the camera's next frame's upright size, at most 1920 px (`uprightSizeOf` in `lib/vision/frame_to_rgb.dart`), the size tapped boards are found in; **`pictureSizerProvider`** (`lib/providers.dart`; tests replace it)
   - **`boardsDrawnProvider`** (`BoardsDrawnNotifier`, `lib/providers.dart`: `choose(drawn)`): Quick draw's boards drawn round (true) or tapped (false, the default); kept for the session
   - **`TapLocator`**: (camera, tap as a fraction of the upright picture) → `TappedTargetsResult`; `tapLocatorProvider`
@@ -106,10 +109,18 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `_find`: Find target (zoom, `locateInFrame`)
   - **`_findAt(camera, at)`** (Tap the board, 2026-10-21): the next frame → `compute(locateTappedInFrame)` at the tap, at the current zoom → `calibrationFrom` → `calibrationProvider.start`; status `tapTheBoardStatus` while waiting
 - **`CalibrationEditor`** (`lib/ui/calibration_editor.dart`): the single target's outline, dragged (`handleReach` 32 px); the drag rules, shared with `BoardsEditor`:
-  - **`grabAt(calibration, point, reach)`** → **`CalibrationGrab`** (`move`, `major`, `minor`) or null: the nearer handle within reach, unless the finger is nearer the centre (small targets); else `move` if inside the outer ring (× 1.1)
-  - **`dragged(calibration, grab, delta:, at:)`**: `moved`, `withMajorHandleAt` or `withMinorHandleAt`
+  - **`grabAt(calibration, point, reach)`** → **`CalibrationGrab`** (`move`, `major`, `minor`; `corner0`…`corner3` on a four-cornered board, 2026-10-21) or null: the nearer handle within reach, unless the finger is nearer the centre (small targets); else `move` if inside the outer ring (× 1.1)
+    - on an outline (`TargetCalibration.outline`): the nearest corner within reach (unless the touch is nearer the centre), else `move` if inside (`shape.reach` ≤ 1.1)
+  - **`dragged(calibration, grab, delta:, at:)`**: `moved`, `withMajorHandleAt`, `withMinorHandleAt` or `withCornerAt`
 - **`TargetCalibration`** (`lib/vision/target_calibration.dart`)
   - `moved`, `withMajorHandleAt`, `withMinorHandleAt` (all rings together); `within(x, y, w, h)`: the same rings in a crop's coordinates
+  - **`outline`** (2026-10-21, [[story-checkpoint-board-outlines]]): optional corners (a drawn square or rectangular board); **`shape`**: the board's edge as a `BoardShape` (`OutlineShape(outline)`, else `EllipseShape(outer)`); `moved`, `within` and the crop carry the corners
+  - **`withCornerAt(index, to)`**: a corner dragged; refused if the outline would fold (**`isConvex`**: every corner turns the same way)
+- **`BoardShape`** (`lib/vision/board_shape.dart`, 2026-10-21, [[story-checkpoint-board-outlines]]): a board's edge as throw detection asks it
+  - `reach(p)`, `centre`, `halfExtent`, `area`, `meanRadius`, `rescaled`, `translated`
+  - **`EllipseShape`**: a ring board's outer ring (`reach` = `Ellipse.normalisedRadius`)
+  - **`OutlineShape`**: convex corners in order (either way round); `centre` = the corners' average
+  - asked by `WatchRegion.fromCalibration` (box, `target`), the motion detector's on-target test, `cropToBoard` (`centre`, `meanRadius`), `findNewObject` (search box and touch test; ring boards keep their old square) and `minKnifeArea` (`area`)
 - **`CalibrationNotifier`** (`lib/providers.dart`)
   - `start`, `adjust` (ignored when locked), `lock`, `unlock`
 - **`TargetMapping`** (`lib/vision/target_mapping.dart`)
@@ -123,7 +134,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `onEpisode`: `classifyThrow(knownKnives)` → stuck (new knife id) / fell out (known id) / board visit (forget all) / bounce-out / scene changed
 - **`classifyThrow`** (`lib/vision/throw_classifier.dart`)
   - board visit: `wasBlocked`, `peakChange` ≥ 10% (`visitPeak`), or `peakArea` ≥ 3% of the region (`visitArea`; 2% until 2026-10-14)
-  - `findNewObject`: connected changed shape touching the target; size vs 0.25% of the target area; overlap with known knives
+  - `findNewObject`: connected changed shape touching the board (`TargetCalibration.shape`, reach ≤ 1.05); size vs 0.25% of the board's area (`minKnifeArea`); overlap with known knives
 - **`GeometricEntryEstimator`** (`lib/vision/entry_point.dart`)
   - colour-changed shape → steel pixels → principal axis → entry at the end away from `outwardDirection`
 - **`GameSession`** (`lib/scoring/game_session.dart`) / **`GameNotifier`** (`lib/providers.dart`)
@@ -304,8 +315,17 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Meaning:** On Play's Calibrate, when Find target can't find the rings or finds the wrong board: the user taps the middle of their board in the picture and the rings are looked for there (a seed centre), at the camera's current zoom. Picks one board out of several, and lets the ring-alignment fallback run. Only when no one is throwing. Requirement: [[Board Finding]].
   - **Used by:** `CalibrationScreen`, `CalibrationControls`, `locateTappedInFrame`
 - **Drawn board (area board)**
-  - **Meaning:** In Quick draw, a board chosen by drawing a finger round it on the screen instead of tapping its centre (Mark, 2026-10-21). The ellipse fitted to the loop is the board; any knife that sticks inside counts, timed only, never scored, so a same-frame finish is a drawn round. For boards whose rings the app can't find or sizes wrongly. Not in two-target Play, which needs scores. [[story-checkpoint-quick-draw-areas]]; [[Design Decisions]] → Quick Draw: Draw Round the Boards.
+  - **Meaning:** In Quick draw, a board chosen by drawing a finger round it on the screen instead of tapping its centre (Mark, 2026-10-21). The ellipse fitted to the loop is the board (or, since 2026-10-21, four corners if the loop has them: Board outline); any knife that sticks inside counts, timed only, never scored, so a same-frame finish is a drawn round. For boards whose rings the app can't find or sizes wrongly. Not in two-target Play, which needs scores. [[story-checkpoint-quick-draw-areas]]; [[Design Decisions]] → Quick Draw: Draw Round the Boards.
   - **Used by:** `areaBoard`, `QuickDrawTargets.areas`, `QuickDrawWatcher(areas:)`, `QuickDrawThrow.scored`, `JudgedThrow.scored`, `LoopDrawer`, `BoardChoosing.addDrawnBoard`, `boardsDrawnProvider`, `pictureSizerProvider`, `BoardsPainter`
+- **Board shape**
+  - **Meaning:** A board's edge in the picture as throw detection needs it: is a point on the board, where is it, how big. An oval for a ring board, a four-cornered outline for a square or rectangular drawn board. The detection code asks the shape, so it works the same on both. Requirement: [[Board Finding]]; [[Design Decisions]] → Quick Draw: Round or Four-Cornered Boards.
+  - **Used by:** `BoardShape`, `EllipseShape`, `OutlineShape`, `TargetCalibration.shape`, `WatchRegion`, `MotionDetector`, `cropToBoard`, `findNewObject`, `minKnifeArea`, `BoardsEditor`
+- **Reach**
+  - **Meaning:** How far out a point is on a board, as a share of the board's edge: 0 at the centre, 1 on the edge, k where the edge scaled by k about the centre passes. For an oval it is the normalised radius; for an outline, the largest share over its edges. Margins like "on the board" (1.05) mean the same on both shapes.
+  - **Used by:** `BoardShape.reach`, `boardOutline` (the mean miss), `grabAt`, `findNewObject`, `MotionDetector`
+- **Board outline (four-cornered board)**
+  - **Meaning:** A Quick draw board drawn round a square or rectangular board: four corners, kept where they were drawn in the picture (a rectangle seen from the side isn't one in the picture), cut at the picture's edge, always convex. Chosen over the oval when the loop keeps clearly closer to the corners (`cornerMargin`). Corners can be dragged in Adjust boards. [[story-checkpoint-board-outlines]].
+  - **Used by:** `boardOutline`, `TargetCalibration.outline`, `withCornerAt`, `isConvex`, `OutlineShape`, `BoardsPainter`, `CalibrationGrab.corner0`…`corner3`
 - **Stencilled (broken) rings**
   - **Meaning:** Rings sprayed through a stencil, so each ring is a few arcs with gaps of bare wood between them (Mark's boards: a red bull, two black rings in four arcs, speckled wood). Rays through a gap see no ring edge, and no single-colour region sits on the board's centre, so the usual search finds no start. Found after a tap by ring alignment.
   - **Used by:** `ColourRingLocator` (step 6), `test/vision/marks_boards_test.dart`

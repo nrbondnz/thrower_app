@@ -27,7 +27,7 @@ COMPONENTS = {
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>. Two-target Play does too. Once both boards are found, <code>BoardsEditor</code> lets each outline be dragged into place, with the single target\'s drag rules (<code>grabAt</code>, <code>dragged</code>); <strong>Adjust boards</strong> unlocks them later, keeping both (2026-10-19).',
-            'Quick draw\'s boards can instead be <strong>drawn round</strong> by finger (2026-10-21, for boards whose rings the app can\'t find): <code>LoopDrawer</code> draws the path, and the ellipse fitted to the loop (<code>areaBoard</code>) is the board, timed only, never scored. Two-target Play never offers it: it needs scores.',
+            'Quick draw\'s boards can instead be <strong>drawn round</strong> by finger (2026-10-21, for boards whose rings the app can\'t find): <code>LoopDrawer</code> draws the path, and the ellipse fitted to the loop (<code>areaBoard</code>), or its four corners for a square or rectangular board, is the board, timed only, never scored. Two-target Play never offers it: it needs scores.',
             'Players can be named (2026-10-19): on the setup screen, or with <strong>Names</strong> on Quick draw before Start. A blank seat is Player 1 / Player 2. Play, History and Quick draw all show the names; Quick draw\'s per-player result lines keep "1:" / "2:", matching the board numbers on the picture.',
             'On the recording\'s Quick draw, <strong>Play</strong> shows only once the boards are locked: played unlocked, nothing would be analysed (2026-10-16).',
         ],
@@ -46,7 +46,7 @@ COMPONENTS = {
             ('NamesButton · editPlayerNames', 'Quick draw\'s Names, before Start: a field per player, the same names as Play; Save or Cancel'),
             ('BoardChoosing.playerNames', 'the names for the board texts ("Tap the centre of Jo\'s board"), Player N without'),
             ('boardsModeButton · LoopDrawer · addDrawnBoard', 'Quick draw only: Draw round the boards / Tap the boards (kept for the session); a finger drawn round each board → areaBoard; "That loop is too small or too flat for a board."'),
-            ('BoardsEditor', 'both boards found, not locked: drag an outline to move, turn or stretch it (grabAt: a handle, else the board whose centre is nearest); Adjust boards unlocks, keeping both'),
+            ('BoardsEditor', 'both boards found, not locked: drag an outline to move, turn or stretch it (grabAt: a handle, else the board whose centre is nearest; a four-cornered board: a corner); Adjust boards unlocks, keeping both'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
             ('AccountScreen · AccountDetails', 'Home → Account (only with accounts): Amplify\'s sign-in screens inside an AuthenticatedView; then who\'s signed in, the backup line (backupText), Back up now, Sign out, Delete account (confirmAndDeleteAccount: asks first)'),
@@ -215,7 +215,7 @@ COMPONENTS = {
         dek='Decides what an episode was: a new knife stuck, a bounce-out, a known knife falling out, or someone visiting the board.',
         body=[
             'It is a board visit if someone stood there, if 10% or more of the region changed at once, or if one shape covering 3% or more of the region moved. People are 4% and up; knives are up to 2.2%. A visit closes the round, and the known knives are forgotten.',
-            '<code>findNewObject</code> looks for a connected changed shape touching the target, and checks it against the knives already in the board, so a knife falling out isn\'t taken for a new one.',
+            '<code>findNewObject</code> looks for a connected changed shape touching the board (its <code>shape</code>: the outer ring, or a drawn board\'s four corners), and checks it against the knives already in the board, so a knife falling out isn\'t taken for a new one.',
         ],
         functions=[
             ('ThrowTracker.onEpisode', 'classifyThrow(knownKnives) → stuck / fell out / visit / bounce-out'),
@@ -267,6 +267,7 @@ COMPONENTS = {
             'Only a square window around the tap is searched (0.45 × the picture\'s shorter side), enlarged 3×, with the tap tried first as the centre. Searching the whole picture found the wrong board: boards side by side can be painted differently.',
             'Calibrate\'s <b>Tap the board</b> (2026-10-21) uses it too, at the camera\'s current zoom, when Find target can\'t find the rings or finds the wrong board.',
             'Quick draw can skip the search (2026-10-21): a finger drawn round a board becomes the board through <code>areaBoard</code>, the ellipse fitted to the loop, kept in <code>QuickDrawTargets.areas</code> as timed only. A loop under 8 points, smaller than 3% of the picture\'s shorter side, bigger than it, or flatter than 0.35 (minor ÷ major) is refused.',
+            'A loop with corners becomes a <strong>four-cornered board</strong> (2026-10-21, a square or rectangular board): the loop is cut at the picture\'s edge, then <code>boardOutline</code> takes its convex hull, the four hull points enclosing the most area, and keeps them when the loop\'s mean miss from them, plus 0.01 (<code>cornerMargin</code>, a lean to the oval), is under its miss from the oval. The corners stay where they were drawn: a rectangle seen from the side isn\'t one in the picture.',
         ],
         functions=[
             ('locateAtTap', 'the camera\'s next frame → compute(locateTappedInFrame)'),
@@ -275,20 +276,25 @@ COMPONENTS = {
             ('boardAt', 'result → TargetCalibration or null'),
             ('QuickDrawTargets', 'the boards in tap order; add(board, area:), clear, lock; replace (a dragged board), unlock (Adjust boards); areas: the drawn boards'),
             ('areaBoard · uprightPictureSize', 'a drawn loop → fitEllipse → a TargetCalibration (rings never scored), or null · the picture size it\'s in'),
+            ('boardOutline · convexHull', 'a loop\'s four corners (the largest quad on its hull), or null if the oval fits as well'),
         ],
         flows=['calibration', 'choosing-boards'],
     ),
     'target-calibration': dict(
         name='TargetCalibration', lane='vision', type='Data + notifier',
-        files=['lib/vision/target_calibration.dart', 'lib/providers.dart'],
+        files=['lib/vision/target_calibration.dart', 'lib/vision/board_shape.dart', 'lib/providers.dart'],
         trigger='After the rings are found',
         dek='The fitted rings for the session: one ellipse per painted edge, plus the outer edge. Adjusted by dragging, then locked.',
         body=[
             'The camera doesn\'t move, so the rings are found once and locked. Taps and later throws are scored against them. Quick draw keeps one calibration per board; <code>within</code> moves the rings into a board crop\'s coordinates.',
+            'Throw detection asks the board\'s <code>shape</code> (a <code>BoardShape</code>, 2026-10-21), not its outer ring: an <code>EllipseShape</code> for a ring board, an <code>OutlineShape</code> for a drawn square or rectangular board (<code>outline</code>, its corners). <code>reach</code> is 0 at the centre and 1 on the edge, as an ellipse\'s normalised radius, so the watched region, the crop, the knife search and the touch test work alike on both, and a knife in a square board\'s corner counts.',
         ],
         functions=[
             ('moved · withMajorHandleAt · withMinorHandleAt', 'drag all the rings together'),
             ('within(x, y, w, h)', 'the same rings in a crop\'s coordinates'),
+            ('outline · shape', 'a drawn board\'s corners (or null) · the board\'s edge as a BoardShape'),
+            ('withCornerAt · isConvex', 'drag a corner; refused if the outline would fold'),
+            ('BoardShape', 'reach, centre, halfExtent, area, meanRadius; EllipseShape, OutlineShape'),
             ('CalibrationNotifier', 'start, adjust (ignored when locked), lock, unlock'),
         ],
         flows=['calibration', 'choosing-boards'],
@@ -619,7 +625,7 @@ FLOWS = {
         body=[
             'There may be more boards in the picture than players, so the user picks them. Finding boards automatically missed board 2 on half the frames of the duel clip.',
             'Once both are found, each outline can be dragged into place (only when no one is throwing: the phone stands behind the throwers). <strong>Adjust boards</strong> unlocks them later, keeping both; on two-target Play it stops watching and clears the marks, and the scores stay (2026-10-19).',
-            'Quick draw only (2026-10-21): <strong>Draw round the boards</strong>. A finger drawn round each board on the screen (<code>LoopDrawer</code>) becomes the board: the ellipse fitted to the loop (<code>areaBoard</code>), no ring search. Any knife that sticks inside counts; only the time decides, so the same frame is a drawn round. Then drag, Lock and Adjust boards as for tapped boards.',
+            'Quick draw only (2026-10-21): <strong>Draw round the boards</strong>. A finger drawn round each board on the screen (<code>LoopDrawer</code>) becomes the board: the ellipse fitted to the loop (<code>areaBoard</code>), or four corners if it was drawn round a square or rectangular board, no ring search. Any knife that sticks inside counts; only the time decides, so the same frame is a drawn round. Then drag, Lock and Adjust boards as for tapped boards.',
         ],
         steps=[
             ('ui', 'BoardsOverlay', ['screen point ÷ the picture\'s size on screen', '= a fraction, 0–1 each way', 'drawn (Quick draw): LoopDrawer → addDrawnBoard → areaBoard'], 'screens', 'BoardChoosing.findBoardAt'),

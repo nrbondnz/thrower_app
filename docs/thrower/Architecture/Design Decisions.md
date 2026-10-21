@@ -923,6 +923,70 @@ Requirement: [[Game Type]] (Quick draw), [[Board Finding]]. Story: [[story-check
 
 **Confirmed:** 2026-10-21 (built; device checks to come).
 
+> **Later (2026-10-21):** a loop with corners now becomes a four-cornered board, not its oval. See **Quick Draw: Round or Four-Cornered Boards** below.
+
+## Quick Draw: Round or Four-Cornered Boards (2026-10-21)
+
+Requirement: [[Game Type]] (Quick draw), [[Board Finding]], [[Instructions and Safety]]. Story: [[story-checkpoint-board-outlines]] (follows [[story-checkpoint-quick-draw-areas]]).
+
+**Problem:** Nigel, 2026-10-21: a drawn board "might be a circle as you have assumed but sometimes it could be a square or rectangular board … if it looks vaguely circular, fine, but if it looks rectangular make it rectangular. I guess the actual view the camera can see should also factor in." A square board's covering oval misses its corners (a knife there isn't watched) and counts strips beyond its edges as the board.
+
+### Decision: boards answer for their own shape (`BoardShape`)
+`lib/vision/board_shape.dart`: throw detection asks the board's shape, not its outer ring.
+- **`BoardShape`:** `reach(p)`, `centre`, `halfExtent` (the box round it), `area`, `meanRadius`, `rescaled`, `translated`.
+- **`EllipseShape`:** a ring board's outer ring; the same sums as before (`reach` = `Ellipse.normalisedRadius`).
+- **`OutlineShape`:** convex corners in order (either way round); `centre` is the corners' average.
+- **`TargetCalibration.outline`** (optional corners; null for a round board) and **`shape`** (the outline if set, else the outer ring). `moved`, `within`, the crop and the handle drags carry the corners along.
+- **Who asks the shape:** `WatchRegion.fromCalibration` (the box; `target` is now a `BoardShape`), the motion detector's on-target test (`reach` ≤ 1.05), `cropToBoard` (`centre`, `meanRadius`), `findNewObject` (search and touch test) and `minKnifeArea` (`area`).
+- **Not asked:** `zoomToFit` (Play only) and the entry point (drawn boards are never scored), so they still use the ellipse. `outer` stays on an outlined board as the oval nearest the loop (its rings feed the entry-point code, never scored).
+
+**Reach** (`OutlineShape.reach`): for each edge, how far the point is from the centre towards that edge, as a share of the edge's own distance from the centre; the largest share wins. So it is 0 at the centre, 1 on the edge, and the outline scaled by k about its centre is where reach is k: the same meaning as an ellipse's normalised radius, so the existing margins (1.05 on-target, `searchMargin`, the watched region's `margin`) mean the same on both shapes.
+
+**Ring boards keep their search square:** `findNewObject` searches a square of side 2 × the ellipse's first semi-axis × `searchMargin` on an `EllipseShape`, as always (the ring tests and duel replays unchanged); an outline searches its own box.
+
+**Options (architectural purity over the quick option):**
+- **Quick, not chosen:** keep everything an ellipse and swap a square for the oval covering it. It would miss nothing inside, but count strips outside the board as on it, and a smaller oval would miss the corners.
+- **Chosen:** one `BoardShape` the detection code asks, with the ellipse as one case, so a new shape needs no change to the watcher, crop or knife search.
+
+### Decision: round or four corners, decided by the fit
+`lib/game/area_board.dart`:
+- **`areaBoard`** first **cuts the loop at the picture's edge** (each point clamped into the picture), fits the oval as before (`outer`, the size and roundness thresholds unchanged), then asks `boardOutline`.
+- **`boardOutline(loop, oval)`:** the loop's `convexHull` (Andrew's monotone chain) → the four hull points enclosing the most area (`_largestQuad`: for each diagonal, the best point on each side) → kept only when the loop's **mean miss** from the four corners (`|reach − 1|`, averaged over the loop) plus **`cornerMargin` 0.01** is under its mean miss from the oval. Otherwise null (round).
+- **Automatic:** no button; the fit decides.
+
+**Measured** (mean miss, oval vs corners):
+- Circle: 0 vs 0.27. Shaky circle (20 px): 0.07 vs 0.15.
+- Square: 0.10 vs 0. Shaky square: 0.12 vs 0.10.
+- Shaky rectangle in perspective: 0.11 vs 0.05.
+
+Every round loop misses its corners by more; every cornered loop misses its oval by more. The margin is a small lean to the oval, so a loop that fits both about as well stays round.
+
+**Why a margin, not a ratio:** first tried "corners under 0.5 × the oval's miss". A square drawn with 12 px of jitter came out round (0.064 vs 0.105), because shaking adds to both misses alike; a ratio punishes a shaky hand, a difference doesn't.
+
+**Corners stay where drawn, in picture coordinates:** a rectangle seen from the side isn't a rectangle in the picture (perspective), so the outline is never squared up. "The actual view the camera can see" is the picture itself.
+
+**Convexity:** `OutlineShape.reach` needs a convex outline. The hull and the largest quad are convex by construction; dragging a corner goes through `TargetCalibration.withCornerAt`, which refuses a move that would fold the outline (`isConvex`: every corner turns the same way).
+
+### Decision: the screen
+- **`BoardsPainter`:** a four-cornered board is painted as its outline; while adjusting, a handle on each corner. The player number and result line sit on its box.
+- **Adjust boards:** `CalibrationGrab.corner0`…`corner3`. `grabAt` on an outline: the nearest corner within reach (unless the touch is nearer the centre), else inside the outline (`reach` ≤ 1.1) moves it. `BoardsEditor` ranks boards by `shape.reach`.
+- **Instruction line:** "Draw a finger round the edge of Player 1's board (round, square or rectangular)." The in-app Instructions (Quick draw): a round board stays round; a square or rectangular one gets four corners to drag into place.
+- **Two-target Play unchanged** (it taps and scores ring boards).
+
+**Mark's duel replayed with square boards:** `quick_draw_replay_test.dart` draws each board as a square round it. The same throws; Player 1 on the same frame; Player 2 seen **one frame sooner** (the corners reach further than the oval did); Player 2 still wins.
+
+**Safety (Review Agent §7):** unchanged from drawing round the boards: on the screen, before anyone throws. No platform, permission or dependency change.
+
+**Checked by:**
+- `test/vision/board_shape_test.dart`: the ellipse as before; the outline's reach (centre, edge, corner, halfway, outside, either way round, perspective), box, area, rescale, move; a board with an outline through the watched region, crop and smallest knife; a knife in a square board's corner found
+- `test/game/area_board_test.dart`: round loops stay round (circle, side-on oval, wobbly, shaky); square, rectangle, perspective rectangle, square on its corner, jittery square → corners where drawn; a board off the picture's edge cut at it
+- `quick_draw_replay_test.dart`: Mark's duel with square boards
+- `board_adjust_test.dart`: grab and drag a corner, folding refused, move, painted with 4 corner handles, `isConvex`
+- `live_quick_draw_screen_test.dart`: a square drawn on the screen → four corners; `instructions_test.dart`
+- Device checks: [[Device Test Plan]] → Drawn Board Checks (QA8–QA14)
+
+**Confirmed:** 2026-10-21 (built; device checks to come).
+
 ## Ring Finding on Real Boards: Colour Edges, Any Paint (2026-10-11)
 
 > **Later (2026-10-21):** stencilled boards whose rings are painted in arcs with gaps (Mark's) aren't read by this; a tapped fallback finds them. See **Boards With Broken Rings: Tap the Board** below.

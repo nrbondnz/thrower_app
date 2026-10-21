@@ -41,8 +41,10 @@ class ThrowEvent {
 ///   ([faceOnEntry]).
 ///
 /// Knives are remembered until a board visit (someone collecting them).
+/// Without [findEntry] (a Quick draw board drawn round by finger: never
+/// scored), a stuck knife is reported at once, with no entry.
 class ThrowWatcher {
-  ThrowWatcher(this.camera, this.calibration, {this.interval = const Duration(milliseconds: 60)})
+  ThrowWatcher(this.camera, this.calibration, {this.interval = const Duration(milliseconds: 60), this.findEntry = true})
       : _detector = MotionDetector(WatchRegion.fromCalibration(calibration), minThreshold: camera.minChange),
         _tracker = ThrowTracker(calibration),
         _debug = WatchDebugLog(calibration);
@@ -56,6 +58,9 @@ class ThrowWatcher {
   /// Frames closer together than this are skipped: ~15 a second is enough
   /// to see a throw. Quick draw times throws, so it looks at every frame.
   final Duration interval;
+
+  /// Whether to look for where a stuck knife went in (for its score).
+  final bool findEntry;
   static const beforeRefresh = Duration(seconds: 1);
 
   final _events = StreamController<ThrowEvent>.broadcast();
@@ -178,7 +183,9 @@ class ThrowWatcher {
     _debug.onEpisode(episode, outcome);
     lastEpisode = episode;
     lastOutcome = outcome;
-    if (outcome.kind == ThrowOutcomeKind.stuck && isFaceOn(calibration)) {
+    if (outcome.kind == ThrowOutcomeKind.stuck && !findEntry) {
+      _events.add(ThrowEvent(outcome, episode, knifeId: knifeId));
+    } else if (outcome.kind == ThrowOutcomeKind.stuck && isFaceOn(calibration)) {
       final entry = faceOnEntry(outcome.object!, calibration);
       _debug.onEntry(entry);
       _events.add(ThrowEvent(outcome, episode, entry: entry, knifeId: knifeId));

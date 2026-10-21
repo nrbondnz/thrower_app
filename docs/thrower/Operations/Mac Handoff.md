@@ -1,8 +1,21 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-19 (section 0000). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-19 (section 0000); since build 9, section 000000 (2026-10-21). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
+
+---
+
+## 000000. Since Build 9 (2026-10-21): for a Future Build 10
+
+Build 9 went out from the Mac on 2026-10-21 (`2b14cab`, "Build 1.0.0+9 for TestFlight"). Nothing below needs doing until Nigel wants build 10; then section 00's steps with **`1.0.0+10`**, and add the build to the External testers group.
+
+### What's in it since build 9 (from the PC, pushed to `main`)
+- **Round or four-cornered boards** in Quick draw ([[story-checkpoint-board-outlines]], Nigel 2026-10-21): a board drawn round by finger becomes an oval if it looks round, or **four corners** if it looks square or rectangular, the corners where they were drawn (as the camera sees the board). Throw detection watches the board's own shape, so a knife in a corner counts. Corners can be dragged in Adjust boards (an outline can't be folded). Commits `f378009`, `bdf39f1`, `f645b09`.
+- **No new plugins, permissions or assets.** `flutter test`: 948 pass on the PC (2026-10-21).
+
+### Then
+Checks to send: [[Device Test Plan]] → Drawn Board Checks → Round or Four-Cornered Boards (**QA8–QA14**), with whatever of QA0–QA7 is still to do from build 9.
 
 ---
 

@@ -92,7 +92,7 @@ List<Point2> _largestQuad(List<Point2> hull) {
         final t = triangle(hull[i], hull[k], hull[m % n]);
         if (t > sideB) (sideB, l) = (t, m % n);
       }
-      if (j < 0 || l < 0 || l == i) continue;
+      if (l < 0) continue; // k is the last point before i: no room on that side.
       if (sideA + sideB > best) {
         best = sideA + sideB;
         corners = [hull[i], hull[j], hull[k], hull[l]];

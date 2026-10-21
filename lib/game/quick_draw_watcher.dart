@@ -87,7 +87,8 @@ class QuickDrawWatcher {
       final (camera: crop, :calibration) = cropToBoard(camera, board, cropRadii: cropRadii);
       final watched = queue ? QueuedCamera(crop) : crop;
       if (watched is QueuedCamera) queues.add(watched);
-      final watcher = ThrowWatcher(watched, calibration, interval: Duration.zero)..start();
+      final watcher =
+          ThrowWatcher(watched, calibration, interval: Duration.zero, findEntry: !areas.contains(player))..start();
       _watchers.add(watcher);
       _subscriptions.add(watcher.events.listen((event) => _onEvent(player, event, calibration)));
     }

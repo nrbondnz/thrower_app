@@ -29,7 +29,7 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │  quick_draw_boards (Quick draw screens, two-target Play):     │  │
 │  │    BoardChoosing (tap → find → outline) · BoardsOverlay       │  │
 │  │    Quick draw: or draw round each (LoopDrawer → areaBoard;    │  │
-│  │      timed only) · boardsModeButton                           │  │
+│  │      timed only; oval or four corners) · boardsModeButton     │  │
 │  │    ── BoardsPainter · boardLines · quickDrawLine              │  │
 │  │    BoardsEditor (drag each outline; Adjust boards → unlock)   │  │
 │  │    playerNames (Play's names) · NamesButton ─▶                │  │
@@ -100,6 +100,9 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │                 │  locateTappedInFrame ─▶ locateTargetAt          │ │
 │                 │    (Quick draw taps) ─▶ ColourRingLocator.seed  │ │
 │                 │  TargetCalibration ─▶ TargetMapping ─▶ point    │ │
+│                 │  BoardShape: the board's edge, as detection     │ │
+│                 │    asks it (EllipseShape · OutlineShape:        │ │
+│                 │    a drawn square board's corners)              │ │
 │                 │  findNewObject · faceOnEntry ·                  │ │
 │                 │    GeometricEntryEstimator          (the knife) │ │
 │                 │  cameraShift (did the phone move? 2 px)         │ │

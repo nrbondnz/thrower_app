@@ -373,7 +373,7 @@ For [[story-checkpoint-quick-draw-areas]] (from build 9; requirement [[Game Type
 
 - **QA0**
   - **Do:** Live test → Quick draw. Before tapping anything, look at the buttons; tap **Draw round the boards**
-  - **Look for:** The button shows before any board is chosen; it now says **Tap the boards**; the line says "Draw a finger round the edge of Player 1's board. Any knife that sticks inside counts: the time wins, not the score."
+  - **Look for:** The button shows before any board is chosen; it now says **Tap the boards**; the line says "Draw a finger round the edge of Player 1's board (round, square or rectangular). Any knife that sticks inside counts: the time wins, not the score."
 - **QA1**
   - **Do:** Drag a finger round the left board, just outside its outer ring; lift; then round the right board
   - **Look for:** A light blue path follows the finger; on lift it becomes an outline round the board with **no rings** inside, and player number 1 above it; then the same for 2; "Both boards found. Drag an outline to fit its board…"
@@ -396,6 +396,32 @@ For [[story-checkpoint-quick-draw-areas]] (from build 9; requirement [[Game Type
   - **Do:** Home → Play → 2 players, 2 targets → choose the boards
   - **Look for:** **No** Draw round the boards button: two-target Play still taps the boards and scores the rings, as before
 - **Mark, on his real boards (with QM6's safety: separate lanes, a starter behind the throwers):** draw round each board, play a match. Do the times and winners match what he sees? A screenshot of the drawn outlines before locking.
+
+### Round or Four-Cornered Boards (added 2026-10-21)
+
+For [[story-checkpoint-board-outlines]] (from build 10; requirement [[Game Type]], Quick draw; why in [[Design Decisions]] → Quick Draw: Round or Four-Cornered Boards): a loop drawn round a **square or rectangular** board becomes four corners, a round one stays an oval. QA8 can be done on Live test → Quick draw (the recording's boards are round); QA9–QA14 need the live camera. A sheet of A4 paper taped flat makes a rectangular board; a square of card makes a square one; knives are only pens pressed on by hand, as in Q4–Q5. Drawing and dragging are on the screen, never at the boards, and only when no one is throwing.
+
+- **QA8 (a round board stays round)**
+  - **Do:** Live test → Quick draw → Draw round the boards; draw round each round board, even a bit shakily
+  - **Look for:** Both become ovals (no corners), with the two white handles in the drag stage as before; the line says "Draw a finger round the edge of Player 1's board (round, square or rectangular)…"
+- **QA9 (a square board)**
+  - **Do:** Live Quick draw, the phone square on to a square of card; draw round its edges, going into each corner
+  - **Look for:** A four-cornered outline whose corners sit on the card's corners (not an oval); a white handle on each corner while it can be adjusted; player number above it
+- **QA10 (a rectangle seen from the side)**
+  - **Do:** Move the phone well to one side of an A4 sheet (as when the phone sits beside the lane); draw round the sheet
+  - **Look for:** Four corners on the sheet's corners as the camera sees them: the far edge shorter than the near one (not squared up into a rectangle)
+- **QA11 (drag a corner)**
+  - **Do:** Before locking, drag one corner handle a little; drag inside the outline to move it; Lock boards; then **Adjust boards** and drag a corner again; Lock
+  - **Look for:** Only that corner moves with the finger; dragging inside moves the whole outline; after Adjust boards the corners are still there and draggable
+- **QA12 (a fold refused)**
+  - **Do:** Drag one corner across the outline, past the opposite edge
+  - **Look for:** The corner stops following once the outline would cross itself (the outline never folds into a bow tie); dragging it back works
+- **QA13 (a board running off the picture)**
+  - **Do:** Frame the phone so a sheet runs off the side of the picture; draw round it, going past the picture's edge
+  - **Look for:** The outline is cut at the picture's edge (corners on the edge, none outside the picture); the board can still be locked and played
+- **QA14 (a knife in a corner counts)**
+  - **Do:** With square or rectangular boards locked, Start; after the long beep press a pen onto one board **right in a corner**, and onto the other near its middle
+  - **Look for:** Both are seen and timed ("0.82 s"); the corner one isn't missed. Also a pen just **outside** a board's edge, a hand's width away: not counted
 
 ## When Results Come Back
 

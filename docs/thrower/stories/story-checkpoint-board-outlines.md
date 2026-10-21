@@ -7,7 +7,7 @@ Nigel, 2026-10-21, after [[story-checkpoint-quick-draw-areas]]: a drawn Quick dr
 3 (Medium): vision (the board's shape in throw detection) → game (the fit) → UI (painting, corner handles) → docs.
 
 ## Status
-IN PROGRESS: plan approved 2026-10-21 ("yes", the architectural-purity option); run whole, committing per task ([[dont-ask-again]]).
+BUILT 2026-10-21, device checks to come (QA8–QA14, [[Device Test Plan]]). Plan approved 2026-10-21 ("yes", the architectural-purity option); run whole, committing per task ([[dont-ask-again]]).
 
 ## Plan
 - **Task 1: boards answer for their own shape.** `BoardShape` (an oval, or a four-cornered outline) with `reach` (1 on the edge, scaling about the centre, as an ellipse's normalised radius), `centre`, `halfExtent`, `area`. `TargetCalibration.outline` (optional corners) and `shape`. Motion watching (`WatchRegion`), the crop (`cropToBoard`), the new-knife search and touch test (`findNewObject`, `minKnifeArea`) ask the shape. Ring boards unchanged (full suite and the duel replays). Not zoom (Play only).
@@ -40,7 +40,7 @@ IN PROGRESS: plan approved 2026-10-21 ("yes", the architectural-purity option); 
   - `flutter analyze`: no issues. `flutter test`: 939 passed.
 
 ## Task 3: The screen, docs, checks
-- **Status:** IN PROGRESS (screen done; docs, traceability, build to come)
+- **Status:** COMPLETE (2026-10-21); device checks to come.
 - **What changed:**
   - `BoardsPainter`: a four-cornered board is painted as its outline, with a handle on each corner while adjusting; the player's number and result line sit on its box (`_span`; round boards as before).
   - `CalibrationGrab.corner0`…`corner3` (`corners`, `corner`); `grabAt` on an outline: the nearest corner within reach (unless the touch is nearer the centre), else inside the outline (`reach` ≤ 1.1) moves it; `dragged` → `TargetCalibration.withCornerAt`, which refuses a corner that would fold the outline (`isConvex`). `BoardsEditor` ranks boards by `shape.reach`.
@@ -51,7 +51,50 @@ IN PROGRESS: plan approved 2026-10-21 ("yes", the architectural-purity option); 
   - `instructions_test.dart`: the four-corner sentence.
   - `flutter analyze`: no issues. `flutter test`: 948 passed.
 
+### Doc Update — 2026-10-21
+
+**Requirements:**
+- `requirements/Basic Setup/Game Type.md`: What Exists Today, Draw round the boards → **Round or four-cornered** (QA8–QA14 to come); Related.
+- `requirements/Basic Setup/Board Finding.md`: **Square and rectangular boards** in What Exists Today; Related (the new decision and glossary terms).
+- `requirements/Instructions and Safety.md`: the Instructions' four-corner sentence; the drawn instruction line now with "(round, square or rectangular)"; Related.
+- `requirements/Requirements Index.md`: Game Type and Board Finding lines.
+
+**Architecture:**
+- `Architecture/Glossary.md`: component tree: `areaBoard` (cut at the picture's edge, `boardOutline`, `convexHull`, `_largestQuad`, `cornerMargin`), `TargetCalibration.outline` / `shape` / `withCornerAt` / `isConvex`, new **`BoardShape`** (`EllipseShape`, `OutlineShape`; who asks it), `grabAt` corners, `dragged` → `withCornerAt`, `BoardsEditor` ranking by `shape.reach`, `BoardsPainter` on an outline, `findNewObject` on the shape. New concepts **Board shape**, **Reach**, **Board outline (four-cornered board)**; Drawn board updated.
+- `Architecture/Data Flow.md`: the Draw Round the Boards diagram (step 3 cut at the edge, step 4 `boardOutline`, painting, corners, detection asking `shape`); the Drawn loop and Board crop coordinate entries.
+- `Architecture/System Diagram.md`: `BoardShape` in the vision box; drawn boards "oval or four corners".
+- Web pages: `tool/web_docs/content.py` (Tapped board finder: the four-cornered fit, `boardOutline · convexHull`; TargetCalibration: `board_shape.dart`, `shape`, `outline`, `withCornerAt`, `BoardShape`; throw classifier: the board's shape; screens and Choosing the boards: four corners), rebuilt with `python tool/web_docs/build.py`.
+
+**Design decisions:**
+- `Architecture/Design Decisions.md`: new **Quick Draw: Round or Four-Cornered Boards (2026-10-21)**: `BoardShape` and why (over the covering oval), `reach`, ring boards' search square kept, the fit and the 0.01 margin with the measurements, why not a ratio, corners kept in picture coordinates, cut at the edge, convexity, the screen, the duel replay with square boards (Player 2 one frame sooner), Checked by. A "Later" pointer in Quick Draw: Draw Round the Boards.
+
+**Operations and overview:**
+- `Operations/Device Test Plan.md`: Drawn Board Checks → **Round or Four-Cornered Boards (QA8–QA14)**: round stays round, square, rectangle from the side, drag a corner, fold refused, off the picture's edge, a knife in a corner. QA0's quoted line updated.
+- `Operations/Mac Handoff.md`: new section **000000. Since Build 9** for a future build 10 (no new plugins or permissions; 948 tests).
+- `CLAUDE.md`, `docs/working-with-nigel.md`: the story in the overview (built 2026-10-21, device checks to come).
+
+**Drift items (not fixed):**
+- Design Decisions → Quick Draw: Draw Round the Boards still argues "why an ellipse"; left as history with the Later pointer.
+- Glossary → Board crop says "a square … 4 × the board's radius"; for an outline the radius is `meanRadius` (half the box's average side). Accurate enough; noted in Data Flow's coordinate entry.
+- `withCornerAt` leaves `outer` (the oval) where it was, so after dragging corners the hidden rings no longer match the outline. Harmless while drawn boards aren't scored or zoomed; would matter if they ever were.
+
 ---
 
 ## Plan Changes Log
 - (none yet)
+
+---
+
+## Traceability Report — 2026-10-21
+- 9 acceptance points: 8 fully covered, 1 with a weakness (the picture's edge applied only when drawing); no bugs; 1 dead check.
+- Fixed:
+  - **G1:** drawn boards ran the blade-entry search for every stuck knife and threw it away (a full-resolution isolate on the live queue). `ThrowWatcher(findEntry:)`; `QuickDrawWatcher` passes `false` for drawn boards, so a stuck knife is reported at once, with no entry.
+  - **G2:** `OutlineShape.reach` gave 0 everywhere for corners all on one line (the whole picture "on the board"); now nothing is on it. Test added.
+  - **G3:** `withCornerAt` let a corner be dragged out of the picture; now it stops at the edge. Test added.
+  - **G4:** for a board longer than 2:1 the crop could cut off the watched region's ends; `cropToBoard` now holds `2 × watchMargin × the longest half-side`. Tests: a 3:1 board's crop; a round board's crop unchanged.
+  - **G5:** dead `l == i` in `_largestQuad` removed.
+- Noted: a corner dragged onto a neighbour leaves a triangle (still convex, `reach` correct); no test that two-target Play never draws (it can't, by structure).
+- `flutter analyze`: no issues. `flutter test`: 952 passed.
+
+## Android build — 2026-10-21
+- `flutter build apk --release` from `f645b09` (before the traceability fixes), installed with `adb install -r`. The fixes above are in the next build.

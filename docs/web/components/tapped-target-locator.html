@@ -30,6 +30,7 @@
     <p>Only a square window around the tap is searched (0.45 × the picture's shorter side), enlarged 3×, with the tap tried first as the centre. Searching the whole picture found the wrong board: boards side by side can be painted differently.</p>
     <p>Calibrate's <b>Tap the board</b> (2026-10-21) uses it too, at the camera's current zoom, when Find target can't find the rings or finds the wrong board.</p>
     <p>Quick draw can skip the search (2026-10-21): a finger drawn round a board becomes the board through <code>areaBoard</code>, the ellipse fitted to the loop, kept in <code>QuickDrawTargets.areas</code> as timed only. A loop under 8 points, smaller than 3% of the picture's shorter side, bigger than it, or flatter than 0.35 (minor ÷ major) is refused.</p>
+    <p>A loop with corners becomes a <strong>four-cornered board</strong> (2026-10-21, a square or rectangular board): the loop is cut at the picture's edge, then <code>boardOutline</code> takes its convex hull, the four hull points enclosing the most area, and keeps them when the loop's mean miss from them, plus 0.01 (<code>cornerMargin</code>, a lean to the oval), is under its miss from the oval. The corners stay where they were drawn: a rectangle seen from the side isn't one in the picture.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
@@ -40,6 +41,7 @@
     <div><dt><code>boardAt</code></dt><dd>result → TargetCalibration or null</dd></div>
     <div><dt><code>QuickDrawTargets</code></dt><dd>the boards in tap order; add(board, area:), clear, lock; replace (a dragged board), unlock (Adjust boards); areas: the drawn boards</dd></div>
     <div><dt><code>areaBoard · uprightPictureSize</code></dt><dd>a drawn loop → fitEllipse → a TargetCalibration (rings never scored), or null · the picture size it&#x27;s in</dd></div>
+    <div><dt><code>boardOutline · convexHull</code></dt><dd>a loop&#x27;s four corners (the largest quad on its hull), or null if the oval fits as well</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>

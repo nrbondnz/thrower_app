@@ -85,7 +85,7 @@ class OutlineShape implements BoardShape {
     // For each edge: how far p is towards it from the centre, as a share of
     // the edge's own distance from the centre. The largest is the scale at
     // which the outline passes through p.
-    var most = 0.0;
+    var most = 0.0, edges = 0;
     for (var i = 0; i < corners.length; i++) {
       final a = corners[i], b = corners[(i + 1) % corners.length];
       // A normal to the edge, pointing away from the centre.
@@ -97,9 +97,11 @@ class OutlineShape implements BoardShape {
         edge = -edge;
       }
       if (edge <= 0) continue;
+      edges++;
       most = math.max(most, (nx * (p.x - centre.x) + ny * (p.y - centre.y)) / edge);
     }
-    return most;
+    // Corners all on one line enclose nothing: no point is on the board.
+    return edges == 0 ? double.infinity : most;
   }
 
   @override
