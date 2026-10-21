@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:thrower_app/vision/board_shape.dart';
 import 'package:thrower_app/vision/coarse_to_fine_locator.dart';
 import 'package:thrower_app/vision/decode_image.dart';
 import 'package:thrower_app/vision/ellipse.dart';
@@ -105,7 +106,7 @@ void main() {
     }
 
     // The whole picture watched; the target a circle of radius 30 in the middle.
-    const region = WatchRegion(0, 0, 1, 1, target: Ellipse(cx: 0.5, cy: 0.5, semiMajor: 0.3, semiMinor: 0.3, angle: 0));
+    const region = WatchRegion(0, 0, 1, 1, target: EllipseShape(Ellipse(cx: 0.5, cy: 0.5, semiMajor: 0.3, semiMinor: 0.3, angle: 0)));
 
     /// Still frames, then [moving], then still again until it settles.
     MotionEpisode run(List<LumaImage> moving) {

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'board_shape.dart';
 import 'ellipse.dart';
 import 'image_difference.dart';
 import 'luma_image.dart';
@@ -231,15 +232,16 @@ bool _gone(NewObject knife, LumaImage before, LumaImage after, int threshold) {
 }
 
 /// The smallest new shape (pixels, in a frame [frameWidth] wide) that counts
-/// as a stuck knife: [minKnifeShare] of the target's area, at least 4 pixels.
+/// as a stuck knife: [minKnifeShare] of the board's area, at least 4 pixels.
 double minKnifeArea(TargetCalibration calibration, int frameWidth, {double minKnifeShare = 0.0025}) {
-  final outer = calibration.outer.rescaled(frameWidth / calibration.imageWidth);
-  return math.max(4, minKnifeShare * math.pi * outer.semiMajor * outer.semiMinor);
+  final board = calibration.shape.rescaled(frameWidth / calibration.imageWidth);
+  return math.max(4, minKnifeShare * board.area);
 }
 
 /// The largest connected shape (8-connected) of pixels that differ between
 /// [before] and [after] by more than [threshold], within [searchMargin] × the
-/// outer ring, that touches the target (the outer ring × 1.05). Null if none.
+/// board's edge ([TargetCalibration.shape]), that touches the board (its edge
+/// × 1.05). Null if none.
 NewObject? findNewObject(
   LumaImage before,
   LumaImage after,
@@ -248,15 +250,22 @@ NewObject? findNewObject(
   double searchMargin = 1.5,
 }) {
   final w = after.width, h = after.height;
-  final outer = calibration.outer.rescaled(w / calibration.imageWidth);
-  bool inSearch(int x, int y) => outer.normalisedRadius(Point2(x.toDouble(), y.toDouble())) <= searchMargin;
-  bool onTarget(int i) => outer.normalisedRadius(Point2((i % w).toDouble(), (i ~/ w).toDouble())) <= 1.05;
+  final board = calibration.shape.rescaled(w / calibration.imageWidth);
+  bool inSearch(int x, int y) => board.reach(Point2(x.toDouble(), y.toDouble())) <= searchMargin;
+  bool onTarget(int i) => board.reach(Point2((i % w).toDouble(), (i ~/ w).toDouble())) <= 1.05;
 
   final changed = List<bool>.filled(w * h, false);
-  final x0 = math.max(0, (outer.cx - outer.semiMajor * searchMargin).floor());
-  final x1 = math.min(w, (outer.cx + outer.semiMajor * searchMargin).ceil());
-  final y0 = math.max(0, (outer.cy - outer.semiMajor * searchMargin).floor());
-  final y1 = math.min(h, (outer.cy + outer.semiMajor * searchMargin).ceil());
+  final centre = board.centre;
+  // Ring boards keep their square of side 2 × the first semi-axis (as
+  // always); an outline searches its own box.
+  final (:halfWidth, :halfHeight) = switch (board) {
+    EllipseShape(:final ellipse) => (halfWidth: ellipse.semiMajor, halfHeight: ellipse.semiMajor),
+    _ => board.halfExtent,
+  };
+  final x0 = math.max(0, (centre.x - halfWidth * searchMargin).floor());
+  final x1 = math.min(w, (centre.x + halfWidth * searchMargin).ceil());
+  final y0 = math.max(0, (centre.y - halfHeight * searchMargin).floor());
+  final y1 = math.min(h, (centre.y + halfHeight * searchMargin).ceil());
   // Re-align a small camera shift and count only really new content (see
   // image_difference.dart), so a nudged camera doesn't look like new objects.
   final (dx, dy) = bestShift(after, before, PixelRect(x0, y0, x1, y1));

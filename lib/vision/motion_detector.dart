@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'board_shape.dart';
 import 'ellipse.dart';
 import 'image_difference.dart';
 import 'luma_image.dart';
@@ -10,18 +11,18 @@ import 'target_calibration.dart';
 class WatchRegion {
   const WatchRegion(this.left, this.top, this.right, this.bottom, {this.target});
 
-  /// The board around a locked calibration: the outer ring's bounding box,
-  /// grown by [margin] about its centre for knife handles sticking out (a
-  /// stuck knife reaches ~0.5 of the target radius beyond its entry point).
+  /// The board around a locked calibration: its edge's bounding box
+  /// ([TargetCalibration.shape]), grown by [margin] about its centre for knife
+  /// handles sticking out (a stuck knife reaches ~0.5 of the target radius
+  /// beyond its entry point).
   factory WatchRegion.fromCalibration(TargetCalibration c, {double margin = 1.5}) {
-    final e = c.outer;
-    final cos = math.cos(e.angle), sin = math.sin(e.angle);
-    final halfW = math.sqrt(math.pow(e.semiMajor * cos, 2) + math.pow(e.semiMinor * sin, 2)) * margin;
-    final halfH = math.sqrt(math.pow(e.semiMajor * sin, 2) + math.pow(e.semiMinor * cos, 2)) * margin;
+    final shape = c.shape, centre = shape.centre;
+    final (:halfWidth, :halfHeight) = shape.halfExtent;
+    final halfW = halfWidth * margin, halfH = halfHeight * margin;
     double fx(double x) => (x / c.imageWidth).clamp(0.0, 1.0);
     double fy(double y) => (y / c.imageHeight).clamp(0.0, 1.0);
-    return WatchRegion(fx(e.cx - halfW), fy(e.cy - halfH), fx(e.cx + halfW), fy(e.cy + halfH),
-        target: e.rescaled(1 / c.imageWidth));
+    return WatchRegion(fx(centre.x - halfW), fy(centre.y - halfH), fx(centre.x + halfW), fy(centre.y + halfH),
+        target: shape.rescaled(1 / c.imageWidth));
   }
 
   final double left;
@@ -29,9 +30,9 @@ class WatchRegion {
   final double right;
   final double bottom;
 
-  /// The target's outer ring, in fractions of the image's **width** (both
-  /// axes), or null if unknown: then every shape counts as on the target.
-  final Ellipse? target;
+  /// The board's edge, in fractions of the image's **width** (both axes), or
+  /// null if unknown: then every shape counts as on the target.
+  final BoardShape? target;
 }
 
 enum WatchState {
@@ -391,7 +392,7 @@ class MotionDetector {
     final (largest, onTarget) = largestShapes(changed, w, h,
         touching: target == null
             ? null
-            : (i) => target.normalisedRadius(Point2((x0 + i % w).toDouble(), (y0 + i ~/ w).toDouble())) <= 1.05);
+            : (i) => target.reach(Point2((x0 + i % w).toDouble(), (y0 + i ~/ w).toDouble())) <= 1.05);
     final side = math.sqrt(total);
     return _Difference(
       changedCount / total,

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'board_shape.dart';
 import 'ellipse.dart';
 
 /// The target's ring edges in the upright camera image, as found by the ring
@@ -16,6 +17,7 @@ class TargetCalibration {
     required this.imageHeight,
     required this.boundaries,
     required this.outer,
+    this.outline,
   });
 
   /// Size of the upright image the ellipses are measured in.
@@ -28,6 +30,19 @@ class TargetCalibration {
   /// Outer edge of the outermost scoring ring (normalised radius 1).
   final Ellipse outer;
 
+  /// The board's corners, for a Quick draw board drawn round a square or
+  /// rectangular board (story-checkpoint-board-outlines); null for a round
+  /// board. When set, it is the board's edge ([shape]), and [outer] is only
+  /// the oval nearest it (the board is never scored).
+  final List<Point2>? outline;
+
+  /// The board's edge, as throw detection asks it: the [outline] if there is
+  /// one, else the [outer] ring.
+  BoardShape get shape {
+    final corners = outline;
+    return corners == null ? EllipseShape(outer) : OutlineShape(corners);
+  }
+
   /// End of the outer ellipse's long axis: the handle for turning/stretching it.
   Point2 get majorHandle => outer.pointAt(0);
 
@@ -35,7 +50,11 @@ class TargetCalibration {
   Point2 get minorHandle => outer.pointAt(math.pi / 2);
 
   /// Everything moved by ([dx], [dy]) image pixels.
-  TargetCalibration moved(double dx, double dy) => _map((e) => e.translated(dx, dy), outer.translated(dx, dy));
+  TargetCalibration moved(double dx, double dy) => _map(
+        (e) => e.translated(dx, dy),
+        outer.translated(dx, dy),
+        (p) => Point2(p.x + dx, p.y + dy),
+      );
 
   /// The long-axis handle dragged to [to]: the long axis turns to point at it
   /// and stretches to reach it; every ring turns and stretches the same way
@@ -66,6 +85,7 @@ class TargetCalibration {
         imageHeight: h,
         boundaries: {for (final e in boundaries.entries) e.key: e.value.translated(-x.toDouble(), -y.toDouble())},
         outer: outer.translated(-x.toDouble(), -y.toDouble()),
+        outline: outline == null ? null : [for (final p in outline!) Point2(p.x - x, p.y - y)],
       );
 
   TargetCalibration _transform({required double majorFactor, required double minorFactor, required double turn}) {
@@ -92,13 +112,17 @@ class TargetCalibration {
       );
     }
 
-    return _map(apply, apply(outer));
+    return _map(apply, apply(outer), (p) => point(p.x, p.y));
   }
 
-  TargetCalibration _map(Ellipse Function(Ellipse) f, Ellipse newOuter) => TargetCalibration(
+  /// Every ring by [f], the outer ring as [newOuter], and the outline's
+  /// corners by [corner].
+  TargetCalibration _map(Ellipse Function(Ellipse) f, Ellipse newOuter, Point2 Function(Point2) corner) =>
+      TargetCalibration(
         imageWidth: imageWidth,
         imageHeight: imageHeight,
         boundaries: {for (final e in boundaries.entries) e.key: f(e.value)},
         outer: newOuter,
+        outline: outline == null ? null : [for (final p in outline!) corner(p)],
       );
 }

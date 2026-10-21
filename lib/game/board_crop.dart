@@ -12,10 +12,10 @@ import '../vision/target_calibration.dart';
 /// The square is kept inside the picture.
 ({CroppedCamera camera, TargetCalibration calibration}) cropToBoard(TargetCamera camera, TargetCalibration board,
     {double cropRadii = 4}) {
-  final o = board.outer;
-  final side = math.min((cropRadii * (o.semiMajor + o.semiMinor) / 2).round(), math.min(board.imageWidth, board.imageHeight)) & ~1;
-  final x = math.max(0, math.min((o.cx - side / 2).round(), board.imageWidth - side));
-  final y = math.max(0, math.min((o.cy - side / 2).round(), board.imageHeight - side));
+  final shape = board.shape, centre = shape.centre;
+  final side = math.min((cropRadii * shape.meanRadius).round(), math.min(board.imageWidth, board.imageHeight)) & ~1;
+  final x = math.max(0, math.min((centre.x - side / 2).round(), board.imageWidth - side));
+  final y = math.max(0, math.min((centre.y - side / 2).round(), board.imageHeight - side));
   final crop = CroppedCamera(camera, x: x, y: y, width: side, height: side);
   return (camera: crop, calibration: board.within(crop.x, crop.y, crop.width, crop.height));
 }
