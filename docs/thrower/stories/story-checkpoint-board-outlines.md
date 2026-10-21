@@ -29,7 +29,15 @@ IN PROGRESS: plan approved 2026-10-21 ("yes", the architectural-purity option); 
   - `flutter analyze`: no issues. `flutter test`: 927 passed (ring boards and the duel replays unchanged).
 
 ## Task 2: The fit
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-10-21)
+- **What changed:** `lib/game/area_board.dart`:
+  - `areaBoard` cuts the loop at the picture's edge, fits the oval (as before; still the board's `outer`), then `boardOutline`.
+  - `boardOutline(loop, oval)`: the loop's `convexHull` → the four hull points enclosing the most area (`_largestQuad`, for each diagonal the best point on each side) → kept when the loop's mean miss from it (`|reach − 1|`) is under the oval's by `cornerMargin` (0.01, a lean to the oval).
+  - **Why a margin, not a ratio:** first tried "corners under 0.5 × the oval's miss"; a square drawn with 12 px of jitter came out round (0.064 vs 0.105), because shaking adds to both misses. Measured (mean miss, oval vs corners): circle 0 vs 0.27, shaky circle (20 px) 0.07 vs 0.15; square 0.10 vs 0, shaky square 0.12 vs 0.10, shaky rectangle in perspective 0.11 vs 0.05. Every round loop misses its corners by more; every cornered loop misses its oval by more.
+- **Test Report:**
+  - `area_board_test.dart`: +11 (circle, side-on oval, wobbly circle stay round; square, rectangle, rectangle in perspective, square on its corner → corners where drawn; a jittery square; shaky drawing, 20 px: circle and side-on oval round, square and perspective rectangle cornered; the oval kept; a board off the picture's edge cut at it).
+  - `quick_draw_replay_test.dart`: +1, Mark's duel with each board drawn as a square round it: the same throws, Player 1 on the same frame, Player 2 one frame sooner (the corners reach further), Player 2 still wins.
+  - `flutter analyze`: no issues. `flutter test`: 939 passed.
 
 ## Task 3: The screen, docs, checks
 - **Status:** NOT STARTED

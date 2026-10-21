@@ -28,8 +28,10 @@ import 'live_replay_test.dart' show frameOf;
 /// can't keep up (the screen skips frames); analysis must still see them all.
 ///
 /// [drawn]: each board drawn round by finger instead (a loop just outside
-/// its outer ring, `areaBoard`), so the throws are timed, not scored.
-Future<List<QuickDrawThrow?>> replay({int step = 1, bool drawn = false}) async {
+/// its outer ring, `areaBoard`), so the throws are timed, not scored;
+/// [square]: drawn as a square round it instead (a four-cornered board,
+/// story-checkpoint-board-outlines).
+Future<List<QuickDrawThrow?>> replay({int step = 1, bool drawn = false, bool square = false}) async {
   final pack = FramePack.parse(File(quickDrawRecording.asset).readAsBytesSync());
   var now = Duration.zero;
   final camera = RecordedCamera(pack, recording: quickDrawRecording, autoTick: false, clock: () => now, decoder: decodeFramePureDart);
@@ -45,12 +47,29 @@ Future<List<QuickDrawThrow?>> replay({int step = 1, bool drawn = false}) async {
         TargetNotFound(:final reason) => throw StateError('board at $tap not found: $reason'),
       },
   ];
+  // A square round the board: its box, 5% out, 10 points along each side.
+  List<Point2> squareRound(Ellipse e) {
+    final r = math.max(e.semiMajor, e.semiMinor) * 1.05;
+    final corners = [Point2(e.cx - r, e.cy - r), Point2(e.cx + r, e.cy - r), Point2(e.cx + r, e.cy + r), Point2(e.cx - r, e.cy + r)];
+    return [
+      for (var c = 0; c < 4; c++)
+        for (var i = 0; i < 10; i++)
+          Point2(
+            corners[c].x + (corners[(c + 1) % 4].x - corners[c].x) * i / 10,
+            corners[c].y + (corners[(c + 1) % 4].y - corners[c].y) * i / 10,
+          ),
+    ];
+  }
+
   final drawnBoards = [
     for (final b in boards)
-      areaBoard([
-        for (var i = 0; i < 40; i++) b.outer.scaled(1.05).pointAt(2 * math.pi * i / 40),
-      ], imageWidth: pack.width, imageHeight: pack.height)!,
+      areaBoard(
+        square ? squareRound(b.outer) : [for (var i = 0; i < 40; i++) b.outer.scaled(1.05).pointAt(2 * math.pi * i / 40)],
+        imageWidth: pack.width,
+        imageHeight: pack.height,
+      )!,
   ];
+  if (square && drawnBoards.any((b) => b.outline == null)) throw StateError('a square drawn round a board stayed round');
   // As the app does: from a second before go.
   final feed = RecordingAnalysisFeed(camera, from: quickDrawRecording.go! - quickDrawLeadIn);
   final watcher = QuickDrawWatcher(
@@ -138,5 +157,19 @@ void main() {
       expect((drawn[p]!.scored, drawn[p]!.score), (false, null), reason: 'Player ${p + 1}');
     }
     expect(judgeQuickDraw(drawn, quickDrawRecording.go!).winner, 1);
+  }, timeout: const Timeout(Duration(minutes: 5)));
+
+  // Four-cornered boards (story-checkpoint-board-outlines): a square drawn
+  // round each round board watches its corners too; the same knives are found.
+  test('with both boards drawn as squares round them: the same throws, within a frame, Player 2 still wins', () async {
+    final squares = await replay(drawn: true, square: true);
+    for (var p = 0; p < 2; p++) {
+      expect(squares[p]?.stuck, throws[p]!.stuck, reason: 'Player ${p + 1}');
+      // In whole frames (60 fps): the square's corners reach further than the
+      // round board, so a knife can be seen a frame sooner (Player 2: 1 frame).
+      final frames = ((squares[p]!.impact - throws[p]!.impact).inMicroseconds * 60 / 1000000).round();
+      expect(frames.abs(), lessThanOrEqualTo(1), reason: 'Player ${p + 1}');
+    }
+    expect(judgeQuickDraw(squares, quickDrawRecording.go!).winner, 1);
   }, timeout: const Timeout(Duration(minutes: 5)));
 }
