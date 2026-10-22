@@ -6,6 +6,7 @@ import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 import 'play_screen.dart';
 import 'score_corrections.dart';
+import 'theme/app_theme.dart';
 
 /// Play for the games scored by hand, Precision and Three targets
 /// (more-game-types story, Nigel 2026-10-20: "We can worry about the camera
@@ -39,8 +40,11 @@ class _ScorePadScreenState extends ConsumerState<ScorePadScreen> implements Corr
     if (await confirmFinishGame(context) && mounted) ref.read(gameProvider.notifier).finishGame();
   }
 
+  // Always dark, whatever Setup → Appearance says (app-design story).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CameraTheme(child: _screen(context));
+
+  Widget _screen(BuildContext context) {
     ref.listen(historySaveErrorProvider, (_, message) {
       if (message != null) {
         ScaffoldMessenger.of(context).showSnackBar(

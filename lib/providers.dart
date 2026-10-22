@@ -18,6 +18,7 @@ import 'scoring/game_session.dart';
 import 'scoring/game_type.dart';
 import 'scoring/match.dart';
 import 'scoring/target_model.dart';
+import 'settings/appearance_store.dart';
 import 'settings/player_names_store.dart';
 import 'sound/signal_sounds.dart';
 import 'vision/target_calibration.dart';
@@ -260,6 +261,33 @@ class GameTypeNotifier extends Notifier<GameType> {
 final gameTypeProvider = NotifierProvider<GameTypeNotifier, GameType>(GameTypeNotifier.new);
 
 /// Where the player names last used are kept (the app's support folder).
+/// Where the Appearance setting is kept (app-design story, 2026-10-23).
+final appearanceStoreProvider =
+    Provider<AppearanceStore>((ref) => FileAppearanceStore(getApplicationSupportDirectory));
+
+/// Setup → Appearance: Phone (the default), Light or Dark. Starts as Phone,
+/// then takes the setting kept on the phone; each change is kept there (a
+/// failure to keep it is ignored: it's a convenience).
+class AppearanceNotifier extends Notifier<Appearance> {
+  var _changed = false;
+
+  @override
+  Appearance build() {
+    ref.read(appearanceStoreProvider).load().then((kept) {
+      if (!_changed && ref.mounted) state = kept;
+    });
+    return Appearance.phone;
+  }
+
+  void choose(Appearance appearance) {
+    _changed = true;
+    state = appearance;
+    ref.read(appearanceStoreProvider).save(appearance).ignore();
+  }
+}
+
+final appearanceProvider = NotifierProvider<AppearanceNotifier, Appearance>(AppearanceNotifier.new);
+
 final playerNamesStoreProvider =
     Provider<PlayerNamesStore>((ref) => FilePlayerNamesStore(getApplicationSupportDirectory));
 

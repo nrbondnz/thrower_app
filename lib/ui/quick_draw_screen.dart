@@ -13,6 +13,7 @@ import '../providers.dart';
 import 'camera_view.dart';
 import 'quick_draw_boards.dart';
 import 'recorded_preview.dart';
+import 'theme/app_theme.dart';
 
 /// Quick draw on a recording (Live test → Quick draw): two throwers, one board
 /// each, both in one view. The live camera's Quick draw is
@@ -93,8 +94,11 @@ class _QuickDrawScreenState extends ConsumerState<QuickDrawScreen> with BoardCho
     super.dispose();
   }
 
+  // Always dark, whatever Setup → Appearance says (app-design story).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CameraTheme(child: _screen(context));
+
+  Widget _screen(BuildContext context) {
     final camera = ref.watch(quickDrawCameraProvider);
     final targets = ref.watch(quickDrawTargetsProvider);
     final notifier = ref.read(quickDrawTargetsProvider.notifier);

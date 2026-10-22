@@ -10,7 +10,7 @@ import 'auth/amplify_backup.dart';
 import 'leaderboard/game_center_leaderboard_service.dart';
 import 'providers.dart';
 import 'ui/home_screen.dart';
-import 'ui/target_painter.dart';
+import 'ui/theme/app_theme.dart';
 
 /// Connects to the accounts backend if this build has its settings
 /// ([connectAccounts]); either way the app starts as before. On the iPhone,
@@ -45,7 +45,11 @@ class ThrowerApp extends ConsumerWidget {
     ref.listen(backupStatusProvider, (_, _) {});
     final app = MaterialApp(
       title: 'Thrower App',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: targetRed)),
+      // Light and dark (app-design story, Nigel 2026-10-23): as the phone
+      // is set, unless Setup → Appearance says otherwise.
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeModeOf(ref.watch(appearanceProvider)),
       home: const HomeScreen(),
     );
     // With accounts, the sign-in screens appear only inside the Account

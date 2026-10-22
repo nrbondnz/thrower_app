@@ -19,6 +19,7 @@ import 'play_screen.dart';
 import 'quick_draw_boards.dart';
 import 'round_marks.dart';
 import 'score_corrections.dart';
+import 'theme/app_theme.dart';
 
 /// Play for two players on two targets, throwing at the same time (Home →
 /// Play → 2 players, 2 targets; players-and-targets story, Task 3).
@@ -175,8 +176,11 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
     super.dispose();
   }
 
+  // Always dark, whatever Setup → Appearance says (app-design story).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CameraTheme(child: _screen(context));
+
+  Widget _screen(BuildContext context) {
     final targets = ref.watch(playTargetsProvider);
     final match = ref.watch(gameProvider);
     ref.listen(historySaveErrorProvider, (_, message) {

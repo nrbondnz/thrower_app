@@ -15,6 +15,7 @@ import '../scoring/match.dart';
 import '../scoring/quick_draw_match.dart';
 import 'camera_view.dart';
 import 'quick_draw_boards.dart';
+import 'theme/app_theme.dart';
 
 /// Quick draw with the phone's live camera (Home → Quick draw): two throwers,
 /// one board each, side by side, throwing on the app's start signal.
@@ -191,8 +192,11 @@ class _LiveQuickDrawScreenState extends ConsumerState<LiveQuickDrawScreen> with 
     };
   }
 
+  // Always dark, whatever Setup → Appearance says (app-design story).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CameraTheme(child: _screen(context));
+
+  Widget _screen(BuildContext context) {
     final targets = ref.watch(quickDrawTargetsProvider);
     final camera = ref.watch(liveQuickDrawCameraProvider).value;
     // Keeps the sounds loaded while Quick draw is open (they are released

@@ -19,6 +19,7 @@ import '../vision/target_mapping.dart';
 import 'calibration_editor.dart';
 import 'camera_view.dart';
 import 'watch_status.dart';
+import 'theme/app_theme.dart';
 
 /// Point the mounted phone at the board and tap "Find target": the camera
 /// zooms in on the board and the fitted ring edges are drawn over the live
@@ -179,8 +180,11 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     debugPrint('Calibration frame saved to ${file.path}');
   }
 
+  // Always dark, whatever Setup → Appearance says (app-design story).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CameraTheme(child: _screen(context));
+
+  Widget _screen(BuildContext context) {
     final camera = ref.watch(cameraProvider).value;
     final state = ref.watch(calibrationProvider);
     final notifier = ref.read(calibrationProvider.notifier);

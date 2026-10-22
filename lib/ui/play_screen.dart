@@ -20,6 +20,7 @@ import 'camera_view.dart';
 import 'post_score_panel.dart';
 import 'round_marks.dart';
 import 'score_corrections.dart';
+import 'theme/app_theme.dart';
 
 /// Play on one target: the locked target in the live picture; each throw is
 /// detected and scored, with a yellow circle showing its score where each
@@ -129,8 +130,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
     super.dispose();
   }
 
+  // Always dark, whatever Setup → Appearance says (app-design story).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => CameraTheme(child: _screen(context));
+
+  Widget _screen(BuildContext context) {
     final calibration = ref.watch(calibrationProvider);
     final match = ref.watch(gameProvider);
     final game = match.players.first;
