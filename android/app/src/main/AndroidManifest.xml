@@ -47,6 +47,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- games_services (Game Center scores) is used on the iPhone only; Android can't post yet
+             (backlog #21). Keep Play Games from starting at every launch (Review Agent, 2026-10-22).
+             Remove these lines when Android posting is built (it needs the Play Games SDK
+             initialised and an APP_ID). -->
+        <provider
+            android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
+            android:authorities="${applicationId}.playgamesinitprovider"
+            tools:node="remove" />
+        <activity
+            android:name="com.google.android.gms.games.internal.v2.resolution.GamesResolutionActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.google.android.gms.games.internal.v2.appshortcuts.PlayGamesAppShortcutsActivity"
+            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

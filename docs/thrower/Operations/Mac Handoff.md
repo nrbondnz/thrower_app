@@ -1,6 +1,6 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-19 (section 0000); since build 9, section 000000 (2026-10-21). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-19 (section 0000); since build 9, section 000000 (2026-10-21; Game Center added 2026-10-22). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
 
@@ -12,7 +12,20 @@ Build 9 went out from the Mac on 2026-10-21 (`2b14cab`, "Build 1.0.0+9 for TestF
 
 ### What's in it since build 9 (from the PC, pushed to `main`)
 - **Round or four-cornered boards** in Quick draw ([[story-checkpoint-board-outlines]], Nigel 2026-10-21): a board drawn round by finger becomes an oval if it looks round, or **four corners** if it looks square or rectangular, the corners where they were drawn (as the camera sees the board). Throw detection watches the board's own shape, so a knife in a corner counts. Corners can be dragged in Adjust boards (an outline can't be folded). Commits `f378009`, `bdf39f1`, `f645b09`.
-- **No new plugins, permissions or assets.** `flutter test`: 948 pass on the PC (2026-10-21).
+- **No new plugins, permissions or assets** for the boards. `flutter test`: 948 pass on the PC (2026-10-21).
+- **Ranked games and Game Center** ([[story-checkpoint-game-center-scores]], Nigel 2026-10-22): **Ranked: 5 × 3 at 3 m** under Which game? (one player, confirm 3 m), **strict mode** (a score can only be changed to 0), and at the end of a full game **Post score** and **View leaderboard** (iPhone only). **New plugin: `games_services` 5.3.0** (Game Center; a pod). Android: its Play Games start-up pieces are removed in `AndroidManifest.xml` (Review Agent, 2026-10-22). Needs the Game Center setup below before the build.
+
+### Game Center setup (Task 4 of [[story-checkpoint-game-center-scores]]), before build 10
+1. **App Store Connect** (Nigel, in the browser): Apps → Thrower → **Services** (Game Center) → **Leaderboards** → **+** → **Recurring**:
+   - Reference name: `Ranked 3 m 5x3`. **Leaderboard ID: `ranked.3m.5x3`** (exactly: the app posts to it, `Leaderboard.ranked3m`).
+   - Score format: Integer. Sort: **High to Low**. Score range: **0 to 75**. Submission type: Best score.
+   - Start: the 1st of next month, 00:00; **duration 1 month**; it restarts automatically.
+   - Localization: English (U.K.), name **"3 m · 5 rounds of 3"**, format "Integer".
+2. `git pull`, `flutter pub get`, **`cd ios && pod install`** (adds the `games_services` pod).
+3. **Xcode, in the foreground (Nigel clicking, Claude explaining):** Runner → Signing & Capabilities → **+ Capability → Game Center**. It adds `com.apple.developer.game-center` to `Runner.entitlements` (made by Sign in with Apple, if that's done; otherwise Xcode creates it, with `CODE_SIGN_ENTITLEMENTS` for Debug, Release and Profile). Commit the entitlements and project changes after the Review Agent.
+4. App Store Connect → the app's version page → tick **Game Center** and add the `ranked.3m.5x3` leaderboard (needed for the App Store release; TestFlight can post before review).
+5. **Privacy labels** (before the App Store, not TestFlight): add **User Content → Gameplay Content** for posted scores ([[Privacy Policy (Draft)]] → Game Center).
+6. **Check on the iPhone (TestFlight):** Settings → Game Center signed in. Play → Ranked → confirm 3 m → play 5 rounds → **Post score** → "Posted to the leaderboard" → **View leaderboard** shows it (sandbox scores are separate from the live ones). If it says to sign in to Game Center while you are signed in, the capability or the leaderboard is missing (steps 1, 3).
 
 ### Then
 Checks to send: [[Device Test Plan]] → Drawn Board Checks → Round or Four-Cornered Boards (**QA8–QA14**), with whatever of QA0–QA7 is still to do from build 9.

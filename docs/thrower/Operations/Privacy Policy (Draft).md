@@ -23,6 +23,10 @@ Everything works without an account. If you create one:
 - These are stored by Amazon Web Services in **London (UK)**. They are not shared with anyone else, not sold, and not used for advertising.
 - The app has **no advertising and no analytics or tracking**.
 
+### Game Center (iPhone, ranked games)
+- At the end of a full ranked game you can choose **Post score**. Only then, the game's total is sent to Apple Game Center, where it appears on the leaderboard under your Game Center nickname for other players to see.
+- Nothing is posted automatically, and no other data from the game is sent. Game Center is run by Apple under Apple's own privacy policy; you can sign out of it in the iPhone's Settings.
+
 ### Deleting your data
 - **Delete account** (in the app: home screen → the person icon → Delete account) deletes your account and its backup straight away. Games on your phone stay until you delete them or the app.
 - You can delete single games, or all of them, in History. While you are signed in, this deletes them from the backup too.
@@ -41,3 +45,4 @@ Thrower is for people old enough to take part in knife and axe throwing under th
   - **Google Play Data safety:** the same; data is encrypted in transit; users can request deletion (in the app).
 - **Age rating** and an adults-only question: [[Instructions and Safety]] → Open Questions.
 - **When subscriptions come** ([[Subscriptions]]): add purchases. Apple and Google handle payment details.
+- **Game Center (2026-10-22, Review Agent):** App Store privacy labels: declare **User Content → Gameplay Content** (a posted ranked score), not linked to tracking. Android sends nothing new (the Play Games start-up pieces are removed from the manifest); the Play Data safety form is unchanged.

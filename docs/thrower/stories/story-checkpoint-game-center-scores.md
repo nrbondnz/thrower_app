@@ -55,6 +55,15 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ### Task 4: Game Center (stops for the Mac and App Store Connect)
 - **Work:** the Flutter plugin (likely `games_services`: check it posts to a recurring leaderboard), `GameCenterLeaderboardService`, iOS only; "Be Careful" Review Agent before committing the plugin. Nigel: App Store Connect → Game Center → a **recurring monthly** leaderboard (ID e.g. `ranked.3m.5x3`, whole number, high to low, range 0–75); Xcode (in the foreground) → **+ Game Center** capability; tick Game Center on the app version. Steps written into the Mac Handoff.
 - **Verify:** a TestFlight build: post a score from a ranked game and see it in View leaderboard (sandbox).
+- **Status:** PC side COMPLETE (2026-10-22); **waiting for Nigel** on the Mac and in App Store Connect ([[Mac Handoff]] → 000000 → Game Center setup), then the TestFlight check.
+- **What changed:**
+  - `pubspec.yaml`: `games_services: 5.3.0` (published 2026-08-02; iOS 14+ pod; the app targets iOS 15).
+  - `lib/leaderboard/game_center_leaderboard_service.dart` (new): `signIn` (GameKit sign-in, then whether signed in), `submit` (`submitScore` to `ranked.3m.5x3`; Game Center's error throws → Try again), `show`.
+  - `lib/main.dart`: the service on the iPhone only (`Platform.isIOS`); Android has none, so no Post score.
+  - `android/app/src/main/AndroidManifest.xml`: **Review Agent fix**: the plugin's Play Games pieces removed (`tools:node="remove"`: `PlayGamesInitProvider`, `GamesResolutionActivity`, the exported `PlayGamesAppShortcutsActivity`), which otherwise started Play Games at every Android launch for nothing.
+  - Docs: [[Mac Handoff]] (the App Store Connect leaderboard, `pod install`, the Xcode Game Center capability, ticking Game Center on the version, privacy labels, the check); [[Privacy Policy (Draft)]] (a Game Center section).
+- **Safety Report (Review Agent, 2026-10-22):** DO NOT COMMIT until the Play Games start-up pieces are removed; done and re-checked (merged manifest: none left; release APK 156.0 MB; on the phone: starts, no Play Games warning). Passed: permissions (none new), iOS target, nothing at start on iOS, no secrets, failures handled (sign-in cancelled, leaderboard missing, no signal), panel only after the game, rollback. Before TestFlight: the Game Center entitlement and leaderboard (Nigel). Before the App Store: privacy labels (User Content → Gameplay Content) and the policy section.
+- **Test Report:** new `test/leaderboard/game_center_leaderboard_service_test.dart`: 3 (the score goes to `ranked.3m.5x3` with its value; Game Center's refusal throws; View leaderboard opens it). Sign-in is left to the device check (it reads the plugin's player stream). `flutter analyze`: no issues. `flutter test`: 986 passed.
 
 ### Task 5: Docs, device checks, traceability
 - **Work:** Docs Agent (requirement [[Rankings]], Design Decisions, glossary, web pages, Device Test Plan, Mac Handoff); Traceability Agent; an Android build (the button hidden).

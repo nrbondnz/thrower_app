@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth/amplify_accounts.dart';
 import 'auth/amplify_backup.dart';
+import 'leaderboard/game_center_leaderboard_service.dart';
 import 'providers.dart';
 import 'ui/home_screen.dart';
 import 'ui/target_painter.dart';
 
 /// Connects to the accounts backend if this build has its settings
-/// ([connectAccounts]); either way the app starts as before.
+/// ([connectAccounts]); either way the app starts as before. On the iPhone,
+/// scores can be posted to Game Center (Android: backlog #21).
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final outputs = await loadAmplifyOutputs(rootBundle);
@@ -24,6 +28,7 @@ Future<void> main() async {
           final backup = AmplifyBackup(userId);
           return (games: backup, names: backup, erase: backup.erase);
         }),
+      if (Platform.isIOS) leaderboardServiceProvider.overrideWithValue(GameCenterLeaderboardService()),
     ],
     child: const ThrowerApp(),
   ));
