@@ -190,6 +190,8 @@ String typeDescription(GameType type, PlayMode mode) {
     GameType.precision => '7 rounds of 3 knives, each round from its own distance: '
         '${precisionDistances.map((d) => '$d').join(', ')} m.',
     GameType.threeTargets => 'Three targets side by side: each round, one knife at each target, in order.',
+    GameType.ranked => '5 rounds of 3 knives from 3 m, one player, scored by the camera. Scores can only be '
+        'changed to a bounce-out (0). A full game can be posted to the leaderboard.',
     GameType.scoring => '',
   };
   return '$how$turns Score each knife by hand on the score pad.';

@@ -5,6 +5,7 @@ import 'package:thrower_app/history/game_record.dart';
 import 'package:thrower_app/scoring/game_session.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
+import 'package:thrower_app/scoring/target_model.dart';
 
 /// A match of [type] for [mode], [rounds] long.
 Match game(GameType type, {PlayMode mode = PlayMode.solo, int? rounds}) =>
@@ -21,12 +22,12 @@ void main() {
       expect(GameType.threeTargets.roundChoices, [3, 5, 7]);
     });
 
-    test('each defaults to its longest game: 9, 7 and 7 rounds', () {
-      expect([for (final t in GameType.values) t.defaultRounds], [9, 7, 7]);
+    test('each defaults to its longest game: 9, 7, 7 and Ranked 5 rounds', () {
+      expect([for (final t in GameType.values) t.defaultRounds], [9, 7, 7, 5]);
     });
 
-    test('only Scoring uses the camera; the others are scored by hand', () {
-      expect([for (final t in GameType.values) t.handScored], [false, true, true]);
+    test('Scoring and Ranked use the camera; Precision and Three targets are scored by hand', () {
+      expect([for (final t in GameType.values) t.handScored], [false, true, true, false]);
     });
 
     test('Precision throws round by round from 3, 5, 7, 3, 4, 5 and 7 m', () {
@@ -161,6 +162,11 @@ void main() {
       expect(GameRecord.fromJson(jsonDecode(jsonEncode(r.toJson()))).type, GameType.threeTargets);
     });
 
+    test('a Ranked game reads back as Ranked', () {
+      final r = GameRecord.fromMatch(game(GameType.ranked).byHand(0).finish(), at: at);
+      expect(GameRecord.fromJson(jsonDecode(jsonEncode(r.toJson()))).type, GameType.ranked);
+    });
+
     test('a Scoring game is written as before, with no "type"', () {
       final r = GameRecord.fromMatch(thrown(game(GameType.scoring, rounds: 3), List.filled(9, 1)), at: at);
       expect(r.toJson().containsKey('type'), isFalse);
@@ -191,6 +197,83 @@ void main() {
         'type': 'blindfold',
       };
       expect(() => GameRecord.fromJson(newer), throwsFormatException);
+    });
+  });
+
+  // Ranked (story-checkpoint-game-center-scores, Nigel 2026-10-22).
+  group('Ranked', () {
+    /// A ranked game with every throw stuck at [score].
+    Match played(int score, {int rounds = 5}) {
+      var m = game(GameType.ranked);
+      for (var r = 0; r < rounds; r++) {
+        for (var i = 0; i < 3; i++) {
+          m = m.stuck(score, const TargetPoint(0.1, 0));
+        }
+        m = m.boardVisited();
+      }
+      return m;
+    }
+
+    test('5 rounds of 3 from 3 m, only 5 rounds offered', () {
+      expect(GameType.ranked.roundChoices, [5]);
+      expect([for (var r = 0; r < 6; r++) GameType.ranked.distanceOf(r)], [3, 3, 3, 3, 3, null]);
+    });
+
+    test('only Ranked is strict', () {
+      expect([for (final t in GameType.values) t.strict], [false, false, false, true]);
+    });
+
+    group('strict mode: a score set or added by hand can only be 0', () {
+      final m = game(GameType.ranked).stuck(3, const TargetPoint(0.1, 0));
+
+      test('a stuck 3 can be marked a bounce-out (0)', () {
+        expect(m.setScore(0, 0, 0, 0).players.first.total, 0);
+      });
+
+      test('a stuck 3 can\'t be raised to 5, or changed to 1', () {
+        expect(identical(m.setScore(0, 0, 0, 5), m), isTrue);
+        expect(identical(m.setScore(0, 0, 0, 1), m), isTrue);
+      });
+
+      test('a throw the camera missed can be added as 0, not as 4', () {
+        expect(m.byHand(0).players.first.rounds.first.throws, hasLength(2));
+        expect(identical(m.byHand(4), m), isTrue);
+      });
+
+      test('nor added as 2 to a round collected early', () {
+        final collected = m.boardVisited();
+        expect(identical(collected.addToRound(0, 0, 2), collected), isTrue);
+        expect(collected.addToRound(0, 0, 0).players.first.rounds.first.throws, hasLength(2));
+      });
+
+      test('Scoring games are unchanged: any score can be set', () {
+        final scoring = game(GameType.scoring).stuck(3, const TargetPoint(0.1, 0));
+        expect(scoring.setScore(0, 0, 0, 5).players.first.total, 5);
+        expect(scoring.byHand(4).players.first.total, 7);
+      });
+    });
+
+    group('postable: a full ranked game by one player', () {
+      test('all 5 rounds played: postable, its total 0–75', () {
+        final m = played(5);
+        expect((m.postable, m.players.first.total), (true, 75));
+      });
+
+      test('not while it is being played', () => expect(played(5, rounds: 4).postable, isFalse));
+
+      test('not finished early', () => expect(played(5, rounds: 4).finish().postable, isFalse));
+
+      test('a Scoring game of 5 rounds is not', () {
+        var m = game(GameType.scoring, rounds: 5);
+        for (var i = 0; i < 15; i++) {
+          m = m.stuck(4, const TargetPoint(0.1, 0));
+        }
+        expect((m.isOver, m.postable), (true, false));
+      });
+
+      test('nor a ranked game for two players', () {
+        expect(game(GameType.ranked, mode: PlayMode.sharedTarget).finish().postable, isFalse);
+      });
     });
   });
 }

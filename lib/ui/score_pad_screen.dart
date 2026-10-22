@@ -176,7 +176,7 @@ String? padWhere(Match match) {
   return switch (match.type) {
     GameType.precision => '$round: from ${match.nextDistance} m',
     GameType.threeTargets => '$round: at target ${match.nextTarget}',
-    GameType.scoring => round,
+    GameType.scoring || GameType.ranked => round,
   };
 }
 

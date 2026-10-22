@@ -1,14 +1,21 @@
 ---
 tags: [requirement, game-centre]
-status: idea
+status: planned
 ---
 
 # Rankings
 
-Part of [[Requirements Index]] → Game Centre. **Status:** 💭 Idea, to be thought through
+Part of [[Requirements Index]] → Game Centre. **Status:** 🗺️ Planned: first step [[story-checkpoint-game-center-scores]] (2026-10-22)
 
 ## What's Wanted
 Players are ranked against throwers across the UK and further: **daily**, **weekly** and **monthly**.
+
+## Decided (Nigel, 2026-10-22)
+- **First step:** post scores for one ranked game, **5 rounds of 3 knives from 3 m**, to an Apple Game Center leaderboard that restarts each month: [[story-checkpoint-game-center-scores]].
+- **Strict mode:** a game that can be posted can't have a score raised by hand: a throw can only be marked a bounce-out (0), and a throw the camera missed only added as 0.
+- **Full games only:** a game finished early can't be posted.
+- **Android:** not postable for now (Game Center is iPhone only): backlog #21, perhaps the app's own leaderboard on the website.
+- **Tables** (this month's best, last month's results): backlog #22.
 
 ## What Exists Today
 - Nothing yet. Needs accounts, a backend and shared results ([[Accounts Roadmap]] stages 2–3, then stage 6).
@@ -32,5 +39,6 @@ Players are ranked against throwers across the UK and further: **daily**, **week
 
 ## Related
 - [[Competitions and Prizes]]
+- [[story-checkpoint-game-center-scores]]
 - [[Accounts Roadmap]] → Stage 6
 - [[Remote Play]]

@@ -184,17 +184,25 @@ class Match {
   /// A throw the camera didn't see, added by hand at [board] as the next
   /// throw (one target: the player whose turn it is, counting toward the
   /// turn): 0 is a miss.
-  Match byHand(int score, {int board = 0}) => _throw(board, (g) => g.byHand(score));
+  Match byHand(int score, {int board = 0}) => _refused(score) ? this : _throw(board, (g) => g.byHand(score));
 
   /// [player]'s throw [throwIndex] of round [roundIndex] now scores [score],
   /// set by hand.
   Match setScore(int player, int roundIndex, int throwIndex, int score) =>
-      _with(player, players[player].setScore(roundIndex, throwIndex, score));
+      _refused(score) ? this : _with(player, players[player].setScore(roundIndex, throwIndex, score));
 
   /// A throw added by hand to [player]'s earlier round [roundIndex], one
   /// collected early ([GameSession.hasRoomIn]).
   Match addToRound(int player, int roundIndex, int score) =>
-      _with(player, players[player].addToRound(roundIndex, score));
+      _refused(score) ? this : _with(player, players[player].addToRound(roundIndex, score));
+
+  /// Strict mode ([GameType.strict]): only 0 (a bounce-out, or a miss) can
+  /// be set or added by hand; anything else is refused.
+  bool _refused(int score) => type.strict && score != 0;
+
+  /// A ranked game played to the end by one player: its total can be posted
+  /// to the leaderboard (Nigel, 2026-10-22: full games only).
+  bool get postable => type == GameType.ranked && players.length == 1 && isOver && !finishedEarly;
 
   /// [player]'s throw [throwIndex] of round [roundIndex] fell out: 0.
   Match fellOut(int player, int roundIndex, int throwIndex) =>

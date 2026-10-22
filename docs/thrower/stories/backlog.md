@@ -84,6 +84,14 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Story:** **Board outlines at the wrong scale on stencilled boards** (Mark's Quick draw recordings, 2026-10-21)
   - **Notes:** On Mark's boards (red bull, wood, black ring, wood, black ring) the ring finder sometimes fits a plausible set of rings at twice or half the painted size, which passes the sanity checks, so the tap fallback never runs, and scores are wrong. Ideas: check the fit against the board's own edge; when tapped, compare the usual fit with the alignment fallback's and keep the one whose rings sit on the strongest edges; an "outline looks wrong? Tap the board" hint in Quick draw. Mark (2026-10-21): scores mostly right; one stuck knife missed, one stuck knife called a bounce-out (see also #19's finding: stuck knives at an angle missed). **Next:** Mark on the latest build (build 9, from the Mac), then his results; original footage only if needed later. [[story-checkpoint-gapped-rings]] → Follow-up. **Workaround for Quick draw (built 2026-10-21):** **Draw round the boards** ([[story-checkpoint-quick-draw-areas]]): Mark draws a finger round each board instead of tapping; the board is the ellipse fitted to the loop, timed only, so the ring scale no longer matters there. Play (scored) still needs the fix.
   - **Depends on:** build 9 on Mark's iPhone
+- **21**
+  - **Story:** **Leaderboards for Android players** (Nigel, 2026-10-22: "not postable currently, backlog item, maybe we will set it up to go to my website")
+  - **Notes:** Game Center ([[story-checkpoint-game-center-scores]]) is iPhone only; on Android the Post score button doesn't show. Options: the app's own leaderboard on Amplify, shown on the website (knifeandaxethrower.com; [[Website Index]]), ranking iPhone and Android together; or Google Play Games (Android only; daily, weekly and all-time, no monthly).
+  - **Depends on:** [[story-checkpoint-game-center-scores]]; accounts stage 2 for the Amplify route
+- **22**
+  - **Story:** **Leaderboard tables: this month's best, last month's results** (Nigel, 2026-10-22: "a best 3 meter score table refreshed each month, previous month results table etc.")
+  - **Notes:** The Game Center leaderboard is recurring (monthly), so Apple keeps each month's results; this is showing them in the app (this month, last month), and perhaps an all-time table. More ranked games later.
+  - **Depends on:** [[story-checkpoint-game-center-scores]]
 
 ## Carry-overs from Live Test
 
