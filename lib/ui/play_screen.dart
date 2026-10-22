@@ -17,6 +17,7 @@ import '../vision/target_calibration.dart';
 import '../vision/throw_classifier.dart';
 import 'calibration_screen.dart';
 import 'camera_view.dart';
+import 'post_score_panel.dart';
 import 'round_marks.dart';
 import 'score_corrections.dart';
 
@@ -257,6 +258,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
                   ],
                   if (match.isOver) ...[
                     const SizedBox(height: 12),
+                    const PostScorePanel(),
+                    const SizedBox(height: 8),
                     FilledButton(onPressed: _newGame, child: const Text('New game')),
                   ],
                 ],

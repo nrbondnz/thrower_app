@@ -13,6 +13,7 @@ import 'game/throw_watcher.dart';
 import 'history/game_history.dart';
 import 'history/game_record.dart';
 import 'history/synced_game_history.dart';
+import 'leaderboard/leaderboard_service.dart';
 import 'scoring/game_session.dart';
 import 'scoring/game_type.dart';
 import 'scoring/match.dart';
@@ -461,6 +462,58 @@ class GameNotifier extends Notifier<Match> {
 }
 
 final gameProvider = NotifierProvider<GameNotifier, Match>(GameNotifier.new);
+
+/// Where scores are posted (Game Center on the iPhone), or null when this
+/// build can't post (Android: backlog #21): then Play shows no Post score.
+/// `main` overrides it where posting is available.
+final leaderboardServiceProvider = Provider<LeaderboardService?>((ref) => null);
+
+/// How posting the current game's score went.
+enum ScorePost {
+  /// Not posted yet.
+  ready,
+  posting,
+  posted,
+
+  /// The player isn't signed in to Game Center.
+  signedOut,
+
+  /// It didn't go (no signal); it can be tried again.
+  failed,
+}
+
+/// Posting the current game's score: once a game ([Match.postable]), never
+/// twice. Back to [ScorePost.ready] when a new game starts.
+class ScorePostNotifier extends Notifier<ScorePost> {
+  @override
+  ScorePost build() {
+    ref.listen(gameProvider, (_, next) {
+      if (next.isEmpty) state = ScorePost.ready;
+    });
+    return ScorePost.ready;
+  }
+
+  /// Posts the game's total to [Leaderboard.ranked3m], signing in to Game
+  /// Center first if needed.
+  Future<void> post() async {
+    final service = ref.read(leaderboardServiceProvider);
+    final match = ref.read(gameProvider);
+    if (service == null || !match.postable || state == ScorePost.posting || state == ScorePost.posted) return;
+    state = ScorePost.posting;
+    try {
+      if (!await service.signIn()) {
+        state = ScorePost.signedOut;
+        return;
+      }
+      await service.submit(Leaderboard.ranked3m, match.players.single.total);
+      state = ScorePost.posted;
+    } catch (_) {
+      state = ScorePost.failed;
+    }
+  }
+}
+
+final scorePostProvider = NotifierProvider<ScorePostNotifier, ScorePost>(ScorePostNotifier.new);
 
 /// The finished games kept on the phone: a file in the app's own support
 /// folder, backed up while someone is signed in ([SyncedGameHistory];

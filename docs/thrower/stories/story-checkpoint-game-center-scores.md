@@ -44,6 +44,13 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ### Task 3: Posting, behind a leaderboard interface
 - **Work:** `LeaderboardService` (like `AuthService`): `isAvailable`, `signIn`, `submit(leaderboard, score)`, `show(leaderboard)`; a fake for tests; **Post score** and **View leaderboard** at the end of a postable game, showing posted, failed (try again) or not signed in to Game Center. Nothing native yet: the app's service says "not available".
 - **Verify:** widget tests with the fake (posted once, failure and retry, hidden for an early finish and on Android).
+- **Status:** COMPLETE (2026-10-22)
+- **What changed:**
+  - `lib/leaderboard/leaderboard_service.dart` (new): `Leaderboard.ranked3m` (ID `ranked.3m.5x3`) and `LeaderboardService` (`signIn`, `submit`, `show`).
+  - `lib/providers.dart`: `leaderboardServiceProvider` (null: this build can't post; `main` will override it on the iPhone in Task 4); `ScorePost` (ready, posting, posted, signedOut, failed) and `ScorePostNotifier.post()` (only a `postable` game, never twice; signs in first; back to ready when a new game starts).
+  - `lib/ui/post_score_panel.dart` (new), on Play once the game is over: **Post score (N)**, then posted / sign in to Game Center / couldn't post (Try again); **View leaderboard**. Nothing without a service (Android) or for a game that can't be posted.
+  - **Plan change:** once posted, the game's scores can't be corrected (`ScoreCorrections` locks its slots and Rounds), so the leaderboard always matches what Play shows.
+- **Test Report:** new `test/leaderboard/score_post_test.dart`: 13 (posts the total once; not signed in; no signal then retry; not mid-game, finished early or Scoring; ready again for a new game; the panel's Post score, posted line, Try again, View leaderboard, hidden for an early finish and without a service; corrections locked once posted). `flutter analyze`: no issues. `flutter test`: 983 passed.
 
 ### Task 4: Game Center (stops for the Mac and App Store Connect)
 - **Work:** the Flutter plugin (likely `games_services`: check it posts to a recurring leaderboard), `GameCenterLeaderboardService`, iOS only; "Be Careful" Review Agent before committing the plugin. Nigel: App Store Connect → Game Center → a **recurring monthly** leaderboard (ID e.g. `ranked.3m.5x3`, whole number, high to low, range 0–75); Xcode (in the foreground) → **+ Game Center** capability; tick Game Center on the app version. Steps written into the Mac Handoff.
@@ -60,4 +67,4 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ---
 
 ## Plan Changes Log
-- (none yet)
+- **2026-10-22 (Task 3):** a posted game's scores are locked (not in the plan): otherwise a correction to 0 after posting would leave the leaderboard higher than Play.

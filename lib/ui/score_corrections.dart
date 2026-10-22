@@ -104,7 +104,9 @@ class ScoreCorrections extends ConsumerWidget {
     final game = match.players[player];
     final shown = shownRound(game);
     final throws = shown == null ? const <ThrowRecord>[] : game.rounds[shown].throws;
-    final canAdd = !match.isOver && match.takesThrowAt(board) && match.nextThrowerAt(board) == player;
+    // A posted score is final: what's on the leaderboard stays what Play shows.
+    final posted = ref.watch(scorePostProvider) == ScorePost.posted;
+    final canAdd = !posted && !match.isOver && match.takesThrowAt(board) && match.nextThrowerAt(board) == player;
     final earlier = [
       for (var r = 0; r < game.rounds.length; r++)
         if (r != shown) r,
@@ -127,11 +129,11 @@ class ScoreCorrections extends ConsumerWidget {
                 key: Key('slot-$player-$i'),
                 record: i < throws.length ? throws[i] : null,
                 onTap: i < throws.length
-                    ? () => _correct(context, ref, shown!, i)
+                    ? (posted ? null : () => _correct(context, ref, shown!, i))
                     : (i == throws.length && canAdd ? () => _add(context, ref) : null),
               ),
             ),
-          if (earlier.isNotEmpty)
+          if (earlier.isNotEmpty && !posted)
             TextButton(
               key: Key('rounds-$player'),
               onPressed: () => _openRounds(context, ref, earlier),
