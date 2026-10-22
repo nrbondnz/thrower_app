@@ -90,7 +90,7 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Depends on:** [[story-checkpoint-game-center-scores]]; accounts stage 2 for the Amplify route
 - **22**
   - **Story:** **Leaderboard tables: this month's best, last month's results** (Nigel, 2026-10-22: "a best 3 meter score table refreshed each month, previous month results table etc.")
-  - **Notes:** The Game Center leaderboard is recurring (monthly), so Apple keeps each month's results; this is showing them in the app (this month, last month), and perhaps an all-time table. More ranked games later.
+  - **Notes:** **Next (Nigel, 2026-10-22): planned as [[story-checkpoint-monthly-tables]]**: this month and last month (the full table, with our own iOS code: the plugin only gives the player's own previous entry); no all-time table for now. The Game Center leaderboard is recurring (monthly), so Apple keeps each month's results. More ranked games later.
   - **Depends on:** [[story-checkpoint-game-center-scores]]
 
 ## Carry-overs from Live Test
