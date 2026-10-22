@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeaderboardService — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--auth);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Auth and leaderboard · Component</span>
+    <h1>LeaderboardService</h1>
+    <p class="dek">Posting a ranked score, independent of where it goes. On the iPhone it&#x27;s Apple Game Center: a leaderboard that restarts each month (2026-10-22). Android has none yet, so no Post score.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Interface + Game Center</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/leaderboard/leaderboard_service.dart</code><br><code>lib/leaderboard/game_center_leaderboard_service.dart</code><br><code>lib/providers.dart</code><br><code>lib/ui/post_score_panel.dart</code><br><code>lib/main.dart</code><br><code>android/app/src/main/AndroidManifest.xml</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Post score or View leaderboard, at the end of a full Ranked game (iPhone)</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>Like <code>AuthService</code>, the UI and the game see only the interface (<code>signIn</code>, <code>submit</code>, <code>show</code>), so tests use a fake, and the app's own leaderboard on Amplify and the website (ranking iPhone and Android together, backlog #21) can replace or join Game Center later without touching Play.</p>
+    <p><code>main</code> overrides <code>leaderboardServiceProvider</code> with <code>GameCenterLeaderboardService</code> only on the iPhone. It uses the <code>games_services</code> plugin (5.3.0); the plugin's Google Play Games start-up pieces are removed from the Android manifest, so Android starts as before.</p>
+    <p>A score is posted once, only when the player taps Post score: the total, shown under their Game Center nickname. Once posted, the game's scores are locked, so the leaderboard always matches Play.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>signIn</code></dt><dd>Game Center&#x27;s own sign-in; false if not signed in afterwards</dd></div>
+    <div><dt><code>submit(leaderboard, score)</code></dt><dd>the total to ranked.3m.5x3 (Leaderboard.ranked3m); throws if it didn&#x27;t go</dd></div>
+    <div><dt><code>show(leaderboard)</code></dt><dd>Apple&#x27;s leaderboard screen (View leaderboard)</dd></div>
+    <div><dt><code>ScorePostNotifier.post</code></dt><dd>only a postable game, never twice: sign in, then submit</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/ranked-post.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Ranked game: posting a score to Game Center</h3>
+      <p>Ranked: 5 × 3 at 3 m in strict mode; a full game&#x27;s total posted once to a monthly Game Center leaderboard (iPhone).</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/leaderboard/leaderboard_service.dart · lib/leaderboard/game_center_leaderboard_service.dart · lib/providers.dart · lib/ui/post_score_panel.dart · lib/main.dart · android/app/src/main/AndroidManifest.xml</footer>
+</div>
+</body>
+</html>

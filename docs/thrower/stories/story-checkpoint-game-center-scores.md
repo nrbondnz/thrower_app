@@ -55,7 +55,7 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ### Task 4: Game Center (stops for the Mac and App Store Connect)
 - **Work:** the Flutter plugin (likely `games_services`: check it posts to a recurring leaderboard), `GameCenterLeaderboardService`, iOS only; "Be Careful" Review Agent before committing the plugin. Nigel: App Store Connect → Game Center → a **recurring monthly** leaderboard (ID e.g. `ranked.3m.5x3`, whole number, high to low, range 0–75); Xcode (in the foreground) → **+ Game Center** capability; tick Game Center on the app version. Steps written into the Mac Handoff.
 - **Verify:** a TestFlight build: post a score from a ranked game and see it in View leaderboard (sandbox).
-- **Status:** PC side COMPLETE (2026-10-22); **waiting for Nigel** on the Mac and in App Store Connect ([[Mac Handoff]] → 000000 → Game Center setup), then the TestFlight check.
+- **Status:** PC side COMPLETE (2026-10-22); **waiting for Nigel** on the Mac and in App Store Connect ([[Mac Handoff]] → 000000 → Game Center setup, before build 11), then the TestFlight check.
 - **What changed:**
   - `pubspec.yaml`: `games_services: 5.3.0` (published 2026-08-02; iOS 14+ pod; the app targets iOS 15).
   - `lib/leaderboard/game_center_leaderboard_service.dart` (new): `signIn` (GameKit sign-in, then whether signed in), `submit` (`submitScore` to `ranked.3m.5x3`; Game Center's error throws → Try again), `show`.
@@ -68,6 +68,29 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ### Task 5: Docs, device checks, traceability
 - **Work:** Docs Agent (requirement [[Rankings]], Design Decisions, glossary, web pages, Device Test Plan, Mac Handoff); Traceability Agent; an Android build (the button hidden).
 
+#### Doc Update: 2026-10-22 (Docs Agent)
+
+**Files updated**
+- `requirements/Game Centre/Rankings.md`: status 🟡 partly built; What Exists Today (Ranked, strict mode, full games only, Post score / View leaderboard, the monthly leaderboard, Android none, what's not yet); Monthly Ranking; the Trust question answered for the first step; links to Design Decisions.
+- `requirements/Basic Setup/Scoring Rules.md`: strict mode (and locked once posted); the rankings question answered.
+- `requirements/Basic Setup/Game Type.md`: Ranked in What's Wanted and What Exists Today (not offered on a Live test recording).
+- `requirements/Instructions and Safety.md`: the *Ranked games* section, including the posting paragraph added in Task 5.
+- `requirements/Requirements Index.md`: Rankings 💭 → 🟡; notes on Scoring Rules and Game Type.
+- `Architecture/Design Decisions.md`: new **Ranked Games and Game Center (2026-10-22)** (the game, strict mode, full games only, `LeaderboardService`, the recurring monthly leaderboard, post once and lock, `games_services`, the Android manifest removals, privacy); More Game Types' `handScored` note.
+- `Architecture/Glossary.md`: `GameType.ranked` / `strict` / `rankedDistance`, `Match.postable`, the Ranked setup, `strictNote`, corrections locked once posted, `LeaderboardService` (`Leaderboard`, `GameCenterLeaderboardService`, `leaderboardServiceProvider`, `ScorePostNotifier`, `PostScorePanel`); concepts Ranked game, Strict mode, Leaderboard (recurring), Posted.
+- `Architecture/System Diagram.md`: the Ranked UI, the wiring, a LEADERBOARD box, `games_services` in native code, an Apple Game Center box; the plugin rule.
+- `Architecture/Data Flow.md`: new **Ranked Game: Posting a Score to Game Center**; App Start notes the iPhone's leaderboard override.
+- `tool/web_docs/content.py` (+ `build.py`: the overview's Auth column also shows LeaderboardService): component `leaderboard-service`, flow `ranked-post`, Ranked in Screens, Providers and GameSession; rebuilt `docs/web/`.
+- `Operations/Device Test Plan.md`: **Ranked Game Checks RK0–RK9**.
+- `Operations/Mac Handoff.md`: Game Center goes out in build 11 (build 10 was bumped before these commits); RK checks in Then.
+- `Troubleshooting/Known Issues.md`: `games_services` starts Google Play Games on Android (the manifest removals).
+- `CLAUDE.md`, `docs/working-with-nigel.md`: the story in progress; `lib/leaderboard/`.
+
+**Checked, consistent:** [[Privacy Policy (Draft)]] → Game Center; [[Mac Handoff]]'s setup steps (leaderboard ID `ranked.3m.5x3`, 0–75, recurring monthly) match `Leaderboard.ranked3m`.
+
+**Drift items**
+- `lib/` and `test/` had uncommitted Task 5 changes while these docs were written (Ranked left out on a Live test recording, `ScorePostNotifier.canPost`, the Instructions' posting paragraph). The docs describe them; recheck the docs if those changes are altered before they are committed.
+
 ## Assumptions (say if wrong)
 - Ranked games are **one player** on the phone: Game Center posts for the person signed in to Game Center on that iPhone.
 - The 3 m distance is the thrower's word (a confirmation), as Precision's distances are.
@@ -77,3 +100,19 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 
 ## Plan Changes Log
 - **2026-10-22 (Task 3):** a posted game's scores are locked (not in the plan): otherwise a correction to 0 after posting would leave the leaderboard higher than Play.
+
+---
+
+## Traceability Report — 2026-10-22
+- 6 acceptance criteria: AC1, AC2, AC4 covered; AC3 and AC6 had gaps; AC5 waits for Nigel's Game Center setup and the TestFlight check. No orphan code. No other way found to raise a ranked score (fell-out only sets 0; History can't edit; the score pad is never reached).
+- **Fixed (2026-10-22):**
+  - **G1:** a Ranked game played on a Live test recording could be posted. Play's setup leaves Ranked out on a recording; `ScorePostNotifier.canPost` (and so the panel) refuses a recording.
+  - **G3:** New game while a score was posting marked the new game posted. `post()` only settles its answer if the game is still the same; corrections are also locked while posting (G3b).
+  - **G4:** solo was enforced by the setup screen only; `GameNotifier.build` now makes a ranked game solo whatever mode was last chosen.
+  - **G6:** the Instructions now explain Post score and View leaderboard (iPhone, Game Center sign-in, public nickname, monthly restart, locked once posted, not Android or Live test).
+  - **G7:** View leaderboard signs in first and says so if it can't open.
+  - Tests: `score_post_test.dart` +5 (a recording not posted; New game while posting; ranked forced solo; locked while posting; View leaderboard's message), `play_setup_screen_test.dart` +1 (no Ranked on a recording), `instructions_test.dart` (the posting sentences). `flutter test`: 992 passed.
+- **For Nigel (rules decisions):**
+  - **G2:** Post score appears as soon as the last knife lands, before the knives are collected; a knife that then falls out lowers Play and History but not a score already posted. Offer Post score only after the last round's knives are collected, or ignore falling out once posted?
+  - **G5:** a round collected early (fewer than 3 knives) still counts as a round, so a "full" game can have fewer than 15 knives. Require 3 throws in every round (strict mode can add a 0) before posting?
+  - **G8:** in strict mode a knife the camera saw stick but couldn't place scores 0 and can't be set to its real score. Accept (camera failures cost points), or allow setting such a "?" throw?

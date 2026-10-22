@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/camera/target_camera.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_type.dart';
@@ -19,7 +20,7 @@ void main() {
 
   late MemoryPlayerNamesStore names;
 
-  Future<void> pumpSetup(WidgetTester tester, {List<String?> kept = const []}) async {
+  Future<void> pumpSetup(WidgetTester tester, {List<String?> kept = const [], bool recording = false}) async {
     // Tall enough that the whole setup screen, Which game? included, is
     // built (a ListView builds only what's near the screen).
     tester.view.physicalSize = const Size(1080, 2600);
@@ -32,6 +33,9 @@ void main() {
       playerNamesStoreProvider.overrideWithValue(names),
     ]);
     addTearDown(container.dispose);
+    if (recording) {
+      container.read(recordingChoiceProvider.notifier).use(const Recording(name: 'Test', description: '', asset: ''));
+    }
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
       child: const MaterialApp(home: PlaySetupScreen()),
@@ -231,5 +235,11 @@ void main() {
       expect((game.type, game.mode, game.maxRounds), (GameType.ranked, PlayMode.solo, 5));
       expect(find.text('Ranked · 3 m'), findsOneWidget);
     });
+  });
+
+  testWidgets('on a Live test recording, Ranked is not offered', (tester) async {
+    await pumpSetup(tester, recording: true);
+    expect(find.byKey(const Key('playGame-ranked')), findsNothing);
+    expect(find.byKey(const Key('playGame-scoring')), findsOneWidget);
   });
 }

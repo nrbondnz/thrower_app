@@ -225,3 +225,9 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 - **The whole board must be in view:** a board cut off by the picture's edge (Mark's left board) isn't found. Move or turn the phone so the whole board shows, keeping it out of the line of throw.
 - **Not fixed:** Find target on its own still doesn't find these boards (widening it broke boards that work). Requirement and open questions: [[Board Finding]].
 
+
+## `games_services` Starts Google Play Games on Android (2026-10-22)
+- **Symptom:** after adding `games_services` (for Game Center on the iPhone), every Android launch starts Google Play Games (its start-up provider runs before the app), and an exported Play Games activity appears in the merged manifest, though the app never uses Play Games.
+- **Cause:** the plugin bundles the Play Games SDK for Android, whose manifest adds `PlayGamesInitProvider`, `GamesResolutionActivity` and `PlayGamesAppShortcutsActivity`.
+- **What we do:** `android/app/src/main/AndroidManifest.xml` removes all three with `tools:node="remove"` (Review Agent, 2026-10-22). Check the merged manifest after any `games_services` upgrade: a new Play Games piece would need removing too.
+- **When Android posting is built** (backlog #21): take the removals out; Play Games then needs its SDK set up and an `APP_ID`. See [[Design Decisions]] → Ranked Games and Game Center.

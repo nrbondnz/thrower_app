@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/leaderboard/leaderboard_service.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_session.dart';
@@ -16,6 +19,9 @@ import '../ui/score_corrections_test.dart' show FakeHost;
 class FakeLeaderboard implements LeaderboardService {
   var signedIn = true;
   var fails = false;
+
+  /// While set, a post waits for it (a slow signal).
+  Completer<void>? hold;
   final posted = <(Leaderboard, int)>[];
   final shown = <Leaderboard>[];
 
@@ -24,12 +30,16 @@ class FakeLeaderboard implements LeaderboardService {
 
   @override
   Future<void> submit(Leaderboard board, int score) async {
+    await hold?.future;
     if (fails) throw StateError('no signal');
     posted.add((board, score));
   }
 
   @override
-  Future<void> show(Leaderboard board) async => shown.add(board);
+  Future<void> show(Leaderboard board) async {
+    if (!signedIn) throw StateError('not signed in');
+    shown.add(board);
+  }
 }
 
 /// A Ranked game: [rounds] rounds of three 4s, then Finish game if [finish].
@@ -170,6 +180,62 @@ void main() {
         child: MaterialApp(home: Scaffold(body: Center(child: ScoreCorrections(host: FakeHost(), player: 0, board: 0)))),
       ));
       expect(find.byKey(const Key('rounds-0')), findsNothing);
+    });
+  });
+
+  // Traceability fixes (2026-10-22).
+  group('hardening', () {
+    test('a ranked game played on a Live test recording is not posted', () async {
+      final c = containerWith(RankedGame.new);
+      c.read(recordingChoiceProvider.notifier).use(const Recording(name: 'Test', description: '', asset: ''));
+      expect(c.read(scorePostProvider.notifier).canPost, isFalse);
+      await c.read(scorePostProvider.notifier).post();
+      expect(board.posted, isEmpty);
+    });
+
+    test('New game while a score is posting: the new game is not marked posted', () async {
+      board.hold = Completer();
+      final c = containerWith(RankedGame.new);
+      final posting = c.read(scorePostProvider.notifier).post();
+      expect(c.read(scorePostProvider), ScorePost.posting);
+      c.read(gameProvider.notifier).newGame();
+      board.hold!.complete();
+      await posting;
+      expect(c.read(scorePostProvider), ScorePost.ready);
+    });
+
+    test('a ranked game is one player\'s, whatever mode was last chosen', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      c.read(playModeProvider.notifier).choose(PlayMode.twoTargets);
+      c.read(gameTypeProvider.notifier).choose(GameType.ranked);
+      expect(c.read(gameProvider).mode, PlayMode.solo);
+    });
+
+    testWidgets('while posting, the scores can\'t be changed either', (tester) async {
+      board.hold = Completer();
+      final c = containerWith(RankedGame.new);
+      unawaited(c.read(scorePostProvider.notifier).post());
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: c,
+        child: MaterialApp(home: Scaffold(body: Center(child: ScoreCorrections(host: FakeHost(), player: 0, board: 0)))),
+      ));
+      expect(find.byKey(const Key('rounds-0')), findsNothing);
+      board.hold!.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('View leaderboard says so when it can\'t open (not signed in)', (tester) async {
+      board.signedIn = false;
+      final c = containerWith(RankedGame.new);
+      await tester.pumpWidget(UncontrolledProviderScope(
+        container: c,
+        child: const MaterialApp(home: Scaffold(body: Center(child: PostScorePanel()))),
+      ));
+      await tester.tap(find.byKey(const Key('viewLeaderboard')));
+      await tester.pump();
+      expect(find.byKey(const Key('viewLeaderboardFailed')), findsOneWidget);
+      expect(board.shown, isEmpty);
     });
   });
 }

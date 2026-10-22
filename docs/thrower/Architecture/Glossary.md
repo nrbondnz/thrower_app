@@ -145,11 +145,14 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `gameLengthProvider` (`GameLengthNotifier`, `choices` 3 / 5 / 9 = `GameType.scoring.roundChoices`, default 9): the rounds in a game, also chosen there
   - **Which game?** (2026-10-20): `gameTypeProvider` (`GameTypeNotifier`: `choose`; Scoring unless chosen); the setup screen's chips `playGame-<type>`, `typeDescription`; hand-scored types hide the target choice (`sharedTarget`) and show their own lengths (`playRoundsFixed` for Precision)
   - Finish game: `GameSession.finish` / `finished` / `finishedEarly`; `Match.finish`, `finishedEarly`, `countedRounds`, `countedTotals` (winner and draw on equal rounds); `GameNotifier.finishGame`; Play's `gameOverText`, `confirmFinishGame`
+  - **Strict mode** (2026-10-22): `Match.setScore`, `byHand` and `addToRound` refuse anything but 0 when `type.strict` (`_refused`: the match comes back unchanged); **`Match.postable`**: Ranked, one player, over, not finished early
+  - **Ranked on the setup screen**: chip `playGame-ranked`; How many players and targets hidden (one player, one name field, 5 rounds); **I'm throwing from 3 m** (`playRankedDistance`) must be ticked before Start; Play's **`playTitle`**: "Ranked · 3 m"
   - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
   - Play's two-player panel (`lib/ui/play_screen.dart`, `PlayersPanel`): `turnText` ("Player 1's turn" / "Collect your knives" / "Wait for Player 2" / "Player 2 wins" / "A draw"), `turnDetail`, `playerTitle`, `playerDetail`, `matchFooter`; `eventMessage`, `paintRoundMarks`
-- **`GameType`** (`lib/scoring/game_type.dart`, pure Dart; [[story-checkpoint-more-game-types]]): `scoring`, `precision`, `threeTargets`
-  - `label` ("Scoring", "Precision", "Three targets"), `roundChoices` ([3, 5, 9], [7], [3, 5, 7]), `defaultRounds` (the longest), `handScored` (all but Scoring)
-  - `distanceOf(round)`: Precision's distance in metres (`precisionDistances` = [3, 5, 7, 3, 4, 5, 7]), else null; `targetOf(index)`: Three targets' target 1–3, else null
+- **`GameType`** (`lib/scoring/game_type.dart`, pure Dart; [[story-checkpoint-more-game-types]]): `scoring`, `precision`, `threeTargets`, **`ranked`** (2026-10-22, [[story-checkpoint-game-center-scores]])
+  - `label` ("Scoring", "Precision", "Three targets", "Ranked: 5 × 3 at 3 m"), `roundChoices` ([3, 5, 9], [7], [3, 5, 7], [5]), `defaultRounds` (the longest), `handScored` (Precision and Three targets; Ranked uses the camera)
+  - **`strict`** (Ranked only): a score set or added by hand can only be 0
+  - `distanceOf(round)`: Precision's distance in metres (`precisionDistances` = [3, 5, 7, 3, 4, 5, 7]), Ranked's **`rankedDistance`** (3) for each of its 5 rounds, else null; `targetOf(index)`: Three targets' target 1–3, else null
   - on `Match`: `type` (kept through `withNames`, `finish` and every throw), `nextDistance`, `nextTarget` (for `nextThrowerAt`; null once over); `GameNotifier.build` fits the length to the type; `newGame` keeps the type
 - **`ScorePadScreen`** / **`ScorePad`** (`lib/ui/score_pad_screen.dart`): Precision and Three targets, scored by hand (no camera)
   - `ScorePad(onScore)`: 5, 4, 3, 2, 1 (from `targetModelProvider`'s rings, via `scoreChoices`) and **Miss** (0), keys `pad<score>` → `GameNotifier.addThrow`
@@ -165,7 +168,8 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `sync()` → `SyncResult` (`downloaded`, `uploaded`): merges both ways by game `id`; null when no one is signed in; throws what the backup throws (no signal)
   - **`RemoteGameStore`** (interface): `list`, `put(record)` (replaces the copy with its `id`), `remove(gameId)`
 - **`ScoreCorrections`** (`lib/ui/score_corrections.dart`) / **`CorrectionHost`**
-  - per player: the round in progress as slots (`shownRound`); a score → `showScorePicker` (`scoreChoices`: 0 and the rings) → `GameNotifier.setScore`; the first empty slot (when `Match.nextThrowerAt` is this player) → `addThrow` → `CorrectionHost.addedByHand`; **Rounds** → `_RoundList` → `_RoundEditor` (`setScore`, `addToRound`); every popup between `CorrectionHost.pauseWatching` and `resumeWatching`
+  - per player: the round in progress as slots (`shownRound`); a score → `showScorePicker` (`scoreChoices`: 0 and the rings; a strict game offers only 0, with **`strictNote`**, 2026-10-22) → `GameNotifier.setScore`; the first empty slot (when `Match.nextThrowerAt` is this player) → `addThrow` → `CorrectionHost.addedByHand`; **Rounds** → `_RoundList` → `_RoundEditor` (`setScore`, `addToRound`); every popup between `CorrectionHost.pauseWatching` and `resumeWatching`
+  - **locked once posted** (2026-10-22): when `scorePostProvider` is `posted`, the slots don't open, nothing can be added and **Rounds** is hidden
   - the rule: `ThrowRecord.corrected`, `byHand`, `withScore`, `ThrowResult.missed`; `GameSession.setScore`, `byHand`, `hasRoomIn`, `addToRound`; `Match.setScore`, `byHand`, `addToRound`, `ThrowSlot`, `throwAt`, `lastThrowAt`, `nextThrowerAt`
   - marks: `RoundMarks` holds `ThrowSlot`s (`addByHand`); `paintRoundMarks(match:)`, `markColour`
   - pausing: `ThrowWatcher.pause` / `resume` / `moves` (`moveCheckDelay` 0.5 s), `PlayBoardsWatcher.pause` / `resume` / `moves`, `MotionDetector.restart`
@@ -205,6 +209,12 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `backend.ts`: `defineBackend({auth, data})`; the sign-in domain per branch (`domainPrefixByBranch`: `throwerapp` for `main`, `throwerapp-dev` for `dev`)
   - `auth/resource.ts`: `auth` = `defineAuth` (email; `externalProviders`: `google`, `signInWithApple`, six `secret(...)`s; `callbackUrls` `throwerapp://callback/`, `logoutUrls` `throwerapp://signout/`) (Task 3)
   - `data/resource.ts`: `data` = `defineData` (default auth mode `userPool`): **`KeptGame`** (`gameId`, `finishedAt`, `record`: JSON) and **`PlayerNameList`** (`names`: JSON), each `allow.owner()` (Task 4)
+- **`LeaderboardService`** (`lib/leaderboard/leaderboard_service.dart`, 2026-10-22, [[story-checkpoint-game-center-scores]]): posting scores, independent of where they go (interface; tests use a fake): `signIn` (false if not signed in afterwards), `submit(board, score)` (throws if it didn't go), `show(board)`
+  - **`Leaderboard`**: `ranked3m` (`id` `ranked.3m.5x3`, the App Store Connect leaderboard ID; scores 0–75)
+  - **`GameCenterLeaderboardService`** (`lib/leaderboard/game_center_leaderboard_service.dart`): Apple Game Center through `games_services` 5.3.0: `signIn` → `GameAuth.signIn` then `GameAuth.isSignedIn`; `submit` → `Leaderboards.submitScore` (`iOSLeaderboardID`); `show` → `Leaderboards.showLeaderboards`
+  - **`leaderboardServiceProvider`** (`lib/providers.dart`, `Provider<LeaderboardService?>`): null = this build can't post (Android: backlog #21); `main` overrides it with a `GameCenterLeaderboardService` when `Platform.isIOS`
+  - **`ScorePostNotifier`** / **`scorePostProvider`** (`lib/providers.dart`): **`ScorePost`** `ready`, `posting`, `posted`, `signedOut`, `failed`; `post()`: only a `postable` game, never twice → `signIn` → `submit(Leaderboard.ranked3m, total)`; back to `ready` when a new game starts
+  - **`PostScorePanel`** (`lib/ui/post_score_panel.dart`), on Play once a `postable` game is over and a service exists: **Post score (N)** (`postScore`; then **Try again**), the line (`postScoreLine`: "Posted to the leaderboard: N.", sign in to Game Center, couldn't post), **View leaderboard** (`viewLeaderboard`)
 - **Test data**: `SyntheticTarget` (flat, affine), `SyntheticScene` (3D ray tracer), `PhotoBoardTexture` (reference photo as the board face, knives removed); tools `render_camera_views`, `locate_target`, `printable_target`
 
 ## Concepts
@@ -345,7 +355,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Meaning:** A name on a seat for one game ("Mark" in place of "Player 2"): a label, nothing more (Nigel, 2026-10-19). Blank is "Player N". The last names used are kept on the phone to fill in next time. Not a **friend** (another app user with a linked account: stage 3 of the [[Accounts Roadmap]]). Requirement: [[Player Names]].
   - **Used by:** `Match.nameOf`, `GameRecord.nameOf`, `playerNamesProvider`, `PlayerNamesStore`, `BoardChoosing.playerNames`, `NamesButton`
 - **Game type**
-  - **Meaning:** Which game Play plays: Scoring (rounds at one target from one place, scored by the camera), Precision or Three targets. Every type is rounds of 3 knives on 5-ring boards, KATTA-scored, the highest total winning; they differ only in the number of rounds and where each knife is thrown from or at. Not the play mode (1 or 2 players, 1 or 2 targets), and not Quick draw (a separate game on Home). Requirement: [[Game Type]].
+  - **Meaning:** Which game Play plays: Scoring (rounds at one target from one place, scored by the camera), Precision, Three targets or Ranked. Every type is rounds of 3 knives on 5-ring boards, KATTA-scored, the highest total winning; they differ only in the number of rounds and where each knife is thrown from or at. Not the play mode (1 or 2 players, 1 or 2 targets), and not Quick draw (a separate game on Home). Requirement: [[Game Type]].
   - **Used by:** `GameType`, `Match.type`, `gameTypeProvider`, `PlaySetupScreen`, `GameRecord`, `howText`
 - **Precision**
   - **Meaning:** A game of 7 rounds of 3 knives, each round thrown from its own distance (3, 5, 7, 3, 4, 5, 7 m: Nigel's guess, to confirm). In competition the set is thrown 4 times, a "marathon" of 84 knives (not built).
@@ -356,6 +366,18 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **Score pad (hand-scored game)**
   - **Meaning:** Scoring without the camera: after each knife someone taps its score (5 to 1, or Miss) on the phone. The same game rules, corrections and History as a camera-scored game; never marked Live test. Whoever taps goes to the phone only when no one is throwing.
   - **Used by:** `ScorePadScreen`, `ScorePad`, `GameType.handScored`, `GameNotifier.addThrow`
+- **Ranked game**
+  - **Meaning:** A game whose total can go on a public leaderboard: **Ranked: 5 × 3 at 3 m** (5 rounds of 3 knives, one player, one target, scored by the camera, from 3 m on the thrower's word), always in strict mode; only a full game can be posted. Requirement: [[Rankings]].
+  - **Used by:** `GameType.ranked`, `rankedDistance`, `Match.postable`, `PlaySetupScreen`, `playTitle`, `PostScorePanel`
+- **Strict mode**
+  - **Meaning:** The correction rule for a game that can be posted: a score can be lowered to 0 (a bounce-out, or a knife the camera missed added as 0) but never set or added as anything else, so no score can be raised by hand.
+  - **Used by:** `GameType.strict`, `Match.setScore` / `byHand` / `addToRound`, `ScoreCorrections` (`strictNote`)
+- **Leaderboard (recurring)**
+  - **Meaning:** A Game Center leaderboard set up in App Store Connect that restarts on a schedule (here each month); a score posted goes to the current period, and Apple keeps earlier periods' results. Shown in Apple's own screen (View leaderboard), each player under their Game Center nickname.
+  - **Used by:** `Leaderboard`, `LeaderboardService`, `GameCenterLeaderboardService`
+- **Posted (a final score)**
+  - **Meaning:** A game whose total went to the leaderboard: posted once only, and its scores can't be corrected afterwards, so the leaderboard always matches Play.
+  - **Used by:** `ScorePostNotifier`, `PostScorePanel`, `ScoreCorrections`
 - **Kept game (game history)**
   - **Meaning:** A finished game of Play saved on the phone: when it finished, how it was played (mode, rounds, and since version 3 the game type), each player's round totals, and the Live test recording if it was played on one. Only finished games are kept, once each; totals and the winner are worked out from the rounds.
   - **Used by:** `GameRecord`, `GameNotifier`, `FileGameHistory`, `HistoryScreen`

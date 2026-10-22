@@ -1,6 +1,6 @@
 # System Diagram
 
-Thrower App runs on the phone. The only parts that reach a backend are sign-in and the backup of kept games and player names (AWS Amplify, stage 2 of the [[Accounts Roadmap]]), and only when the build has the backend's settings and the user signs in; see [[Design Decisions]] → User Accounts Required. Requirements: [[Accounts and Sign-In]], [[Game Recording]], [[Player Names]]. The layers each depend only on the ones below them. The UI reaches every layer through Riverpod providers (`lib/providers.dart`), so tests can swap any layer for a fake. Drawn in the same box style as WhereWillWeVisit's System Diagram (2026-10-14).
+Thrower App runs on the phone. The only parts that reach a backend are sign-in and the backup of kept games and player names (AWS Amplify, stage 2 of the [[Accounts Roadmap]]), and only when the build has the backend's settings and the user signs in; see [[Design Decisions]] → User Accounts Required. Besides the backend, on the iPhone only, a full Ranked game's total goes to Apple Game Center when the player taps **Post score** ([[Design Decisions]] → Ranked Games and Game Center; requirement [[Rankings]]). Requirements: [[Accounts and Sign-In]], [[Game Recording]], [[Player Names]]. The layers each depend only on the ones below them. The UI reaches every layer through Riverpod providers (`lib/providers.dart`), so tests can swap any layer for a fake. Drawn in the same box style as WhereWillWeVisit's System Diagram (2026-10-14).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -15,10 +15,14 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │              │    now, Sign out, Delete account (asks first)  │  │
 │  │              ├─ HistoryScreen ── GameRecordScreen             │  │
 │  │              ├─ PlaySetupScreen (game, players, rounds, names)│  │
+│  │              │    Ranked: 1 player, "I'm throwing from 3 m"   │  │
 │  │              ├─ ScorePadScreen (Precision, Three targets):    │  │
 │  │              │    ScorePad 5–1 · Miss, no camera; turns       │  │
 │  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
 │  │              │    └ ScoreCorrections (tap a score: 0–5 popup) │  │
+│  │              │    strict (Ranked): only 0; locked once posted │  │
+│  │              │    └ PostScorePanel (full Ranked game, iPhone):│  │
+│  │              │       Post score · View leaderboard            │  │
 │  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
 │  │              │    Start → _Lights · go beep · _Result (large) │  │
 │  │              ├─ CalibrationScreen ── CalibrationEditor        │  │
@@ -50,7 +54,7 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │  liveQuickDrawCameraProvider (live Quick draw's own, 60 fps)  │  │
 │  │  signalSoundsProvider           startScheduleProvider         │  │
 │  │  playModeProvider (1 or 2 players, 1 or 2 targets)            │  │
-│  │  gameTypeProvider (Scoring, Precision, Three targets)         │  │
+│  │  gameTypeProvider (Scoring, Precision, Three targets, Ranked) │  │
 │  │  playTargetsProvider (two-target Play's boards, session-long) │  │
 │  │  gameHistoryProvider (kept games: SyncedGameHistory)          │  │
 │  │    · historySaveErrorProvider                                 │  │
@@ -63,6 +67,9 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │    ◀── backupFactoryProvider (main: AmplifyBackup)            │  │
 │  │  backupStatusProvider (BackupNotifier: sync on sign-in;       │  │
 │  │    backUpNow) · deleteAccountProvider (backup, then account)  │  │
+│  │  leaderboardServiceProvider (null: this build can't post;     │  │
+│  │    main: GameCenterLeaderboardService on the iPhone)          │  │
+│  │  scorePostProvider (ScorePostNotifier: post once; signs in)   │  │
 │  └──────┬──────────────────┬──────────────────┬──────────┬───────┘  │
 │         │                  │                  │          │          │
 │         ▼                  ▼                  ▼          ▼          │
@@ -135,6 +142,14 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │    support folder: the names last used (blank if unreadable)   │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
+│  ┌───────────────────── LEADERBOARD (lib/leaderboard) ────────────┐ │
+│  │ LeaderboardService (interface: signIn, submit, show) ◀──       │ │
+│  │   ScorePostNotifier (Post score), PostScorePanel (View         │ │
+│  │   leaderboard); Leaderboard.ranked3m = ranked.3m.5x3           │ │
+│  │  └GameCenterLeaderboardService (iPhone only): Game Center      │ │
+│  │    sign-in, submitScore, showLeaderboards; Android: none       │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                     │
 │  ┌───────────────────────── NATIVE CODE ──────────────────────────┐ │
 │  │ camera (LiveCamera: back camera, image stream, no audio;       │ │
 │  │   Quick draw asks for 60 fps)                                  │ │
@@ -148,6 +163,9 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  │ amplify_authenticator (AccountScreen's sign-in screens)        │ │
 │  │ amplify_api (AmplifyBackup: GraphQL; added only if the         │ │
 │  │   deployed backend has a data API: hasBackup)                  │ │
+│  │ games_services 5.3.0 (GameCenterLeaderboardService; used on    │ │
+│  │   the iPhone only; its Play Games start-up pieces are removed  │ │
+│  │   from the Android manifest)                                   │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
           │  AmplifyAuthService → Cognito (sign-in); AmplifyBackup →
@@ -171,6 +189,18 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │  Hosting frontend: web_public/ (holding page; the privacy policy)   │
 │  Its settings: amplify_outputs.json, one per branch, copied to      │
 │    assets/config/ in the app (gitignored)                           │
+└─────────────────────────────────────────────────────────────────────┘
+
+          │  GameCenterLeaderboardService → Game Center (iPhone only,
+          │  beside the backend): a full Ranked game's total, only
+          ▼  when the player taps Post score
+┌─────────────────────────────────────────────────────────────────────┐
+│           APPLE GAME CENTER  (set up in App Store Connect)          │
+│                                                                     │
+│  Leaderboard ranked.3m.5x3: recurring, restarts each month (Apple   │
+│    keeps each month's results); integer 0–75, high to low, best     │
+│    score; shown under the player's Game Center nickname; Apple's    │
+│    own leaderboard screen (View leaderboard)                        │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -266,7 +296,7 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 **Rules:**
 - `lib/vision` and `lib/scoring` have **no Flutter imports**. They run in background isolates and in tests on a PC.
 - Vision depends on the camera layer's **data** types (`CameraFrame`) only, never on a plugin.
-- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`; Amplify behind `AuthService`, and the backup behind `RemoteGameStore` and `PlayerNamesStore`), so tests feed recorded frames, fake sound and temporary folders.
+- Plugins stay in the edge layers, behind interfaces (`TargetCamera`, `RecordingSound`, `SignalSounds`; `path_provider` behind `GameHistory` and `PlayerNamesStore`; Amplify behind `AuthService`, and the backup behind `RemoteGameStore` and `PlayerNamesStore`; `games_services` behind `LeaderboardService`), so tests feed recorded frames, fake sound and temporary folders.
 - Heavy work (frame conversion, ring finding, the entry search) runs off the UI thread via `compute`, using top-level functions and plain data. See [[Known Issues]] → Isolate Fails.
 
 **Precision and Three targets** (2026-10-20, [[story-checkpoint-more-game-types]]) skip the camera, game and vision layers: `ScorePadScreen` feeds hand-tapped scores straight into `GameNotifier` → `Match` (with its `GameType`), and from there into History like any game ([[Data Flow]] → Precision and Three Targets: the Score Pad).

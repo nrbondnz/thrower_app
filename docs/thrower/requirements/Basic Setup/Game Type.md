@@ -8,6 +8,8 @@ status: built
 Part of [[Requirements Index]] → Basic setup. **Status:** ✅ Built (device checks to come where noted)
 
 ## What's Wanted
+**Ranked** (Nigel, 2026-10-22): a game whose score can go on a leaderboard, first **5 sets of 3 knives at 3 m** ([[Rankings]]).
+
 The players choose the kind of game: **scoring** (rounds of throws, the highest total wins) or **Quick draw** (two throwers on a start signal, the fastest to stick wins).
 
 **More game types (Nigel, 2026-10-20):**
@@ -24,6 +26,7 @@ The players choose the kind of game: **scoring** (rounds of throws, the highest 
 	- **Precision:** 7 rounds of 3, from **3, 5, 7, 3, 4, 5, 7 m** (Nigel's guess; to confirm); the screen says where the next knife is thrown from ("Round 2 of 7: from 5 m").
 	- **Three targets:** 3, 5 or 7 rounds; the screen says which target the next knife goes at ("Round 1 of 3: at target 2").
 	- Kept in History with the game's name, and Precision's rounds with their distances; backed up when signed in.
+- **Ranked: 5 × 3 at 3 m** (built 2026-10-22, [[story-checkpoint-game-center-scores]]; device checks RK0–RK9 to come): under **Which game?**; one player, 5 rounds of 3, scored by the camera; Start waits for **I'm throwing from 3 m**; Play's title "Ranked · 3 m"; not offered on a Live test recording; **strict mode** (only 0 by hand: [[Scoring Rules]]); a full game can be posted to a monthly Game Center leaderboard on the iPhone ([[Rankings]]).
 - All of them use the same player names, if given ([[Player Names]]): on Play's setup screen, or **Names** on Quick draw.
 - **Live test** (Home) plays both on recordings, for testing without throwing.
 
@@ -37,4 +40,4 @@ The players choose the kind of game: **scoring** (rounds of throws, the highest 
 ## Related
 - [[Round Play]]
 - [[Number of Rounds]]
-- [[Design Decisions]] → Quick Draw sections (including Quick Draw: Draw Round the Boards; Quick Draw: Round or Four-Cornered Boards); Adjust Each Board; More Game Types: Precision and Three Targets
+- [[Design Decisions]] → Quick Draw sections (including Quick Draw: Draw Round the Boards; Quick Draw: Round or Four-Cornered Boards); Adjust Each Board; More Game Types: Precision and Three Targets; Ranked Games and Game Center

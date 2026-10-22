@@ -104,8 +104,10 @@ class ScoreCorrections extends ConsumerWidget {
     final game = match.players[player];
     final shown = shownRound(game);
     final throws = shown == null ? const <ThrowRecord>[] : game.rounds[shown].throws;
-    // A posted score is final: what's on the leaderboard stays what Play shows.
-    final posted = ref.watch(scorePostProvider) == ScorePost.posted;
+    // A posted score is final: what's on the leaderboard stays what Play
+    // shows (also while it's being posted).
+    final post = ref.watch(scorePostProvider);
+    final posted = post == ScorePost.posted || post == ScorePost.posting;
     final canAdd = !posted && !match.isOver && match.takesThrowAt(board) && match.nextThrowerAt(board) == player;
     final earlier = [
       for (var r = 0; r < game.rounds.length; r++)

@@ -49,6 +49,8 @@
     <div><dt><code>signedInUserProvider · backupFactoryProvider · backupProvider</code></dt><dd>who&#x27;s signed in; how main makes a user&#x27;s Backup (AmplifyBackup); the signed-in user&#x27;s Backup, or null</dd></div>
     <div><dt><code>backupStatusProvider (BackupNotifier)</code></dt><dd>on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow</dd></div>
     <div><dt><code>deleteAccountProvider (deleteAccount)</code></dt><dd>erase the backup, then delete the account; the phone keeps its games and names</dd></div>
+    <div><dt><code>leaderboardServiceProvider</code></dt><dd>where scores are posted (main: GameCenterLeaderboardService on the iPhone), or null: no Post score (Android)</dd></div>
+    <div><dt><code>scorePostProvider (ScorePostNotifier)</code></dt><dd>post a postable game&#x27;s total once: sign in, submit; ready / posting / posted / signedOut / failed; ready again for a new game</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -93,6 +95,12 @@
       <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
       <h3>Backing up: the sign-in merge and each kept game</h3>
       <p>Signed in, kept games and names backed up to the user&#x27;s own rows; merged by id on sign-in; the phone first.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/ranked-post.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Ranked game: posting a score to Game Center</h3>
+      <p>Ranked: 5 × 3 at 3 m in strict mode; a full game&#x27;s total posted once to a monthly Game Center leaderboard (iPhone).</p>
       <span class="more">Open →</span>
     </a>
   </div>

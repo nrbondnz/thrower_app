@@ -30,7 +30,17 @@ class PlaySetupScreen extends ConsumerStatefulWidget {
 }
 
 class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
-  late var _type = ref.read(gameTypeProvider);
+  /// Playing a Live test recording: Ranked isn't offered (a recording's
+  /// score is not the thrower's).
+  late final _onRecording = ref.read(recordingChoiceProvider) != null;
+
+  /// The game types offered here.
+  late final _types = [
+    for (final t in GameType.values)
+      if (!(_onRecording && t == GameType.ranked)) t,
+  ];
+
+  late var _type = _types.contains(ref.read(gameTypeProvider)) ? ref.read(gameTypeProvider) : GameType.scoring;
 
   late var _players = ref.read(playModeProvider).players;
 
@@ -109,7 +119,7 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
               key: const Key('playGame'),
               spacing: 8,
               children: [
-                for (final t in GameType.values)
+                for (final t in _types)
                   ChoiceChip(
                     key: Key('playGame-${t.name}'),
                     label: Text(t.label),

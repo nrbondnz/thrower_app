@@ -15,8 +15,9 @@ class PostScorePanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(leaderboardServiceProvider);
     final match = ref.watch(gameProvider);
-    if (service == null || !match.postable) return const SizedBox.shrink();
+    ref.watch(recordingChoiceProvider);
     final post = ref.watch(scorePostProvider);
+    if (service == null || !ref.read(scorePostProvider.notifier).canPost) return const SizedBox.shrink();
     final total = match.players.single.total;
     final line = switch (post) {
       ScorePost.ready => null,
@@ -25,7 +26,7 @@ class PostScorePanel extends ConsumerWidget {
       ScorePost.signedOut => 'Sign in to Game Center (in the iPhone\'s Settings) to post, then try again.',
       ScorePost.failed => "Couldn't post the score. Check the signal and try again.",
     };
-    final canPost = post == ScorePost.ready || post == ScorePost.failed || post == ScorePost.signedOut;
+    final canTap = post == ScorePost.ready || post == ScorePost.failed || post == ScorePost.signedOut;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -39,7 +40,7 @@ class PostScorePanel extends ConsumerWidget {
           spacing: 12,
           runSpacing: 8,
           children: [
-            if (canPost)
+            if (canTap)
               FilledButton(
                 key: const Key('postScore'),
                 onPressed: ref.read(scorePostProvider.notifier).post,
@@ -47,12 +48,30 @@ class PostScorePanel extends ConsumerWidget {
               ),
             OutlinedButton(
               key: const Key('viewLeaderboard'),
-              onPressed: () => service.show(Leaderboard.ranked3m).catchError((_) {}),
+              onPressed: () => _view(context, service),
               child: const Text('View leaderboard'),
             ),
           ],
         ),
       ],
     );
+  }
+
+  /// Opens the leaderboard, signing in to Game Center first; says so if it
+  /// can't.
+  Future<void> _view(BuildContext context, LeaderboardService service) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (await service.signIn()) {
+        await service.show(Leaderboard.ranked3m);
+        return;
+      }
+    } catch (_) {
+      // Falls through to the message.
+    }
+    messenger.showSnackBar(const SnackBar(
+      key: Key('viewLeaderboardFailed'),
+      content: Text("Couldn't open the leaderboard. Sign in to Game Center (in the iPhone's Settings) and try again."),
+    ));
   }
 }

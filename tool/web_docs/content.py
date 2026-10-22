@@ -10,7 +10,7 @@ LANES = {
     'scoring': ('Scoring (pure Dart)', 'lib/scoring'),
     'sound':   ('Sound', 'lib/sound'),
     'history': ('History and settings', 'lib/history · lib/settings'),
-    'auth':    ('Auth', 'lib/auth'),
+    'auth':    ('Auth and leaderboard', 'lib/auth · lib/leaderboard'),
     'native':  ('Plugins and native code', 'external'),
 }
 
@@ -21,9 +21,9 @@ COMPONENTS = {
         files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
                'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/score_pad_screen.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart',
-               'lib/ui/account_screen.dart'],
+               'lib/ui/account_screen.dart', 'lib/ui/post_score_panel.dart'],
         trigger='The user, from Home',
-        dek='Home leads to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
+        dek='Home leads to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
         body=[
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>. Two-target Play does too. Once both boards are found, <code>BoardsEditor</code> lets each outline be dragged into place, with the single target\'s drag rules (<code>grabAt</code>, <code>dragged</code>); <strong>Adjust boards</strong> unlocks them later, keeping both (2026-10-19).',
@@ -33,7 +33,7 @@ COMPONENTS = {
         ],
         functions=[
             ('HomeScreen', 'Instructions, Play, History, Quick draw, Live test, Calibrate target, Scoring test target'),
-            ('PlaySetupScreen', 'after Play: Which game? (Scoring, Precision, Three targets); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type\'s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start'),
+            ('PlaySetupScreen', 'after Play: Which game? (Scoring, Precision, Three targets, Ranked: one player, 5 rounds, Start waits for I\'m throwing from 3 m); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type\'s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start'),
             ('ScorePadScreen · ScorePad', 'Precision and Three targets, no camera: whose turn and where from or at in large type (padHeadline, padWhere: "Round 2 of 7: from 5 m"); tap 5–1 or Miss; each player\'s rounds (padPlayerDetail), corrections, Finish game, New game'),
             ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
@@ -41,7 +41,8 @@ COMPONENTS = {
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)'),
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
-            ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile'),
+            ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile; a Ranked game offers only 0 (strictNote); locked once its score is posted'),
+            ('PostScorePanel', 'on Play at the end of a full Ranked game, iPhone only: Post score (N), the posted / sign in / try again line, View leaderboard'),
             ('HistoryScreen · GameRecordScreen', 'the kept games, newest first, by name (resultText), with the game type (howText: "Precision · …"); a game\'s rounds (historyRoundLabel: "Round 2 (5 m)"); Delete; Clear history (asks first)'),
             ('NamesButton · editPlayerNames', 'Quick draw\'s Names, before Start: a field per player, the same names as Play; Save or Cancel'),
             ('BoardChoosing.playerNames', 'the names for the board texts ("Tap the centre of Jo\'s board"), Player N without'),
@@ -51,7 +52,7 @@ COMPONENTS = {
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
             ('AccountScreen · AccountDetails', 'Home → Account (only with accounts): Amplify\'s sign-in screens inside an AuthenticatedView; then who\'s signed in, the backup line (backupText), Back up now, Sign out, Delete account (confirmAndDeleteAccount: asks first)'),
         ],
-        flows=['calibration', 'play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup'],
+        flows=['calibration', 'play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup', 'ranked-post'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -79,8 +80,10 @@ COMPONENTS = {
             ('signedInUserProvider · backupFactoryProvider · backupProvider', 'who\'s signed in; how main makes a user\'s Backup (AmplifyBackup); the signed-in user\'s Backup, or null'),
             ('backupStatusProvider (BackupNotifier)', 'on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow'),
             ('deleteAccountProvider (deleteAccount)', 'erase the backup, then delete the account; the phone keeps its games and names'),
+            ('leaderboardServiceProvider', 'where scores are posted (main: GameCenterLeaderboardService on the iPhone), or null: no Post score (Android)'),
+            ('scorePostProvider (ScorePostNotifier)', 'post a postable game\'s total once: sign in, submit; ready / posting / posted / signedOut / failed; ready again for a new game'),
         ],
-        flows=['frame-sources', 'play', 'score-pad', 'game-history', 'player-names', 'live-quick-draw', 'backup'],
+        flows=['frame-sources', 'play', 'score-pad', 'game-history', 'player-names', 'live-quick-draw', 'backup', 'ranked-post'],
     ),
     'target-camera': dict(
         name='TargetCamera', lane='camera', type='Interface', files=['lib/camera/target_camera.dart', 'lib/camera/camera_frame.dart'],
@@ -326,7 +329,7 @@ COMPONENTS = {
         dek='A game of 3, 5 or 9 rounds of 3 throws per player. A board visit (collecting the knives) closes the round.',
         body=[
             'A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).',
-            'The game type (2026-10-20, <code>GameType</code>): Scoring, Precision (7 rounds, each from its own distance: 3, 5, 7, 3, 4, 5, 7 m) or Three targets (one knife at each of three boards per round). It changes only where each knife is thrown from or at; the rules here are shared. Precision and Three targets are scored by hand on the score pad for now.',
+            'The game type (2026-10-20, <code>GameType</code>): Scoring, Precision (7 rounds, each from its own distance: 3, 5, 7, 3, 4, 5, 7 m) or Three targets (one knife at each of three boards per round). It changes only where each knife is thrown from or at; the rules here are shared. Precision and Three targets are scored by hand on the score pad for now. Ranked (2026-10-22): 5 rounds of 3 from 3 m, one player, scored by the camera, in strict mode: a score set or added by hand can only be 0, and a full game is <code>postable</code> to the leaderboard.',
             '<code>Match</code> holds a <code>GameSession</code> per player (2026-10-16). Two players on one target take turns: 3 knives, collect, then the other player, Player 1 starting every round. On two targets each board scores for its own player. The higher total wins; equal totals are a draw.',
         ],
         functions=[
@@ -339,8 +342,9 @@ COMPONENTS = {
             ('setScore · byHand · addToRound', 'a score set by hand (corrected), a missed throw added (0)'),
             ('GameType: roundChoices · handScored · distanceOf · targetOf', 'each game type\'s lengths, and where a knife is thrown from (Precision) or at (Three targets)'),
             ('Match: type · nextDistance · nextTarget', 'the game type, kept through every change; where the next knife goes from or at'),
+            ('GameType.strict · Match.postable', 'strict mode (Ranked): setScore, byHand and addToRound refuse anything but 0; a full one-player Ranked game, not finished early, can be posted'),
         ],
-        flows=['play', 'score-pad', 'score-correction', 'game-history', 'player-names'],
+        flows=['play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'ranked-post'],
     ),
     'quick-draw-watcher': dict(
         name='QuickDrawWatcher', lane='game', type='Class', files=['lib/game/quick_draw_watcher.dart'],
@@ -471,6 +475,24 @@ COMPONENTS = {
         ],
         flows=['backup'],
     ),
+    'leaderboard-service': dict(
+        name='LeaderboardService', lane='auth', type='Interface + Game Center',
+        files=['lib/leaderboard/leaderboard_service.dart', 'lib/leaderboard/game_center_leaderboard_service.dart', 'lib/providers.dart', 'lib/ui/post_score_panel.dart', 'lib/main.dart', 'android/app/src/main/AndroidManifest.xml'],
+        trigger='Post score or View leaderboard, at the end of a full Ranked game (iPhone)',
+        dek='Posting a ranked score, independent of where it goes. On the iPhone it\'s Apple Game Center: a leaderboard that restarts each month (2026-10-22). Android has none yet, so no Post score.',
+        body=[
+            'Like <code>AuthService</code>, the UI and the game see only the interface (<code>signIn</code>, <code>submit</code>, <code>show</code>), so tests use a fake, and the app\'s own leaderboard on Amplify and the website (ranking iPhone and Android together, backlog #21) can replace or join Game Center later without touching Play.',
+            '<code>main</code> overrides <code>leaderboardServiceProvider</code> with <code>GameCenterLeaderboardService</code> only on the iPhone. It uses the <code>games_services</code> plugin (5.3.0); the plugin\'s Google Play Games start-up pieces are removed from the Android manifest, so Android starts as before.',
+            'A score is posted once, only when the player taps Post score: the total, shown under their Game Center nickname. Once posted, the game\'s scores are locked, so the leaderboard always matches Play.',
+        ],
+        functions=[
+            ('signIn', 'Game Center\'s own sign-in; false if not signed in afterwards'),
+            ('submit(leaderboard, score)', 'the total to ranked.3m.5x3 (Leaderboard.ranked3m); throws if it didn\'t go'),
+            ('show(leaderboard)', 'Apple\'s leaderboard screen (View leaderboard)'),
+            ('ScorePostNotifier.post', 'only a postable game, never twice: sign in, then submit'),
+        ],
+        flows=['ranked-post'],
+    ),
 }
 
 # External boxes on the overview (not clickable).
@@ -482,6 +504,7 @@ EXTERNAL = [
     ('amplify_flutter · amplify_auth_cognito', 'sign-in to Cognito (AWS, eu-west-2)'),
     ('amplify_authenticator', 'the ready-made sign-in screens (Account screen)'),
     ('amplify_api', 'the backup\'s GraphQL API (only if the backend has one)'),
+    ('games_services', 'Game Center on the iPhone (Post score, View leaderboard)'),
 ]
 
 # id: dict(title, cat ('core' | 'flow'), lane, dek, body[paras], steps[(lane, title, [lines], component_id|None, arrow_label|None)], caption, files)
@@ -566,6 +589,24 @@ FLOWS = {
         ],
         caption='The camera for these games is backlogged: Precision moves the thrower between distances, and Three targets needs three boards watched at once.',
         files=['lib/scoring/game_type.dart', 'lib/scoring/match.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/score_pad_screen.dart', 'lib/history/game_record.dart', 'lib/ui/history_screen.dart'],
+    ),
+    'ranked-post': dict(
+        title='Ranked game: posting a score to Game Center', cat='flow', lane='auth',
+        dek='Ranked: 5 × 3 at 3 m, one player, in strict mode; at the end of a full game, on the iPhone, Post score sends the total once to a Game Center leaderboard that restarts each month.',
+        body=[
+            'Strict mode (Nigel: scores can only be changed "to mark a bounce out but not to change scores to higher"): the rules themselves refuse anything but 0 by hand, and the popup offers only 0. Finish game early, and the game can no longer be posted.',
+            '3 m is the thrower\'s word: the setup screen asks for it before Start. Nothing goes to Game Center unless the player taps Post score.',
+        ],
+        steps=[
+            ('ui', 'PlaySetupScreen', ['Which game? → Ranked: one player, 5 rounds', 'I\'m throwing from 3 m → Start'], 'screens', 'gameTypeProvider'),
+            ('scoring', 'GameNotifier → Match(ranked)', ['scored by the camera, as in Scoring', 'strict: setScore · byHand · addToRound only 0'], 'game-session', '5 full rounds'),
+            ('scoring', 'Match.postable', ['Ranked, one player, over, not finished early', 'kept in History (type "ranked")'], 'game-session', 'PostScorePanel'),
+            ('wiring', 'ScorePostNotifier.post', ['signIn → submit(ranked3m, total)', 'posted once · signedOut · failed: Try again'], 'providers', 'GameCenterLeaderboardService'),
+            ('native', 'games_services → Game Center', ['leaderboard ranked.3m.5x3, recurring monthly', 'the score under the Game Center nickname'], None, 'View leaderboard'),
+            ('ui', 'PlayScreen', ['"Posted to the leaderboard: N."', 'corrections locked · Apple\'s leaderboard screen'], 'screens', None),
+        ],
+        caption='Built 2026-10-22 on the PC; waiting for the Game Center setup on the Mac and in App Store Connect, then device checks RK0–RK9. Android shows no Post score (backlog #21); tables in the app are backlog #22.',
+        files=['lib/scoring/game_type.dart', 'lib/scoring/match.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/post_score_panel.dart', 'lib/providers.dart', 'lib/leaderboard/leaderboard_service.dart', 'lib/leaderboard/game_center_leaderboard_service.dart'],
     ),
     'score-correction': dict(
         title='Changing a score (without jogging the camera)', cat='flow', lane='ui',
@@ -698,7 +739,7 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-pad', 'ranked-post', 'score-correction', 'game-history', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
@@ -706,6 +747,7 @@ CARD_TEXT = {
     'calibration': 'Find the rings once in a background isolate, drag to adjust, lock for the session.',
     'play': 'Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.',
     'score-pad': 'Precision and Three targets: Which game?, then each knife\'s score tapped on a pad; the same turns, rounds and History.',
+    'ranked-post': 'Ranked: 5 × 3 at 3 m in strict mode; a full game\'s total posted once to a monthly Game Center leaderboard (iPhone).',
     'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
     'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
     'player-names': 'A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.',
@@ -719,14 +761,14 @@ NOTES = [
     ('Layer rules', [
         '<code>lib/vision</code> and <code>lib/scoring</code> have no Flutter imports: they run in background isolates and in tests on a PC.',
         'Vision depends only on the camera layer\'s data type, <code>CameraFrame</code>, never on a plugin.',
-        'Plugins stay behind interfaces (<code>TargetCamera</code>, <code>RecordingSound</code>, <code>SignalSounds</code>), so tests feed recorded frames and fake sound.',
+        'Plugins stay behind interfaces (<code>TargetCamera</code>, <code>RecordingSound</code>, <code>SignalSounds</code>, <code>LeaderboardService</code>), so tests feed recorded frames and fake sound.',
     ]),
     ('Off the UI thread', [
         'Frame conversion, ring finding and the entry search run through <code>compute</code>, with top-level functions and plain data.',
         'The motion pass stays on the UI thread: brightness only, at ~320 px.',
     ]),
     ('On the phone only', [
-        'Camera frames never leave the phone. The game history and the player names are files in the app\'s own folder. The only network calls are to the accounts backend (AWS Amplify, stage 2): sign-in, and the backup of the kept games and names to the user\'s own rows. Both happen only when the build has its settings and the user signs in.',
+        'Camera frames never leave the phone. The game history and the player names are files in the app\'s own folder. The only network calls are to the accounts backend (AWS Amplify, stage 2): sign-in, and the backup of the kept games and names to the user\'s own rows. Both happen only when the build has its settings and the user signs in. On the iPhone, a full Ranked game\'s total goes to Apple Game Center only when the player taps Post score.',
         'The camera records no sound today. Recording and sharing (backlog #11) would change that, and needs the Review Agent.',
     ]),
 ]

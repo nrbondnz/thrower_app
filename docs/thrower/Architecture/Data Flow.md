@@ -474,6 +474,56 @@ Two games scored by hand, with no camera yet ([[story-checkpoint-more-game-types
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## Ranked Game: Posting a Score to Game Center
+
+The first step towards [[Rankings]] ([[story-checkpoint-game-center-scores]], 2026-10-22; why in [[Design Decisions]] → Ranked Games and Game Center). A Ranked game is Play with one player, five rounds and strict corrections; at the end of a full game, on the iPhone, its total can be posted once. Android has no `LeaderboardService`, so no Post score (backlog #21).
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│      RANKED GAME: STRICT CORRECTIONS → POST SCORE → GAME CENTER     │
+│                                                                     │
+│   PlaySetupScreen: Which game? → Ranked (playGame-ranked): one      │
+│   player, 5 rounds; Start waits for I'm throwing from 3 m           │
+│   (playRankedDistance) → gameTypeProvider.choose(ranked)            │
+│                                  │                                  │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ PlayScreen ("Ranked · 3 m", playTitle): calibrate, throws    │  │
+│   │ scored by the camera as in Scoring                           │  │
+│   │ ScoreCorrections: a score, an empty slot or Rounds → the     │  │
+│   │ popup offers only 0 (strictNote) → Match.setScore / byHand   │  │
+│   │ / addToRound; anything but 0 is refused (type.strict)        │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │  5 rounds played (not Finish     │
+│                                  │  game early)                     │
+│                                  ▼                                  │
+│   Match.postable (Ranked, one player, over, not finished early)     │
+│   GameNotifier._keep → History (GameRecord v3, type "ranked")       │
+│                                  │                                  │
+│                                  ▼                                  │
+│   ┌──────────────────────────────────────────────────────────────┐  │
+│   │ PostScorePanel (only with leaderboardServiceProvider: the    │  │
+│   │ iPhone): Post score (N) → ScorePostNotifier.post:            │  │
+│   │   posting → service.signIn() (Game Center's own sign-in)     │  │
+│   │     false → signedOut ("Sign in to Game Center …")           │  │
+│   │   → service.submit(Leaderboard.ranked3m, total)              │  │
+│   │     throws → failed ("Couldn't post …", Try again)           │  │
+│   │   → posted ("Posted to the leaderboard: N."): never again    │  │
+│   │     for this game; ScoreCorrections locked                   │  │
+│   │ View leaderboard → service.show(ranked3m): Apple's screen    │  │
+│   └──────────────────────────────┬───────────────────────────────┘  │
+│                                  │  GameCenterLeaderboardService    │
+│                                  │  (games_services)                │
+│                                  ▼                                  │
+│   Apple Game Center: leaderboard ranked.3m.5x3 (recurring,          │
+│   monthly): the score under the player's Game Center nickname       │
+│                                                                     │
+│   New game → gameProvider empty → ScorePost.ready again             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+Nothing goes to Game Center unless the player taps **Post score**: then only the total, under their Game Center nickname ([[Privacy Policy (Draft)]] → Game Center).
+
 ## App Start: Accounts (If the Build Has Them)
 
 Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Tasks 1, 2 and 4; why in [[Design Decisions]] → User Accounts Required; requirement [[Accounts and Sign-In]]). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. Signing in happens only on Home → Account (`AccountScreen`, Amplify's screens inside an `AuthenticatedView`), never in front of the app.
@@ -514,6 +564,8 @@ Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Task
 │   History.                                                          │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+Separately, on the iPhone (`Platform.isIOS`), `main` also overrides `leaderboardServiceProvider` with a `GameCenterLeaderboardService` (2026-10-22); nothing contacts Game Center until **Post score** (see Ranked Game: Posting a Score to Game Center above).
 
 Nothing leaves the phone unless the build has the settings and the user signs in: then their email and password (or their Google or Apple sign-in) go to Cognito (AWS, London `eu-west-2`), and the backup below starts.
 

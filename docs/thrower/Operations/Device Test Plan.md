@@ -423,6 +423,41 @@ For [[story-checkpoint-board-outlines]] (from build 10; requirement [[Game Type]
   - **Do:** With square or rectangular boards locked, Start; after the long beep press a pen onto one board **right in a corner**, and onto the other near its middle
   - **Look for:** Both are seen and timed ("0.82 s"); the corner one isn't missed. Also a pen just **outside** a board's edge, a hand's width away: not counted
 
+## Ranked Game Checks (added 2026-10-22)
+
+For [[story-checkpoint-game-center-scores]] (requirement [[Rankings]]; why in [[Design Decisions]] → Ranked Games and Game Center): **Ranked: 5 × 3 at 3 m**, strict mode and posting to a monthly Game Center leaderboard. RK0–RK4 and RK9 work on any build with the story (a real board, or the A4 printout with pens in Blu Tack). RK5–RK8 need the **iPhone** with the Game Center setup done ([[Mac Handoff]] → Game Center setup) and a TestFlight build; sandbox scores are kept apart from live ones. Changing a score means going to the phone: only when no one is throwing. Named **RK**n.
+
+- **RK0 (setup)**
+  - **Do:** Home → Play → Which game? → **Ranked: 5 × 3 at 3 m**
+  - **Look for:** No How many players / targets (one name field only); "5 rounds" fixed; the description mentions strict mode and posting; **Start** greyed out until **I'm throwing from 3 m** is ticked. Via Live test (a recording chosen and calibrated) → Play: **no Ranked chip**
+- **RK1 (the game)**
+  - **Do:** Tick 3 m → Start; calibrate; throw (or press pens into the printout)
+  - **Look for:** The title says **"Ranked · 3 m"**; throws scored by the camera as in Scoring; 5 rounds of 3
+- **RK2 (strict popup on a score)**
+  - **Do:** Between rounds, tap a scored throw's slot
+  - **Look for:** The popup offers **only 0**, with "Ranked game: a score can only be changed to 0 (a bounce-out, or a miss)."; tapping 0 makes it 0 (light blue, ✎) and the total drops
+- **RK3 (strict popup on an empty slot and an earlier round)**
+  - **Do:** When a throw wasn't seen, tap the empty slot; then **Rounds** → an earlier round → a throw
+  - **Look for:** Both offer only 0 with the same note; no way to enter 1–5 anywhere
+- **RK4 (finished early)**
+  - **Do:** A new Ranked game; after 2 rounds, **Finish game** → confirm
+  - **Look for:** "Game over after 2 of 5 rounds!"; **no Post score** and no View leaderboard; the game is in History as Ranked
+- **RK5 (post a full game, iPhone)**
+  - **Do:** Signed in to Game Center (Settings → Game Center); play all 5 rounds → **Post score (N)**
+  - **Look for:** "Posting…", then **"Posted to the leaderboard: N."** with N the game's total; the Post score button goes (it can't post twice)
+- **RK6 (locked after posting)**
+  - **Do:** After RK5, tap a score slot; look for **Rounds**
+  - **Look for:** Nothing opens; Rounds is gone; the total stays N. **New game** → a new Ranked game shows Post score again at its end
+- **RK7 (View leaderboard)**
+  - **Do:** Tap **View leaderboard**
+  - **Look for:** Apple's leaderboard screen opens on "3 m · 5 rounds of 3" for the **current month**, with the RK5 score under your Game Center nickname; closing it returns to Play
+- **RK8 (not signed in; no signal)**
+  - **Do:** Sign out of Game Center in Settings, finish a Ranked game → Post score; then sign in again → Try again. Separately, Airplane mode → Post score
+  - **Look for:** Not signed in: "Sign in to Game Center (in the iPhone's Settings) to post, then try again." with **Try again**, which posts once signed in. No signal: "Couldn't post the score. Check the signal and try again." with Try again. No crash either way
+- **RK9 (Android)**
+  - **Do:** On the Samsung, launch the app; play a full Ranked game
+  - **Look for:** No Google Play Games sign-in popup or warning at launch; at the end **no Post score or View leaderboard** (Android can't post yet, backlog #21); RK0–RK4 behave as on the iPhone
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

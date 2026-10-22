@@ -43,6 +43,7 @@ SUB = {
     'game-history': 'finished games, one JSON file',
     'player-names-store': 'the names last used',
     'auth-service': 'interface only',
+    'leaderboard-service': 'Game Center (iPhone)',
     'ring-locator': 'rings → ellipses',
     'tapped-target-locator': 'the board at a tap',
     'target-calibration': 'the locked rings',
@@ -182,7 +183,7 @@ def overview_svg():
         ('camera', 20, 330, ['target-camera', 'live-camera', 'recorded-camera', 'recording-analysis-feed', 'cropped-camera', 'queued-camera']),
         ('game', 365, 330, ['throw-watcher', 'throw-classifier', 'quick-draw-watcher', 'quick-draw-judge', 'start-signal', 'play-boards-watcher']),
         ('scoring', 710, 260, ['target-model', 'game-session']),
-        ('auth', 985, 195, ['auth-service']),
+        ('auth', 985, 195, ['auth-service', 'leaderboard-service']),
     ]
     bh, gap = 46, 10
     h = 36 + 6 * (bh + gap) + 6

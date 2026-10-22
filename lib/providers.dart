@@ -355,7 +355,9 @@ class GameNotifier extends Notifier<Match> {
     _knives.clear();
     _finishedAt = null;
     _kept = null;
-    return Match(mode, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider), type: type);
+    // A ranked game is one player's, whatever mode was last chosen.
+    final played = type == GameType.ranked ? PlayMode.solo : mode;
+    return Match(played, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider), type: type);
   }
 
   /// The same mode, type, length and names, from the start.
@@ -483,7 +485,9 @@ enum ScorePost {
 }
 
 /// Posting the current game's score: once a game ([Match.postable]), never
-/// twice. Back to [ScorePost.ready] when a new game starts.
+/// twice, and never a game played on a Live test recording. Back to
+/// [ScorePost.ready] when a new game starts; a post still going when the game
+/// changes doesn't touch the new one.
 class ScorePostNotifier extends Notifier<ScorePost> {
   @override
   ScorePost build() {
@@ -493,22 +497,34 @@ class ScorePostNotifier extends Notifier<ScorePost> {
     return ScorePost.ready;
   }
 
+  /// Whether the current game can be posted here: a [Match.postable] game,
+  /// not on a recording, on a phone with a leaderboard.
+  bool get canPost =>
+      ref.read(leaderboardServiceProvider) != null &&
+      ref.read(recordingChoiceProvider) == null &&
+      ref.read(gameProvider).postable;
+
   /// Posts the game's total to [Leaderboard.ranked3m], signing in to Game
   /// Center first if needed.
   Future<void> post() async {
-    final service = ref.read(leaderboardServiceProvider);
+    if (!canPost || state == ScorePost.posting || state == ScorePost.posted) return;
+    final service = ref.read(leaderboardServiceProvider)!;
     final match = ref.read(gameProvider);
-    if (service == null || !match.postable || state == ScorePost.posting || state == ScorePost.posted) return;
+    // The answer belongs to this game only (New game may be tapped meanwhile).
+    void settle(ScorePost result) {
+      if (identical(ref.read(gameProvider), match)) state = result;
+    }
+
     state = ScorePost.posting;
     try {
       if (!await service.signIn()) {
-        state = ScorePost.signedOut;
+        settle(ScorePost.signedOut);
         return;
       }
       await service.submit(Leaderboard.ranked3m, match.players.single.total);
-      state = ScorePost.posted;
+      settle(ScorePost.posted);
     } catch (_) {
-      state = ScorePost.failed;
+      settle(ScorePost.failed);
     }
   }
 }

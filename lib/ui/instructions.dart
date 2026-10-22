@@ -168,6 +168,10 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Strict mode: a score can only be changed to 0, to mark a bounce-out, or a knife the camera missed added '
           'as 0. No score can be raised by hand.',
       'Only a full game of 5 rounds can be posted. Finish game ends it early, and it can no longer be posted.',
+      'On an iPhone, a full ranked game ends with Post score and View leaderboard. Posting needs you signed in to '
+          'Game Center (in the iPhone\'s Settings). Your total goes on the leaderboard under your Game Center '
+          'nickname, for everyone to see; the leaderboard starts again each month. Once posted, the game\'s scores '
+          'can no longer be changed. Not on Android yet, and not on a Live test recording.',
     ]),
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',

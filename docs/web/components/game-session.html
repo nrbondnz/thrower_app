@@ -27,7 +27,7 @@
 
   <div class="detail-body">
     <p>A bounce-out scores 0. A knife that sticks and then falls out before it is collected turns that throw into 0. Once the knives are collected, Play shows the next round straight away (backlog #12).</p>
-    <p>The game type (2026-10-20, <code>GameType</code>): Scoring, Precision (7 rounds, each from its own distance: 3, 5, 7, 3, 4, 5, 7 m) or Three targets (one knife at each of three boards per round). It changes only where each knife is thrown from or at; the rules here are shared. Precision and Three targets are scored by hand on the score pad for now.</p>
+    <p>The game type (2026-10-20, <code>GameType</code>): Scoring, Precision (7 rounds, each from its own distance: 3, 5, 7, 3, 4, 5, 7 m) or Three targets (one knife at each of three boards per round). It changes only where each knife is thrown from or at; the rules here are shared. Precision and Three targets are scored by hand on the score pad for now. Ranked (2026-10-22): 5 rounds of 3 from 3 m, one player, scored by the camera, in strict mode: a score set or added by hand can only be 0, and a full game is <code>postable</code> to the leaderboard.</p>
     <p><code>Match</code> holds a <code>GameSession</code> per player (2026-10-16). Two players on one target take turns: 3 knives, collect, then the other player, Player 1 starting every round. On two targets each board scores for its own player. The higher total wins; equal totals are a draw.</p>
   </div>
 
@@ -42,6 +42,7 @@
     <div><dt><code>setScore · byHand · addToRound</code></dt><dd>a score set by hand (corrected), a missed throw added (0)</dd></div>
     <div><dt><code>GameType: roundChoices · handScored · distanceOf · targetOf</code></dt><dd>each game type&#x27;s lengths, and where a knife is thrown from (Precision) or at (Three targets)</dd></div>
     <div><dt><code>Match: type · nextDistance · nextTarget</code></dt><dd>the game type, kept through every change; where the next knife goes from or at</dd></div>
+    <div><dt><code>GameType.strict · Match.postable</code></dt><dd>strict mode (Ranked): setScore, byHand and addToRound refuse anything but 0; a full one-player Ranked game, not finished early, can be posted</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -74,6 +75,12 @@
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Player names: into the game, History and Quick draw</h3>
       <p>A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/ranked-post.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Ranked game: posting a score to Game Center</h3>
+      <p>Ranked: 5 × 3 at 3 m in strict mode; a full game&#x27;s total posted once to a monthly Game Center leaderboard (iPhone).</p>
       <span class="more">Open →</span>
     </a>
   </div>

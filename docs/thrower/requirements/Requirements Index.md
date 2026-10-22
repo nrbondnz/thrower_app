@@ -12,9 +12,9 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 
 ## Basic Setup
 - [[Player Names|Setting up player names]] ✅ (named players; backup written, not yet deployed; friends with accounts planned)
-- [[Scoring Rules|Rules of scoring]] ✅ (KATTA)
+- [[Scoring Rules|Rules of scoring]] ✅ (KATTA; strict mode for ranked games, 2026-10-22)
 - [[Number of Rounds|Setting number of rounds]] ✅
-- [[Game Type|Setting game type (scoring, quick draw, Precision, Three targets)]] ✅ (Precision and Three targets scored by hand for now; their camera planned; Quick draw boards can be drawn round, timed only, round or four-cornered, 2026-10-21)
+- [[Game Type|Setting game type (scoring, quick draw, Precision, Three targets)]] ✅ (Precision and Three targets scored by hand for now; their camera planned; Quick draw boards can be drawn round, timed only, round or four-cornered, 2026-10-21; Ranked: 5 × 3 at 3 m, 2026-10-22)
 - [[Board Finding|Finding the board (calibration)]] 🟡 (automatic on most boards; stencilled boards with broken rings by Tap the board, 2026-10-21; Quick draw: or draw round each board, round or four-cornered)
 
 ## Basic Play
@@ -33,7 +33,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 - [[Accounts and Sign-In|Accounts and sign-in]] 🟡 (email sign-in deployed; Google, Apple, the backup and Delete account written, waiting for secrets)
 
 ## Game Centre
-- [[Rankings]] 💭
+- [[Rankings]] 🟡 (first step built 2026-10-22: Ranked: 5 × 3 at 3 m posted to a monthly Game Center leaderboard, iPhone only; waiting for the Mac and App Store Connect)
 	- [[Rankings#Daily Ranking|Daily ranking]]
 	- [[Rankings#Weekly Ranking|Weekly ranking]]
 	- [[Rankings#Monthly Ranking|Monthly ranking]]

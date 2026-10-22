@@ -267,7 +267,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 - **Safety (Review Agent §7):** scoring by hand brings someone to the phone after every knife. The screen and the Instructions say: score when no one is throwing, or have someone who isn't throwing keep score; never stand in the lane to use the phone.
 
 ### The type changes only where knives are thrown from, or at
-- **`GameType`** (`lib/scoring/game_type.dart`, pure Dart): `scoring`, `precision`, `threeTargets`, each with its `label`, `roundChoices` ([3, 5, 9], [7], [3, 5, 7]), `defaultRounds` (the longest), `handScored` (all but Scoring), `distanceOf(round)` (Precision) and `targetOf(index)` (Three targets).
+- **`GameType`** (`lib/scoring/game_type.dart`, pure Dart): `scoring`, `precision`, `threeTargets`, each with its `label`, `roundChoices` ([3, 5, 9], [7], [3, 5, 7]), `defaultRounds` (the longest), `handScored` (all but Scoring; since 2026-10-22 Precision and Three targets only, as Ranked uses the camera: Ranked Games and Game Center), `distanceOf(round)` (Precision) and `targetOf(index)` (Three targets).
 - **`Match.type`** is kept through every change (`withNames`, `finish`, each throw); `Match.nextDistance` and `Match.nextTarget` say where whoever throws next (`nextThrowerAt`) throws from or at.
 - **The rules are reused unchanged:** `GameSession` (rounds of 3, finishing early, corrections) and `Match` (turns, counted rounds, winner, draw). *Not chosen:* a separate game class per type, which would have duplicated the turn and scoring rules and the history.
 - **Wiring:** `gameTypeProvider` (`GameTypeNotifier`, Scoring unless chosen, kept for the session like `playModeProvider`). `GameNotifier` builds the match with the type and a length the type offers (else its `defaultRounds`); a change of type starts a new game; **New game** keeps the type.
@@ -289,6 +289,65 @@ Folders are created when their first code arrives, never empty "just in case". N
 **Instructions:** a section, *Precision and Three targets* (which game, the distances, one knife at each target, taking turns, the score pad, the safety line). Requirement: [[Instructions and Safety]].
 
 **Built:** 2026-10-20 (Tasks 1–3); device checks GT0–GT9 in [[Device Test Plan]].
+
+## Ranked Games and Game Center (2026-10-22)
+
+**Requirement:** [[Rankings]] (first step), [[Scoring Rules]] (strict mode), [[Game Type]] (Ranked), [[Instructions and Safety]]. **Story:** [[story-checkpoint-game-center-scores]].
+
+**Nigel, 2026-10-22:** "How can I set up Game Center to be able to store scores? There would be a best 3 meter score table refreshed each month, previous month results table etc. But to start I would just like to allow users to post scores for particular games, lets say 5 sets of 3 knives at 3 meters."
+
+### Decision: one ranked game, Ranked: 5 × 3 at 3 m
+- **`GameType.ranked`** ("Ranked: 5 × 3 at 3 m", `roundChoices` [5]): 5 rounds of 3 knives (0–75), **one player**, one target, **scored by the camera** (not the score pad: `handScored` is now Precision and Three targets only).
+- **One player:** Game Center posts for whoever is signed in to Game Center on that iPhone, so a two-player game would have no one to post the second score for. `Match.postable` requires one player.
+- **3 m is the thrower's word:** `rankedDistance` = 3; Play's setup asks **I'm throwing from 3 m** (`playRankedDistance`), and Start waits until it's ticked. The app can't measure the distance, as with Precision's distances. Play's title says "Ranked · 3 m" (`playTitle`).
+- **Kept in History** like any game (`GameRecord` version 3, `type` "ranked"), and backed up when signed in. As for Precision, a file holding a Ranked game is version 3, so an app older than More Game Types sets it aside (renamed, never deleted).
+- **Not on a Live test recording** (Task 5 fix, 2026-10-22): Play's setup leaves Ranked out while a recording is chosen, and Post score never shows for one: a recording's score isn't the thrower's.
+- *Not chosen:* several ranked games (3, 5 and 9 rounds) at once: one leaderboard first; more later (backlog #22).
+
+### Decision: strict mode (only 0 by hand)
+- **Nigel:** "if they are posting to game centre they would have to go into a strict mode where they can only change scores to mark a bounce out but not to change scores to higher".
+- **The rule, in pure Dart:** `GameType.strict` (Ranked only). `Match.setScore`, `byHand` and `addToRound` refuse any score but 0 in a strict game (`_refused`: the match comes back unchanged), so a raise is impossible whatever the screen does.
+- **The screen:** the correction popup offers only **0**, with `strictNote` ("Ranked game: a score can only be changed to 0 (a bounce-out, or a miss)."), for a score, an empty slot and an earlier round.
+- **Why 0 is still allowed:** a knife that bounced out or fell out after the camera scored it, or a knife the camera didn't see, must still be put right, and lowering a score can only hurt the thrower's own total.
+- Elsewhere (Scoring, Precision, Three targets) corrections are unchanged (0–5).
+
+### Decision: full games only
+- **`Match.postable`:** `type == ranked`, one player, `isOver`, not `finishedEarly`. **Finish game** ends a Ranked game early, and it can no longer be posted (Nigel: full games only).
+- **Why:** a leaderboard of totals only compares like with like if every game is 15 knives.
+
+### Decision: posting behind `LeaderboardService`
+- **`LeaderboardService`** (`lib/leaderboard/leaderboard_service.dart`), like `AuthService`: `signIn`, `submit(leaderboard, score)`, `show(leaderboard)`. `Leaderboard.ranked3m` carries the App Store Connect ID `ranked.3m.5x3`.
+- **`leaderboardServiceProvider`** is null where the build can't post; `main` overrides it with **`GameCenterLeaderboardService`** only when `Platform.isIOS`. With no service, **`PostScorePanel`** shows nothing (Android).
+- **`ScorePostNotifier`** (`ScorePost`: ready, posting, posted, signedOut, failed): signs in to Game Center first, then submits the total; a failure can be tried again; back to ready when a new game starts.
+- **Why an interface:** the UI and the game never see Game Center, so tests use a fake, and the leaderboard can later be swapped for (or joined by) the app's own leaderboard on Amplify, shown on the website, ranking iPhone and Android together (backlog #21), without touching Play.
+
+### Decision: a recurring monthly Game Center leaderboard
+- Set up by Nigel in App Store Connect ([[Mac Handoff]] → Game Center setup): **recurring**, restarts each month, integer, high to low, range 0–75, best score.
+- **Why:** Nigel's "best 3 meter score table refreshed each month". Apple restarts it and keeps each month's results, so "last month's results" (backlog #22) needs no backend.
+- **View leaderboard** opens Apple's own leaderboard screen (`showLeaderboards`); no table of our own yet.
+
+### Decision: post once; corrections locked after posting
+- **Posted once:** `ScorePostNotifier.post` does nothing once `posted` (or while posting), and the button goes.
+- **Locked after posting** (a plan change in Task 3): once posted, `ScoreCorrections` opens no slot, adds nothing and hides **Rounds**.
+- **Why:** otherwise a correction to 0 after posting would leave the leaderboard higher than what Play and History show. A posted score is final.
+
+### Decision: the plugin, `games_services` 5.3.0
+- **Chosen:** `games_services` (published 2026-08-02; iOS 14+ pod, the app targets iOS 15): sign-in, `submitScore` and `showLeaderboards` on Game Center, used only inside `GameCenterLeaderboardService`.
+- **Why:** a maintained, widely used plugin covers the three calls we need; behind our interface it can be replaced without touching the app.
+- *Not chosen:* our own GameKit platform channel (Swift): more code to write and keep up on the iPhone, for the same three calls.
+
+### Decision: the Android manifest removes Play Games' start-up pieces
+- `games_services` also brings Google Play Games for Android, which would start at every Android launch (`PlayGamesInitProvider`) and wants an `APP_ID` the app doesn't have.
+- **Review Agent fix (2026-10-22):** `AndroidManifest.xml` removes `PlayGamesInitProvider`, `GamesResolutionActivity` and the exported `PlayGamesAppShortcutsActivity` (`tools:node="remove"`). Checked: none left in the merged manifest; the app starts with no Play Games warning.
+- **Why:** Android can't post yet (backlog #21), so Play Games would only cost start-up time and show warnings, and an exported activity is surface for nothing. Put them back when Android posting is built.
+
+### Privacy
+- Nothing goes to Game Center unless the player taps **Post score**: then only the game's total, shown publicly under their **Game Center nickname** (Apple's alias, not their name or email). Game Center is Apple's, under Apple's privacy policy.
+- App Store privacy labels: **User Content → Gameplay Content** ([[Privacy Policy (Draft)]] → Game Center). Android sends nothing new.
+
+**Instructions:** a section, *Ranked games* (the game, the 3 m confirmation, strict mode, full games only; and, added in Task 5, Post score and View leaderboard on an iPhone, signed in to Game Center, the total public under the Game Center nickname, the monthly restart, scores locked once posted, not on Android or a Live test recording).
+
+**Built:** 2026-10-22 (Tasks 1–3, Task 4's PC side); waiting for the Mac and App Store Connect; device checks RK0–RK9 in [[Device Test Plan]].
 
 ## Camera: `camera` Plugin, Back Camera, No Audio
 
