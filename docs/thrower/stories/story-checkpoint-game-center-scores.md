@@ -121,3 +121,27 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
   - **G5:** yes, 3 per round: `Match.postable` needs every round's 3 throws (missing ones can be added as 0).
   - **G8:** keep a "?" throw at 0; the Instructions say so.
   - Tests: `game_type_test.dart` +2 (a short round: over but not postable; the 0 added: postable); `score_post_test.dart` +2 (a knife falling out after posting changes nothing; before posting it scores 0 and the lower total is posted); `instructions_test.dart` (15 knives, "?" stays 0). Device check RK10. `flutter test`: 996 passed.
+
+---
+
+## Follow-up 2026-10-23: rounds move on (Round done)
+
+**Nigel, on the iPhone:** "It lets you score 3 zeros on a round but when that is done on a ranked round, and possibly any round, when you think the round is complete the app should automatically move to the next round. Basically, 3 scores should either move on automatically (in ranked) or offer a 'round done' for others."
+
+**Cause:** a round only moved on when the camera saw someone at the board (a board visit) or when the next knife landed. Three bounce-outs leave nothing to collect, so Play stayed on "Round complete…".
+
+**Built (uncommitted on 2026-10-23):**
+- `GameType.movesOnByItself` (Ranked only): in `Match._throw`, via `_movedOn`, a ranked round's 3rd throw closes the round (`GameSession.boardVisited`). 15 throws with no collecting is still a full, postable game.
+- `Match.canEndRound` and `Match.endRound()` (**Round done**): shown once the round has all its throws and hasn't been collected; one target with two players: when the turn is complete, and it passes the turn; two targets: only when every player still playing has finished; not once the game is over.
+- `GameNotifier.endRound()`: the knives still on the board are remembered, so one that falls out later still scores 0.
+- `RoundDoneButton` (key `roundDone`, `lib/ui/play_screen.dart`) on Play and two-target Play, under the score rows. The score pad is unchanged (it already moved on).
+- Instructions: *Rounds* (tap Round done when there's nothing to collect); *Ranked games* (the next round starts by itself after 3 knives; collect before throwing again).
+- Tests: `game_type_test.dart` ('the end of a round'), `game_notifier_test.dart` ('Round done'), `play_screen_test.dart` ('Round done').
+
+### Doc Update — 2026-10-23
+- `Architecture/Design Decisions.md`: new section *Rounds Move On: Round Done (2026-10-23)*; a pointer from *Ranked Games and Game Center*.
+- `requirements/Basic Play/Round Play.md`, `One Target.md`, `Two Targets.md`, `requirements/Game Centre/Rankings.md`: What Exists Today.
+- `Architecture/Glossary.md`: *Round done* concept; `Match` functions.
+- `Operations/Device Test Plan.md`: new *Round Done Checks* RD0–RD3.
+- `Operations/Mac Handoff.md`: build 11's contents and checks to send.
+- `tool/web_docs/content.py` (screens, GameSession and Match, the Play flow); web pages rebuilt.

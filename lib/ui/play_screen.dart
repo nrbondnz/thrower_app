@@ -245,6 +245,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
                     for (var p = 0; p < match.players.length; p++)
                       ScoreCorrections(host: this, player: p, board: 0, label: rowLabel(match, p)),
                   ],
+                  const RoundDoneButton(),
                   if (camera is RecordedCamera) ...[
                     const SizedBox(height: 12),
                     ValueListenableBuilder(
@@ -267,6 +268,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Round done (Nigel, 2026-10-23): shown once the round has all its throws,
+/// so the next round can start without the camera seeing the knives
+/// collected (three bounce-outs leave nothing to collect).
+class RoundDoneButton extends ConsumerWidget {
+  const RoundDoneButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(gameProvider).canEndRound) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: FilledButton(
+        key: const Key('roundDone'),
+        onPressed: ref.read(gameProvider.notifier).endRound,
+        child: const Text('Round done'),
       ),
     );
   }

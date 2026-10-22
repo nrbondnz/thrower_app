@@ -461,6 +461,23 @@ For [[story-checkpoint-game-center-scores]] (requirement [[Rankings]]; why in [[
   - **Do:** In a Ranked game, collect the knives after only 2 throws in one round (walk to the board), then finish all 5 rounds. Then tap that round (Rounds) and add the missing knife as 0. On a later game, post the score, then pull a knife out of the board before collecting
   - **Look for:** After 5 rounds with a short round: the game is over but **no Post score**; after adding the 0: **Post score** appears. After posting, pulling a knife out **doesn't change** the total on Play or in History
 
+## Round Done Checks (added 2026-10-23)
+
+For the follow-up to [[story-checkpoint-game-center-scores]] (requirements [[Round Play]] and [[Rankings]]; why in [[Design Decisions]] → Rounds Move On: Round Done). A round used to wait for the camera to see the knives collected, so three bounce-outs left Play stuck on "Round complete…". Any phone; a real board, or the A4 printout with a hand wave for a bounce-out. Go to the phone only when no one is throwing. Named **RD**n.
+
+- **RD0 (Ranked: three bounce-outs move on)**
+  - **Do:** A Ranked game; throw 3 knives that all bounce out (printout: wave a hand 3 times)
+  - **Look for:** After the 3rd, **Round 2 of 5** shows by itself, with no Round done button and no one at the board. Play on to 5 rounds without collecting: **Post score** appears (iPhone)
+- **RD1 (Scoring: Round done starts round 2)**
+  - **Do:** A one-player Scoring game; 3 bounce-outs (or 3 knives, then don't go to the board)
+  - **Look for:** **Round done** appears under the scores only after the 3rd throw; tapping it shows round 2, empty, and the button goes. A knife from round 1 that then falls out still scores 0
+- **RD2 (one target, two players: Round done passes the turn)**
+  - **Do:** 2 players, 1 target; Player 1 throws 3 bounce-outs
+  - **Look for:** **Round done** appears; tapping it makes it **Player 2's turn**. After Player 2's 3 throws, Round done again starts round 2 with Player 1
+- **RD3 (two targets: only once both have finished)**
+  - **Do:** 2 players, 2 targets; Player 1 throws 3, Player 2 only 2
+  - **Look for:** No Round done while Player 2 is still throwing; it appears after Player 2's 3rd throw, and tapping it starts round 2 on both boards. No Round done once the game is over
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

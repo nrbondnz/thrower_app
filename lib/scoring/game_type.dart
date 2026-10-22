@@ -37,6 +37,12 @@ enum GameType {
   /// by hand can only be 0.
   bool get strict => this == ranked;
 
+  /// A round's last throw starts the next round by itself (Nigel,
+  /// 2026-10-23: three bounce-outs leave nothing on the board to collect, so
+  /// the camera never sees the knives collected). Other games offer Round
+  /// done ([Match.canEndRound]).
+  bool get movesOnByItself => this == ranked;
+
   /// Where round [round] (from 0) is thrown from, in metres: Precision's
   /// own distances, Ranked's [rankedDistance]; null for the other types, or
   /// past the last round.

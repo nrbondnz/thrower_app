@@ -300,4 +300,64 @@ void main() {
       expect(shortRound().addToRound(0, 1, 0).postable, isTrue);
     });
   });
+
+  // Nigel, 2026-10-23: "3 scores should either move on automatically (in
+  // ranked) or offer a 'round done' for others".
+  group('the end of a round', () {
+    test('Ranked: the 3rd throw starts the next round by itself', () {
+      final m = thrown(game(GameType.ranked), [0, 0, 0]);
+      expect((m.players.single.awaitingNextRound, m.players.single.roundNumber), (true, 2));
+    });
+
+    test('Ranked: no Round done to tap (it has moved on)', () {
+      expect(thrown(game(GameType.ranked), [0, 0, 0]).canEndRound, isFalse);
+    });
+
+    test('Ranked: 15 throws with no collecting is a full game that can be posted', () {
+      final m = List.filled(15, 3).fold(game(GameType.ranked), (m, s) => m.stuck(s, const TargetPoint(0.5, 0)));
+      expect((m.isOver, m.postable, m.players.single.total), (true, true, 45));
+    });
+
+    test('Ranked: a knife falling out after the round moved on still scores 0', () {
+      final m = [5, 5, 5].fold(game(GameType.ranked), (m, s) => m.stuck(s, const TargetPoint(0.1, 0))).fellOut(0, 0, 2);
+      expect(m.players.single.total, 10);
+    });
+
+    test('Scoring: after 3 throws the round waits, and Round done can be tapped', () {
+      final m = thrown(game(GameType.scoring), [0, 0, 0]);
+      expect((m.players.single.awaitingNextRound, m.canEndRound), (false, true));
+    });
+
+    test('Round done starts the next round', () {
+      final m = thrown(game(GameType.scoring), [0, 0, 0]).endRound();
+      expect((m.players.single.awaitingNextRound, m.players.single.roundNumber, m.canEndRound), (true, 2, false));
+    });
+
+    test('not before the round has all its throws', () {
+      final m = thrown(game(GameType.scoring), [4, 4]);
+      expect(m.canEndRound, isFalse);
+      expect(identical(m.endRound(), m), isTrue);
+    });
+
+    test('not once the game is over', () {
+      expect(thrown(game(GameType.scoring, rounds: 3), List.filled(9, 2)).canEndRound, isFalse);
+    });
+
+    test('one target, two players: Round done passes the turn', () {
+      final m = thrown(game(GameType.scoring, mode: PlayMode.sharedTarget), [1, 1, 1]);
+      expect(m.canEndRound, isTrue);
+      final next = m.endRound();
+      expect((next.turn, next.turnThrows, next.canEndRound), (1, 0, false));
+    });
+
+    test('two targets: only once both players have finished the round', () {
+      final one = game(GameType.scoring, mode: PlayMode.twoTargets);
+      final first = [0, 1, 2].fold(one, (m, _) => m.byHand(3));
+      expect(first.canEndRound, isFalse);
+      final both = [0, 1, 2].fold(first, (m, _) => m.byHand(3, board: 1));
+      expect(both.canEndRound, isTrue);
+      final next = both.endRound();
+      expect([for (final g in next.players) g.roundNumber], [2, 2]);
+    });
+  });
 }

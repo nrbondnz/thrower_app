@@ -390,6 +390,11 @@ class GameNotifier extends Notifier<Match> {
     _change(state.byHand(score, board: board));
   }
 
+  /// Round done ([Match.endRound]): the next round starts without the
+  /// camera seeing the knives collected. The knives still on the board are
+  /// remembered, so one falling out still scores 0.
+  void endRound() => _change(state.endRound());
+
   /// A throw added to [player]'s earlier round [roundIndex], one collected
   /// early.
   void addToRound(int player, int roundIndex, int score) => _change(state.addToRound(player, roundIndex, score));

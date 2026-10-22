@@ -258,4 +258,25 @@ void main() {
     game.onEvent(stuckAt(500 + 200 * 0.3 * math.cos(1), 400 + 200 * 0.3 * math.sin(1), 9), c);
     expect(session().rounds.single.throws.single.score, 4);
   });
+
+  group('Round done (Nigel, 2026-10-23)', () {
+    test('starts the next round without anyone at the board', () {
+      game
+        ..onEvent(event(ThrowOutcomeKind.bounceOut), c)
+        ..onEvent(event(ThrowOutcomeKind.bounceOut), c)
+        ..onEvent(event(ThrowOutcomeKind.bounceOut), c)
+        ..endRound();
+      expect(session().roundNumber, 2);
+    });
+
+    test('a knife still on the board is remembered: falling out later scores 0', () {
+      game
+        ..onEvent(stuckAt(500, 400, 0), c) // bull: 5
+        ..onEvent(event(ThrowOutcomeKind.bounceOut), c)
+        ..onEvent(event(ThrowOutcomeKind.bounceOut), c)
+        ..endRound()
+        ..onEvent(event(ThrowOutcomeKind.fellOut, id: 0), c);
+      expect(session().total, 0);
+    });
+  });
 }

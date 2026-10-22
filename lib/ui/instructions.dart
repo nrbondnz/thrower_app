@@ -79,6 +79,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
             'yellow circle where the blade went in. A bounce-out shows a 0 beside the target.',
       'After $n throws the round is complete. Collect your $knives${paper ? '' : ' only when no one is throwing'}: '
           'the app sees someone at the target and starts the next round.',
+      'If there is nothing to collect (three bounce-outs), or the app has not started the next round, tap Round done.',
       'Collecting early ends the round with fewer throws.',
       'After round ${rules.maxRounds} the game is over and shows your final total. Tap New game to play again.',
       'To stop sooner, tap Finish game (it asks first): the game ends with the rounds played so far, '
@@ -165,6 +166,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Ranked: 5 × 3 at 3 m is a game whose score can go on the leaderboard: 5 rounds of 3 knives from 3 m, '
           'one player, scored by the camera. Choose it under Which game? and confirm you are throwing from 3 m, '
           'measured from the board to the throwing line.',
+      'After 3 knives the next round starts by itself; collect your knives before throwing again.',
       'Strict mode: a score can only be changed to 0, to mark a bounce-out, or a knife the camera missed added '
           "as 0. No score can be raised by hand, not even a knife the camera saw stick but couldn't place (?): "
           'it scores 0.',

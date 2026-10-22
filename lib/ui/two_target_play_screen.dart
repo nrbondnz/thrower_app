@@ -269,6 +269,7 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                     const SizedBox(height: 8),
                     for (var p = 0; p < match.players.length; p++)
                       ScoreCorrections(host: this, player: p, board: p, label: rowLabel(match, p)),
+                    const RoundDoneButton(),
                     const SizedBox(height: 8),
                   ],
                   Wrap(

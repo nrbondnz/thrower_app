@@ -223,11 +223,34 @@ class Match {
   }
 
   Match _throw(int board, GameSession Function(GameSession) add) {
-    if (mode != PlayMode.sharedTarget) return _with(board, add(players[board]));
+    if (mode != PlayMode.sharedTarget) return _with(board, _movedOn(add(players[board])));
     if (isOver) return this;
     // Thrown on without collecting: the turn already had all its knives.
     final m = turnComplete ? _passTurn() : this;
     return Match._(mode, type, _replaced(m.players, m.turn, add(m.players[m.turn])), names, m.turn, m.turnThrows + 1);
+  }
+
+  /// [game] with its complete round closed, for a type that moves on by
+  /// itself ([GameType.movesOnByItself]).
+  GameSession _movedOn(GameSession game) => type.movesOnByItself && game.roundComplete ? game.boardVisited() : game;
+
+  /// Round done can be tapped (Nigel, 2026-10-23): the round (one target:
+  /// the turn) has all its throws and the knives haven't been collected yet.
+  /// On two targets, every player still playing has finished the round
+  /// (they collect together).
+  bool get canEndRound {
+    if (isOver) return false;
+    if (mode == PlayMode.sharedTarget) return turnComplete;
+    final playing = players.where((g) => !g.isOver);
+    return playing.isNotEmpty && playing.every((g) => g.roundComplete && !g.awaitingNextRound);
+  }
+
+  /// Round done: the next round (one target: the next turn) starts now, as
+  /// if the knives had been collected. Nothing changes unless [canEndRound].
+  Match endRound() {
+    if (!canEndRound) return this;
+    if (mode == PlayMode.sharedTarget) return _passTurn();
+    return Match._(mode, type, List.unmodifiable([for (final g in players) g.boardVisited()]), names, turn, turnThrows);
   }
 
   /// One target: this turn has all its throws; the knives are to be

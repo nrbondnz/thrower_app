@@ -225,6 +225,7 @@ void main() {
       expect(text, contains('Or tap Draw round the boards first'));
       expect(text, contains('Strict mode: a score can only be changed to 0'));
       expect(text, contains('Only a full game can be posted: 5 rounds, each with 3 knives.'));
+      expect(text, contains('After 3 knives the next round starts by itself'));
       expect(text, contains("not even a knife the camera saw stick but couldn't place (?)"));
       expect(text, contains('ends with Post score and View leaderboard'));
       expect(text, contains('Once posted, the game\'s scores can no longer be changed.'));

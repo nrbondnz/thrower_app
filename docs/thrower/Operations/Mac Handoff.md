@@ -15,6 +15,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 - **Strict mode** in a ranked game: tapping a score, an empty slot or an earlier round offers **only 0** (a bounce-out, or a miss), with a note why. No score can be raised by hand, not even a "?" knife.
 - **Posting (iPhone only):** at the end of a full game (5 rounds, **3 knives in each**: missing ones can be added as 0) Play shows **Post score (N)** and **View leaderboard**. Posting is the thrower's choice. Once posted, the score is final: no corrections, and a knife falling out no longer changes it. Not on Android yet (backlog #21).
 - **New plugin: `games_services` 5.3.0** (Game Center; a pod, iOS 14+; the app targets 15). **No `Info.plist` keys** (Game Center needs none). **New capability: Game Center** (step 4 below). On Android its Play Games start-up pieces are removed in `AndroidManifest.xml` (Review Agent, 2026-10-22); nothing to do for that on the Mac.
+- **Rounds move on** (Nigel on the iPhone, 2026-10-23): a **Ranked** round now starts the next round by itself after 3 knives (three bounce-outs used to leave Play stuck on "Round complete…"). Other camera games show **Round done** once a round has its throws, for when there's nothing to collect (one target: passes the turn; two targets: once both have finished).
 - Commits `5e2096a`, `7599aba`, `7a7d357`, `c77dc2a`, `ef13cb7`, `6adaf38`. `flutter test`: **996 pass** on the PC (2026-10-22).
 - **Accounts:** as builds 9 and 10, **without** the backend settings file (`assets/config/amplify_outputs.json`): the app runs signed out exactly as before; no Sign in with Apple capability is needed. (Accounts in a build is section 00000.)
 
@@ -37,6 +38,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 
 ### Checks to send
 - [[Device Test Plan]] → **Ranked Game Checks (RK0–RK10)**: RK0–RK4 and RK10 on any phone; **RK5–RK8 need the iPhone** with Game Center signed in; RK9 is Android (no Post score, no Play Games popup).
+- [[Device Test Plan]] → **Round Done Checks (RD0–RD3)**: any phone; RD0 is a Ranked game.
 - Still open from builds 9 and 10: QA0–QA14 (drawn boards), BF8 (Mark's real boards).
 
 ### Worth knowing

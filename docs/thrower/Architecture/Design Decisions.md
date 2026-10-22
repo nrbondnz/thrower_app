@@ -300,6 +300,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 - **Posting is the thrower's choice at the end of the game** ("The user should choose to post at the end of the game if they want to share their score"). Post score shows once the game is over, as built. **A posted score is final:** from the moment posting starts (`GameNotifier.markFinal`), a knife falling out no longer changes the game, so Play and History keep matching the leaderboard; if the post fails, falling out counts again. Before posting, a knife falling out still scores 0, and that lower total is what gets posted.
 - **"5 sets of 3": every round needs its 3 throws** (`Match.postable`). A round collected early (fewer than 3 knives) leaves the game over but not postable until the missing knives are added as 0 (strict mode allows 0).
 - **A "?" throw stays at 0** (a knife the camera saw stick but couldn't place): strict means no score is raised by hand, so a camera miss costs the thrower; the Instructions say so.
+- **Update (2026-10-23):** a ranked round moves on after its 3rd throw, with no collecting: [[#Rounds Move On: Round Done (2026-10-23)]].
 - Also fixed then: no Ranked on a Live test recording (and no posting from one); a post still going when New game is tapped doesn't touch the new game; a ranked game is always solo (`GameNotifier.build`); corrections are locked while posting too; View leaderboard signs in first and says if it can't open.
 
 ### Decision: one ranked game, Ranked: 5 × 3 at 3 m
@@ -542,6 +543,32 @@ The camera path keeps frames at full camera resolution for this (`frameToRgb(max
 - `finishedRounds`: the rounds already collected (all of them once the game is over).
 
 Play's `roundText` then shows the new round, empty ("Round 2 of 9: – · – · –  (0)"), and `gameText` drops "Round complete…" and lists the collected round under "Rounds:" straight away. No empty round is stored: the session's rounds are as before. Checked by `game_session_test.dart` and `game_notifier_test.dart`.
+
+## Rounds Move On: Round Done (2026-10-23)
+
+**Requirement:** [[Round Play]], [[Rankings]], [[One Target]], [[Two Targets]]. **Story:** follow-up to [[story-checkpoint-game-center-scores]].
+
+**Nigel, 2026-10-23 (on the iPhone):** "3 scores should either move on automatically (in ranked) or offer a 'round done' for others."
+
+**The problem:** a round only moved on when the camera saw someone at the board (a board visit), or when the next knife landed. Three bounce-outs leave nothing to collect, so Play stayed on "Round complete…".
+
+### Decision: a ranked round moves on by itself
+- **`GameType.movesOnByItself`** (Ranked only). In `Match._throw` (via `_movedOn`), a ranked round's 3rd throw closes the round (`GameSession.boardVisited`), so the next round shows straight away.
+- 15 throws with no collecting is still a full game, and can be posted.
+- The Instructions tell the thrower to collect the knives before throwing again.
+
+### Decision: Round done for the other games
+- **`Match.canEndRound`** and **`Match.endRound()`**; on the screen **`RoundDoneButton`** (key `roundDone`), on Play and two-target Play, under the score rows.
+- It shows once the round has all its throws and hasn't been collected. It doesn't show once the game is over.
+- **One target, two players:** it shows when the turn is complete, and passes the turn.
+- **Two targets:** it shows only when every player still playing has finished the round (they collect together).
+- **`GameNotifier.endRound()`:** the knives still on the board are remembered (a real board visit forgets them), so one that falls out later still scores 0.
+- The score pad already moved on by itself, so it's unchanged.
+
+### Why
+- The camera can't see a collection that never happens. A button is the plain fix for a bounce-out round, or a visit the camera missed.
+- Ranked moves on by itself because it is one player and always 3 knives a round (`Match.postable` needs them); a button there would be one more trip to the phone.
+- *Not chosen:* moving on by itself in every game. With two players, or a thrower who collects early, the app can't tell whether the knives are still to be collected.
 
 ## Blade Entry Point (Throw Detection, Task 4)
 

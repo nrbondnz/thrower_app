@@ -21,10 +21,11 @@ Players are ranked against throwers across the UK and further: **daily**, **week
 - **Ranked: 5 × 3 at 3 m** (`GameType.ranked`; [[Game Type]]): under Which game? on Play's setup; one player, 5 rounds of 3, scored by the camera; **I'm throwing from 3 m** must be ticked before Start; Play's title "Ranked · 3 m".
 - **Strict mode** (`GameType.strict`; [[Scoring Rules]]): a score can only be changed to 0, and a missed throw only added as 0; the rules refuse anything else (`Match.setScore`, `byHand`, `addToRound`).
 - **Full games only** (`Match.postable`): Finish game early, and it can't be posted.
+- **Rounds move on by themselves** (2026-10-23, `GameType.movesOnByItself`): after a round's 3rd knife the next round starts, with no collecting, so three bounce-outs don't stall the game. Why: [[Design Decisions]] → Rounds Move On: Round Done.
 - **Post score** and **View leaderboard** at the end of a full ranked game (`PostScorePanel`, `ScorePostNotifier`), iPhone only: posts the total (0–75) once to Game Center's `ranked.3m.5x3` leaderboard (`GameCenterLeaderboardService`, behind `LeaderboardService`); says whether it went (posted, sign in to Game Center, couldn't post: Try again). Once posted, the game's scores are locked.
 - **The leaderboard** restarts each month (recurring, set up in App Store Connect: [[Mac Handoff]] → Game Center setup, to do). View leaderboard opens Apple's own screen.
 - **Android:** no Post score (backlog #21). **Instructions:** a *Ranked games* section ([[Instructions and Safety]]).
-- **Not yet:** the Game Center setup on the Mac and in App Store Connect, the TestFlight check (device checks RK0–RK9 in [[Device Test Plan]]), tables in the app (backlog #22), daily and weekly rankings, ranking iPhone and Android together (needs the app's own backend: [[Accounts Roadmap]] stage 6).
+- **Not yet:** the Game Center setup on the Mac and in App Store Connect, the TestFlight check (device checks RK0–RK10 and RD0 in [[Device Test Plan]]), tables in the app (backlog #22), daily and weekly rankings, ranking iPhone and Android together (needs the app's own backend: [[Accounts Roadmap]] stage 6).
 - **Why each choice:** [[Design Decisions]] → Ranked Games and Game Center (2026-10-22).
 
 ### Daily Ranking

@@ -145,6 +145,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `gameLengthProvider` (`GameLengthNotifier`, `choices` 3 / 5 / 9 = `GameType.scoring.roundChoices`, default 9): the rounds in a game, also chosen there
   - **Which game?** (2026-10-20): `gameTypeProvider` (`GameTypeNotifier`: `choose`; Scoring unless chosen); the setup screen's chips `playGame-<type>`, `typeDescription`; hand-scored types hide the target choice (`sharedTarget`) and show their own lengths (`playRoundsFixed` for Precision)
   - Finish game: `GameSession.finish` / `finished` / `finishedEarly`; `Match.finish`, `finishedEarly`, `countedRounds`, `countedTotals` (winner and draw on equal rounds); `GameNotifier.finishGame`; Play's `gameOverText`, `confirmFinishGame`
+  - **Round done** (2026-10-23): `Match.canEndRound`, `endRound` (one target: `_passTurn`; two targets: every player `boardVisited`), `_movedOn` (Ranked: `GameType.movesOnByItself`); `GameNotifier.endRound` (the known knives kept); `RoundDoneButton` (key `roundDone`) on Play and two-target Play
   - **Strict mode** (2026-10-22): `Match.setScore`, `byHand` and `addToRound` refuse anything but 0 when `type.strict` (`_refused`: the match comes back unchanged); **`Match.postable`**: Ranked, one player, over, not finished early
   - **Ranked on the setup screen**: chip `playGame-ranked`; How many players and targets hidden (one player, one name field, 5 rounds); **I'm throwing from 3 m** (`playRankedDistance`) must be ticked before Start; Play's **`playTitle`**: "Ranked · 3 m"
   - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
@@ -264,6 +265,9 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **Board visit**
   - **Meaning:** Someone at the board (collecting knives), not a throw: they stood there, ≥ 10% of the region changed at once, or one shape ≥ 3% of the region moved (people are 4%+, knives up to 2.2%). Ends the round.
   - **Used by:** `classifyThrow`, `ThrowTracker`, `GameSession`
+- **Round done**
+  - **Meaning:** Ending a round that has all its throws without the camera seeing the knives collected (e.g. three bounce-outs). A button on Play; on one target it passes the turn, on two targets it waits until both have finished. The knives still on the board are remembered. A Ranked round does this by itself after its 3rd throw. Requirement: [[Round Play]].
+  - **Used by:** `Match.canEndRound`, `Match.endRound`, `GameNotifier.endRound`, `RoundDoneButton`, `GameType.movesOnByItself`
 - **Episode**
   - **Meaning:** One stretch of motion in the board's region, from the first change until the board has been still for 0.3 s and looks like the board again. One throw, one bounce, or one visit to the board.
   - **Used by:** `MotionDetector`, `ThrowTracker`

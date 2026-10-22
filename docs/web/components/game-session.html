@@ -43,6 +43,7 @@
     <div><dt><code>GameType: roundChoices · handScored · distanceOf · targetOf</code></dt><dd>each game type&#x27;s lengths, and where a knife is thrown from (Precision) or at (Three targets)</dd></div>
     <div><dt><code>Match: type · nextDistance · nextTarget</code></dt><dd>the game type, kept through every change; where the next knife goes from or at</dd></div>
     <div><dt><code>GameType.strict · Match.postable</code></dt><dd>strict mode (Ranked): setScore, byHand and addToRound refuse anything but 0; a full one-player Ranked game, not finished early, can be posted</dd></div>
+    <div><dt><code>GameType.movesOnByItself · Match.canEndRound · endRound · GameNotifier.endRound</code></dt><dd>the end of a round with nothing collected (2026-10-23): Ranked moves on after its 3rd throw; other games show Round done (one target: passes the turn; two targets: once both have finished); the known knives are kept</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>

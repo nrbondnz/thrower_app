@@ -289,4 +289,26 @@ void main() {
       expect(textOf(tester, 'turnText'), "Maximilian Jones's turn");
     });
   });
+
+  group('Round done (Nigel, 2026-10-23)', () {
+    testWidgets('not shown while the round has throws to come', (tester) async {
+      await pumpPlay(tester, 2);
+      expect(find.byKey(const Key('roundDone')), findsNothing);
+    });
+
+    testWidgets('after 3 throws, tapping it starts the next round', (tester) async {
+      await pumpPlay(tester, 3);
+      await tester.tap(find.byKey(const Key('roundDone')));
+      await tester.pump();
+      expect(textOf(tester, 'roundText'), startsWith('Round 2 of 9'));
+      expect(find.byKey(const Key('roundDone')), findsNothing);
+    });
+
+    testWidgets('one target, two players: it passes the turn', (tester) async {
+      await pumpShared(tester, 3, collect: false);
+      await tester.tap(find.byKey(const Key('roundDone')));
+      await tester.pump();
+      expect(textOf(tester, 'turnText'), "Player 2's turn");
+    });
+  });
 }
