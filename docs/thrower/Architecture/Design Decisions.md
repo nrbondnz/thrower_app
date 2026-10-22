@@ -332,6 +332,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 - Set up by Nigel in App Store Connect ([[Mac Handoff]] → Game Center setup): **recurring**, restarts each month, integer, high to low, range 0–75, best score.
 - **Why:** Nigel's "best 3 meter score table refreshed each month". Apple restarts it and keeps each month's results, so "last month's results" (backlog #22) needs no backend.
 - **View leaderboard** opens Apple's own leaderboard screen (`showLeaderboards`); no table of our own yet.
+- **Update (Nigel, 2026-10-23): weekly, not monthly.** Nigel set the recurring leaderboard up in App Store Connect to **start on 2026-10-23 and restart every week** (1-week duration). The app is unchanged (it posts to `ranked.3m.5x3` whatever the period); the Instructions now say "starts again each week" (from build 13; build 12 still says "each month"). Backlog #22's tables become **this week and last week** ([[story-checkpoint-monthly-tables]], to re-confirm with Nigel).
 
 ### Decision: post once; corrections locked after posting
 - **Posted once:** `ScorePostNotifier.post` does nothing once `posted` (or while posting), and the button goes.

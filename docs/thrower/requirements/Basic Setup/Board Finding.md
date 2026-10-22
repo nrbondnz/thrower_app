@@ -27,6 +27,7 @@ Part of [[Requirements Index]] → Basic setup. **Status:** 🟡 Partly built (m
 - **Off-centre taps on a dark board:** Mark's right board (in shade, against the sky) is found when tapped on its bull or just above, but a tap 10 px to the right gives a wrong fit. Can the tapped search be made steadier on low-contrast boards, or is "drag the outline, or tap again" enough? ([[Known Issues]] → Stencilled Boards)
 - **Gapped rings without a tap:** Find target on its own still can't find stencilled boards. Every attempt to widen the automatic search broke boards that work today (see the decision's rejected attempts). Worth another try later, perhaps with more real boards as fixtures?
 - **The whole board must be in view:** Mark's left board is cut off by the picture's edge, so it isn't a usable view. Should the app say so (e.g. "Move the phone so the whole board is in the picture")?
+- **A time limit on the search?** Nigel (2026-10-23): give up after ~5 s and offer Tap the board, rather than leave the thrower waiting. Backlogged **only if testing shows it's needed** (#23, [[story-checkpoint-find-target-timeout]]); today a search is one or two pictures, ~1.4 s on Mark's boards.
 - Other ring patterns still untested: axes boards, boards with numbers painted in the rings, very worn paint.
 
 ## Related

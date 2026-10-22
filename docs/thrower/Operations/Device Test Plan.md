@@ -450,7 +450,7 @@ For [[story-checkpoint-game-center-scores]] (requirement [[Rankings]]; why in [[
   - **Look for:** Nothing opens; Rounds is gone; the total stays N. **New game** → a new Ranked game shows Post score again at its end
 - **RK7 (View leaderboard)**
   - **Do:** Tap **View leaderboard**
-  - **Look for:** Apple's leaderboard screen opens on "3 m · 5 rounds of 3" for the **current month**, with the RK5 score under your Game Center nickname; closing it returns to Play
+  - **Look for:** Apple's leaderboard screen opens on "3 m · 5 rounds of 3" for the **current week** (the leaderboard restarts weekly), with the RK5 score under your Game Center nickname; closing it returns to Play
 - **RK8 (not signed in; no signal)**
   - **Do:** Sign out of Game Center in Settings, finish a Ranked game → Post score; then sign in again → Try again. Separately, Airplane mode → Post score
   - **Look for:** Not signed in: "Sign in to Game Center (in the iPhone's Settings) to post, then try again." with **Try again**, which posts once signed in. No signal: "Couldn't post the score. Check the signal and try again." with Try again. No crash either way

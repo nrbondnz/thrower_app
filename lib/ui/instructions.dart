@@ -174,7 +174,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'missing knives as 0 (tap the round). Finish game ends the game early, and it can no longer be posted.',
       'On an iPhone, a full ranked game ends with Post score and View leaderboard. Posting needs you signed in to '
           'Game Center (in the iPhone\'s Settings). Your total goes on the leaderboard under your Game Center '
-          'nickname, for everyone to see; the leaderboard starts again each month. Once posted, the game\'s scores '
+          'nickname, for everyone to see; the leaderboard starts again each week. Once posted, the game\'s scores '
           'can no longer be changed. Not on Android yet, and not on a Live test recording.',
     ]),
     const InstructionSection('Resetting', [

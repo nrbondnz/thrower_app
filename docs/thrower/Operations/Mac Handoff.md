@@ -1,14 +1,45 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 11, section 0000000 (2026-10-22)**; build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23)**; build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
 
 ---
 
+## 00000000. Builds 11, 12 and 13 Done (2026-10-23): Handed Back to the PC
+
+All three went out from the Mac on 2026-10-23. **Nothing is waiting on the Mac.** The next Mac session starts from a new section above this one, written on the PC.
+
+### Build 11: Ranked games and Game Center (`95261c2`)
+- Done as section 0000000 below. Nigel created the leaderboard `ranked.3m.5x3` in App Store Connect and added the **Game Center** capability in Xcode. That created `ios/Runner/Runner.entitlements` (`com.apple.developer.game-center`) and set `CODE_SIGN_ENTITLEMENTS` for Debug, Release and Profile.
+  - Be Careful review: OK (bundle ID and signing unchanged, no new `Info.plist` keys).
+  - Xcode also rewrote parts of `project.pbxproj` (`objectVersion` 54 → 60, labels). Harmless.
+- `games_services` pod in `Podfile.lock`. 996 tests.
+- External testers: **Testing at once**; Game Center didn't trigger a review.
+- **The leaderboard as actually set up:** Recurring, **starting 2026-10-23, 1-week duration** (weekly, not monthly as planned). **Not added for App Store review** (step 8 still to do before an App Store release).
+
+### Build 12: rounds move on, Round done (`ec94098`)
+- From the PC's `f27232c`. 1011 tests.
+- Uploaded, but it still says the leaderboard "starts again each month", so it was **not added to External testers** (build 13 replaces it).
+
+### Build 13: the Instructions say "each week"
+- `lib/ui/instructions.dart`: "the leaderboard starts again each week" (one line, made on the Mac). 1011 tests, analyze clean.
+- Docs changed to weekly: [[Design Decisions]] (an update under the monthly-leaderboard decision), [[Rankings]], [[Device Test Plan]] RK7 (the current **week**), [[Glossary]], [[backlog]] #22, and [[story-checkpoint-monthly-tables]] (now **this week / last week**, to re-confirm with Nigel before Task 1; a monthly table would need a second leaderboard).
+- Added to External testers with What to Test notes (rounds moving on, Round done, the weekly leaderboard).
+
+### Also from this Mac session
+- **Backlog #23, only if testing shows it's needed:** a ~5 s time limit on Find target, then offer Tap the board ([[story-checkpoint-find-target-timeout]]; open question on [[Board Finding]]).
+- **Mark's build 8 TestFlight screenshots** (2026-10-21): recorded in [[story-checkpoint-gapped-rings]] → Follow-up.
+- **Disk:** the Mac was nearly full (383 MB free). Old archives, old simulator runtimes, caches and a Time Machine local snapshot were cleared; about 12 GB is free now. Build 13's archive is kept in Xcode Organizer.
+
+### Checks to send
+- [[Device Test Plan]]: **RK0–RK10** (ranked; RK5–RK8 need the iPhone signed in to Game Center), **RD0–RD3** (rounds move on), and anything left of QA0–QA14 and BF8.
+
+---
+
 ## 0000000. Build 11 (2026-10-22): Ranked Games and Game Center
 
-**Start here** when Nigel wants build 11. Build 10 is out (`6f2ab96`); everything below came after it.
+**Done 2026-10-23** (section 00000000 above). Build 10 is out (`6f2ab96`); everything below came after it.
 
 ### What's in it since build 10 (from the PC, pushed to `main`)
 - **Ranked: 5 × 3 at 3 m** ([[story-checkpoint-game-center-scores]], Nigel 2026-10-22), under **Which game?** on Play's setup: one player, 5 rounds of 3, scored by the camera; **Start** waits for "I'm throwing from 3 m". Play's title reads **Ranked · 3 m**. Not offered on a Live test recording.
@@ -24,6 +55,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
    - Reference name: `Ranked 3 m 5x3`. **Leaderboard ID: `ranked.3m.5x3`** (exactly: the app posts to it, `Leaderboard.ranked3m`).
    - Score format: Integer. Sort: **High to Low**. Score range: **0 to 75**. Submission type: Best score.
    - Start: the 1st of next month, 00:00; **duration 1 month**; it restarts automatically (Apple keeps each month's results: backlog #22 will show them in the app).
+   - **As actually set up (Nigel, 2026-10-23): Recurring, starting 2026-10-23, duration 1 week** (weekly, not monthly). Not added for App Store review yet (step 8).
    - Localization: English (U.K.), name **"3 m · 5 rounds of 3"**, format Integer.
    - If App Store Connect asks to enable Game Center for the app first, do that (the version page step 8 below is separate).
 2. **Claude:** `git pull` (expect `6adaf38` or later; check `git log --oneline -8`), `flutter pub get`, then `flutter test` (996; the replay tests take ~5 min).
@@ -43,7 +75,7 @@ Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this exp
 
 ### Worth knowing
 - Game Center shows the player's **Game Center nickname** next to their score, for everyone; nothing is posted unless they tap Post score.
-- **View leaderboard** opens Apple's own screen. Check (RK7) that it opens on the **current month**; if it shows "all time", note it for backlog #22.
+- **View leaderboard** opens Apple's own screen. Check (RK7) that it opens on the **current week** (weekly since 2026-10-23); if it shows "all time", note it for backlog #22.
 - If `pod install` complains about the deployment target, the pod needs iOS 14 and the project is 15: nothing should need changing.
 
 ---

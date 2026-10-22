@@ -90,8 +90,12 @@ Stories not yet started, in rough priority order. Each becomes a `story-checkpoi
   - **Depends on:** [[story-checkpoint-game-center-scores]]; accounts stage 2 for the Amplify route
 - **22**
   - **Story:** **Leaderboard tables: this month's best, last month's results** (Nigel, 2026-10-22: "a best 3 meter score table refreshed each month, previous month results table etc.")
-  - **Notes:** **Next (Nigel, 2026-10-22): planned as [[story-checkpoint-monthly-tables]]**: this month and last month (the full table, with our own iOS code: the plugin only gives the player's own previous entry); no all-time table for now. The Game Center leaderboard is recurring (monthly), so Apple keeps each month's results. More ranked games later.
+  - **Notes:** **Next (Nigel, 2026-10-22): planned as [[story-checkpoint-monthly-tables]]**: this month and last month (the full table, with our own iOS code: the plugin only gives the player's own previous entry); no all-time table for now. The Game Center leaderboard is recurring, so Apple keeps each period's results. **Update 2026-10-23:** Nigel set it up **weekly** (from 2026-10-23), so the plan becomes this week and last week (to re-confirm before building). More ranked games later.
   - **Depends on:** [[story-checkpoint-game-center-scores]]
+- **23**
+  - **Story:** **Find target time limit: give up after ~5 s and offer Tap the board** (Nigel, 2026-10-23: "it should timeout after 5 or so seconds … This will allow the user to tap on the target rather than waiting a long time")
+  - **Notes:** **Only if testing shows it's needed** (Nigel: "I am not sure it's really an issue"). Today there's no limit, but Find target looks at only one or two pictures, so a long wait is one slow ring-finder run on a hard board (Mark's build 8: 1393 ms). Written up as [[story-checkpoint-find-target-timeout]] (3 tasks: Calibrate, then board taps in Quick draw and two-target Play, then docs). Ask testers for the time shown after the result before picking it up.
+  - **Depends on:** a tester reporting a long search
 
 ## Carry-overs from Live Test
 

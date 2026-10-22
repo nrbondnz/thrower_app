@@ -3,6 +3,8 @@
 ## Story Goal
 Backlog #22. Nigel, 2026-10-22: "a best 3 meter score table refreshed each month, previous month results table etc."; then "add backlog #22 monthly tables next". Show the Ranked leaderboard (`ranked.3m.5x3`, recurring monthly in Game Center: [[story-checkpoint-game-center-scores]]) in the app: **this month's** best scores and **last month's** results, each a table of rank, Game Center nickname and score, with the player's own place. Requirement: [[Rankings]].
 
+> **Update 2026-10-23:** Nigel set the Game Center leaderboard up **weekly** (recurring, from 2026-10-23, 1-week duration), not monthly. "This month / last month" here becomes **this week / last week** unless Nigel wants a second, monthly leaderboard. Re-confirm before Task 1.
+
 ## Decided (Nigel, 2026-10-22)
 - **Last month: the full table**, with our own small piece of iOS code (the `games_services` plugin's `loadPreviousOccurrence` returns only the player's own entry). Behind the same `LeaderboardService` interface.
 - **No all-time table** for now.

@@ -377,7 +377,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Meaning:** The correction rule for a game that can be posted: a score can be lowered to 0 (a bounce-out, or a knife the camera missed added as 0) but never set or added as anything else, so no score can be raised by hand.
   - **Used by:** `GameType.strict`, `Match.setScore` / `byHand` / `addToRound`, `ScoreCorrections` (`strictNote`)
 - **Leaderboard (recurring)**
-  - **Meaning:** A Game Center leaderboard set up in App Store Connect that restarts on a schedule (here each month); a score posted goes to the current period, and Apple keeps earlier periods' results. Shown in Apple's own screen (View leaderboard), each player under their Game Center nickname.
+  - **Meaning:** A Game Center leaderboard set up in App Store Connect that restarts on a schedule (here each week, since 2026-10-23); a score posted goes to the current period, and Apple keeps earlier periods' results. Shown in Apple's own screen (View leaderboard), each player under their Game Center nickname.
   - **Used by:** `Leaderboard`, `LeaderboardService`, `GameCenterLeaderboardService`
 - **Posted (a final score)**
   - **Meaning:** A game whose total went to the leaderboard: posted once only, and its scores can't be corrected afterwards, so the leaderboard always matches Play.
