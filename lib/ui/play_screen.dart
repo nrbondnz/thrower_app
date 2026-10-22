@@ -9,6 +9,7 @@ import '../camera/target_camera.dart';
 import '../game/throw_watcher.dart';
 import '../providers.dart';
 import '../scoring/game_session.dart';
+import '../scoring/game_type.dart';
 import '../scoring/match.dart';
 import '../vision/ellipse.dart';
 import '../vision/motion_detector.dart';
@@ -144,7 +145,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
     if (calibration == null || !calibration.locked) {
       _stopWatcher();
       return Scaffold(
-        appBar: AppBar(title: const Text('Play')),
+        appBar: AppBar(title: Text(playTitle(match))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -170,7 +171,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Play'),
+        title: Text(playTitle(match)),
         actions: [
           if (!match.isOver)
             TextButton(
@@ -267,6 +268,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
     );
   }
 }
+
+/// Play's title: "Ranked · 3 m" for a ranked game, else "Play".
+String playTitle(Match match) => match.type == GameType.ranked ? 'Ranked · $rankedDistance m' : 'Play';
 
 String playStateText(WatchState state) => switch (state) {
       WatchState.watching => 'Ready: throw when it’s your turn.',

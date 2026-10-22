@@ -160,6 +160,15 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'Never stand in the lane to use the phone.',
       'The highest total wins. Finish game ends it early, and every game is kept in History.',
     ]),
+    // Game Center scores story (Nigel, 2026-10-22): strict mode, full games only.
+    const InstructionSection('Ranked games', [
+      'Ranked: 5 × 3 at 3 m is a game whose score can go on the leaderboard: 5 rounds of 3 knives from 3 m, '
+          'one player, scored by the camera. Choose it under Which game? and confirm you are throwing from 3 m, '
+          'measured from the board to the throwing line.',
+      'Strict mode: a score can only be changed to 0, to mark a bounce-out, or a knife the camera missed added '
+          'as 0. No score can be raised by hand.',
+      'Only a full game of 5 rounds can be posted. Finish game ends it early, and it can no longer be posted.',
+    ]),
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',
     ]),

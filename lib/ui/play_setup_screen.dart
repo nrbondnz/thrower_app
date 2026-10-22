@@ -19,7 +19,9 @@ import 'two_target_play_screen.dart';
 /// (two players take turns), with their own lengths. Starts with the last
 /// choice. **Start** keeps a game in progress if the choice is the
 /// same (renaming it if the names changed), and starts a new one if it
-/// changed.
+/// changed. **Ranked** (story-checkpoint-game-center-scores, 2026-10-22) is
+/// one player, 5 rounds, and Start waits for the thrower to confirm they
+/// throw from 3 m.
 class PlaySetupScreen extends ConsumerStatefulWidget {
   const PlaySetupScreen({super.key});
 
@@ -36,6 +38,11 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
   late var _targets = ref.read(playModeProvider).targets;
 
   late var _rounds = _fit(ref.read(gameLengthProvider));
+
+  /// Ranked: the thrower has confirmed the distance.
+  var _distanceConfirmed = false;
+
+  bool get _ranked => _type == GameType.ranked;
 
   /// [rounds] if [_type] offers it, else the type's usual length.
   int _fit(int rounds) => _type.roundChoices.contains(rounds) ? rounds : _type.defaultRounds;
@@ -57,7 +64,7 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
     super.dispose();
   }
 
-  PlayMode get _mode => _players == 1
+  PlayMode get _mode => _players == 1 || _ranked
       ? PlayMode.solo
       : _targets == 1 || _type.handScored
           ? PlayMode.sharedTarget
@@ -115,18 +122,30 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            Text('How many players?', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            SegmentedButton<int>(
-              key: const Key('playPlayers'),
-              segments: const [
-                ButtonSegment(value: 1, label: Text('1 player')),
-                ButtonSegment(value: 2, label: Text('2 players')),
-              ],
-              selected: {_players},
-              onSelectionChanged: (s) => setState(() => _players = s.single),
-            ),
-            if (_players == 2 && !_type.handScored) ...[
+            if (_ranked)
+              CheckboxListTile(
+                key: const Key('playRankedDistance'),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: _distanceConfirmed,
+                onChanged: (v) => setState(() => _distanceConfirmed = v ?? false),
+                title: const Text("I'm throwing from $rankedDistance m"),
+                subtitle: const Text('Measured from the board to the throwing line.'),
+              )
+            else ...[
+              Text('How many players?', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              SegmentedButton<int>(
+                key: const Key('playPlayers'),
+                segments: const [
+                  ButtonSegment(value: 1, label: Text('1 player')),
+                  ButtonSegment(value: 2, label: Text('2 players')),
+                ],
+                selected: {_players},
+                onSelectionChanged: (s) => setState(() => _players = s.single),
+              ),
+            ],
+            if (_players == 2 && !_type.handScored && !_ranked) ...[
               const SizedBox(height: 24),
               Text('How many targets?', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -141,8 +160,8 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
               ),
             ],
             const SizedBox(height: 24),
-            Text(_players == 1 ? 'Name (optional)' : 'Names (optional)', style: theme.textTheme.titleMedium),
-            for (var i = 0; i < _players; i++)
+            Text(mode.players == 1 ? 'Name (optional)' : 'Names (optional)', style: theme.textTheme.titleMedium),
+            for (var i = 0; i < mode.players; i++)
               TextField(
                 key: Key('playName$i'),
                 controller: _names[i],
@@ -166,12 +185,12 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
             else
               Text('${_type.defaultRounds} rounds', key: const Key('playRoundsFixed')),
             const SizedBox(height: 16),
-            Text(_type.handScored ? typeDescription(_type, mode) : modeDescription(mode),
+            Text(_type.handScored || _ranked ? typeDescription(_type, mode) : modeDescription(mode),
                 key: const Key('playModeDescription')),
             const SizedBox(height: 24),
             FilledButton(
               key: const Key('playStart'),
-              onPressed: _start,
+              onPressed: _ranked && !_distanceConfirmed ? null : _start,
               child: const Text('Start'),
             ),
           ],
@@ -181,7 +200,7 @@ class _PlaySetupScreenState extends ConsumerState<PlaySetupScreen> {
   }
 }
 
-/// What Precision and Three targets mean, under the choices.
+/// What Precision, Three targets and Ranked mean, under the choices.
 String typeDescription(GameType type, PlayMode mode) {
   final turns = mode == PlayMode.sharedTarget
       ? ' Take turns: Player 1 throws 3 knives and collects them, then Player 2.'
@@ -194,7 +213,7 @@ String typeDescription(GameType type, PlayMode mode) {
         'changed to a bounce-out (0). A full game can be posted to the leaderboard.',
     GameType.scoring => '',
   };
-  return '$how$turns Score each knife by hand on the score pad.';
+  return type.handScored ? '$how$turns Score each knife by hand on the score pad.' : '$how$turns';
 }
 
 /// What each way of playing means, under the choices.

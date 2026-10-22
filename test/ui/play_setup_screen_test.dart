@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/camera/target_camera.dart';
 import 'package:thrower_app/providers.dart';
+import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/play_screen.dart';
 import 'package:thrower_app/ui/play_setup_screen.dart';
@@ -193,6 +194,42 @@ void main() {
       await start(tester);
       final m = container.read(gameProvider);
       expect((m.nameOf(0), m.players.single.total), ('Jo', 5));
+    });
+  });
+
+  // Ranked (story-checkpoint-game-center-scores, 2026-10-22).
+  group('Ranked', () {
+    Future<void> chooseRanked(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('playGame-ranked')));
+      await tester.pump();
+    }
+
+    FilledButton startButton(WidgetTester tester) => tester.widget<FilledButton>(find.byKey(const Key('playStart')));
+
+    testWidgets('one player, 5 rounds: no players or targets choice', (tester) async {
+      await pumpSetup(tester);
+      await tapSegment(tester, '2 players');
+      await chooseRanked(tester);
+      expect(find.text('How many players?'), findsNothing);
+      expect(find.text('How many targets?'), findsNothing);
+      expect(find.byKey(const Key('playName1')), findsNothing);
+      expect(find.text('5 rounds'), findsOneWidget);
+      expect(description(tester), contains('Scores can only be changed to a bounce-out (0)'));
+    });
+
+    testWidgets('Start waits for the 3 m confirmation, then plays a 5-round ranked game alone', (tester) async {
+      await pumpSetup(tester);
+      await tapSegment(tester, '2 players');
+      await chooseRanked(tester);
+      expect(startButton(tester).onPressed, isNull);
+      await tester.tap(find.byKey(const Key('playRankedDistance')));
+      await tester.pump();
+      expect(startButton(tester).onPressed, isNotNull);
+      await start(tester);
+      expect(find.byType(PlayScreen), findsOneWidget);
+      final game = container.read(gameProvider);
+      expect((game.type, game.mode, game.maxRounds), (GameType.ranked, PlayMode.solo, 5));
+      expect(find.text('Ranked · 3 m'), findsOneWidget);
     });
   });
 }

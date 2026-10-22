@@ -27,11 +27,17 @@ abstract interface class CorrectionHost {
 String addThrowTitle(Match match) =>
     match.type.handScored ? 'Add a throw (0: missed the board)' : 'A throw the camera missed (0: missed the board)';
 
+/// The note on a strict (Ranked) game's popup, which offers only 0.
+const strictNote = 'Ranked game: a score can only be changed to 0 (a bounce-out, or a miss).';
+
 /// The scores a throw can have: 0 and each ring's score, lowest first.
+/// A strict game ([GameType.strict]) offers only 0.
 List<int> scoreChoices(Iterable<int> ringScores) => {0, ...ringScores}.toList()..sort();
 
-/// The popup: [scores] as large buttons and Cancel. Null if cancelled.
-Future<int?> showScorePicker(BuildContext context, {required String title, required List<int> scores, int? current}) =>
+/// The popup: [scores] as large buttons and Cancel, with [note] above
+/// them. Null if cancelled.
+Future<int?> showScorePicker(BuildContext context,
+        {required String title, required List<int> scores, int? current, String? note}) =>
     showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
@@ -41,6 +47,7 @@ Future<int?> showScorePicker(BuildContext context, {required String title, requi
           runSpacing: 12,
           alignment: WrapAlignment.center,
           children: [
+            if (note != null) Text(note, key: const Key('strictNote')),
             for (final s in scores)
               SizedBox(
                 width: 64,
@@ -135,13 +142,17 @@ class ScoreCorrections extends ConsumerWidget {
     );
   }
 
-  List<int> _scores(WidgetRef ref) => scoreChoices([for (final r in ref.read(targetModelProvider).rings) r.score]);
+  List<int> _scores(WidgetRef ref) => ref.read(gameProvider).type.strict
+      ? const [0]
+      : scoreChoices([for (final r in ref.read(targetModelProvider).rings) r.score]);
+
+  String? _note(WidgetRef ref) => ref.read(gameProvider).type.strict ? strictNote : null;
 
   /// Opens the popup with watching paused.
   Future<int?> _pick(BuildContext context, WidgetRef ref, String title, {int? current}) async {
     host.pauseWatching();
     try {
-      return await showScorePicker(context, title: title, scores: _scores(ref), current: current);
+      return await showScorePicker(context, title: title, scores: _scores(ref), current: current, note: _note(ref));
     } finally {
       host.resumeWatching();
     }
@@ -176,7 +187,7 @@ class ScoreCorrections extends ConsumerWidget {
       if (round == null || !context.mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (context) => _RoundEditor(player: player, round: round, scores: scores),
+        builder: (context) => _RoundEditor(player: player, round: round, scores: scores, note: _note(ref)),
       );
     } finally {
       host.resumeWatching();
@@ -211,11 +222,12 @@ class _RoundList extends ConsumerWidget {
 /// An earlier round's throws: tap one to change it, or an empty slot (a
 /// round collected early) to add one. Watching is already paused.
 class _RoundEditor extends ConsumerWidget {
-  const _RoundEditor({required this.player, required this.round, required this.scores});
+  const _RoundEditor({required this.player, required this.round, required this.scores, this.note});
 
   final int player;
   final int round;
   final List<int> scores;
+  final String? note;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -240,6 +252,7 @@ class _RoundEditor extends ConsumerWidget {
                           title: 'Round ${round + 1}, throw ${i + 1}',
                           scores: scores,
                           current: throws[i].score,
+                          note: note,
                         );
                         if (s != null && context.mounted) notifier.setScore(player, round, i, s);
                       }
@@ -249,6 +262,7 @@ class _RoundEditor extends ConsumerWidget {
                                 context,
                                 title: addThrowTitle(ref.read(gameProvider)),
                                 scores: scores,
+                                note: note,
                               );
                               if (s != null && context.mounted) notifier.addToRound(player, round, s);
                             }

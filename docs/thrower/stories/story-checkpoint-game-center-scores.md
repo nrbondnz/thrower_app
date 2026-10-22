@@ -33,6 +33,13 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ### Task 2: The screens
 - **Work:** Ranked under Which game? on Play's setup (players and targets fixed at 1; the 3 m confirmation); in Play, a "Ranked · 3 m" label and the strict popup (Bounce-out (0) / Cancel); the Instructions section.
 - **Verify:** widget tests; on the phone, set up a ranked game and see the strict popup.
+- **Status:** COMPLETE (2026-10-22)
+- **What changed:**
+  - `play_setup_screen.dart`: Ranked hides How many players and targets (always 1 player, one name field, 5 rounds); **I'm throwing from 3 m** (`playRankedDistance`) must be ticked before Start; the description says strict mode and posting (`typeDescription`, no score-pad sentence for Ranked).
+  - `play_screen.dart`: `playTitle`: "Ranked · 3 m" (calibrated or not).
+  - `score_corrections.dart`: in a strict game the popup offers only 0, with `strictNote` ("Ranked game: a score can only be changed to 0 (a bounce-out, or a miss)."), for a score, an empty slot and an earlier round.
+  - `instructions.dart`: a **Ranked games** section (what it is, the 3 m confirmation, strict mode, full games only).
+- **Test Report:** `score_corrections_test.dart` +3 (only 0 with the note; bounce-out sets 0; an empty slot adds only 0); `play_setup_screen_test.dart` +2 (one player and 5 rounds, the strict description; Start waits for 3 m, then a 5-round ranked solo game titled "Ranked · 3 m"); `instructions_test.dart` (the section, in order; strict and full-game sentences). `flutter analyze`: no issues. `flutter test`: 970 passed.
 
 ### Task 3: Posting, behind a leaderboard interface
 - **Work:** `LeaderboardService` (like `AuthService`): `isAvailable`, `signIn`, `submit(leaderboard, score)`, `show(leaderboard)`; a fake for tests; **Post score** and **View leaderboard** at the end of a postable game, showing posted, failed (try again) or not signed in to Game Center. Nothing native yet: the app's service says "not available".

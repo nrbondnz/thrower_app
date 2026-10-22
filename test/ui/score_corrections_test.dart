@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_session.dart';
+import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
+import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/ui/score_corrections.dart';
 
 import 'play_screen_test.dart' show GameWith, SharedGameWith;
@@ -120,4 +122,50 @@ void main() {
     await pump(tester, () => GameWith(2));
     expect(find.byKey(const Key('rounds-0')), findsNothing);
   });
+
+  // Strict mode (story-checkpoint-game-center-scores, Nigel 2026-10-22).
+  group('a Ranked game: strict mode', () {
+    testWidgets('a score offers only 0, with the note why', (tester) async {
+      await pump(tester, () => RankedWith(1));
+      await tester.tap(find.byKey(const Key('slot-0-0')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('pickScore0')), findsOneWidget);
+      for (var s = 1; s <= 5; s++) {
+        expect(find.byKey(Key('pickScore$s')), findsNothing);
+      }
+      expect(find.text(strictNote), findsOneWidget);
+    });
+
+    testWidgets('marking a bounce-out sets 0', (tester) async {
+      await pump(tester, () => RankedWith(2));
+      await tapAndPick(tester, const Key('slot-0-1'), 0);
+      expect(container.read(gameProvider).players.single.total, 4);
+    });
+
+    testWidgets('an empty slot adds only 0', (tester) async {
+      await pump(tester, () => RankedWith(1));
+      await tester.tap(find.byKey(const Key('slot-0-1')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('pickScore3')), findsNothing);
+      await tester.tap(find.byKey(const Key('pickScore0')));
+      await tester.pumpAndSettle();
+      expect(container.read(gameProvider).players.single.rounds.single.throws, hasLength(2));
+    });
+  });
+}
+
+/// A Ranked game with [throws] knives stuck at 4.
+class RankedWith extends GameNotifier {
+  RankedWith(this.throws);
+
+  final int throws;
+
+  @override
+  Match build() {
+    var g = Match(PlayMode.solo, rules: const GameSession(maxRounds: 5), type: GameType.ranked);
+    for (var i = 0; i < throws; i++) {
+      g = g.stuck(4, const TargetPoint(0.1, 0));
+    }
+    return g;
+  }
 }
