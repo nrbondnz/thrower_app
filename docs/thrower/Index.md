@@ -6,6 +6,8 @@ Obsidian knowledge base for **Thrower App**. Open `docs/thrower/` as a vault. Or
 
 - **[[Architecture Index|Architecture]]**
   - **What's Inside:** Design decisions, system diagram, data flow
+- **`AppDesign/`**
+  - **What's Inside:** [[App Design Index]]: how the app should look and feel (brand, themes, navigation, Home, stats, components)
 - **`requirements/`**
   - **What's Inside:** [[Requirements Index]]: what the app should do, by area (setup, play, Game Centre), with what exists today and open questions
 - **`stories/`**
