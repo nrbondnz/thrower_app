@@ -55,7 +55,7 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
 ### Task 4: Game Center (stops for the Mac and App Store Connect)
 - **Work:** the Flutter plugin (likely `games_services`: check it posts to a recurring leaderboard), `GameCenterLeaderboardService`, iOS only; "Be Careful" Review Agent before committing the plugin. Nigel: App Store Connect → Game Center → a **recurring monthly** leaderboard (ID e.g. `ranked.3m.5x3`, whole number, high to low, range 0–75); Xcode (in the foreground) → **+ Game Center** capability; tick Game Center on the app version. Steps written into the Mac Handoff.
 - **Verify:** a TestFlight build: post a score from a ranked game and see it in View leaderboard (sandbox).
-- **Status:** PC side COMPLETE (2026-10-22); **waiting for Nigel** on the Mac and in App Store Connect ([[Mac Handoff]] → 000000 → Game Center setup, before build 11), then the TestFlight check.
+- **Status:** PC side COMPLETE (2026-10-22); **waiting for Nigel** on the Mac and in App Store Connect ([[Mac Handoff]] → 0000000, Build 11), then the TestFlight check.
 - **What changed:**
   - `pubspec.yaml`: `games_services: 5.3.0` (published 2026-08-02; iOS 14+ pod; the app targets iOS 15).
   - `lib/leaderboard/game_center_leaderboard_service.dart` (new): `signIn` (GameKit sign-in, then whether signed in), `submit` (`submitScore` to `ranked.3m.5x3`; Game Center's error throws → Try again), `show`.

@@ -425,7 +425,7 @@ For [[story-checkpoint-board-outlines]] (from build 10; requirement [[Game Type]
 
 ## Ranked Game Checks (added 2026-10-22)
 
-For [[story-checkpoint-game-center-scores]] (requirement [[Rankings]]; why in [[Design Decisions]] → Ranked Games and Game Center): **Ranked: 5 × 3 at 3 m**, strict mode and posting to a monthly Game Center leaderboard. RK0–RK4 and RK9 work on any build with the story (a real board, or the A4 printout with pens in Blu Tack). RK5–RK8 need the **iPhone** with the Game Center setup done ([[Mac Handoff]] → Game Center setup) and a TestFlight build; sandbox scores are kept apart from live ones. Changing a score means going to the phone: only when no one is throwing. Named **RK**n.
+For [[story-checkpoint-game-center-scores]] (requirement [[Rankings]]; why in [[Design Decisions]] → Ranked Games and Game Center): **Ranked: 5 × 3 at 3 m**, strict mode and posting to a monthly Game Center leaderboard. RK0–RK4 and RK9 work on any build with the story (a real board, or the A4 printout with pens in Blu Tack). RK5–RK8 need the **iPhone** with the Game Center setup done ([[Mac Handoff]] → Build 11) and a TestFlight build; sandbox scores are kept apart from live ones. Changing a score means going to the phone: only when no one is throwing. Named **RK**n.
 
 - **RK0 (setup)**
   - **Do:** Home → Play → Which game? → **Ranked: 5 × 3 at 3 m**

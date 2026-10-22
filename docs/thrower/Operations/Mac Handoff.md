@@ -1,34 +1,61 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; latest handover 2026-10-19 (section 0000); since build 9, section 000000 (2026-10-21; Game Center added 2026-10-22). Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 11, section 0000000 (2026-10-22)**; build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
 
 ---
 
-## 000000. Since Build 9 (2026-10-21): for a Future Build 10
+## 0000000. Build 11 (2026-10-22): Ranked Games and Game Center
 
-Build 9 went out from the Mac on 2026-10-21 (`2b14cab`, "Build 1.0.0+9 for TestFlight"). Nothing below needs doing until Nigel wants build 10; then section 00's steps with **`1.0.0+10`**, and add the build to the External testers group.
+**Start here** when Nigel wants build 11. Build 10 is out (`6f2ab96`); everything below came after it.
 
-### What's in it since build 9 (from the PC, pushed to `main`)
-- **Round or four-cornered boards** in Quick draw ([[story-checkpoint-board-outlines]], Nigel 2026-10-21): a board drawn round by finger becomes an oval if it looks round, or **four corners** if it looks square or rectangular, the corners where they were drawn (as the camera sees the board). Throw detection watches the board's own shape, so a knife in a corner counts. Corners can be dragged in Adjust boards (an outline can't be folded). Commits `f378009`, `bdf39f1`, `f645b09`.
-- **No new plugins, permissions or assets** for the boards. `flutter test`: 948 pass on the PC (2026-10-21).
-- **Ranked games and Game Center** (**after build 10**: `6f2ab96` bumped `1.0.0+10` on 2026-10-21, before these commits, so they go out in **build 11**) ([[story-checkpoint-game-center-scores]], Nigel 2026-10-22): **Ranked: 5 × 3 at 3 m** under Which game? (one player, confirm 3 m), **strict mode** (a score can only be changed to 0), and at the end of a full game **Post score** and **View leaderboard** (iPhone only). **New plugin: `games_services` 5.3.0** (Game Center; a pod). Android: its Play Games start-up pieces are removed in `AndroidManifest.xml` (Review Agent, 2026-10-22). Needs the Game Center setup below before the build.
+### What's in it since build 10 (from the PC, pushed to `main`)
+- **Ranked: 5 × 3 at 3 m** ([[story-checkpoint-game-center-scores]], Nigel 2026-10-22), under **Which game?** on Play's setup: one player, 5 rounds of 3, scored by the camera; **Start** waits for "I'm throwing from 3 m". Play's title reads **Ranked · 3 m**. Not offered on a Live test recording.
+- **Strict mode** in a ranked game: tapping a score, an empty slot or an earlier round offers **only 0** (a bounce-out, or a miss), with a note why. No score can be raised by hand, not even a "?" knife.
+- **Posting (iPhone only):** at the end of a full game (5 rounds, **3 knives in each**: missing ones can be added as 0) Play shows **Post score (N)** and **View leaderboard**. Posting is the thrower's choice. Once posted, the score is final: no corrections, and a knife falling out no longer changes it. Not on Android yet (backlog #21).
+- **New plugin: `games_services` 5.3.0** (Game Center; a pod, iOS 14+; the app targets 15). **No `Info.plist` keys** (Game Center needs none). **New capability: Game Center** (step 4 below). On Android its Play Games start-up pieces are removed in `AndroidManifest.xml` (Review Agent, 2026-10-22); nothing to do for that on the Mac.
+- Commits `5e2096a`, `7599aba`, `7a7d357`, `c77dc2a`, `ef13cb7`, `6adaf38`. `flutter test`: **996 pass** on the PC (2026-10-22).
+- **Accounts:** as builds 9 and 10, **without** the backend settings file (`assets/config/amplify_outputs.json`): the app runs signed out exactly as before; no Sign in with Apple capability is needed. (Accounts in a build is section 00000.)
 
-### Game Center setup (Task 4 of [[story-checkpoint-game-center-scores]]), before build 11
-1. **App Store Connect** (Nigel, in the browser): Apps → Thrower → **Services** (Game Center) → **Leaderboards** → **+** → **Recurring**:
+### Steps (iOS work in the foreground, in Xcode: `docs/dont-ask-again.md`)
+1. **Nigel, App Store Connect (browser), first:** Apps → Thrower → **Services** (Game Center) → **Leaderboards** → **+** → **Recurring**:
    - Reference name: `Ranked 3 m 5x3`. **Leaderboard ID: `ranked.3m.5x3`** (exactly: the app posts to it, `Leaderboard.ranked3m`).
    - Score format: Integer. Sort: **High to Low**. Score range: **0 to 75**. Submission type: Best score.
-   - Start: the 1st of next month, 00:00; **duration 1 month**; it restarts automatically.
-   - Localization: English (U.K.), name **"3 m · 5 rounds of 3"**, format "Integer".
-2. `git pull`, `flutter pub get`, **`cd ios && pod install`** (adds the `games_services` pod).
-3. **Xcode, in the foreground (Nigel clicking, Claude explaining):** Runner → Signing & Capabilities → **+ Capability → Game Center**. It adds `com.apple.developer.game-center` to `Runner.entitlements` (made by Sign in with Apple, if that's done; otherwise Xcode creates it, with `CODE_SIGN_ENTITLEMENTS` for Debug, Release and Profile). Commit the entitlements and project changes after the Review Agent.
-4. App Store Connect → the app's version page → tick **Game Center** and add the `ranked.3m.5x3` leaderboard (needed for the App Store release; TestFlight can post before review).
-5. **Privacy labels** (before the App Store, not TestFlight): add **User Content → Gameplay Content** for posted scores ([[Privacy Policy (Draft)]] → Game Center).
-6. **Check on the iPhone (TestFlight):** Settings → Game Center signed in. Play → Ranked → confirm 3 m → play 5 rounds → **Post score** → "Posted to the leaderboard" → **View leaderboard** shows it (sandbox scores are separate from the live ones). If it says to sign in to Game Center while you are signed in, the capability or the leaderboard is missing (steps 1, 3).
+   - Start: the 1st of next month, 00:00; **duration 1 month**; it restarts automatically (Apple keeps each month's results: backlog #22 will show them in the app).
+   - Localization: English (U.K.), name **"3 m · 5 rounds of 3"**, format Integer.
+   - If App Store Connect asks to enable Game Center for the app first, do that (the version page step 8 below is separate).
+2. **Claude:** `git pull` (expect `6adaf38` or later; check `git log --oneline -8`), `flutter pub get`, then `flutter test` (996; the replay tests take ~5 min).
+3. **Claude:** `cd ios && pod install`: adds the **`games_services`** pod, so **`ios/Podfile.lock` changes** (expected; commit it with the build).
+4. **Nigel, in Xcode (Claude explaining):** `open ios/Runner.xcworkspace` → **Runner** target → **Signing & Capabilities** → **+ Capability → Game Center**. There's no `Runner.entitlements` yet, so Xcode **creates** `ios/Runner/Runner.entitlements` (with `com.apple.developer.game-center`) and sets **`CODE_SIGN_ENTITLEMENTS`**. Check it's set for **Debug, Release and Profile** (WhereWillWeVisit needed all three; if only one, add the others in Build Settings). Signing stays automatic with team QCQ64RLD77; Xcode refreshes the provisioning profile with Game Center.
+5. **Claude:** run the **"Be Careful" Review Agent** on the entitlements and `project.pbxproj` changes (identity, signing, the capability only on Runner) before committing them.
+6. **Optional but worth it, Nigel:** a **debug** run on his iPhone from Xcode (destination his iPhone → **Run**) to try posting before uploading. Settings → **Game Center** signed in. Then Play → Ranked → tick 3 m → calibrate → play 5 rounds of 3 (the A4 printout and pens are fine) → **Post score** → "Posted to the leaderboard: N." → **View leaderboard** shows it. Debug and TestFlight builds post to the **sandbox** leaderboard (separate from live scores). If it says to sign in to Game Center while signed in, step 1 or 4 is missing or not yet live (a new leaderboard can take a little while to appear).
+7. **Claude:** bump `pubspec.yaml` to **`version: 1.0.0+11`**, then `flutter build ios --config-only --release`. **Nigel, in Xcode:** destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**.
+8. **Nigel, App Store Connect:** on the app's version page, tick **Game Center** and add the `ranked.3m.5x3` leaderboard (needed for an App Store release; TestFlight posts without it). Before an **App Store** release (not TestFlight): privacy labels **User Content → Gameplay Content** ([[Privacy Policy (Draft)]] → Game Center).
+9. **Claude:** confirm from the Xcode logs (`$TMPDIR/*.xcdistributionlogs`) and App Store Connect (processing, then available); commit the bump, `ios/Podfile.lock`, `Runner.entitlements` and `project.pbxproj`, e.g. `Build 1.0.0+11 for TestFlight (Ranked games, Game Center)`, and `git push origin main`.
+10. **Nigel:** add the build to the **External testers** group ([[Known Issues]]: builds of the same version often skip review).
 
-### Then
-Checks to send: [[Device Test Plan]] → Drawn Board Checks → Round or Four-Cornered Boards (**QA8–QA14**), with whatever of QA0–QA7 is still to do from build 9. With build 11: **Ranked Game Checks (RK0–RK9)**.
+### Checks to send
+- [[Device Test Plan]] → **Ranked Game Checks (RK0–RK10)**: RK0–RK4 and RK10 on any phone; **RK5–RK8 need the iPhone** with Game Center signed in; RK9 is Android (no Post score, no Play Games popup).
+- Still open from builds 9 and 10: QA0–QA14 (drawn boards), BF8 (Mark's real boards).
+
+### Worth knowing
+- Game Center shows the player's **Game Center nickname** next to their score, for everyone; nothing is posted unless they tap Post score.
+- **View leaderboard** opens Apple's own screen. Check (RK7) that it opens on the **current month**; if it shows "all time", note it for backlog #22.
+- If `pod install` complains about the deployment target, the pod needs iOS 14 and the project is 15: nothing should need changing.
+
+---
+
+## 000000. Build 10 (done 2026-10-21): Round or Four-Cornered Boards
+
+Build 10 went out from the Mac on 2026-10-21 (`6f2ab96`, "Build 1.0.0+10 for TestFlight"). Kept as history.
+
+### What was in it since build 9
+- **Round or four-cornered boards** in Quick draw ([[story-checkpoint-board-outlines]], Nigel 2026-10-21): a board drawn round by finger becomes an oval if it looks round, or **four corners** if it looks square or rectangular, the corners where they were drawn (as the camera sees the board). Throw detection watches the board's own shape, so a knife in a corner counts. Corners can be dragged in Adjust boards (an outline can't be folded). Commits `f378009`, `bdf39f1`, `f645b09`, `66c796b`.
+- No new plugins, permissions or assets. `flutter test`: 948 pass on the PC.
+
+### Checks for it
+[[Device Test Plan]] → Drawn Board Checks → Round or Four-Cornered Boards (**QA8–QA14**), with whatever of QA0–QA7 is still to do from build 9.
 
 ---
 
