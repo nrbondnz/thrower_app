@@ -457,6 +457,9 @@ For [[story-checkpoint-game-center-scores]] (requirement [[Rankings]]; why in [[
 - **RK9 (Android)**
   - **Do:** On the Samsung, launch the app; play a full Ranked game
   - **Look for:** No Google Play Games sign-in popup or warning at launch; at the end **no Post score or View leaderboard** (Android can't post yet, backlog #21); RK0–RK4 behave as on the iPhone
+- **RK10 (15 knives; a posted score is final)**
+  - **Do:** In a Ranked game, collect the knives after only 2 throws in one round (walk to the board), then finish all 5 rounds. Then tap that round (Rounds) and add the missing knife as 0. On a later game, post the score, then pull a knife out of the board before collecting
+  - **Look for:** After 5 rounds with a short round: the game is over but **no Post score**; after adding the 0: **Post score** appears. After posting, pulling a knife out **doesn't change** the total on Play or in History
 
 ## When Results Come Back
 

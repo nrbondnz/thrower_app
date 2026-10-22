@@ -340,6 +340,13 @@ class GameNotifier extends Notifier<Match> {
   /// again (e.g. its knives being collected after the end).
   String? _kept;
 
+  /// The score is being posted, or was ([ScorePostNotifier]): knives falling
+  /// out no longer change it.
+  var _final = false;
+
+  /// Marks this game's score final (posting it), or not (the post failed).
+  void markFinal(bool isFinal) => _final = isFinal;
+
   /// A new game whenever the camera (live camera ↔ a recording), the play
   /// mode, the game type or the game length changes (a length the type
   /// doesn't offer is its [GameType.defaultRounds]). Renaming the players renames this game
@@ -355,6 +362,7 @@ class GameNotifier extends Notifier<Match> {
     _knives.clear();
     _finishedAt = null;
     _kept = null;
+    _final = false;
     // A ranked game is one player's, whatever mode was last chosen.
     final played = type == GameType.ranked ? PlayMode.solo : mode;
     return Match(played, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider), type: type);
@@ -362,6 +370,7 @@ class GameNotifier extends Notifier<Match> {
 
   /// The same mode, type, length and names, from the start.
   void newGame() {
+    _final = false;
     _knives.clear();
     _finishedAt = null;
     _kept = null;
@@ -408,6 +417,9 @@ class GameNotifier extends Notifier<Match> {
     // knives, so one falling out can't zero a real throw).
     final kind = event.outcome.kind;
     if (!state.takesThrowAt(board) && (kind == ThrowOutcomeKind.stuck || kind == ThrowOutcomeKind.bounceOut)) return;
+    // A posted score is final (Nigel, 2026-10-22): a knife falling out after
+    // posting doesn't change the game, so Play matches the leaderboard.
+    if (kind == ThrowOutcomeKind.fellOut && _final) return;
     final before = state;
     _apply(kind, event, calibration, board);
     if (state.isOver && !identical(state, before)) _keep();
@@ -516,16 +528,19 @@ class ScorePostNotifier extends Notifier<ScorePost> {
     }
 
     state = ScorePost.posting;
+    final game = ref.read(gameProvider.notifier)..markFinal(true);
     try {
       if (!await service.signIn()) {
         settle(ScorePost.signedOut);
-        return;
+      } else {
+        await service.submit(Leaderboard.ranked3m, match.players.single.total);
+        settle(ScorePost.posted);
       }
-      await service.submit(Leaderboard.ranked3m, match.players.single.total);
-      settle(ScorePost.posted);
     } catch (_) {
       settle(ScorePost.failed);
     }
+    // Not posted after all: the game goes on counting knives falling out.
+    if (identical(ref.read(gameProvider), match) && state != ScorePost.posted) game.markFinal(false);
   }
 }
 

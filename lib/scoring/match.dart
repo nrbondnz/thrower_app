@@ -200,9 +200,16 @@ class Match {
   /// be set or added by hand; anything else is refused.
   bool _refused(int score) => type.strict && score != 0;
 
-  /// A ranked game played to the end by one player: its total can be posted
-  /// to the leaderboard (Nigel, 2026-10-22: full games only).
-  bool get postable => type == GameType.ranked && players.length == 1 && isOver && !finishedEarly;
+  /// A ranked game played to the end by one player, every round with all
+  /// its throws (Nigel, 2026-10-22: full games only, 5 sets of 3; a knife
+  /// missing from a round collected early can be added as 0): its total can
+  /// be posted to the leaderboard.
+  bool get postable =>
+      type == GameType.ranked &&
+      players.length == 1 &&
+      isOver &&
+      !finishedEarly &&
+      players.single.rounds.every((r) => r.throws.length >= throwsPerRound);
 
   /// [player]'s throw [throwIndex] of round [roundIndex] fell out: 0.
   Match fellOut(int player, int roundIndex, int throwIndex) =>

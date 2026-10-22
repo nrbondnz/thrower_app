@@ -7,12 +7,15 @@ import 'package:thrower_app/camera/recorded_camera.dart';
 import 'package:thrower_app/leaderboard/leaderboard_service.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_session.dart';
+import 'package:thrower_app/vision/throw_classifier.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/ui/post_score_panel.dart';
 import 'package:thrower_app/ui/score_corrections.dart';
 
+import '../game/game_notifier_test.dart' show calibration, event, stuckAt;
+import '../history/memory_game_history.dart';
 import '../ui/score_corrections_test.dart' show FakeHost;
 
 /// Stands in for Game Center: records what was posted and shown.
@@ -236,6 +239,47 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('viewLeaderboardFailed')), findsOneWidget);
       expect(board.shown, isEmpty);
+    });
+  });
+
+  // Nigel, 2026-10-22: post at the end if you want to share it; once posted,
+  // the score is final.
+  group('a posted score is final', () {
+    /// A live ranked game played by the camera: 15 bulls, the last round's
+    /// knives not yet collected.
+    Future<ProviderContainer> played() async {
+      final c = ProviderContainer(overrides: [
+        leaderboardServiceProvider.overrideWithValue(board),
+        gameHistoryProvider.overrideWithValue(MemoryGameHistory()),
+      ]);
+      addTearDown(c.dispose);
+      c.listen(scorePostProvider, (_, _) {});
+      c.read(gameTypeProvider.notifier).choose(GameType.ranked);
+      final game = c.read(gameProvider.notifier);
+      final cal = calibration();
+      for (var r = 0; r < 5; r++) {
+        for (var i = 0; i < 3; i++) {
+          game.onEvent(stuckAt(500, 400, r * 3 + i), cal);
+        }
+        if (r < 4) game.onEvent(event(ThrowOutcomeKind.boardVisit), cal);
+      }
+      return c;
+    }
+
+    test('a knife falling out after posting changes nothing', () async {
+      final c = await played();
+      expect(c.read(gameProvider).players.single.total, 75);
+      await c.read(scorePostProvider.notifier).post();
+      c.read(gameProvider.notifier).onEvent(event(ThrowOutcomeKind.fellOut, id: 14), calibration());
+      expect(c.read(gameProvider).players.single.total, 75);
+    });
+
+    test('before posting, a knife falling out still scores 0 (and that is what can be posted)', () async {
+      final c = await played();
+      c.read(gameProvider.notifier).onEvent(event(ThrowOutcomeKind.fellOut, id: 14), calibration());
+      expect(c.read(gameProvider).players.single.total, 70);
+      await c.read(scorePostProvider.notifier).post();
+      expect(board.posted.single.$2, 70);
     });
   });
 }

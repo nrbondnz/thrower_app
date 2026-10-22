@@ -116,3 +116,8 @@ IN PROGRESS: plan approved 2026-10-22 ("yes, go ahead"); run whole, committing p
   - **G2:** Post score appears as soon as the last knife lands, before the knives are collected; a knife that then falls out lowers Play and History but not a score already posted. Offer Post score only after the last round's knives are collected, or ignore falling out once posted?
   - **G5:** a round collected early (fewer than 3 knives) still counts as a round, so a "full" game can have fewer than 15 knives. Require 3 throws in every round (strict mode can add a 0) before posting?
   - **G8:** in strict mode a knife the camera saw stick but couldn't place scores 0 and can't be set to its real score. Accept (camera failures cost points), or allow setting such a "?" throw?
+- **Nigel's answers (2026-10-22), built the same day:**
+  - **G2:** "The user should choose to post at the end of the game if they want to share their score": Post score stays an optional choice at the end; a posted score is final (`GameNotifier.markFinal` while posting and after: a knife falling out no longer changes it; undone if the post fails).
+  - **G5:** yes, 3 per round: `Match.postable` needs every round's 3 throws (missing ones can be added as 0).
+  - **G8:** keep a "?" throw at 0; the Instructions say so.
+  - Tests: `game_type_test.dart` +2 (a short round: over but not postable; the 0 added: postable); `score_post_test.dart` +2 (a knife falling out after posting changes nothing; before posting it scores 0 and the lower total is posted); `instructions_test.dart` (15 knives, "?" stays 0). Device check RK10. `flutter test`: 996 passed.

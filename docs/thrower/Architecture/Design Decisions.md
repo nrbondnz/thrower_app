@@ -296,6 +296,12 @@ Folders are created when their first code arrives, never empty "just in case". N
 
 **Nigel, 2026-10-22:** "How can I set up Game Center to be able to store scores? There would be a best 3 meter score table refreshed each month, previous month results table etc. But to start I would just like to allow users to post scores for particular games, lets say 5 sets of 3 knives at 3 meters."
 
+### Decided after the traceability check (Nigel, 2026-10-22)
+- **Posting is the thrower's choice at the end of the game** ("The user should choose to post at the end of the game if they want to share their score"). Post score shows once the game is over, as built. **A posted score is final:** from the moment posting starts (`GameNotifier.markFinal`), a knife falling out no longer changes the game, so Play and History keep matching the leaderboard; if the post fails, falling out counts again. Before posting, a knife falling out still scores 0, and that lower total is what gets posted.
+- **"5 sets of 3": every round needs its 3 throws** (`Match.postable`). A round collected early (fewer than 3 knives) leaves the game over but not postable until the missing knives are added as 0 (strict mode allows 0).
+- **A "?" throw stays at 0** (a knife the camera saw stick but couldn't place): strict means no score is raised by hand, so a camera miss costs the thrower; the Instructions say so.
+- Also fixed then: no Ranked on a Live test recording (and no posting from one); a post still going when New game is tapped doesn't touch the new game; a ranked game is always solo (`GameNotifier.build`); corrections are locked while posting too; View leaderboard signs in first and says if it can't open.
+
 ### Decision: one ranked game, Ranked: 5 × 3 at 3 m
 - **`GameType.ranked`** ("Ranked: 5 × 3 at 3 m", `roundChoices` [5]): 5 rounds of 3 knives (0–75), **one player**, one target, **scored by the camera** (not the score pad: `handScored` is now Precision and Three targets only).
 - **One player:** Game Center posts for whoever is signed in to Game Center on that iPhone, so a two-player game would have no one to post the second score for. `Match.postable` requires one player.

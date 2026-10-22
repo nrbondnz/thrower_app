@@ -276,4 +276,28 @@ void main() {
       });
     });
   });
+
+  // Nigel, 2026-10-22: "5 sets of 3": every round needs its 3 throws.
+  group('Ranked: every round needs 3 throws to post', () {
+    /// 5 rounds of three 4s, but round 2 collected after 2 knives.
+    Match shortRound() {
+      var m = game(GameType.ranked);
+      for (var r = 0; r < 5; r++) {
+        for (var i = 0; i < (r == 1 ? 2 : 3); i++) {
+          m = m.stuck(4, const TargetPoint(0.1, 0));
+        }
+        m = m.boardVisited();
+      }
+      return m;
+    }
+
+    test('a round collected early: the game is over but can\'t be posted', () {
+      final m = shortRound();
+      expect((m.isOver, m.postable), (true, false));
+    });
+
+    test('the missing knife added as 0: it can be posted', () {
+      expect(shortRound().addToRound(0, 1, 0).postable, isTrue);
+    });
+  });
 }
