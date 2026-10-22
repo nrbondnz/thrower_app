@@ -17,22 +17,29 @@ class GameRecord {
     this.names = const [],
     this.recording,
     this.type = GameType.scoring,
+    this.knives,
   });
 
   /// [match], finished at [at]; [recording] names the Live test recording it
   /// was played on (null for the camera).
   factory GameRecord.fromMatch(Match match, {required DateTime at, String? recording}) => GameRecord(
-        id: '${at.microsecondsSinceEpoch}',
-        finishedAt: at,
-        mode: match.mode,
-        rounds: match.maxRounds,
-        players: [
-          for (final g in match.players) [for (final r in g.rounds) r.total]
+    id: '${at.microsecondsSinceEpoch}',
+    finishedAt: at,
+    mode: match.mode,
+    rounds: match.maxRounds,
+    players: [
+      for (final g in match.players) [for (final r in g.rounds) r.total],
+    ],
+    names: match.names,
+    recording: recording,
+    type: match.type,
+    knives: [
+      for (final g in match.players)
+        [
+          for (final r in g.rounds) [for (final t in r.throws) t.score],
         ],
-        names: match.names,
-        recording: recording,
-        type: match.type,
-      );
+    ],
+  );
 
   /// The format [toJson] writes; [fromJson] reads this version and earlier
   /// ones (version 1 had no names; versions 1 and 2 only Scoring games).
@@ -58,6 +65,12 @@ class GameRecord {
 
   /// Which game it was: Scoring for games kept before version 3.
   final GameType type;
+
+  /// Each knife's score, by player then round (app-design story,
+  /// 2026-10-23, for the stats: `ThrowStats`). Null for a game kept before
+  /// then, which has only its round totals. An extra field, so the format's
+  /// [version] is unchanged: older builds read the game and ignore it.
+  final List<List<List<int>>>? knives;
 
   /// [player]'s name, or "Player N" without one.
   String nameOf(int player) => names.elementAtOrNull(player) ?? playerNumber(player);
@@ -89,17 +102,18 @@ class GameRecord {
   bool get draw => players.length > 1 && winner == null;
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'finishedAt': finishedAt.toUtc().toIso8601String(),
-        'mode': mode.name,
-        'rounds': rounds,
-        'players': players,
-        if (names.any((n) => n != null)) 'names': names,
-        if (recording != null) 'recording': recording,
-        // Written only for the newer types, so a Scoring game stays as
-        // version 2 wrote it.
-        if (type != GameType.scoring) 'type': type.name,
-      };
+    'id': id,
+    'finishedAt': finishedAt.toUtc().toIso8601String(),
+    'mode': mode.name,
+    'rounds': rounds,
+    'players': players,
+    if (names.any((n) => n != null)) 'names': names,
+    if (recording != null) 'recording': recording,
+    // Written only for the newer types, so a Scoring game stays as
+    // version 2 wrote it.
+    if (type != GameType.scoring) 'type': type.name,
+    'knives': ?knives,
+  };
 
   /// Throws [FormatException] if [json] isn't a record this version can
   /// read.
@@ -116,25 +130,47 @@ class GameRecord {
     if (mode == null) throw FormatException('unknown mode "$modeName"');
     final players = [
       for (final p in field<List<Object?>>('players'))
-        if (p is List<Object?>) [for (final r in p) r is int ? r : throw const FormatException('a round total is not a number')]
-        else throw const FormatException('a player is not a list of rounds'),
+        if (p is List<Object?>)
+          [for (final r in p) r is int ? r : throw const FormatException('a round total is not a number')]
+        else
+          throw const FormatException('a player is not a list of rounds'),
     ];
     if (players.length != mode.players) throw FormatException('${players.length} players for $modeName');
     final names = switch (json['names']) {
       null => const <String?>[],
-      final List<Object?> list when list.length == players.length && list.every((n) => n == null || n is String) =>
-        [for (final n in list) cleanName(n as String?)],
+      final List<Object?> list when list.length == players.length && list.every((n) => n == null || n is String) => [
+        for (final n in list) cleanName(n as String?),
+      ],
       _ => throw const FormatException('"names" is not a name (or null) per player'),
     };
     final type = switch (json['type']) {
       null => GameType.scoring,
-      final String name => GameType.values.where((t) => t.name == name).firstOrNull ??
-          (throw FormatException('unknown game type "$name"')),
+      final String name =>
+        GameType.values.where((t) => t.name == name).firstOrNull ??
+            (throw FormatException('unknown game type "$name"')),
       _ => throw const FormatException('"type" is not a game type'),
     };
+    // Each knife's score: a game kept before 2026-10-23 has none, and one
+    // that can't be read loses them, not the game.
+    List<List<List<int>>>? knives;
+    try {
+      knives = switch (json['knives']) {
+        final List<Object?> ps when ps.length == players.length => [
+          for (final p in ps)
+            [
+              for (final r in p as List<Object?>) [for (final k in r as List<Object?>) k as int],
+            ],
+        ],
+        _ => null,
+      };
+    } on TypeError {
+      knives = null;
+    }
     return GameRecord(
+      knives: knives,
       id: field<String>('id'),
-      finishedAt: DateTime.tryParse(field<String>('finishedAt'))?.toLocal() ??
+      finishedAt:
+          DateTime.tryParse(field<String>('finishedAt'))?.toLocal() ??
           (throw const FormatException('finishedAt is not a date')),
       mode: mode,
       rounds: field<int>('rounds'),

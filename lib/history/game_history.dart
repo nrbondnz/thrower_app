@@ -134,7 +134,10 @@ class FileGameHistory implements GameHistory {
     try {
       await file.parent.create(recursive: true);
       await temp.writeAsString(
-        jsonEncode({'version': _versionFor(games), 'games': [for (final g in games) g.toJson()]}),
+        jsonEncode({
+          'version': _versionFor(games),
+          'games': [for (final g in games) g.toJson()],
+        }),
         flush: true,
       );
       await temp.rename(file.path);
