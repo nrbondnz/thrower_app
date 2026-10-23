@@ -121,8 +121,8 @@ IN PROGRESS: Tasks 1–6 built (2026-10-23); Task 7 (docs, traceability, device 
 
 ### Task 7: Docs, traceability, device checks, handoff
 - **Status:** IN PROGRESS
-- **Done:** Docs Agent (below); Device Test Plan → App Design Checks (AD0–AD11); Mac Handoff → Build 14.
-- **To do:** Traceability Agent; fix the in-app Instructions' references to the old Home; the device checks.
+- **Done:** Docs Agent (below); Traceability Agent (report below, fixes in `db1788e`); Device Test Plan → App Design Checks (AD0–AD11); Mac Handoff → Build 14.
+- **To do:** fix the in-app Instructions' references to the old Home; the device checks.
 
 ---
 
@@ -151,3 +151,109 @@ IN PROGRESS: Tasks 1–6 built (2026-10-23); Task 7 (docs, traceability, device 
 - Older device checks (H, C, PT, RK…) say "Home → Play", "Home → History" and so on. App Design Checks starts with a note mapping them to the tabs, rather than rewriting each.
 - The in-app Instructions (`lib/ui/instructions.dart`) still describe the old Home (Play, History, Calibrate target and Live test on Home). To fix in Task 7.
 
+
+---
+
+## Traceability Report — 2026-10-23
+
+### Coverage Summary
+- Requirements and decisions checked: 12.
+- Fully covered (requirement, design, code, test): 11, after the fixes below.
+- Covered, but with an open layout gap on small phones: 1 (Play's large total).
+- Orphan code (no requirement): none found.
+
+### Matrix
+- **Themes follow the phone; Setup → Appearance (Phone, Light, Dark)**
+  - Design: [[Colour and Themes]]; [[Design Decisions]] → App Design.
+  - Code: `AppTheme`, `themeModeOf`, `AppearanceNotifier`, `FileAppearanceStore`, `lib/main.dart`.
+  - Test: `appearance_test.dart`; `app_shell_test.dart` 'Appearance: choosing Dark makes the app dark, and keeps it'.
+  - Status: ✅ Covered. The setting persists: it's saved on each change and loaded at start.
+- **The camera screens stay dark**
+  - Code: `CameraTheme` round Play, two-target Play, Quick draw (recording and live), Calibrate and the score pad.
+  - Test: `appearance_test.dart` 'a camera screen is dark inside a light app'; `play_screen_test.dart` 'dialogs over Play are dark in a light app' (new).
+  - Status: ✅ Covered, after fix 2.
+- **Bottom bar: Home, Throw, History, Setup**
+  - Design: [[Navigation and Structure]]. Code: `AppShell`. Test: `app_shell_test.dart`.
+  - Status: ✅ Covered.
+- **Home: hero, last session, Start throwing, quick actions**
+  - Design: [[Home Screen]]. Code: `HomeScreen`, `LastSessionCard`, `lastSessionTiles`.
+  - Test: `app_shell_test.dart`: one thrower, totals only, the kind, a tap opens History. New: two throwers; a Live test session passed over.
+  - Status: ✅ Covered. Two throwers show `countedTotals` under `nameOf`, as History's result does.
+- **Throw: Leaderboard on the iPhone only**
+  - Code: `ThrowScreen`; `leaderboardServiceProvider` is null unless `main` overrides it on iOS.
+  - Test: `app_shell_test.dart`: no card without a service; the card opens Game Center's.
+  - Status: ✅ Covered.
+- **Setup → Account only with accounts**
+  - Code: `SetupScreen` (`authServiceProvider != null`). Test: `account_screen_test.dart`.
+  - Status: ✅ Covered.
+- **Each knife kept with a session (`GameRecord.knives`)**
+  - Design: [[Design Decisions]] → App Design (an extra field; the version stays 3).
+  - Code: `GameRecord.fromMatch`, `toJson`, `fromJson`. The backup stores `jsonEncode(record.toJson())` and reads it with `GameRecord.fromJson` (`AmplifyBackup.put`, `list`).
+  - Test: `throw_stats_test.dart` 'kept through JSON' (the same encode and decode as the backup), 'a session kept before then reads with none', 'knives that can't be read are dropped'. Also `keeping_games_test.dart` (new, fix 1).
+  - Status: ✅ Covered. `AmplifyBackup` itself is still checked on the device.
+- **Stats: sessions, knives, per knife, 5s, hit rate, best ranked or best round**
+  - Design: [[History and Stats]]. Code: `ThrowStats`, `perKnifeText`, `hitRateText`, `StatsCard`.
+  - Test: `throw_stats_test.dart` (14), `history_screen_test.dart` (4).
+  - Status: ✅ Covered. Each stat matches its definition:
+    - Live test sessions are left out.
+    - Per knife is to one decimal place.
+    - A 0 counts as thrown, not hit.
+    - Best ranked comes only from a ranked session not finished early.
+    - Older sessions count only towards Sessions and Best, with the note.
+- **`keptGamesProvider` read again (session kept, delete, clear, tab change, back from a pushed screen)**
+  - Code: `GameNotifier._keep`, `HistoryScreen._reload`, `AppShell._go`, `openScreen`.
+  - Test: `keeping_games_test.dart` 'a finished session is read again into the kept sessions' (new); `app_shell_test.dart` 'a session kept since: Home and History show it after a tab change' (new); `history_screen_test.dart` (delete, clear).
+  - Status: ✅ Covered.
+    - A session kept from Play (pushed by `PlaySetupScreen`) refreshes through `_keep` itself, and `openScreen` reads the sessions again on the way back.
+    - History refreshes while it's on screen, because it watches the provider.
+- **Play: the total large**
+  - Design: [[Throwing Screens]]. Code: `PlayScreen` (`playTotal`). Test: `play_screen_test.dart`.
+  - Status: 🟡 Covered, but see recommended fix 1 (small phones).
+- **"Throwing" and "session", not "game", in new words**
+  - All new words on Home, Throw, Setup and History's stats follow it. Older words on History stay as they are (see question 2).
+  - Status: ✅ for new words.
+- **In-app Instructions point to the tabs**
+  - Done in Task 7 (commit `db741f8`); tested by `instructions_test.dart`.
+  - Status: ✅ Covered.
+
+### Gaps Found and Fixed (commit `db1788e`)
+1. **A missed knife added after the end wasn't kept.**
+   - Cause: `GameNotifier._keep` skipped a save when the round totals hadn't changed.
+   - Effect: adding a 0 to a round collected early (the Ranked rules allow it) changes the knives, and so Knives and Hit rate, but no total. The kept session kept the old knives.
+   - Fix: `_keep` now compares each knife.
+   - Files: `lib/providers.dart`.
+   - Test: `keeping_games_test.dart` 'a 0 added after the end to a round collected early re-saves the game with that knife'.
+2. **Some dialogs over camera screens were light in Light mode.**
+   - Cause: `showDialog` takes its theme from the context it's given, and each screen's own State context is above its `CameraTheme`.
+   - Effect: Reset this game? (Play and two-target Play), Finish the game now? and Finish the match now? came up light over a dark screen.
+   - Fix: the three dialogs are wrapped in `CameraTheme`. Score corrections and the names dialog already used a context inside the screen, so they were already dark.
+   - Files: `lib/ui/play_screen.dart`, `lib/ui/two_target_play_screen.dart`, `lib/ui/live_quick_draw_screen.dart`.
+   - Test: `play_screen_test.dart` 'dialogs over Play are dark in a light app' (2 tests; both fail without the fix).
+3. **Missing tests, now added:**
+   - Home's last session for two throwers.
+   - Home's last session skips a newer Live test session.
+   - Home and History read the sessions again on a tab change.
+   - The kept sessions are read again when a session finishes.
+   - Files: `test/ui/app_shell_test.dart`, `test/history/keeping_games_test.dart`.
+
+### Test Results
+- `flutter analyze`: no issues.
+- The affected tests all passed: 438 passed, 0 failed. They are `play_screen`, `two_target_play_screen`, `live_quick_draw_screen`, `quick_draw_screen`, `score_pad_screen`, `score_corrections`, `app_shell`, `history_screen`, `account_screen`, `widget_test`, `test/history`, `test/settings` and `test/game`.
+
+### Recommended Fixes (not made: no more lib/test changes while the Mac build runs)
+1. **Play on small phones (Task 6).** From a one-off widget check with a 24 pt status bar and a 48 pt navigation bar:
+   - On 360 × 640, one thrower at game over: the camera area drops from 150 to 40 pt.
+   - On 320 × 568, one thrower at game over: the bottom panel overflows by 51 pt. It fitted before Task 6.
+   - On an iPhone SE (375 × 667) at game over: the camera area drops from 197 to 118 pt.
+   - Mid-game it fits everywhere, but the camera has about 80 pt less.
+   - Options: let the bottom panel scroll, with a cap on its height; or show a smaller total at game over (the game text already gives the final total).
+2. **Play overflows by 24 pt to the right on a 320 pt wide phone.** The cause is likely the AppBar's Finish game and Reset game, or the slot row. It was there before this story.
+3. **History overflows by 61 pt to the right at twice the text size.** The cause is likely the AppBar's Clear history. Home, Throw and Setup fit at 1.0, 1.3 and 2.0 times the text size on a 320 pt screen.
+4. **Home's quick-action cards** can be different heights when "QUICK DRAW" wraps on a narrow phone. Cosmetic.
+5. **Best ranked** counts any ranked session not finished early. That includes one with a round collected after fewer than 3 knives, which can't be posted. It could use the same test as `Match.postable`.
+
+### Open Questions
+1. History lists Live test sessions, but the stats and the Sessions count leave them out, so the count can differ from the list. Should the list mark Live test sessions, leave them out, or stay as it is?
+2. History still says "No games yet", "Each game of Play is kept here", "Every kept game is removed" and "Delete this game", under a SESSIONS heading. Change them in the planned wording pass, with "Which game?" and "Game over"?
+3. Play on small phones (recommended fix 1): scroll the panel, or show a smaller total at game over?
+4. Best ranked: count only sessions that could be posted (recommended fix 5)?
