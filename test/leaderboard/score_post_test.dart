@@ -157,6 +157,31 @@ void main() {
       });
     }
 
+    // Traceability (2026-10-23): a score "changed" by hand to the value it
+    // had changes no knife, but the session was still changed by hand: the
+    // end panel stops offering Post score, so History mustn't offer it either.
+    test('a normal 5 × 3 game: a score confirmed by hand at its own value after the end is kept as changed',
+        () async {
+      final history = MemoryGameHistory();
+      final c = ProviderContainer(overrides: [
+        gameProvider.overrideWith(() => RankedGame(type: GameType.scoring, rounds: 4)),
+        leaderboardServiceProvider.overrideWithValue(board),
+        gameHistoryProvider.overrideWithValue(history),
+      ]);
+      addTearDown(c.dispose);
+      final game = c.read(gameProvider.notifier);
+      final cal = calibration();
+      for (var k = 0; k < 3; k++) {
+        game.onEvent(stuckAt(500, 400, k), cal); // the last round, seen by the camera: kept
+      }
+      await Future<void>.delayed(Duration.zero);
+      expect(history.games.single.changedByHand, isFalse);
+      final score = c.read(gameProvider).players.single.rounds.first.throws.first.score;
+      game.setScore(0, 0, 0, score); // picked its own value in the score picker
+      await Future<void>.delayed(Duration.zero);
+      expect(history.games.single.changedByHand, isTrue);
+    });
+
     test('a new game can be posted again', () async {
       final c = containerWith(RankedGame.new);
       await c.read(scorePostProvider.notifier).post();

@@ -143,4 +143,71 @@ void main() {
       expect(played(GameType.scoring, rounds: 3).postable, isFalse);
     });
   });
+
+  // Traceability (2026-10-23): what counts as a hand change. A knife that
+  // fell out, or a "?" (stuck, where it went in not found), is what the
+  // camera saw, not a score set by hand.
+  group('changed by hand, or not', () {
+    /// A normal 5 × 3 session whose first knife is a "?" (scores 0).
+    Match withUnscored() {
+      var m = Match(PlayMode.solo, rules: const GameSession(maxRounds: 5), type: GameType.scoring);
+      for (var r = 0; r < 5; r++) {
+        for (var k = 0; k < 3; k++) {
+          m = r == 0 && k == 0 ? m.stuck(4, null) : m.stuck(4, p);
+        }
+        m = m.boardVisited();
+      }
+      return m;
+    }
+
+    /// A session of [type] whose round 2 was collected after 2 knives.
+    Match shortRound(GameType type) {
+      var m = Match(PlayMode.solo, rules: const GameSession(maxRounds: 5), type: type);
+      for (var r = 0; r < 5; r++) {
+        for (var k = 0; k < (r == 1 ? 2 : 3); k++) {
+          m = m.stuck(4, p);
+        }
+        m = m.boardVisited();
+      }
+      return m;
+    }
+
+    // (name, session, changed by hand, postable at the end, History's status)
+    final cases = <(String, Match, bool, bool, PostStatus)>[
+      (
+        'a knife that fell out (Ranked)',
+        played(GameType.ranked, change: (m) => m.fellOut(0, 0, 0)),
+        false,
+        true,
+        PostStatus.canPost,
+      ),
+      (
+        'a knife that fell out (normal 5 × 3)',
+        played(GameType.scoring, change: (m) => m.fellOut(0, 0, 0)),
+        false,
+        true,
+        PostStatus.canPost,
+      ),
+      ('a "?" (normal 5 × 3)', withUnscored(), false, true, PostStatus.canPost),
+      (
+        'a missing knife added as 0 (Ranked: strict mode allows it)',
+        shortRound(GameType.ranked).addToRound(0, 1, 0),
+        true,
+        true,
+        PostStatus.canPost,
+      ),
+      (
+        'a missing knife added as 0 (normal 5 × 3)',
+        shortRound(GameType.scoring).addToRound(0, 1, 0),
+        true,
+        false,
+        const PostStatus(PostState.cannotPost, NotPostable.changedByHand),
+      ),
+    ];
+    for (final (name, m, changed, postable, status) in cases) {
+      test('$name: at the end and in History', () {
+        expect((m.changedByHand, m.postable, postStatusOf(kept(m), now)), (changed, postable, status));
+      });
+    }
+  });
 }

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/game_record.dart';
 import 'package:thrower_app/history/post_status.dart';
+import 'package:thrower_app/history/test_sessions.dart';
+import 'package:thrower_app/leaderboard/leaderboard_service.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/ui/history_screen.dart';
@@ -95,6 +99,60 @@ void main() {
     expect(board.posted, isEmpty);
     expect(history.games.single.posted, isFalse);
     expect(find.byKey(const Key('historyPostMessage')), findsOneWidget);
+  });
+
+  // Traceability (2026-10-23): History's list is read again after a post.
+  testWidgets('back on the list after posting, the session says Posted', (tester) async {
+    await pumpList(tester, [ranked]);
+    await tester.tap(find.byKey(Key('historyGame-${ranked.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('historyPostScore')));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(statusOf(tester, ranked), 'Posted');
+  });
+
+  // Traceability (2026-10-23): a post that went is kept as Posted even if the
+  // page was left while it was going (else it could be posted twice).
+  testWidgets('leaving the page while posting: still kept as Posted', (tester) async {
+    await pumpList(tester, [ranked]);
+    board.hold = Completer<void>();
+    await tester.tap(find.byKey(Key('historyGame-${ranked.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('historyPostScore')));
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    board.hold!.complete();
+    await tester.pumpAndSettle();
+    expect((board.posted.length, history.games.single.posted), (1, true));
+    expect(statusOf(tester, ranked), 'Posted');
+  });
+
+  testWidgets('a test session posts to the test leaderboard, never the live one', (tester) async {
+    final test = makeTestSessions(now, count: 1).single;
+    await pumpList(tester, [test]);
+    await tester.tap(find.byKey(Key('historyGame-${test.id}')));
+    await tester.pumpAndSettle();
+    if (test.type != GameType.ranked) {
+      await tester.tap(find.byKey(const Key('postAt3m')));
+      await tester.pump();
+    }
+    await tester.tap(find.byKey(const Key('historyPostScore')));
+    await tester.pumpAndSettle();
+    expect(board.posted.single.$1, Leaderboard.test3m);
+  });
+
+  testWidgets('a small phone with large text: the status line fits', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final test = makeTestSessions(now, count: 1).single.markedPosted();
+    await pumpList(tester, [changed, test]);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('on Android: Can be posted, but no Post score', (tester) async {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/game_record.dart';
 import 'package:thrower_app/leaderboard/leaderboard_service.dart';
+import 'package:thrower_app/history/test_sessions.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
@@ -49,6 +50,19 @@ void main() {
       expect(find.byType(LeaderboardsScreen), findsOneWidget);
       expect(find.text('3 M KNIVES · 3 × 5'), findsOneWidget);
     });
+
+    // Review Agent fix (46ed757), traced 2026-10-23: the test board is
+    // only for test builds.
+    for (final tools in [false, true]) {
+      testWidgets('the test leaderboard ${tools ? 'shows' : 'is hidden'} in ${tools ? 'a test' : 'an App Store'} build',
+          (tester) async {
+        await pumpShell(tester, overrides: [testToolsProvider.overrideWithValue(tools)]);
+        await tester.tap(find.text('Leaderboards'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('leaderboard-test3m')), tools ? findsOneWidget : findsNothing);
+        expect(find.byKey(const Key('leaderboard-ranked3m')), findsOneWidget);
+      });
+    }
 
     testWidgets('Leaderboards on Android: they are on the iPhone for now', (tester) async {
       await pumpShell(tester);
@@ -106,6 +120,22 @@ void main() {
         ])),
       ]);
       expect(find.text('Per knife'), findsNothing);
+      expect(find.descendant(of: find.byKey(const Key('homeLastSession')), matching: find.text('12')), findsOneWidget);
+    });
+
+    // Posting-from-history story, traced 2026-10-23: test sessions aren't
+    // real throwing, so Home's last session skips them.
+    testWidgets('a newer test session is not the last session', (tester) async {
+      final real = session([
+        [5, 4, 3]
+      ]);
+      final made = makeTestSessions(real.finishedAt.add(const Duration(days: 1)), count: 1).single;
+      // Newer than the real one, whatever the time zone.
+      final test = GameRecord.fromJson({
+        ...made.toJson(),
+        'finishedAt': real.finishedAt.add(const Duration(hours: 1)).toUtc().toIso8601String(),
+      });
+      await pumpShell(tester, games: [real, test]);
       expect(find.descendant(of: find.byKey(const Key('homeLastSession')), matching: find.text('12')), findsOneWidget);
     });
 

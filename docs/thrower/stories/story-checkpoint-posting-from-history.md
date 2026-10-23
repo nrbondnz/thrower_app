@@ -140,3 +140,138 @@ IN PROGRESS: Tasks 1–4 COMPLETE 2026-10-23 (commit 7030b33; Review Agent fixes
 
 ## Plan Changes Log
 - **2026-10-23 (Review Agent, commit 46ed757):** test sessions post to a separate test leaderboard (`Leaderboard.test3m`, `test.ranked.3m.5x3`), can't be posted in a build without the test tools (`NotPostable.testSession`), and are never backed up or synced. Setup's heading reads "Test sessions (test build only)". Mac Handoff Build 15 gains the test leaderboard setup and the `DART_DEFINES` checks.
+
+---
+
+## Traceability Report: 2026-10-23
+
+Story: Posting From History. Code: commits 7030b33 and 46ed757, plus the fixes below (not committed). Design: [[Design Decisions]] → Posting From History.
+
+### Coverage Summary
+- Requirements traced: 14 (Nigel's six asks, his four answers, the Review Agent's four fixes).
+- Fully covered (design, code, test): 14, after the fixes below.
+- Bugs found and fixed: 2. Missing tests added: 10.
+- Orphan code: none.
+- Full suite after the fixes: 1120 passed, 0 failed. `app_shell_test.dart` after its last new test: 21 passed. `flutter analyze`: no issues.
+
+### Forward: requirement → design → code → test
+
+**A1. Each History result says Can be posted, Posted or Cannot be posted**
+- Design: "the rules, in one pure function"; "Post score from a session's page".
+- Code: `postStatusOf`, `PostStatus`, `NotPostable`; `PostStatusLabel` on each History card.
+- Test: `post_status_test.dart` (one case per reason); `history_post_test.dart`.
+- Status: ✅ Covered.
+
+**A2. Normal 3 m 5 × 3 sessions can be posted with no hand changes**
+- Code: `Match.postable`, `Match.changedByHand`; `GameRecord.changedByHand`.
+- Test: `post_status_test.dart` (and the new group "changed by hand, or not"); `score_post_test.dart`.
+- Status: ✅ Covered.
+
+**A3. Test sessions to post, made again on request**
+- Code: `makeTestSessions`, `TestSessionsCard`.
+- Test: `test_sessions_test.dart`; new Home test in `app_shell_test.dart`.
+- Status: ✅ Covered.
+
+**A4. Leaderboards in place of "Throw" on the bar**
+- Code: `AppShell.leaderboards`, `LeaderboardsScreen`.
+- Test: `app_shell_test.dart`.
+- Status: ✅ Covered.
+
+**A5. "Quick actions" becomes "Throwing types"**
+- Code: `home_screen.dart`.
+- Test: `app_shell_test.dart`.
+- Status: ✅ Covered.
+
+**A6. One board for now, "3 m knives · 3 × 5", built for more**
+- Code: `Leaderboard.ranked3m` (`title`, `about`); the screen lists `Leaderboard.values`.
+- Test: `app_shell_test.dart`.
+- Status: ✅ Covered.
+
+**D1. Only sessions from this leaderboard week**
+- Code: `leaderboard_week.dart`; `NotPostable.earlierWeek`.
+- Test: `post_status_test.dart`.
+- Status: ✅ Covered. The start time is still to confirm on the Mac.
+
+**D2. A 3 m tick for a normal session**
+- Code: `ThreeMetreTick` in `PostScorePanel` and `HistoryPostPanel`.
+- Test: `score_post_test.dart`, `history_post_test.dart`.
+- Status: ✅ Covered.
+
+**D3. Any hand change blocks a normal session; Ranked still allows 0s**
+- Code: `Match.changedByHand` (from `ThrowRecord.corrected`); Ranked's exception in `postStatusOf`.
+- Test: `post_status_test.dart`. New: a fell-out and a "?" aren't hand changes; a missing knife added as 0 blocks Scoring but not Ranked, at the end and in History.
+- Status: ✅ Covered (new tests).
+
+**D4. Test sessions: 10 each tap, marked Test, out of the stats, test builds only**
+- Code: `testToolsEnabled`, `testToolsProvider`; `ThrowStats.of` and Home skip `test`.
+- Test: `test_sessions_test.dart`; new Home test.
+- Status: ✅ Covered.
+
+**R1. Test sessions post only in a test build**
+- Code: `postStatusOf(…, testTools:)`, `NotPostable.testSession`.
+- Test: `test_sessions_test.dart`.
+- Status: ✅ Covered.
+
+**R2. Test sessions go only to the test leaderboard**
+- Code: `leaderboardFor`, `Leaderboard.test3m`, used by `HistoryPostPanel`.
+- Test: `test_sessions_test.dart`; new widget test in `history_post_test.dart`.
+- Status: ✅ Covered.
+
+**R3. Test sessions never backed up or synced**
+- Code: `SyncedGameHistory.add` and `sync` skip `test`.
+- Test: `synced_game_history_test.dart`, group "test sessions".
+- Status: ✅ Covered.
+
+**R4. The test board shows only in test builds**
+- Code: `LeaderboardsScreen` filters `Leaderboard.test`.
+- Test: new, `app_shell_test.dart` (shown / hidden).
+- Status: ✅ Covered (new test).
+
+**K1. Posted sessions kept as Posted, at the end and from History**
+- Code: `GameNotifier.keepPosted`, `GameRecord.markedPosted`, `HistoryPostPanel`.
+- Test: `score_post_test.dart`; `history_post_test.dart`. New: back on the list says Posted; leaving the page mid-post.
+- Status: ✅ Covered (after fix 2).
+
+### Backward: code → requirement
+- Every new symbol in the two commits traces to A1–A6, D1–D4, R1–R4 or K1. No orphan code.
+- The end-of-game post uses `Leaderboard.ranked3m` directly, not `leaderboardFor`. A live session is never a test session, so it's consistent.
+
+### Checks asked for
+- History refreshes after a post from a session's page: yes. The panel invalidates `keptGamesProvider`, which History watches. New test.
+- A session posted at its end shows Posted in History straight away: yes (`keepPosted` keeps it again and invalidates the list).
+- The end panel after a correction made after the end: `Match.postable` turns false and the panel hides. History could still say Can be posted: fix 1.
+- `Match.changedByHand` ignores a fell-out and a "?": yes. New tests.
+- A knife added as 0 in a normal 5 × 3 session blocks posting at the end and in History: yes. New test.
+- Build 14 records (knives, no `changedByHand`) say "kept before": yes. Existing test.
+- The test board only in test builds: yes. New test.
+- Overflow: the History card's status line fits at 320 dp with 1.6× text, and now wraps (`Flexible`). `HistoryPostPanel` is all wrapping text. Two layout risks elsewhere are in the open questions.
+
+### Fixes (not committed)
+
+**Fix 1: a score "changed" to its own value wasn't kept as a hand change**
+- Bug: in a normal 5 × 3 session, picking the same score in the score picker sets `corrected` but changes no knife. `GameNotifier._keep` skipped the save (same knives, same `posted`), so the kept session still had `changedByHand: false`. The end panel stopped offering Post score, but History said Can be posted.
+- Fix: `_keep`'s check also includes `changedByHand` (`lib/providers.dart`).
+- Test: `score_post_test.dart`, "a score confirmed by hand at its own value after the end is kept as changed". It fails without the fix.
+
+**Fix 2: leaving a session's page while posting lost the Posted mark**
+- Bug: `HistoryPostPanel._post` used `ref` after the post. If the page was closed meanwhile (back, during Game Center sign-in or a slow signal), Riverpod throws on `ref`. The score reached Game Center, but the session wasn't kept as Posted, so it could be posted twice.
+- Fix: read the history and the provider container before waiting (`lib/ui/history_post_panel.dart`).
+- Test: `history_post_test.dart`, "leaving the page while posting: still kept as Posted". It fails without the fix.
+
+**Small: the status line wraps**
+- `PostStatusLabel`'s text is `Flexible`.
+- Test: `history_post_test.dart`, "a small phone with large text: the status line fits".
+
+**Tests added**
+- `test/history/post_status_test.dart`: group "changed by hand, or not" (5 cases).
+- `test/ui/history_post_test.dart`: back on the list says Posted; leaving mid-post; a test session posts to the test board; small phone.
+- `test/ui/app_shell_test.dart`: the test board shown or hidden (2); Home skips a newer test session.
+- `test/leaderboard/score_post_test.dart`: the same-value correction.
+
+### Open questions for Nigel
+1. **The Posted mark doesn't sync to another phone.** `SyncedGameHistory.sync` merges by id only. A session posted on one phone stays Can be posted on another phone that already had it. A post made offline isn't backed up later either. Should sync treat "posted on either copy" as posted? Recommended: yes (a small change to `sync`).
+2. **A "?" in a normal 5 × 3 session.** It scores 0 and isn't a hand change, so the session can be posted with that 0. Setting it by hand blocks posting. Is that the rule you want?
+3. **Play's end panel on a small phone.** The panel under the camera doesn't scroll, and a normal 5 × 3 session now adds the 3 m tick there. It could overflow on a small phone in landscape. Worth a device check, or making the panel scroll.
+4. **History's app bar with large text.** At 320 dp and 2× text, "Clear history" overflows the app bar. This was there before the story. Fix it now, or log it?
+5. **A post that goes but isn't kept** (the file can't be written) still says Can be posted. Accepted in Design Decisions.
+6. Still to confirm on the Mac: the leaderboard week's exact start (`rankedLeaderboardStart`).

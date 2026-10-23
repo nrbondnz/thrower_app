@@ -31,9 +31,11 @@ class PostStatusLabel extends ConsumerWidget {
       children: [
         Icon(icon, size: 14, color: colour),
         const SizedBox(width: 4),
-        Text(
-          game.test ? 'Test · ${status.label}' : status.label,
-          style: theme.textTheme.labelMedium?.copyWith(color: colour, fontWeight: FontWeight.w700),
+        Flexible(
+          child: Text(
+            game.test ? 'Test · ${status.label}' : status.label,
+            style: theme.textTheme.labelMedium?.copyWith(color: colour, fontWeight: FontWeight.w700),
+          ),
         ),
       ],
     );
@@ -60,6 +62,10 @@ class _HistoryPostPanelState extends ConsumerState<HistoryPostPanel> {
   String? _message;
 
   Future<void> _post(LeaderboardService service) async {
+    // Read before waiting: the page may be left while the post is going,
+    // and a post that went must still be kept as Posted (never posted twice).
+    final history = ref.read(gameHistoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     setState(() {
       _posting = true;
       _message = null;
@@ -72,11 +78,11 @@ class _HistoryPostPanelState extends ConsumerState<HistoryPostPanel> {
         await service.submit(leaderboardFor(_game), _game.totals.single);
         final posted = _game.markedPosted();
         try {
-          await ref.read(gameHistoryProvider).add(posted);
+          await history.add(posted);
         } catch (_) {
           // Posted all the same; History may say "Can be posted" until it's kept.
         }
-        ref.invalidate(keptGamesProvider);
+        container.invalidate(keptGamesProvider);
         _game = posted;
         message = 'Posted to the leaderboard: ${posted.totals.single}.';
       }

@@ -511,9 +511,11 @@ class GameNotifier extends Notifier<Match> {
     final recording = state.type.handScored ? null : ref.read(recordingChoiceProvider)?.name;
     final record = GameRecord.fromMatch(state, at: at, recording: recording, posted: _posted);
     // Each knife, not just the round totals: a 0 added to a round collected
-    // early changes the knives (and the stats) but no total. And posting
-    // changes the record, not the knives.
-    final kept = '${record.knives} ${record.posted}';
+    // early changes the knives (and the stats) but no total. Posting
+    // changes the record, not the knives; and so does a score set by hand
+    // to the value it already had (the record is then changed by hand, so a
+    // normal session can't be posted from History either).
+    final kept = '${record.knives} ${record.posted} ${record.changedByHand}';
     if (kept == _kept) return;
     _kept = kept;
     final errors = ref.read(historySaveErrorProvider.notifier);
