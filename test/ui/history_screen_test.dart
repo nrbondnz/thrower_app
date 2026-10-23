@@ -9,6 +9,7 @@ import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/history_screen.dart';
 
 import '../history/memory_game_history.dart';
+import '../history/throw_stats_test.dart' show session;
 
 /// Game-history story, Task 3: Home → History.
 GameRecord game(DateTime at, PlayMode mode, List<List<int>> players,
@@ -237,6 +238,54 @@ void main() {
     test('other games have no distance on their rounds', () {
       final g = typed(GameType.threeTargets, PlayMode.solo, [List.filled(3, 9)], rounds: 3);
       expect(historyRoundLabel(g, 0), 'Round 1');
+    });
+  });
+
+  // App design story (2026-10-23): the stats above the sessions.
+  group('the stats', () {
+    Future<void> pumpWith(WidgetTester tester, List<GameRecord> games) async {
+      await tester.pumpWidget(ProviderScope(
+        overrides: [gameHistoryProvider.overrideWithValue(MemoryGameHistory(games))],
+        child: const MaterialApp(home: HistoryScreen()),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    String tile(WidgetTester tester, String label) {
+      final column = find.ancestor(of: find.text(label), matching: find.byType(Column)).first;
+      final texts = tester.widgetList<Text>(find.descendant(of: column, matching: find.byType(Text)));
+      return texts.first.data!;
+    }
+
+    testWidgets('sessions, knives, per knife, 5s, hit rate and best round', (tester) async {
+      await pumpWith(tester, [
+        session([
+          [5, 4, 0],
+          [5, 3, 1],
+        ]),
+      ]);
+      expect(find.byKey(const Key('historyStats')), findsOneWidget);
+      expect(
+        [for (final l in ['Sessions', 'Knives', 'Per knife', '5s', 'Hit rate', 'Best round']) tile(tester, l)],
+        ['1', '6', '3.0', '2', '83%', '9'],
+      );
+    });
+
+    testWidgets('the best ranked total, once there is a ranked session', (tester) async {
+      await pumpWith(tester, [session(List.filled(5, [4, 4, 4]), type: GameType.ranked)]);
+      expect(tile(tester, 'Best ranked'), '60');
+      expect(find.text('Best round'), findsNothing);
+    });
+
+    testWidgets('sessions kept before each knife was: it says the knife stats leave them out', (tester) async {
+      await pumpWith(tester, [older, session([[1, 1, 1]])]);
+      expect(find.byKey(const Key('historyStatsPartial')), findsOneWidget);
+      expect(find.textContaining('from the 1 of 2 sessions'), findsOneWidget);
+    });
+
+    testWidgets('every session kept with its knives: no such note', (tester) async {
+      await pumpWith(tester, [session([[1, 1, 1]])]);
+      expect(find.byKey(const Key('historyStatsPartial')), findsNothing);
     });
   });
 }

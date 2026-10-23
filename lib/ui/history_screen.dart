@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../history/game_history.dart';
 import '../history/game_record.dart';
+import '../history/throw_stats.dart';
 import '../providers.dart';
 import '../scoring/game_type.dart';
 import '../scoring/match.dart';
+import 'theme/widgets.dart';
 
-/// Home → History (game-history story, Task 3): the finished games kept on
-/// this phone, newest first. Tap one for every round of each player; delete
-/// one there, or **Clear history** here (after asking). If the history
-/// can't be read it says so, and Play still works.
+/// The History tab (game-history story, Task 3; app-design story,
+/// 2026-10-23): the stats over the sessions kept on this phone
+/// ([ThrowStats]), then the sessions, newest first. Tap one for every round
+/// of each player; delete one there, or **Clear history** here (after
+/// asking). If the history can't be read it says so, and Play still works.
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
@@ -19,13 +22,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  late Future<List<GameRecord>> _games = _load();
-
-  Future<List<GameRecord>> _load() => ref.read(gameHistoryProvider).load();
-
-  void _reload() => setState(() {
-        _games = _load();
-      });
+  void _reload() => ref.invalidate(keptGamesProvider);
 
   Future<void> _clear() async {
     final sure = await showDialog<bool>(
@@ -61,26 +58,24 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   void _say(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<List<GameRecord>>(
-        future: _games,
-        builder: (context, snapshot) {
-          final games = snapshot.data;
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('History'),
-              actions: [
-                if (games != null && games.isNotEmpty)
-                  TextButton(key: const Key('historyClear'), onPressed: _clear, child: const Text('Clear history')),
-              ],
-            ),
-            body: SafeArea(top: false, child: _body(context, snapshot)),
-          );
-        },
-      );
+  Widget build(BuildContext context) {
+    final kept = ref.watch(keptGamesProvider);
+    final games = kept.value;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('History'),
+        actions: [
+          if (games != null && games.isNotEmpty)
+            TextButton(key: const Key('historyClear'), onPressed: _clear, child: const Text('Clear history')),
+        ],
+      ),
+      body: SafeArea(top: false, child: _body(context, kept)),
+    );
+  }
 
-  Widget _body(BuildContext context, AsyncSnapshot<List<GameRecord>> snapshot) {
-    if (snapshot.hasError) {
-      final error = snapshot.error;
+  Widget _body(BuildContext context, AsyncValue<List<GameRecord>> kept) {
+    if (kept.hasError && !kept.isLoading) {
+      final error = kept.error;
       return _Message(
         key: const Key('historyLoadFailed'),
         text: "Couldn't load the history",
@@ -88,7 +83,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         action: OutlinedButton(onPressed: _reload, child: const Text('Try again')),
       );
     }
-    final games = snapshot.data;
+    final games = kept.value;
     if (games == null) return const Center(child: CircularProgressIndicator());
     if (games.isEmpty) {
       return const _Message(
@@ -97,15 +92,75 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         detail: 'Each game of Play is kept here when it finishes.',
       );
     }
-    return ListView.separated(
-      itemCount: games.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, i) => ListTile(
-        key: Key('historyGame-${games[i].id}'),
-        title: Text(whenText(games[i].finishedAt)),
-        subtitle: Text(summaryText(games[i])),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => _open(games[i]),
+    final theme = Theme.of(context);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: [
+        StatsCard(stats: ThrowStats.of(games)),
+        const SectionHeading('Sessions'),
+        for (final g in games) ...[
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              key: Key('historyGame-${g.id}'),
+              title: Text(whenText(g.finishedAt), style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(summaryText(g)),
+              trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+              onTap: () => _open(g),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+}
+
+/// History's stats (docs/thrower/AppDesign/History and Stats.md): sessions,
+/// knives and per knife; 5s, hit rate, and the best ranked total (or, before
+/// a ranked session, the best round). Says how many sessions the knife
+/// stats are from when some were kept before each knife was.
+class StatsCard extends StatelessWidget {
+  const StatsCard({super.key, required this.stats});
+
+  final ThrowStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = stats;
+    return Card(
+      key: const Key('historyStats'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          children: [
+            StatRow([
+              StatTile(value: '${s.sessions}', label: 'Sessions'),
+              StatTile(value: '${s.knives}', label: 'Knives'),
+              StatTile(value: perKnifeText(s), label: 'Per knife'),
+            ]),
+            const SizedBox(height: 16),
+            StatRow([
+              StatTile(value: '${s.fives}', label: '5s'),
+              StatTile(value: hitRateText(s), label: 'Hit rate'),
+              if (s.bestRanked case final best?)
+                StatTile(value: '$best', label: 'Best ranked')
+              else
+                StatTile(value: '${s.bestRound ?? '–'}', label: 'Best round'),
+            ]),
+            if (s.partial) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Knives, per knife, 5s and hit rate: from the ${s.withKnives} of ${s.sessions} sessions '
+                'kept with each knife.',
+                key: const Key('historyStatsPartial'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
