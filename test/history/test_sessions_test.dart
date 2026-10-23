@@ -97,6 +97,22 @@ void main() {
       expect(find.byKey(const Key('setupAddTestSessions')), findsNothing);
     });
 
+    // Store-release hygiene (backlog #6, 2026-10-23): Live test plays
+    // recordings of real people; the scoring test target is a developer's
+    // check. Both are test-build tools.
+    testWidgets('no Live test or Scoring test target in an App Store build', (tester) async {
+      await pumpSetup(tester, tools: false);
+      await tester.scrollUntilVisible(find.byKey(const Key('setupCalibrate')), 100);
+      expect(find.byKey(const Key('setupLiveTest')), findsNothing);
+      expect(find.byKey(const Key('setupTestTarget')), findsNothing);
+    });
+
+    testWidgets('both in a test build', (tester) async {
+      await pumpSetup(tester, tools: true);
+      await tester.scrollUntilVisible(find.byKey(const Key('setupTestTarget')), 100);
+      expect(find.byKey(const Key('setupLiveTest')), findsOneWidget);
+    });
+
     testWidgets('Add 10 test sessions adds 10 more each time', (tester) async {
       await pumpSetup(tester, tools: true);
       await tapTile(tester, 'setupAddTestSessions');

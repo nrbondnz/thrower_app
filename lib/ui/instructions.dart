@@ -23,8 +23,11 @@ enum InstructionTarget { realBoard, paper }
 /// app's behaviour changes** (see Common Tasks → Update the In-App
 /// Instructions). Rule numbers come from [rules] and [target], so they can't
 /// drift from the code; button names must match the screens.
+///
+/// [testTools]: a test build, which has Live test (store-release hygiene,
+/// 2026-10-23); its recordings are mentioned only then.
 List<InstructionSection> instructionSections(GameSession rules, TargetModel target,
-    {InstructionTarget kind = InstructionTarget.realBoard}) {
+    {InstructionTarget kind = InstructionTarget.realBoard, bool testTools = false}) {
   final paper = kind == InstructionTarget.paper;
   final ringScores = [for (final r in target.rings) '${r.score}'];
   final lineRing = switch (target.lineTouchRule) {
@@ -214,8 +217,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'Quick draw is for two real boards and two throwers. It is not played on the paper target.'
       else ...[
         'A duel: two throwers, one board each, side by side, throwing at the same time on "go". '
-            'Tap Quick draw on Home (or under Throw). (Setup, then Live test, then Quick draw, plays a recording '
-            'of a real duel.)',
+            'Tap Quick draw on Home.${testTools ? ' (Setup, then Live test, then Quick draw, plays a recording of a '
+                'real duel.)' : ''}',
         'Put the phone on its stand behind the throwers, where it sees both boards: out of both lines of throw, '
             'not between the lanes, and out of reach of a backswing (at least 3 m back for axes, or as your venue says).',
         "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards.",
@@ -288,7 +291,8 @@ class _InstructionsScreenState extends ConsumerState<InstructionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sections = instructionSections(ref.watch(gameProvider).players.first, ref.watch(targetModelProvider), kind: _kind);
+    final sections = instructionSections(ref.watch(gameProvider).players.first, ref.watch(targetModelProvider),
+        kind: _kind, testTools: ref.watch(testToolsProvider));
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Instructions')),

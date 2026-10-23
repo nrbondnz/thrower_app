@@ -169,7 +169,8 @@ void main() {
     test('how to choose the boards and play, with the button names on the screen', () {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
       expect(text, contains('tap Choose boards again'));
-      expect(text, contains('Tap Quick draw on Home (or under Throw).'));
+      expect(text, contains('Tap Quick draw on Home.'));
+      expect(text, isNot(contains('Live test, then Quick draw')));
       expect(text, contains('then the starter taps Next round.'));
     });
 
@@ -313,5 +314,14 @@ void main() {
   // Gapped-rings story (2026-10-21).
   test('calibrating: Tap the board when Find target cannot find the rings', () {
     expect(text, contains('tap Tap the board, then tap the middle of your board'));
+  });
+
+  // Store-release hygiene (backlog #6, 2026-10-23): Live test is in test
+  // builds only, so only they mention its recording.
+  test('a test build mentions the Quick draw recording', () {
+    final text = [
+      for (final s in instructionSections(const GameSession(), TargetModel.katta(), testTools: true)) ...s.points,
+    ].join(' ');
+    expect(text, contains('Setup, then Live test, then Quick draw, plays a recording of a real duel.'));
   });
 }
