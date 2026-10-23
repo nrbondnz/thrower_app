@@ -12,7 +12,7 @@ updated: 23 October 2026
 While you are signed in:
 
 - **One game:** tap **History** at the bottom of the screen, tap the game, then tap the bin ("Delete this game").
-- **All games:** tap **History**, then **Clear history**, and confirm.
+- **All games:** tap **History**, then **Clear history** (the bin at the top), and confirm.
 
 The games are deleted from your phone and from your backup. If you have no signal at that moment, a deleted game may come back from the backup the next time the App syncs; delete it again once you have a signal.
 
