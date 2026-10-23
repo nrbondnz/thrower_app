@@ -29,6 +29,7 @@ void main() {
     await tester.tap(find.text('Setup'));
     await tester.pumpAndSettle();
     expect(find.byType(SetupScreen), findsOneWidget);
+    await tester.scrollUntilVisible(find.byKey(const Key('setupTestTarget')), 100);
     await tester.ensureVisible(find.byKey(const Key('setupTestTarget')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('setupTestTarget')));

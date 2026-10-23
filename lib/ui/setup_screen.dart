@@ -11,6 +11,7 @@ import 'calibration_screen.dart';
 import 'debug_target_screen.dart';
 import 'instructions.dart';
 import 'live_test_screen.dart';
+import 'support_links.dart';
 import 'theme/widgets.dart';
 
 /// The Setup tab: the technical tools together and out of the way, the
@@ -35,9 +36,9 @@ class SetupScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          const SectionHeading('Help'),
-          Card(
-            child: tile('setupInstructions', Icons.menu_book_outlined, 'Instructions',
+          const SectionHeading('Help and support'),
+          HelpAndSupportCard(
+            instructions: tile('setupInstructions', Icons.menu_book_outlined, 'Instructions',
                 'Setting up the phone, throwing, scoring', const InstructionsScreen()),
           ),
           const SectionHeading('Appearance'),

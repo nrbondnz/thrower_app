@@ -228,6 +228,7 @@ void main() {
       expect(find.text('Calibrate target'), findsNothing);
       await tester.tap(find.text('Setup'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.byKey(const Key('setupTestTarget')), 100);
       expect(find.byKey(const Key('setupCalibrate')), findsOneWidget);
       expect(find.byKey(const Key('setupLiveTest')), findsOneWidget);
       expect(find.byKey(const Key('setupTestTarget')), findsOneWidget);
@@ -255,6 +256,9 @@ void main() {
         ),
       ));
       await tester.tap(find.text('Setup'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Dark'), 100);
+      await tester.ensureVisible(find.text('Dark'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Dark'));
       await tester.pumpAndSettle();

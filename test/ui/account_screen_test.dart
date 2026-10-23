@@ -48,6 +48,7 @@ void main() {
   testWidgets('a build without accounts: no Account in Setup', (tester) async {
     await pumpHome(tester);
     expect(find.byKey(const Key('setupAccount')), findsNothing);
+    await tester.scrollUntilVisible(find.byKey(const Key('setupCalibrate')), 100);
     expect(find.byKey(const Key('setupCalibrate')), findsOneWidget);
   });
 

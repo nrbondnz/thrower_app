@@ -32,6 +32,9 @@ Future<ProviderContainer> pump(WidgetTester tester, Widget home, {TargetCamera? 
 void main() {
   testWidgets('Setup opens Live test, which offers Target 1 and Target 2', (tester) async {
     await pump(tester, const SetupScreen());
+    await tester.scrollUntilVisible(find.text('Live test'), 100);
+    await tester.ensureVisible(find.text('Live test'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Live test'));
     await tester.pumpAndSettle();
     expect(find.byType(LiveTestScreen), findsOneWidget);
@@ -53,6 +56,9 @@ void main() {
 
   testWidgets('leaving Live test goes back to the phone camera', (tester) async {
     final container = await pump(tester, const SetupScreen());
+    await tester.scrollUntilVisible(find.text('Live test'), 100);
+    await tester.ensureVisible(find.text('Live test'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Live test'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Target 2'));
