@@ -148,7 +148,8 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 
 **Symptom:** `flutter build apk` warns: "Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): amplify_analytics_pinpoint, amplify_auth_cognito, amplify_db_common, amplify_secure_storage. Future versions of Flutter will fail to build…".
 **Cause:** Amplify Flutter 2.16 (the newest at the time) still applies KGP. Flutter 3.47 only warns about it.
-**Fix:** none needed yet. Before upgrading Flutter, check the Amplify Flutter changelog for "Built-in Kotlin" support and upgrade it first. `amplify_analytics_pinpoint` comes in with `amplify_auth_cognito` (a transitive dependency in `pubspec.lock`), but the app never adds the analytics plugin and its Amplify settings have no analytics section, so nothing is collected (checked 2026-10-21: the privacy policy's "no analytics" holds).
+**Still there (2026-10-23):** the only warning left in an Android build. Amplify Flutter 2.16.0 is still the newest, so it can't be fixed from the app. It's yellow text from Flutter's tool, not an error.
+**Fix:** none possible yet. Before upgrading Flutter, check the Amplify Flutter changelog for "Built-in Kotlin" support and upgrade it first. `amplify_analytics_pinpoint` comes in with `amplify_auth_cognito` (a transitive dependency in `pubspec.lock`), but the app never adds the analytics plugin and its Amplify settings have no analytics section, so nothing is collected (checked 2026-10-21: the privacy policy's "no analytics" holds).
 
 ## Flutter Upgrade Fails: "being used by another process" (2026-10-21)
 
@@ -162,17 +163,20 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
   3. For the Dart SDK, close Android Studio and IntelliJ (their analysis servers restart with them).
   4. Run `flutter --version` (and `flutter precache` if the engine was the one that failed), then `flutter pub get` and `flutter analyze`.
 
-## Build Warning: "A restricted method in java.lang.System has been called" (2026-10-21)
+## Build Warning: "A restricted method in java.lang.System has been called" (2026-10-21, fixed 2026-10-23)
 
-**Symptom:** at the start of `flutter build apk` / `flutter run`: "WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader … Use --enable-native-access=ALL-UNNAMED … Restricted methods will be blocked in a future release".
-**Cause:** Gradle 9.3.1's own native library loader on a newer Java (22+ warns about native access). Nothing to do with the app's code.
-**Fix:** none needed; it goes when Flutter / Android Studio move to a Gradle that enables native access. The build and the app are unaffected.
+- **Symptom:** at the start of `flutter build apk` / `flutter run`: "WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader … Use --enable-native-access=ALL-UNNAMED … Restricted methods will be blocked in a future release".
+- **Cause:** Gradle's own native library loader on Java 25 (Android Studio's bundled JBR). Java 22 and later warn about native access. It's printed by the Gradle **launcher**, not the daemon.
+- **Fix (2026-10-23, Nigel: no red in a build):**
+  - `android/gradlew` and `android/gradlew.bat`: `DEFAULT_JVM_OPTS="--enable-native-access=ALL-UNNAMED"` (the launcher).
+  - `android/gradle.properties`: the same flag on `org.gradle.jvmargs` (the daemon).
+- **Note:** `gradlew` and `gradlew.bat` are **gitignored** (Flutter generates them), so their change is on this PC only. If the warning comes back (Flutter regenerated them, or another machine), put the flag back in `DEFAULT_JVM_OPTS`, or set it per machine: `GRADLE_OPTS=--enable-native-access=ALL-UNNAMED` (Windows: a user environment variable; Mac: `export` in `~/.zshrc`). Only a JDK of 24 or later prints it; JDK 17 and later accept the flag (Review Agent, 2026-10-23).
 
-## Build Warning: "SDK \cache\artifactsML versions up to 3 but … version 4" (2026-10-21)
+## Build Warning: "SDK XML versions up to 3 but … version 4" (2026-10-21, fixed 2026-10-23)
 
-**Symptom:** "Warning: SDK processing. This version only understands SDK \cache\artifactsML versions up to 3 but an SDK \cache\artifactsML file of version 4 was encountered."
-**Cause:** Android Studio's SDK Manager wrote newer SDK metadata than the older Android SDK command-line tools the build reads it with.
-**Fix (optional, harmless either way):** Android Studio → Settings → Languages & Frameworks → Android SDK → **SDK Tools** → tick **Android SDK Command-line Tools (latest)** → Apply.
+- **Symptom:** "Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered."
+- **Cause:** the Android SDK command-line tools (23.0) write newer SDK metadata than Android Gradle Plugin 9.1.0 could read.
+- **Fix (2026-10-23):** AGP **9.4.1** (`android/settings.gradle.kts`), which needs Gradle **9.6.0** (`android/gradle/wrapper/gradle-wrapper.properties`). Newer AGPs each need a newer Gradle: 9.2.1 needs 9.4.1, 9.3.3 needs 9.5.0, 9.4.1 needs 9.6.0.
 
 ## Release Builds Need INTERNET in the App's Manifest (2026-10-19)
 
