@@ -48,7 +48,7 @@
 
 ## Wireless `adb` Device ID Changes
 
-- **Symptom:** `flutter run -d <id>` says "No supported devices found" although the phone is connected.
+- **Symptom:** `flutter run --flavor beta -d <id>` says "No supported devices found" although the phone is connected.
 - **Cause:** after the phone locks, wireless debugging can come back under a new mDNS name (`… (2)._adb-tls-connect._tcp`).
 - **Fix:** run `flutter devices` and use the ID it lists.
 - **Related:** if the phone is **locked**, `flutter run` installs and starts the app but never attaches (no "Flutter run key commands"). Unlock it and run again.
@@ -246,12 +246,22 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 ## `--dart-define` Carries Over in `Generated.xcconfig` (2026-10-23)
 - **Symptom:** an iOS archive has the test tools (Setup → Test sessions) though the last command had no `--dart-define`; or the other way round.
 - **Cause:** `ios/Flutter/Generated.xcconfig` (gitignored) keeps `DART_DEFINES` from the last `flutter build ios --config-only`, `flutter run` or `flutter build`. Xcode's archive reads that file.
+- **It keeps `FLAVOR` too** (since the flavors, 2026-10-23). Check `grep FLAVOR ios/Flutter/Generated.xcconfig` shows the flavor of the scheme you archive. An archive of the plain Runner scheme can pick up a leftover `FLAVOR`, which is why the Runner scheme is to be deleted once the beta and store schemes exist.
+- **Retiring:** once the Mac has the beta and store schemes, the `THROWER_TEST_TOOLS` define and the `grep VEhST1dF…` check below are no longer needed. The store flavor never shows test tools, whatever the define says ([[Design Decisions]] → Build Flavors: Beta and Store).
 - **Also:** one uploaded build can be chosen for both TestFlight and the App Store, so a test-tools build could be submitted for review by mistake.
 - **What we do:**
   - Before any archive, check the file: `grep -c VEhST1dFUl9URVNUX1RPT0xT ios/Flutter/Generated.xcconfig` (base64 for `THROWER_TEST_TOOLS`). 1 = test tools on; 0 = off.
   - After uploading a test-tools build, run `flutter build ios --config-only --release` with no define, and check the grep prints 0.
   - A test-tools build's What to Test says "TEST TOOLS BUILD – never submit for App Store review."
   - See [[Mac Handoff]] → Build 15.
+
+## A Build With No Flavor Reports an Old APK (2026-10-23)
+- **Symptom:** `flutter build apk` (or `flutter run`) with no `--flavor` says it built, and names `app-release.apk` or `app-debug.apk`. The APK is from before the flavors: old code, installed by mistake.
+- **Cause:** since 2026-10-23 Android has two product flavors, beta and store. Gradle builds the flavored APKs (`app-beta-release.apk`, `app-store-release.apk`). Flutter, given no flavor, can find an unflavored APK left in `build/app/outputs/flutter-apk/` and report that.
+- **What we do:**
+  - Always pass `--flavor beta` or `--flavor store`, and install only `app-beta-…` or `app-store-…` ([[Common Tasks]] → Build and Install on Android (Flavors)).
+  - The stale `app-debug.apk` and `app-release.apk` were deleted (Review Agent, 2026-10-23). If one comes back, `flutter clean`.
+  - The JetBrains run configuration needs Build flavor `beta`, set on each machine (it's gitignored).
 
 ## The Posting Week Uses the Phone's Clock (2026-10-23)
 - **What:** whether a session was thrown "this leaderboard week" (`sameWeek`) is checked on the phone, against the phone's clock and the session's kept time. Changing the phone's clock could get round it.

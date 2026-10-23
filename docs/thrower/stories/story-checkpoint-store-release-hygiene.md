@@ -7,7 +7,7 @@ Backlog #6, picked up 2026-10-23 (Nigel: "do #6 and then carry on to others"), a
 - deal with the **Live test recordings**: 87 MB of real footage, including people's faces and voices in the Quick draw clip, inside every build today.
 
 ## Status
-IN PROGRESS 2026-10-23: Task 1 built. Task 2 needs Nigel's decision (below).
+IN PROGRESS 2026-10-23: Tasks 1 and 2 built on the PC. Task 2's Mac step (the Xcode configurations and schemes) waits for the Mac: [[Mac Handoff]] → Build 15 → Flavors: beta and store schemes.
 
 ## Task 1: Test tools hidden from store builds (built 2026-10-23)
 - **Setup → Tools:**
@@ -24,7 +24,10 @@ IN PROGRESS 2026-10-23: Task 1 built. Task 2 needs Nigel's decision (below).
 - **Debug-only code:** the frame dumps, the frame-rate label and the watch debug line are all behind `kDebugMode`, so they're out of release builds.
 - **App name:** the phone shows **"Thrower App"** (`CFBundleDisplayName`, Android `android:label`), while the app's hero says THROWER. Renaming the store name is Nigel's choice; it's not changed here.
 
-## Task 2: The recordings out of store builds (NEEDS NIGEL)
+## Task 2: The recordings out of store builds
+
+### Decision
+Nigel chose **A, flavors** (2026-10-23). The flavor is named **beta**, not "test": Android forbids flavor names starting with "test".
 
 The footage is real people (Mark, the Captain, others at the venue), with voices in the Quick draw clip. For a public app, either they agree to it, or it isn't in the app.
 
@@ -51,13 +54,28 @@ The footage is real people (Mark, the Captain, others at the venue), with voices
 ### Recommendation
 **A.** It keeps Live test for testers, takes the footage and 87 MB out of store builds, and makes test tools follow the build flavor rather than a define that can be forgotten. Not needed before the first store submission; it is needed before one.
 
+### Task 2 record
+- **Status:** COMPLETE on the PC (2026-10-23), commit `8ed8624`. The Mac step is pending.
+- **What changed:**
+  - `pubspec.yaml`: `assets/live/` only in the **beta** flavor (`flavors: [beta]`).
+  - Android: `productFlavors { beta, store }`, the same app ID. APKs `app-beta-release.apk` (164 MB) and `app-store-release.apk` (76 MB).
+  - `testToolsEnabled = appFlavor != 'store' && (kDebugMode || appFlavor == 'beta' || THROWER_TEST_TOOLS)`. A store build never has test tools.
+  - `liveRecordingsProvider` checks the asset manifest. Live test, and the Instructions' line about its recording, show only when the recordings are in the build.
+  - `ios/Podfile` maps `Debug/Profile/Release-beta` and `-store`.
+  - The JetBrains run config (gitignored) has Build flavor `beta` on this PC.
+  - The stale `app-debug.apk` and `app-release.apk` were deleted ([[Known Issues]] → A Build With No Flavor Reports an Old APK).
+- **Review Agent:** OK with conditions (stale APKs deleted; the store guard on `testToolsEnabled`).
+- **Mac step (pending):** add the six Xcode configurations and the shared `beta` and `store` schemes ([[Mac Handoff]] → Flavors: beta and store schemes). Until then, an iPhone build has no flavor: no recordings, and test tools only with the `THROWER_TEST_TOOLS` define.
+- **After the schemes:** delete the Runner scheme; remove the `THROWER_TEST_TOOLS` define; retire the Known Issues `grep VEhST1dF…` check and the Mac Handoff define steps; maybe add `default-flavor: store` to `pubspec.yaml` (never `beta`).
+- **Verify:** device checks FL0–FL3 ([[Device Test Plan]] → Flavor Checks).
+
 ## Not in this story
 - Line-touch rules (#3), axes (#7) and full-screen Play (#8) stay on the backlog.
 
 ---
 
 ## Plan Changes Log
-- (none yet)
+- **2026-10-23:** Nigel chose option A (flavors). The tester flavor is named `beta`, since Android forbids flavor names starting with "test".
 
 ---
 
@@ -75,3 +93,23 @@ The footage is real people (Mark, the Captain, others at the venue), with voices
 
 ### Notes
 - Task 2 (the recordings out of store builds) still needs Nigel's decision.
+
+## Doc Update — 2026-10-23 (Task 2: flavors)
+
+### Files Updated
+- `Architecture/Design Decisions.md`: new section **Build Flavors: Beta and Store (2026-10-23)**; the test-tools and Live test decisions now name the flavor.
+- `Architecture/Glossary.md`: **Test build** (now the beta flavor); new concepts **Flavor**, **`appFlavor`**; `liveRecordingsProvider` under the providers.
+- `AppDesign/Navigation and Structure.md`, `requirements/Game Centre/Rankings.md`: the test-build wording.
+- `Operations/Common Tasks.md`: iOS archive commands with `--flavor`; `flutter run --flavor beta`; the beta APK path for `adb install -r`; new section **Build and Install on Android (Flavors)**.
+- `Operations/Cloud Config Setup.md`: the adb install path.
+- `Operations/Mac Handoff.md`: Build 15 gets the section **Flavors: beta and store schemes (Nigel in Xcode)**; the build commands name a flavor, or note why not.
+- `Operations/Device Test Plan.md`: SH0 now a store-flavor build; new **Flavor Checks** FL0–FL3.
+- `Operations/Store Compliance.md`: the release checklist: built from the store flavor and scheme, never a promoted beta or TestFlight build.
+- `Troubleshooting/Known Issues.md`: `flutter run --flavor beta`; `Generated.xcconfig` keeps `FLAVOR` too; new entry **A Build With No Flavor Reports an Old APK**.
+- `docs/dont-ask-again.md`: the Xcode entry's commands with `--flavor`.
+- `docs/working-with-nigel.md`: one line on the flavors.
+- `tool/web_docs/content.py`: `testToolsProvider` text; new `liveRecordingsProvider`; `docs/web/` rebuilt.
+- `stories/story-checkpoint-compliance.md`, `website/Website Index.md`: Task 2 (publishing) done; the 5 pages live, dated 23 October 2026.
+
+### Notes
+- Archived and older story checkpoints keep `THROWER_TEST_TOOLS` as history.

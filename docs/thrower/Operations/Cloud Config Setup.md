@@ -145,7 +145,7 @@ Related: [[story-checkpoint-app-user-accounts]] (accounts, stage 2), [[Accounts 
   2. watches the deploy;
   3. runs the Managed Login branding command;
   4. regenerates the settings file;
-  5. installs the build on the Samsung with `adb install -r` (keeping the app's data).
+  5. builds the beta flavor and installs it on the Samsung with `adb install -r build/app/outputs/flutter-apk/app-beta-release.apk` (keeping the app's data; [[Common Tasks]] → Build and Install on Android (Flavors)).
 
 ### Changing one later (rotation, or a revoked key)
 - Update it in the console, then redeploy each branch (Amplify → Redeploy this version). The values are read at deploy time.

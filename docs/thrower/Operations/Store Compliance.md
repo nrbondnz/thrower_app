@@ -118,5 +118,8 @@ The app shows no violence. It's a scoring tool for knife and axe throwing, a spo
    - Data safety answers;
    - privacy and account deletion URLs;
    - the IARC rating.
-4. The build has no test tools: no `THROWER_TEST_TOOLS` ([[Known Issues]]).
+4. The build is from the **store** flavor and scheme: no test tools, no Live test recordings.
+   - iPhone: `flutter build ios --config-only --release --flavor store`, archived from the **store** scheme and uploaded on its own. Android: `flutter build appbundle --release --flavor store` (or the store APK).
+   - **Never a promoted beta or TestFlight build.** One uploaded build can be chosen for both TestFlight and the App Store, so pick only a build recorded as **store** ([[Mac Handoff]] records each build number as beta or store).
+   - Before the Mac has the store scheme, no store build can be made for the iPhone. Don't submit one ([[Design Decisions]] → Build Flavors: Beta and Store; [[Known Issues]] → `--dart-define` Carries Over).
 5. If accounts are in the build: Delete account works in the app (device check), and App Review has a demo account.

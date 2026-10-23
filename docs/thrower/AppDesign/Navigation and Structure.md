@@ -42,8 +42,8 @@ Nigel, 2026-10-23: "rather than 'Throw' at the menu put online leaderboards." Th
 In this order, as built:
 - **Instructions** (under Help).
 - **Appearance:** Phone, Light or Dark ([[Colour and Themes]]).
-- **Tools:** Calibrate target, Live test, Scoring test target: the technical tools, together and out of the way.
-- **Test sessions** (test builds only: debug, or `THROWER_TEST_TOOLS`): Add 10 test sessions, Remove test sessions.
+- **Tools:** Calibrate target; in test builds, Live test (only where the recordings are: the beta flavor) and Scoring test target. The technical tools, together and out of the way.
+- **Test sessions** (test builds only: the beta flavor, debug, or `THROWER_TEST_TOOLS`; never the store flavor): Add 10 test sessions, Remove test sessions.
 - **Account**, in a build with accounts (it was on Home's app bar).
 
 ## Throwing Screens Cover the Bar

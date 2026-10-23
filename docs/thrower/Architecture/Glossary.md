@@ -185,7 +185,8 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Leaderboard week** (`lib/leaderboard/leaderboard_week.dart`): `rankedLeaderboardStart` (2026-10-23 00:00 UTC, to confirm), `rankedLeaderboardPeriod` (7 days), **`weekStartOf(at)`**, **`sameWeek(thrown, now)`**
   - **`PostStatusLabel`** (`lib/ui/history_post_panel.dart`, key `historyStatus-<id>`): the status, "Test ·" in front for a test session
   - **`HistoryPostPanel`** (`historyPostPanel`): the label, "Why: …" (`historyPostReason`), the result (`historyPostMessage`); when it can be posted: **Post score (N)** (`historyPostScore`, with **`ThreeMetreTick`** for a normal session) → `signIn` → `submit(leaderboardFor(game), total)` → `markedPosted` → `gameHistoryProvider.add`; no service: "Posting is on the iPhone for now."
-  - **Test sessions** (`lib/history/test_sessions.dart`): **`testToolsFlag`** (`THROWER_TEST_TOOLS`), **`testToolsEnabled`** (`kDebugMode` or the flag), **`makeTestSessions(now)`** (10 random postable sessions this week, `test: true`); **`testToolsProvider`** (`lib/providers.dart`)
+  - **Test sessions** (`lib/history/test_sessions.dart`): **`testToolsFlag`** (`THROWER_TEST_TOOLS`), **`testToolsEnabled`** (`appFlavor != 'store'`, and `kDebugMode`, the beta flavor or the flag; 2026-10-23), **`makeTestSessions(now)`** (10 random postable sessions this week, `test: true`); **`testToolsProvider`** (`lib/providers.dart`)
+  - **`liveRecordingsProvider`** (`lib/providers.dart`, 2026-10-23, [[story-checkpoint-store-release-hygiene]]): a `FutureProvider<bool>`, whether any `assets/live/` file is in the asset manifest (the beta flavor only); false if the manifest can't be read
   - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"; "Precision · 2 players, taking turns · 7 rounds"), `historyRoundLabel` ("Round 2", Precision "Round 2 (5 m)"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
@@ -240,7 +241,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`SetupScreen`** (`lib/ui/setup_screen.dart`, 2026-10-23): the Setup tab
   - Help and support ("Help" before the compliance story, 2026-10-23): **`HelpAndSupportCard`**, with Instructions (`setupInstructions`) passed in
   - Appearance: a `SegmentedButton` (`setupAppearance`) → `AppearanceNotifier.choose`
-  - Tools: Calibrate target (`setupCalibrate`); Live test (`setupLiveTest`) and Scoring test target (`setupTestTarget`) only when `testToolsProvider` (2026-10-23, [[story-checkpoint-store-release-hygiene]])
+  - Tools: Calibrate target (`setupCalibrate`); Live test (`setupLiveTest`) only when `testToolsProvider` and `liveRecordingsProvider`; Scoring test target (`setupTestTarget`) only when `testToolsProvider` (2026-10-23, [[story-checkpoint-store-release-hygiene]])
   - Test sessions (test build only) (2026-10-23), only when `testToolsProvider`: **`TestSessionsCard`**: Add 10 test sessions (`setupAddTestSessions`) → `makeTestSessions`, Remove test sessions (`setupRemoveTestSessions`)
   - Account (`setupAccount`), only when `authServiceProvider` isn't null
 - **Help and support** (`lib/ui/support_links.dart`, 2026-10-23, [[story-checkpoint-compliance]]; why in [[Design Decisions]] → Compliance: Policies and Help and Support)
@@ -428,8 +429,14 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Meaning:** Flutter's way for Dart to call the app's own native code by name. The app has one, `thrower/game_center`, for the leaderboard tables on the iPhone; plugins use their own.
   - **Used by:** `GameCenterLeaderboardService.loadTable`, `GameCenterTables`
 - **Test build**
-  - **Meaning:** A debug build, or one made with `--dart-define=THROWER_TEST_TOOLS=true` (TestFlight). Only a test build shows Live test, the Scoring test target and test sessions. A store build must not have the define.
+  - **Meaning:** A build with the test tools: the **beta** flavor (TestFlight, Play testing), a debug build, or (iPhone, until the Xcode schemes exist) one made with `--dart-define=THROWER_TEST_TOOLS=true`. Never the store flavor. Only a test build shows the Scoring test target and test sessions; Live test also needs the recordings (`liveRecordingsProvider`).
   - **Used by:** `testToolsEnabled`, `testToolsProvider`, `SetupScreen`, `instructionSections(testTools:)`, `LeaderboardsScreen`, `postStatusOf`
+- **Flavor (build flavor)**
+  - **Meaning:** A named version of the same app, picked at build time with `--flavor`. Thrower has two (2026-10-23): **beta** (testers: the Live test recordings and the test tools) and **store** (neither). Same app ID. Android: `productFlavors`; iOS: Xcode configurations and schemes `beta` and `store`. See [[Design Decisions]] → Build Flavors: Beta and Store.
+  - **Used by:** `pubspec.yaml` (`assets/live/` for `flavors: [beta]`), `android/app/build.gradle.kts`, `ios/Podfile`, `testToolsEnabled`, `liveRecordingsProvider`
+- **`appFlavor`**
+  - **Meaning:** Flutter's constant (`package:flutter/services.dart`) holding the `--flavor` the build was made with: `'beta'`, `'store'`, or null for a build with no flavor (iPhone builds before the schemes exist).
+  - **Used by:** `testToolsEnabled`
 - **Posted (a final score)**
   - **Meaning:** A game whose total went to the leaderboard: posted once only, and its scores can't be corrected afterwards, so the leaderboard always matches Play.
   - **Used by:** `ScorePostNotifier`, `PostScorePanel`, `ScoreCorrections`, `GameRecord.posted`, `HistoryPostPanel`

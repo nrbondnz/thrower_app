@@ -444,7 +444,7 @@ Requirement: [[Look and Feel]], [[Throwing Stats]], [[Game Recording]]. Design: 
 ### Decision: test sessions behind a build flag
 - **`lib/history/test_sessions.dart`:** `makeTestSessions(now)` makes 10 random sessions this week: one thrower, 5 rounds of 3, a mix of Ranked and 5 × 3, no hand changes, `test: true`.
 - **Setup → Test sessions:** **Add 10 test sessions** and **Remove test sessions** (`TestSessionsCard`).
-- **Shown only when** `testToolsEnabled`: a debug build, or `--dart-define=THROWER_TEST_TOOLS=true` (`testToolsFlag`). TestFlight builds set it; App Store builds must not. `testToolsProvider` lets tests switch it.
+- **Shown only when** `testToolsEnabled`: a debug build, the **beta** flavor, or `--dart-define=THROWER_TEST_TOOLS=true` (`testToolsFlag`), and **never** the **store** flavor (2026-10-23, [[#Build Flavors: Beta and Store (2026-10-23)]]). The define is for iPhone builds until the Mac has the flavor schemes. `testToolsProvider` lets tests switch it.
 - **Left out** of `ThrowStats` and Home's last session.
 - **Why:** Nigel can check posting on the iPhone without throwing 15 knives each time.
 - **Review Agent fixes (2026-10-23, commit 46ed757):** Game Center has **no sandbox for TestFlight** (Apple TN2417): once a leaderboard is live, a TestFlight post lands on the real one. So:
@@ -503,17 +503,56 @@ Requirement: [[Look and Feel]], [[Throwing Stats]], [[Game Recording]]. Design: 
 
 ### Decision: Live test and the Scoring test target only in test builds
 - **Setup → Tools** shows **Live test** and **Scoring test target** only when `testToolsProvider` is on. **Calibrate target** stays for everyone.
-- A test build is a debug build, or one made with `THROWER_TEST_TOOLS` ([[#Decision: test sessions behind a build flag]]).
+- A test build is a debug build, the **beta** flavor, or one made with `THROWER_TEST_TOOLS` ([[#Decision: test sessions behind a build flag]]). Never the store flavor.
+- **Live test** also needs the recordings in the build (`liveRecordingsProvider`, from 2026-10-23): see Build Flavors below.
 - **Instructions:** `instructionSections(..., testTools:)` mentions the Live test recording only in a test build. The stale "(or under Throw)" is gone.
 - **Why:** Live test plays recordings of real people. The Scoring test target is a developer's check. Neither belongs in a store build.
 
-### Pending: the recordings out of store builds (Nigel to decide)
-- The recordings (`assets/live/`, about 87 MB) are still inside every build, so they can be extracted.
-- **Recommended: flavors** (a `test` and a `store` build). The assets go only into the test flavor, and test tools follow the flavor, not a define that can be forgotten.
-- Other options: take the recordings out of the app (testers lose Live test), or keep them with written consent.
-- Details: [[story-checkpoint-store-release-hygiene]] → Task 2.
+### The recordings out of store builds: decided 2026-10-23
+- Nigel chose **flavors** (Task 2). See the next section.
 
 **Built:** 2026-10-23 (Task 1, commit ae22576). Device checks SH0–SH1 in [[Device Test Plan]].
+
+## Build Flavors: Beta and Store (2026-10-23)
+
+**Requirement:** [[Instructions and Safety]], [[Rankings]]. **Story:** [[story-checkpoint-store-release-hygiene]] Task 2 (backlog #6). Nigel approved 2026-10-23.
+
+### Decision: two flavors, beta and store
+- **beta:** for testers (TestFlight, Play testing) and development. Has the Live test recordings and the test tools.
+- **store:** for the App Store and Google Play. Neither.
+- **Same app ID** (`nz.nrbond.thrower`) and signing: they're the same app, built for testers or the store.
+- **Named beta, not test:** Android forbids flavor names starting with "test".
+- **Why:** the recordings are real people, with voices in the Quick draw clip. They stay with testers and never reach the public. A store build is also smaller: the Android store APK is 76 MB, the beta 164 MB.
+- *Not chosen:* removing the recordings (testers lose Live test, which Nigel kept for TestFlight on 2026-10-11); keeping them with written consent (the app stays 87 MB bigger).
+
+### Decision: the recordings are a beta-only asset
+- `pubspec.yaml`: `- path: assets/live/` with `flavors: [beta]`. Flutter leaves the folder out of every other build.
+- **`liveRecordingsProvider`** (`lib/providers.dart`) reads the asset manifest and says whether any `assets/live/` file is in this build.
+- **Live test** on Setup, and the Instructions' line about its recording, show only when the test tools are on **and** the recordings are there.
+- **Why the check:** an iPhone build with no flavor (before the Xcode schemes exist) can have the test tools (the define) but no recordings. It mustn't offer a Live test it can't play.
+
+### Decision: test tools follow the flavor
+- `testToolsEnabled = appFlavor != 'store' && (kDebugMode || appFlavor == 'beta' || THROWER_TEST_TOOLS)`.
+- **The store flavor never has test tools**, even in debug or with the define (Review Agent: a define can be left over in Xcode's `Generated.xcconfig`; [[Known Issues]] → `--dart-define` Carries Over).
+- `appFlavor` is Flutter's (`package:flutter/services.dart`): the `--flavor` a build was made with, or null.
+
+### Decision: how each platform builds them
+- **Android:** `productFlavors { beta, store }` in `android/app/build.gradle.kts`. The APKs are `app-beta-release.apk` and `app-store-release.apk`. Always build with `--flavor` ([[Common Tasks]] → Build and Install on Android (Flavors)). A build with no flavor can report an old APK ([[Known Issues]]).
+- **iOS:** Xcode configurations `Debug/Profile/Release-beta` and `-store`, and shared schemes `beta` and `store`. `ios/Podfile` maps them already; **the configurations and schemes are made on the Mac** ([[Mac Handoff]] → Build 15 → Flavors: beta and store schemes).
+- **Until the schemes exist:** iPhone builds have no flavor: no recordings, and the test tools only with `THROWER_TEST_TOOLS`. `--flavor beta` fails ("The Xcode project does not define custom schemes").
+- **JetBrains:** the run configuration has Build flavor `beta`. It's gitignored, so it's set on each machine.
+
+### Decision: every store submission is a store build
+- Each App Store or Play submission is built from the **store** flavor and scheme, and uploaded on its own.
+- Never submit or promote a TestFlight or Play testing (beta) build. One uploaded iPhone build can be chosen for both TestFlight and the App Store, so each build number is recorded as beta or store in the [[Mac Handoff]].
+- In the release checklist: [[Store Compliance]] → Release Checklist.
+
+### After the Mac has the schemes
+- Delete the Runner scheme: an archive of plain Runner can pick up a leftover `FLAVOR`.
+- Remove the `THROWER_TEST_TOOLS` define, and retire the `grep VEhST1dF…` check ([[Known Issues]]) and the Mac Handoff define steps.
+- Maybe add `default-flavor: store` to `pubspec.yaml` (never `beta`), so a build that forgets the flavor is a store build.
+
+**Built:** 2026-10-23 on the PC (Task 2, commit 8ed8624); the Xcode schemes wait for the Mac. Device checks FL0–FL3 in [[Device Test Plan]].
 
 ## Small Fixes: Play's Panel and Posted Sync (2026-10-23)
 
@@ -954,7 +993,7 @@ Sources: [IKTHOF tournament rules](https://ikthof.com/tournament-rules/), [WATL 
   - **Decoding:** the app uses `decodeFrameNatively`, Flutter's own image codec (native, off the UI thread). It gives a `ui.Image` for `RecordedPreview` (which keeps a `clone()`) and BGRA bytes for the watcher (`toByteData` RGBA, with red and blue swapped by `rgbaToBgra`). Tests inject `decodeFramePureDart` (`package:image`), which needs no engine. Until 2026-10-13 the app decoded in pure Dart on the UI thread: 15–27 ms per 322 px frame on a PC, which made playback jump and freeze on Nigel's Samsung SM A065F (see [[Known Issues]]).
   - Made with `tool/pack_recording.dart` (needs ffmpeg).
   - Target 1 and Target 2: cut from Nigel's **original** video (since 2026-10-12): 322 × 322 px (boards ~245 px across), 15 fps, 2,848 frames, JPEG q12, **25.9 MB each** (Nigel's choice of size: same frame rate as the phone's analysis, quality that looks the same as q5 at half the size). Until 2026-10-12 they were 140 × 140 crops of a compressed copy, 10.4 MB each.
-  - **In TestFlight builds too** (Nigel, 2026-10-11), so his brother can run them.
+  - **In TestFlight builds too** (Nigel, 2026-10-11), so his brother can run them. Since 2026-10-23 they're in the **beta** flavor only, never a store build ([[#Build Flavors: Beta and Store (2026-10-23)]]).
   - Recordings keep `minChange` 20 (the live camera 12): even from the original, JPEG and video blocks gave false bounce-outs at 12.
 - **Rejected:** a video plugin for decoding (native code, and no frame-pixel access in `video_player`); pre-computed results (not a test of the pipeline).
 - **Quick draw clip** (2026-10-14, Task 1 of [[story-checkpoint-quick-draw]]): both boards in one picture, for the two-thrower race.

@@ -572,7 +572,7 @@ For [[story-checkpoint-posting-from-history]] (requirement [[Rankings]]; why in 
   - **Do:** In the TestFlight build (test tools), post a **Test** session from History with an unusual total (note it). Then Leaderboards → **Test: 3 m knives · 3 × 5**, and then **3 m knives · 3 × 5**
   - **Look for:** The total is on the **Test** board under your Game Center nickname, and **not** on the real 3 m knives · 3 × 5 board
 - **PH13 (no test tools without the flag)**
-  - **Do:** Install a release build made **without** `THROWER_TEST_TOOLS` (an App Store-style build). Open Setup, Leaderboards, and History on a phone that still has Test sessions
+  - **Do:** Install a **store**-flavor release build (Android: `app-store-release.apk`; iPhone: an archive of the **store** scheme, or, until the schemes exist, a build made without `THROWER_TEST_TOOLS`). Open Setup, Leaderboards, and History on a phone that still has Test sessions
   - **Look for:** Setup has **no Test sessions (test build only)** section. Leaderboards shows only 3 m knives · 3 × 5, no Test board. Any Test session says **Cannot be posted**, "Why: a test session, in a build without the test tools."
 
 ## Compliance Checks (added 2026-10-23)
@@ -654,12 +654,29 @@ For the small fixes in commit 7939fa2 (requirements [[Look and Feel]], [[Ranking
 
 For [[story-checkpoint-store-release-hygiene]] (backlog #6; requirement [[Instructions and Safety]]; why in [[Design Decisions]] → Store-Release Hygiene). Named **SH**n.
 
-- **SH0 (no test tools without the flag)**
-  - **Do:** Install a release build made **without** `THROWER_TEST_TOOLS` (an App Store-style build). Open **Setup**, then Setup → **Instructions** → Quick draw
+- **SH0 (no test tools in a store build)**
+  - **Do:** Install a **store**-flavor release build (Android: `app-store-release.apk`; iPhone: an archive of the **store** scheme, or, until the schemes exist, a build made without `THROWER_TEST_TOOLS`). Open **Setup**, then Setup → **Instructions** → Quick draw
   - **Look for:** Tools has only **Calibrate target**: no **Live test** and no **Scoring test target**. The Quick draw instructions don't mention the Live test recording
 - **SH1 (present in a test build)**
-  - **Do:** Install a TestFlight build (with the flag) or a debug build. Open Setup, then the Instructions' Quick draw section
+  - **Do:** Install a **beta**-flavor build (TestFlight from the beta scheme, `app-beta-release.apk`, or a debug run with `--flavor beta`). Open Setup, then the Instructions' Quick draw section
   - **Look for:** Tools has **Calibrate target**, **Live test** and **Scoring test target**, and each opens as before. The Quick draw instructions mention the Live test recording (Setup, then Live test, then Quick draw)
+
+## Flavor Checks (added 2026-10-23)
+
+For [[story-checkpoint-store-release-hygiene]] Task 2 (two build flavors, **beta** and **store**; why in [[Design Decisions]] → Build Flavors: Beta and Store). FL2 waits for the Mac's Xcode schemes ([[Mac Handoff]] → Flavors: beta and store schemes). Named **FL**n.
+
+- **FL0 (the store APK: no Live test, no test tools)**
+  - **Do:** On the Samsung, `flutter build apk --release --flavor store`, then `adb install -r build/app/outputs/flutter-apk/app-store-release.apk`. Open **Setup**, **Leaderboards** and Setup → **Instructions** → Quick draw
+  - **Look for:** Tools has only **Calibrate target**. No **Test sessions (test build only)** section, no Test leaderboard card. The Quick draw instructions don't mention the Live test recording. The APK is about 76 MB, not about 164 MB. History and names are still there (same app ID)
+- **FL1 (the beta APK: both)**
+  - **Do:** `flutter build apk --release --flavor beta`, then `adb install -r build/app/outputs/flutter-apk/app-beta-release.apk`. Open the same screens
+  - **Look for:** Tools has **Calibrate target**, **Live test** and **Scoring test target**. **Test sessions** is on Setup, and the Test board on Leaderboards. Live test plays a recording. The Quick draw instructions mention the Live test recording
+- **FL2 (an iPhone archive from each scheme)**
+  - **Do:** On the Mac, once the schemes exist: archive **beta** and install it (TestFlight), then archive **store** (an App Store build; check it before any submission)
+  - **Look for:** The beta archive has `flutter_assets/assets/live/`, and Setup has Live test and Test sessions. The store archive has no `assets/live/`, and Setup has no test tools. `grep FLAVOR ios/Flutter/Generated.xcconfig` showed the matching flavor before each archive
+- **FL3 (Live test absent when the recordings are missing)**
+  - **Do:** On the iPhone, before the Xcode schemes exist: a build with no flavor, made with `THROWER_TEST_TOOLS` (or a debug run from Xcode). It has test tools but no recordings
+  - **Look for:** Setup has **Scoring test target** and Test sessions, but **no Live test**. The Quick draw instructions don't mention the Live test recording. Nothing crashes
 
 ## When Results Come Back
 

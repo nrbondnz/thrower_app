@@ -15,8 +15,10 @@ On the Mac, with the repo pulled. The first time takes about an hour, later buil
    - The alternative, **external** testers, needs no account access but a Beta App Review of each version's first build (usually within a day).
 
 **Each build** (done in the foreground in Xcode: see [[dont-ask-again]] → Xcode work)
-1. Bump the build number in `pubspec.yaml` (`version: 1.0.0+N`, N one higher than the last upload), then `flutter build ios --config-only --release` so Xcode picks up the new number.
-2. `open ios/Runner.xcworkspace` → destination **Any iOS Device (arm64)** → **Product → Archive**. Organizer opens with the new archive when it's done.
+1. Bump the build number in `pubspec.yaml` (`version: 1.0.0+N`, N one higher than the last upload), then `flutter build ios --config-only --release --flavor beta` so Xcode picks up the new number and flavor.
+   - **Before the Mac has the beta and store schemes** ([[Mac Handoff]] → Build 15 → Flavors), leave out `--flavor`: `--flavor beta` fails with "The Xcode project does not define custom schemes".
+   - An App Store build uses `--flavor store` and the **store** scheme, archived and uploaded on its own. Never submit or promote a TestFlight build ([[Store Compliance]] → Release Checklist).
+2. `open ios/Runner.xcworkspace` → the **beta** scheme (or **store**) → destination **Any iOS Device (arm64)** → **Product → Archive**. Organizer opens with the new archive when it's done.
 3. Organizer → **Distribute App → App Store Connect → Upload**. (CLI alternative, not the default: `flutter build ipa --release`, then upload the `.ipa` with Transporter.)
    - "Redundant Binary Upload" means that build number was already uploaded: bump N and archive again.
 4. Wait for *Processing* in App Store Connect (10–30 min). Export compliance is pre-answered (`ITSAppUsesNonExemptEncryption = NO`).
@@ -73,8 +75,26 @@ The website is worked on in the worktree `C:\dev\flutter_projs\thrower_app-websi
 
 ## Run the App on a Phone
 
-- Use the JetBrains `main.dart` run configuration (see `working-with-nigel.md` → IDE).
+- Use the JetBrains `main.dart` run configuration (see `working-with-nigel.md` → IDE). It needs **Build flavor: `beta`** (see Build and Install on Android (Flavors)).
+- From the command line: `flutter run --flavor beta -d <device id>`.
 - **After adding or upgrading a plugin with native code** (e.g. `camera`), fully **stop and re-run**. A hot reload or hot restart doesn't add the native side, and the plugin fails at runtime. See [[Known Issues]].
+
+## Build and Install on Android (Flavors)
+
+Since 2026-10-23 the app has two flavors ([[Design Decisions]] → Build Flavors: Beta and Store):
+- **beta:** for testers and development. Has the Live test recordings (`assets/live/`) and the test tools.
+- **store:** for Google Play and the App Store. Neither.
+- Same app ID (`nz.nrbond.thrower`), so one replaces the other and keeps the app's data.
+
+**Build and install** (never `flutter install`: it uninstalls first and wipes History):
+1. `flutter build apk --release --flavor beta` (or `--flavor store`).
+2. `adb install -r build/app/outputs/flutter-apk/app-beta-release.apk` (or `app-store-release.apk`).
+- Sizes on 2026-10-23: beta 164 MB, store 76 MB.
+
+**Gotchas:**
+- **Always give a flavor.** A build with no `--flavor` can report success and point at an old APK (`app-release.apk`, `app-debug.apk`) left from before the flavors. Run `flutter clean` if one appears, and install only `app-beta-…` or `app-store-…` ([[Known Issues]] → A Build With No Flavor Reports an Old APK).
+- **JetBrains:** the `main.dart` run configuration needs **Build flavor: `beta`** (Edit Configurations → Build flavor). The run configurations are gitignored, so set it on each machine.
+- Android won't allow a flavor name starting with "test", hence **beta**.
 
 ## Run Tests and Analysis
 
@@ -169,7 +189,7 @@ The app's **Live test** plays packed recordings (`assets/live/*.tfrm`) in place 
 1. Cut it, scaled to 720 × 1280, without audio: `ffmpeg -ss 158.5 -i IMG_1628.mov -t 7.5 -map 0:0 -vf scale=720:1280 -c:v libx264 -crf 12 -an quickdraw.mp4`.
 2. Cut the sound separately, mono: `ffmpeg -ss 158.5 -i IMG_1628.mov -t 7.5 -map 0:1 -ac 1 -c:a aac -b:a 96k assets/live/quickdraw.m4a`. Same start and length, so it lines up with the first frame.
 3. Pack it at 60 fps: `dart run tool/pack_recording.dart quickdraw.mp4 assets/live/quickdraw.tfrm --ffmpeg <path to ffmpeg> --fps 60 --quality 20`. 449 frames, 34.2 MB. q12 was 53.1 MB; q31 was 23.0 MB but blocky on the boards (the grass compresses poorly).
-4. Give its `Recording` the `audio` asset (see `quickDrawRecording` in `lib/camera/recorded_camera.dart`). The audio asset needs no `pubspec.yaml` change: `assets/live/` is already listed.
+4. Give its `Recording` the `audio` asset (see `quickDrawRecording` in `lib/camera/recorded_camera.dart`). The audio asset needs no `pubspec.yaml` change: `assets/live/` is already listed, for the **beta** flavor only (store builds never carry the recordings).
 
 There's no ffmpeg on Nigel's PC. `pip install imageio-ffmpeg` brings one, at `python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())"`.
 
@@ -184,7 +204,7 @@ There's no ffmpeg on Nigel's PC. `pip install imageio-ffmpeg` brings one, at `py
 
 In Git Bash, prefix `adb shell` commands that take device paths with `MSYS_NO_PATHCONV=1`, or `/sdcard/...` gets rewritten to a Windows path.
 
-The wireless device ID can change after the phone locks (e.g. `adb-…._adb-tls-connect._tcp` becomes `adb-… (2)._adb-tls-connect._tcp`). Check `flutter devices` before `flutter run -d`. See [[Known Issues]].
+The wireless device ID can change after the phone locks (e.g. `adb-…._adb-tls-connect._tcp` becomes `adb-… (2)._adb-tls-connect._tcp`). Check `flutter devices` before `flutter run --flavor beta -d …`. See [[Known Issues]].
 
 ## Reset the Camera Permission (to Test the First-Run Prompt)
 
@@ -267,6 +287,6 @@ Secrets never go in git or in a chat. A deploy fails until all six exist.
    ```bash
    aws cognito-idp create-managed-login-branding --user-pool-id <pool> --client-id <client> --use-cognito-provided-values --region eu-west-2
    ```
-3. Regenerate the outputs (Connect the App to the Amplify Backend), rebuild, and install with `adb install -r`. The Account screen then shows Google and Apple buttons.
+3. Regenerate the outputs (Connect the App to the Amplify Backend), rebuild (`flutter build apk --release --flavor beta`), and install with `adb install -r build/app/outputs/flutter-apk/app-beta-release.apk`. The Account screen then shows Google and Apple buttons.
 4. **iOS (on the Mac, in Xcode):** Signing & Capabilities → **+ Sign in with Apple**. This creates `Runner.entitlements` and sets `CODE_SIGN_ENTITLEMENTS` for Debug, Release and Profile; WhereWillWeVisit needed all three.
 

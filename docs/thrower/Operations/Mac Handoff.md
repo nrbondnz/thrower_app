@@ -1,6 +1,6 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 15, posting from History, leaderboard tables (new Swift to compile) and store hygiene, section 0000000000 (2026-10-23)**; build 14, the app design, section 000000000 (2026-10-23; carried by build 15 if 14 never went); builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 15, posting from History, leaderboard tables (new Swift to compile), store hygiene and the beta and store flavors (new Xcode schemes), section 0000000000 (2026-10-23)**; build 14, the app design, section 000000000 (2026-10-23; carried by build 15 if 14 never went); builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
 
@@ -19,7 +19,7 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
 - **A Leaderboards tab** in place of Throw: **3 m knives · 3 × 5** opens the app's own table (see Also in it: leaderboard tables). Home's "Quick actions" is now **Throwing types**.
 - **Test sessions** (test builds only): Setup → Test sessions (test build only) → **Add 10 test sessions** and **Remove test sessions**. Marked Test, left out of the stats, never backed up. They post only to a separate test leaderboard, `test.ranked.3m.5x3`, shown on the Leaderboards tab only in test builds.
 - Commits `7030b33` (Tasks 1–4) and `46ed757` (Review Agent fixes), then Task 5 (docs).
-- **New:** a build flag, `THROWER_TEST_TOOLS`. No new permissions, assets or `Info.plist` keys. Nothing for Signing & Capabilities. The bundle ID and signing are unchanged. (One plugin made direct, `url_launcher`: see Also in it, below.)
+- **New:** two build flavors, **beta** and **store** (see Flavors: beta and store schemes, below). And a build flag, `THROWER_TEST_TOOLS`, needed only until the schemes exist. No new permissions, assets or `Info.plist` keys. Nothing for Signing & Capabilities. The bundle ID and signing are unchanged. (One plugin made direct, `url_launcher`: see Also in it, below.)
 - The history file has three extra fields (`changedByHand`, `posted`, `test`); its version is unchanged, so earlier builds still read it.
 
 ### Also in it: Help and support (compliance, 2026-10-23)
@@ -43,19 +43,63 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
 - Last week uses GameKit's completion-handler `loadPreviousOccurrence`. In the leaderboard's first week it gives nothing, and the table says "No results for last week yet".
 
 ### Also in it: store-release hygiene (backlog #6, 2026-10-23)
-- **Setup → Tools** shows **Live test** and **Scoring test target** only in test builds (debug, or `THROWER_TEST_TOOLS`), commit `ae22576`. **Calibrate target** stays.
+- **Setup → Tools** shows **Live test** and **Scoring test target** only in test builds, commit `ae22576`. **Calibrate target** stays.
 - The Instructions mention the Live test recording only in test builds.
-- The recordings are still inside every build (about 87 MB). Keeping them out of store builds is Nigel's decision (flavors recommended: [[story-checkpoint-store-release-hygiene]] → Task 2). Nothing to do for it on the Mac yet.
+- **Two flavors** (Task 2, commit `8ed8624`; why in [[Design Decisions]] → Build Flavors: Beta and Store):
+  - **beta:** for testers. Has the Live test recordings (`assets/live/`, about 87 MB, real people with voices) and the test tools.
+  - **store:** neither. Every App Store build.
+  - The test tools show in a debug build, the beta flavor, or with `THROWER_TEST_TOOLS`, and **never** in the store flavor.
+  - Live test shows only when the recordings are in the build (`liveRecordingsProvider`).
+  - `ios/Podfile` already maps the six configurations. **The Xcode configurations and schemes aren't made yet:** that's the next section.
+- **Until the schemes exist:** `flutter build ios --config-only --release` with no flavor works. The build has no recordings and no flavor (`appFlavor` is null). The test tools show only with the define, and Live test is hidden. `--flavor beta` fails with "The Xcode project does not define custom schemes."
 
 ### Also in it: small fixes (2026-10-23, commit `7939fa2`)
 - Play's and two-target Play's panel under the camera is at most 65% of the screen. The scores scroll; **Round done**, **Post score**, **New game** and the board buttons stay in sight.
 - A session posted on one phone shows **Posted** on the others after a backup sync.
 - History's **Clear history** is a bin icon (tooltip "Clear history").
 
+### Flavors: beta and store schemes (Nigel in Xcode)
+Do this first, before the archive, if there's time. Then build 15 is a **beta** build and needs no `THROWER_TEST_TOOLS` define. If it can't be done, the define steps below still work, but the build has no Live test (no recordings).
+
+1. **Claude:** `git pull`, `flutter pub get`, then `flutter build ios --config-only --release` (no flavor yet), then `open ios/Runner.xcworkspace`.
+2. **Nigel, in Xcode:** the Runner project (blue icon) → PROJECT **Runner** → **Info** → **Configurations**:
+   - **+** → Duplicate "Debug" → name it `Debug-beta`;
+   - then `Debug-store` (from Debug);
+   - `Release-beta` and `Release-store` (from Release);
+   - `Profile-beta` and `Profile-store` (from Profile).
+   - The names must be exactly `<Base>-<flavor>`: a hyphen and a lower-case flavor.
+3. **Check "Based on Configuration File"** for each new configuration:
+   - Runner's `Debug-*` use **Debug**.
+   - Runner's `Release-*` and `Profile-*` use **Release**.
+   - RunnerTests: as `pod install` sets it.
+4. **TARGETS → Runner → Build Settings** (All, Levels). For each new configuration, check:
+   - `CODE_SIGN_ENTITLEMENTS` = `Runner/Runner.entitlements` (Game Center);
+   - `CODE_SIGN_STYLE` = Automatic;
+   - `DEVELOPMENT_TEAM` = QCQ64RLD77;
+   - `PRODUCT_BUNDLE_IDENTIFIER` = `nz.nrbond.thrower`;
+   - `CURRENT_PROJECT_VERSION` = `$(FLUTTER_BUILD_NUMBER)`.
+   - Under **Signing & Capabilities** (All), Game Center should show for each.
+5. **Product → Scheme → Manage Schemes:**
+   - Duplicate **Runner** to make **`beta`**, ticked **Shared**. Duplicating keeps the "Run Prepare Flutter Framework Script" pre-action.
+   - Edit Scheme `beta`: Run **Debug-beta**, Test **Debug-beta**, Profile **Profile-beta**, Analyze **Debug-beta**, Archive **Release-beta**.
+   - Make **`store`** the same way, with the `-store` configurations.
+6. **Recommended:** delete the **Runner** scheme. An archive of plain Runner can pick up a leftover `FLAVOR`.
+7. **Claude:** `cd ios && pod install`. Expect "did not set the base configuration" warnings for the new configurations. `Podfile.lock` shouldn't change.
+8. **Check:**
+   - `flutter build ios --config-only --release --flavor beta`, then `grep FLAVOR ios/Flutter/Generated.xcconfig` shows `FLAVOR=beta`.
+   - Archive **beta**: the archive's `flutter_assets/assets/live/` is there, and Setup has Live test and Test sessions.
+   - Archive **store**: no `assets/live`, no test tools.
+9. **Commit** `project.pbxproj`, `xcshareddata/xcschemes/beta.xcscheme` and `store.xcscheme`, the Runner scheme's deletion, and `Podfile.lock` if it changed. **The Review Agent checks the `project.pbxproj` diff first.**
+10. **From then on:**
+    - TestFlight: `flutter build ios --config-only --release --flavor beta`, archive the **beta** scheme.
+    - App Store: `--flavor store`, archive the **store** scheme.
+    - Record each build number as **beta** or **store** (in this file, under its build).
+11. **Then, the PC's follow-ups** (tell the PC): remove the `THROWER_TEST_TOOLS` define; retire the `grep VEhST1dF…` check (here and in [[Known Issues]]); maybe add `default-flavor: store` to `pubspec.yaml` (never `beta`).
+
 ### First: the Swift must compile (Claude, before the archive)
-1. After `git pull` and `flutter pub get`: `flutter build ios --config-only --release` (with the define, as in Steps below). Then build in Xcode (**Product → Build**, or let **Archive** build it). Watch for errors in `AppDelegate.swift`.
+1. After `git pull` and `flutter pub get`: `flutter build ios --config-only --release --flavor beta` once the schemes exist; without them, no flavor and the define, as in Steps below. Then build in Xcode (**Product → Build**, or let **Archive** build it). Watch for errors in `AppDelegate.swift`.
 2. **If it doesn't compile:** fix it on the Mac, keeping the channel name, method and reply keys the same (`loadTable`; `leaderboardID`, `previous`, `count`; `entries`, `me`, `start`; errors `signedOut`, `notFound`, `failed`). Commit the fix, and tell the PC what changed and why (a note in this section is enough).
-3. **A debug run on the iPhone** (Xcode's Run, or `flutter run` with Xcode open), signed in to Game Center, after posting a score:
+3. **A debug run on the iPhone** (Xcode's Run with the **beta** scheme, or `flutter run --flavor beta` with Xcode open; no `--flavor` before the schemes exist), signed in to Game Center, after posting a score:
    - **Leaderboards → 3 m knives · 3 × 5:** This week shows the score and your row.
    - **Last week:** "No results for last week yet" (in the first week).
    - Watch the Xcode console for any GameKit error.
@@ -74,6 +118,13 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
    - Write down exactly what App Store Connect shows and send it to the PC. If it's different, the PC changes `rankedLeaderboardStart`. Don't change it on the Mac.
 
 ### Steps: a TestFlight build with the test tools (iOS work in the foreground, in Xcode: `docs/dont-ask-again.md`)
+- **With the schemes** (Flavors, above):
+  - step 2: `flutter build ios --config-only --release --flavor beta` (no define);
+  - step 3: `grep FLAVOR ios/Flutter/Generated.xcconfig` shows `FLAVOR=beta`;
+  - step 5: archive the **beta** scheme;
+  - skip step 7. Record build 15 as **beta**.
+- **Without the schemes:** follow the steps as written: no flavor, with the define. The build has no Live test.
+
 1. **Claude:** `git pull` (check `git log --oneline -8` shows the Posting from History commits), `flutter pub get`, then `flutter test` (all pass; the replay tests take ~5 min).
 2. **Claude:** bump `pubspec.yaml` to **`version: 1.0.0+15`**, then run:
    - `flutter build ios --config-only --release --dart-define=THROWER_TEST_TOOLS=true`
@@ -92,18 +143,21 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
    - "Leaderboards → 3 m knives · 3 × 5 now shows this week's and last week's tables. Last week is empty until the first week ends."
    - "Clear history in History is now a bin icon at the top."
 
-### App Store builds (later): always a fresh archive, no define
-One uploaded build can be chosen for both TestFlight and the App Store, so a test-tools build must never be submitted for review.
-1. Bump the build number, then run `flutter build ios --config-only --release` with **no** `--dart-define`.
-2. `grep -c VEhST1dFUl9URVNUX1RPT0xT ios/Flutter/Generated.xcconfig` must print **0**. If it prints 1, **stop and don't archive**.
-3. In App Store Connect, **never choose a build marked TEST TOOLS** for an App Store version.
+### App Store builds (later): always a fresh store archive
+One uploaded build can be chosen for both TestFlight and the App Store. So **every store submission is its own build, archived from the store scheme** and uploaded on its own. Never submit or promote a TestFlight (beta) build.
+1. Bump the build number, then run `flutter build ios --config-only --release --flavor store` (no `--dart-define`).
+2. `grep FLAVOR ios/Flutter/Generated.xcconfig` must show `FLAVOR=store`. Until the define is retired, `grep -c VEhST1dFUl9URVNUX1RPT0xT ios/Flutter/Generated.xcconfig` must print **0** too. If either is wrong, **stop and don't archive**.
+3. Archive the **store** scheme. Record the build number as **store**.
+4. In App Store Connect, **never choose a build marked TEST TOOLS, or any beta build,** for an App Store version.
+- Before the schemes exist, no store build can be made: don't submit one ([[Store Compliance]] → Release Checklist).
 
 ### Checks to send
-- [[Device Test Plan]] → **Posting From History Checks (PH0–PH13)**: the iPhone for posting; the Samsung for PH9. PH8 needs a session from the week before. PH13 needs an App Store-style build (no define), e.g. a release run from Xcode.
+- [[Device Test Plan]] → **Posting From History Checks (PH0–PH13)**: the iPhone for posting; the Samsung for PH9. PH8 needs a session from the week before. PH13 needs a store build (the store scheme; before the schemes, no define), e.g. a release run from Xcode.
 - [[Device Test Plan]] → **Compliance Checks (CP0–CP4)**: on the iPhone (and the Samsung from the PC). CP5 and CP6 wait for the website pages to be published.
 - [[Device Test Plan]] → **Leaderboard Table Checks (LT0–LT8)**: the iPhone, signed in to Game Center; LT7 on the Samsung.
 - [[Device Test Plan]] → **Small Fixes Checks (SF0–SF3)**: SF2 needs a build with accounts, so later.
-- [[Device Test Plan]] → **Store Hygiene Checks (SH0–SH1)**: SH1 in this TestFlight build; SH0 in an App Store-style build (no define), with PH13.
+- [[Device Test Plan]] → **Store Hygiene Checks (SH0–SH1)**: SH1 in this TestFlight build; SH0 in a store build (the store scheme; before the schemes, no define), with PH13.
+- [[Device Test Plan]] → **Flavor Checks (FL0–FL3)**: FL0 and FL1 on the Samsung (from the PC); FL2 once the schemes exist; FL3 on the iPhone before them.
 - If build 14 never went: App Design Checks (AD0–AD11) too, with AD0 and AD3 read as the note there says.
 - The earlier checks still open: RK0–RK10, RD0–RD3, QA0–QA14, BF8.
 
@@ -424,7 +478,7 @@ Some steps need **Nigel**: the Xcode GUI, logging in with his Apple ID, and the 
 ### 2. Signing (one-time)
 - **Nigel:** `open ios/Runner.xcworkspace` (the **workspace**, not the `.xcodeproj`). In Xcode: *Runner* target → *Signing & Capabilities* → tick **Automatically manage signing** → choose his **Team**. Leave the bundle ID as **`nz.nrbond.thrower`** (it's hard to change once published). Xcode registers it with Apple.
 - **Claude:** `git diff ios/Runner.xcodeproj/project.pbxproj` should show `DEVELOPMENT_TEAM = XXXXXXXXXX;` lines added, and nothing else. The team ID isn't a secret.
-- Optional sanity check: plug in Nigel's iPhone, if he has one, and run `flutter run --release`.
+- Optional sanity check: plug in Nigel's iPhone, if he has one, and run `flutter run --release --flavor beta` (no `--flavor` before the beta and store schemes exist: Build 15 → Flavors).
 
 ### 3. App record (one-time)
 - **Nigel:** [App Store Connect](https://appstoreconnect.apple.com) → *Apps* → **+** → *New App*:
@@ -442,8 +496,8 @@ The tester is **an internal tester** (decided 2026-10-08), so he gets each build
 
 ### 5. Build and upload (every build)
 1. **Claude:** bump the build number in `pubspec.yaml`: `version: 1.0.0+N`, where N is one higher than the last upload. The first upload can stay `+1`.
-2. **Claude:** `flutter build ios --config-only --release` (refreshes the version Xcode uses), then `open ios/Runner.xcworkspace`. **All Xcode work happens in the foreground in Xcode** so Nigel can follow it (Nigel, 2026-10-10; see `docs/dont-ask-again.md`).
-3. **Nigel**, in Xcode: destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**. If it fails on signing, step 2 isn't done.
+2. **Claude:** `flutter build ios --config-only --release --flavor beta` for TestFlight, or `--flavor store` for the App Store (refreshes the version and flavor Xcode uses), then `open ios/Runner.xcworkspace`. Before the schemes exist (Build 15 → Flavors), no `--flavor`. **All Xcode work happens in the foreground in Xcode** so Nigel can follow it (Nigel, 2026-10-10; see `docs/dont-ask-again.md`).
+3. **Nigel**, in Xcode: choose the matching scheme (**beta** or **store**), destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**. If it fails on signing, step 2 isn't done.
 4. Wait 10–30 minutes for *Processing* in App Store Connect. Export compliance is already answered in `Info.plist` (`ITSAppUsesNonExemptEncryption = NO`).
 5. With automatic distribution on, the tester gets a TestFlight email. He installs Apple's **TestFlight** app and then Thrower App from it.
 
@@ -451,6 +505,7 @@ The tester is **an internal tester** (decided 2026-10-08), so he gets each build
 - A TestFlight build is a **release** build: no debug extras (frames/s label, error detail, frame dumps, the watch log).
 - `NSMicrophoneUsageDescription` is in `Info.plist` only because the camera plugin links audio APIs and App Store Connect flags that. The app never records sound.
 - Builds expire after 90 days.
+- Every App Store submission is its own **store** build. Never submit or promote a TestFlight (beta) build. Record each build number as beta or store.
 - "No profiles for 'nz.nrbond.thrower' were found": signing isn't set up. Go back to step 2, and make sure Xcode is signed in with the right Apple ID.
 
 ---

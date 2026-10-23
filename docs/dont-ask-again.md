@@ -34,12 +34,12 @@ This is a cross-session, ever-growing list of questions that came up once, got a
 
 ## Xcode work happens in the foreground, in Xcode
 **Settled answer:** iOS build, archive, signing and upload work is done **visibly in Xcode**, so Nigel can follow it, not as background CLI builds (`flutter build ipa`) that he only hears about afterwards. The pattern for an archive:
-1. **Claude:** bump `version: 1.0.0+N` in `pubspec.yaml`, then `flutter build ios --config-only --release`. This only refreshes `Generated.xcconfig` (the version and build number Xcode uses); it isn't a build.
+1. **Claude:** bump `version: 1.0.0+N` in `pubspec.yaml`, then `flutter build ios --config-only --release --flavor beta` (TestFlight) or `--flavor store` (App Store). This only refreshes `Generated.xcconfig` (the version, build number and flavor Xcode uses); it isn't a build. Until the Mac has the beta and store schemes, leave out `--flavor` (`docs/thrower/Operations/Mac Handoff.md` → Build 15 → Flavors).
 2. **Claude:** `open ios/Runner.xcworkspace`, and say exactly what to click.
-3. **Nigel**, in Xcode: destination **Any iOS Device (arm64)** → **Product → Archive**. Xcode compiles the Dart code itself (Flutter's build-phase script), shows progress, then opens **Organizer** → **Distribute App → App Store Connect → Upload**.
+3. **Nigel**, in Xcode: the matching scheme (**beta** or **store**), destination **Any iOS Device (arm64)** → **Product → Archive**. Xcode compiles the Dart code itself (Flutter's build-phase script), shows progress, then opens **Organizer** → **Distribute App → App Store Connect → Upload**.
 4. **Claude:** confirms the result from Xcode's logs (`$TMPDIR/*.xcdistributionlogs`) and App Store Connect, and narrates each step.
 
-The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explaining) and device installs (Xcode's Run button, or `flutter run` with Xcode open). Claude can't click inside Xcode; it prepares, explains and checks. Read-only checks (git diffs, logs, `flutter test`) stay on the command line.
+The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explaining) and device installs (Xcode's Run button, or `flutter run --flavor beta` with Xcode open). Claude can't click inside Xcode; it prepares, explains and checks. Read-only checks (git diffs, logs, `flutter test`) stay on the command line.
 **Why:** Nigel wants to follow and learn the Xcode flow, not just get results.
 **Confirmed:** 2026-10-10.
 
