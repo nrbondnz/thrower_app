@@ -69,13 +69,17 @@ class _WeekTableState extends ConsumerState<WeekTable> {
     _load();
   }
 
-  Future<void> _load() async {
+  /// Loads the table. Try again shows the spinner; pull to refresh
+  /// ([keep]) leaves the table in place until the new one arrives.
+  Future<void> _load({bool keep = false}) async {
     final service = ref.read(leaderboardServiceProvider);
     if (service == null) return;
-    setState(() {
-      _table = null;
-      _failure = null;
-    });
+    if (!keep) {
+      setState(() {
+        _table = null;
+        _failure = null;
+      });
+    }
     LeaderboardTable? table;
     _Failure? failure;
     try {
@@ -120,13 +124,26 @@ class _WeekTableState extends ConsumerState<WeekTable> {
         text: widget.week == LeaderboardWeek.thisWeek
             ? 'No scores yet this week. Post one at the end of a full session.'
             : 'No results for last week yet.',
+        // A score just posted can take a moment to reach Game Center.
+        action: OutlinedButton(key: const Key('tableRefresh'), onPressed: _load, child: const Text('Refresh')),
       );
     }
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(keep: true),
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          if (table.weekStart case final start?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text(
+                weekText(start),
+                key: const Key('tableWeek'),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
           for (final e in table.entries) EntryRow(entry: e),
           if (table.meBelow) ...[
             const Divider(),
@@ -199,4 +216,16 @@ class _Message extends StatelessWidget {
           ),
         ),
       );
+}
+
+const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/// "Week from Fri 23 Oct, 13:00": when the week began, as Game Center says,
+/// in the phone's time (traceability, 2026-10-23: shows the leaderboard's
+/// real start, to check `rankedLeaderboardStart`).
+String weekText(DateTime start) {
+  final t = start.toLocal();
+  final time = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  return 'Week from ${_days[t.weekday - 1]} ${t.day} ${_months[t.month - 1]}, $time';
 }

@@ -59,9 +59,9 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
    - **Leaderboards → 3 m knives · 3 × 5:** This week shows the score and your row.
    - **Last week:** "No results for last week yet" (in the first week).
    - Watch the Xcode console for any GameKit error.
-4. **The week's start.** Game Center sends it as `start`; the app reads it into `LeaderboardTable.weekStart` but doesn't show it.
+4. **The week's start.** Game Center sends it as `start`, and each table now shows it at the top ("Week from Fri 23 Oct, 13:00", in the phone's time; added 2026-10-23 after the Traceability Agent). Read it off the This week tab and send it to the PC.
    - Compare the leaderboard's start in App Store Connect (step 2 of Before archiving) with `rankedLeaderboardStart` in `lib/leaderboard/leaderboard_week.dart` (2026-10-23 00:00 UTC).
-   - To see Game Center's own value: a breakpoint in `GameCenterTables.loadTable` on `board.startDate` during the debug run. Send it to the PC.
+   - No breakpoint needed: the line at the top of the table is Game Center's own `startDate`.
 
 ### Before archiving: App Store Connect (Nigel, Claude explaining)
 1. **Create the test leaderboard.** App Store Connect → the app → Game Center → Leaderboards → add a **Recurring** leaderboard:

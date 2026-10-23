@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -105,6 +107,50 @@ void main() {
     });
   });
 
+  // Traceability check, 2026-10-23.
+  group('reloading', () {
+    testWidgets('no scores yet: Refresh shows a score just posted', (tester) async {
+      await pumpTables(tester);
+      board.tables[LeaderboardWeek.thisWeek] = table([(1, 'Mark', 66)]);
+      await tester.tap(find.byKey(const Key('tableRefresh')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mark'), findsOneWidget);
+    });
+
+    testWidgets('pull to refresh keeps the table while it loads, then shows the new one', (tester) async {
+      final slow = _SlowBoard();
+      await tester.pumpWidget(ProviderScope(
+        overrides: [leaderboardServiceProvider.overrideWithValue(slow)],
+        child: const MaterialApp(home: LeaderboardTableScreen(board: Leaderboard.ranked3m)),
+      ));
+      await tester.pump();
+      slow.replies.removeAt(0).complete(table([(1, 'Mark', 66)]));
+      await tester.pumpAndSettle();
+      await tester.fling(find.text('Mark'), const Offset(0, 300), 1000);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(slow.replies, hasLength(1), reason: 'the refresh should have asked again');
+      expect(find.text('Mark'), findsOneWidget, reason: 'the table should stay while it reloads');
+      slow.replies.removeAt(0).complete(table([(1, 'Captain', 70)]));
+      await tester.pumpAndSettle();
+      expect(find.text('Captain'), findsOneWidget);
+    });
+  });
+
+  group('LeaderboardTable.meBelow', () {
+    test('no score this week: nothing under the table', () {
+      expect(table([(1, 'Mark', 66)]).meBelow, isFalse);
+    });
+
+    test('in the top 25: not repeated under the table', () {
+      expect(table([(1, 'Mark', 66), (2, 'Nigel', 40)], myRank: 2).meBelow, isFalse);
+    });
+
+    test('further down: under the table', () {
+      expect(table([(1, 'Mark', 66)], myRank: 40).meBelow, isTrue);
+    });
+  });
+
   testWidgets("Open in Game Center shows Apple's screen", (tester) async {
     await pumpTables(tester);
     await tester.tap(find.byKey(const Key('openInGameCenter')));
@@ -172,4 +218,41 @@ void main() {
       );
     });
   });
+
+  // Traceability (2026-10-23): the week's start, as Game Center says.
+  testWidgets("the table says when the week began", (tester) async {
+    final start = DateTime.utc(2026, 10, 23);
+    board.tables[LeaderboardWeek.thisWeek] = LeaderboardTable(
+      entries: const [LeaderboardEntry(rank: 1, name: 'Mark', score: 66)],
+      weekStart: start,
+    );
+    await pumpTables(tester);
+    expect(find.text(weekText(start)), findsOneWidget);
+  });
+
+  test("weekText: the day, date and time, in the phone's time", () {
+    final local = DateTime(2026, 10, 23, 13, 5);
+    expect(weekText(local), 'Week from Fri 23 Oct, 13:05');
+  });
+}
+
+/// Replies only when the test completes each load ([replies], oldest first).
+class _SlowBoard implements LeaderboardService {
+  final replies = <Completer<LeaderboardTable>>[];
+
+  @override
+  Future<bool> signIn() async => true;
+
+  @override
+  Future<LeaderboardTable> loadTable(Leaderboard board, LeaderboardWeek week, {int count = 25}) {
+    final reply = Completer<LeaderboardTable>();
+    replies.add(reply);
+    return reply.future;
+  }
+
+  @override
+  Future<void> submit(Leaderboard board, int score) async {}
+
+  @override
+  Future<void> show(Leaderboard board) async {}
 }

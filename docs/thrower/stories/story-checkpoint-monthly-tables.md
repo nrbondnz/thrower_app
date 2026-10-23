@@ -76,3 +76,95 @@ IN PROGRESS 2026-10-23: Nigel approved the plan on 2026-10-22 ("Full table, own 
 ### Notes
 - Task 3's Traceability Agent run is still to do.
 - The filename still says "monthly"; kept so links don't break.
+
+---
+
+## Traceability Report — 2026-10-23
+
+Story: Leaderboard Tables (backlog #22). Code: commit a5afd1f, plus the fixes below (not committed). Also looked at 7939fa2 (small fixes) and ae22576 (#6).
+
+### Coverage Summary
+- Requirements: 13.
+- Fully covered (design, code, test): 12 (R11 still needs its device check).
+- Partly covered: 1 (the week's start from Game Center: read, never used).
+- Orphan code: none.
+- The Swift (`GameCenterTables`) is covered only through a mocked channel. It's checked on the Mac (LT0–LT8).
+
+### Matrix
+
+- **R1: This week's best scores (3 m), a table**
+  - Design: Design Decisions → Leaderboard Tables: This Week and Last Week.
+  - Code: `WeekTable` (`LeaderboardWeek.thisWeek`), `GameCenterLeaderboardService.loadTable`, `GameCenterTables.loadTable`.
+  - Test: "this week's table: place, nickname and score"; "reads the rows, the player and the week's start".
+  - Device: LT0. Status: ✅
+- **R2: Last week's results, the full table, our own iOS code**
+  - Design: Design Decisions → Leaderboard Tables (why not the plugin).
+  - Code: `previous: true` on `thrower/game_center`; `loadPreviousOccurrence` then `loadEntries` in `AppDelegate.swift`.
+  - Test: "Last week's tab loads last week"; "asks for the leaderboard, the week and 25 places".
+  - Device: LT1. Status: ✅
+- **R3: No all-time table**
+  - Design: Decided list above; Rankings → Not yet.
+  - Code: `LeaderboardWeek` has two values only. Status: ✅ (nothing to test)
+- **R4: Weekly, not monthly (Plan Changes Log)**
+  - Design: Design Decisions; Rankings.
+  - Code: `LeaderboardWeek` labels; the tabs.
+  - Test: the tab keys `week-thisWeek`, `week-lastWeek` in the widget tests. Status: ✅
+- **R5: Top 25, the player's own row marked**
+  - Code: `count = 25` (Dart), clamped to 1–100 in the Swift; `EntryRow` "(you)".
+  - Test: "the player's own row is marked (you)". Status: ✅
+- **R6: The player under the table if further down**
+  - Code: `LeaderboardTable.meBelow`.
+  - Test: "further down than the top 25"; new `LeaderboardTable.meBelow` unit tests (no score, in the top 25, further down). Status: ✅
+- **R7: Loading**
+  - Code: spinner while `_table` and `_failure` are null.
+  - Test: indirectly (the pull-to-refresh test pumps a load in flight). Status: ✅
+- **R8: Empty (no scores this week; no results last week)**
+  - Code: `tableEmpty`, two messages; new **Refresh** button.
+  - Test: "no scores yet this week"; "no results for last week yet"; new "Refresh shows a score just posted". Status: ✅
+- **R9: Signed out of Game Center, with Try again**
+  - Code: `signIn()` false or `signedOut` from the Swift → `LeaderboardSignedOut`.
+  - Test: "not signed in to Game Center: says so, Try again"; "signed out of Game Center: LeaderboardSignedOut"; "View leaderboard, not signed in". Status: ✅
+- **R10: No signal, with Try again**
+  - Code: any other error; in the Swift, `NSURLErrorDomain` or `GKError.communicationsFailure` → `failed`.
+  - Test: "no signal: says so, Try again"; "any other failure is passed on". Status: ✅
+- **R11: The first week (no previous occurrence)**
+  - Code: `loadPreviousOccurrence` gives no board and no network error → `["entries": []]` → "No results for last week yet."
+  - Test: Dart side only ("no results for last week yet"). The Swift branch needs LT1. Status: ✅ (device check to come)
+- **R12: Reached from the Leaderboards tab and View leaderboard; Open in Game Center**
+  - Code: `LeaderboardsScreen` → `openScreen`; `PostScorePanel` → `Navigator.push`; `openInGameCenter` → `viewLeaderboard`.
+  - Test: app_shell_test; "View leaderboard opens the 3 m leaderboard's tables"; "Open in Game Center shows Apple's screen". Status: ✅
+- **R13: The week's start from Game Center (to confirm `rankedLeaderboardStart`)**
+  - Code: `LeaderboardTable.weekStart` is read from `start`.
+  - Test: "reads the rows, the player and the week's start".
+  - Gap: nothing uses or shows it. The Mac Handoff asks to check it in a debug run, but there's nothing to see. Status: ⚠️
+
+### Checked and Fine
+- **`setState` from `initState`:** `_load` calls `setState` before its first `await`, so during `initState`. Flutter allows this (it only asserts in a constructor, or after dispose); the element is already dirty for its first build. The widget tests run this path with a fake service and pass.
+- **After dispose:** the only `setState` after an `await` checks `mounted`. Switching tabs fast is safe.
+- **`meBelow` with no `me`:** false, so nothing goes under the table.
+- **The `count` on the iPhone:** clamped to 1–100 (`max(1, min(count, 100))`).
+- **View leaderboard from a camera screen:** the pushed route takes the app's theme from `MaterialApp` (not the camera's dark `CameraTheme`), and Back returns to Play. It posts and views `ranked3m`, the same board `ScorePostNotifier` posts to.
+- **Loads firing twice:** each tab loads once when built. `TabBarView` doesn't keep the other tab alive, so going back to a tab loads it again (fresh, and `signIn` is quick when already signed in). No double load on opening.
+- **The Swift (reading only; it compiles on the Mac):**
+  - The closure parameter `board` in `loadPreviousOccurrence { board, error in … }` shadows the outer `var board`. That's legal in Swift and only the parameter is used inside.
+  - The nested `func row(_:)` shadows nothing; `entries.map(row)` is fine.
+  - The API shapes match iOS 14+ GameKit: `loadLeaderboards(IDs:)`, `loadPreviousOccurrence(completionHandler:)`, `loadEntries(for:timeScope:range:)` returning `(Entry?, [Entry], Int)`, `startDate`, `gamePlayerID`. The target is iOS 15.0 and Swift 5.0, so the `Task`/`@MainActor` code and the non-`Sendable` captures are warnings at most.
+  - `registrar(forPlugin:)` is optional and `messenger()` is a method: both used correctly.
+  - No definite compile error found. `ios/` not touched.
+- **7939fa2:** the posted-sync loop and Play's scrolling panel look right; tests cover them.
+- **ae22576:** Live test and the Scoring test target hidden behind `testToolsProvider`; tests cover it.
+
+### Fixes (2026-10-23, not committed)
+1. **Pull to refresh dropped the table.** `_load` cleared the table first, so a pull swapped the list for a full-screen spinner and took the `RefreshIndicator` away mid-refresh. Now `_load(keep: true)` (pull to refresh) leaves the table until the new one arrives. Try again still shows the spinner.
+2. **No way to reload an empty table.** Straight after Post score, View leaderboard can show "No scores yet this week" before Game Center has the score, with no way to reload but going back. The empty state now has a **Refresh** button (`tableRefresh`).
+- Files: `lib/ui/leaderboard_table_screen.dart`, `test/ui/leaderboard_table_screen_test.dart`.
+- New tests: "no scores yet: Refresh shows a score just posted"; "pull to refresh keeps the table while it loads, then shows the new one"; three `LeaderboardTable.meBelow` tests.
+- Results: `flutter analyze` clean on both files; leaderboard_table_screen_test, score_post_test and app_shell_test: 65 passed, 0 failed.
+
+### Gaps
+1. **R13, the week's start:** read but never shown or used. Either show it (for example "Week from Fri 23 Oct" under the tabs) or log it in a debug run, so the Mac check in the Handoff can be done. Question for Nigel below.
+2. **The Swift is untested on the PC:** it is checked by LT0–LT8 on the Mac and iPhone.
+
+### Open Questions for Nigel
+1. Show the week's dates on each tab (from Game Center's `start`)? It would also do the Mac check of `rankedLeaderboardStart` with no debug run.
+2. Should a tab keep its table when you switch away and back (no reload), or reload each time as now?
