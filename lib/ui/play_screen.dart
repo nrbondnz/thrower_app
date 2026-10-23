@@ -100,15 +100,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
 
   /// Mid-game, a stray tap shouldn't wipe the scores: ask first.
   Future<void> _confirmReset() async {
+    // Dark like the screen: this State's context is above its CameraTheme.
     final reset = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset this game?'),
-        content: const Text('Scores will be lost.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Reset')),
-        ],
+      builder: (context) => CameraTheme(
+        child: AlertDialog(
+          title: const Text('Reset this game?'),
+          content: const Text('Scores will be lost.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Reset')),
+          ],
+        ),
       ),
     );
     if (reset == true && mounted) _newGame();
@@ -371,21 +374,25 @@ String gameOverText(GameSession game) => game.rounds.length < game.maxRounds
     ? 'Game over after ${game.rounds.length} of ${game.maxRounds} rounds!'
     : 'Game over!';
 
-/// Finish game asks first: it ends the game for everyone.
+/// Finish game asks first: it ends the game for everyone. Dark, like the
+/// camera screens it's asked from (their State's context is above their
+/// [CameraTheme]).
 Future<bool> confirmFinishGame(BuildContext context) async =>
     await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Finish the game now?'),
-        content: const Text('It ends with the rounds played so far and is kept in History.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(
-            key: const Key('finishGameConfirm'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Finish'),
-          ),
-        ],
+      builder: (context) => CameraTheme(
+        child: AlertDialog(
+          title: const Text('Finish the game now?'),
+          content: const Text('It ends with the rounds played so far and is kept in History.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(
+              key: const Key('finishGameConfirm'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Finish'),
+            ),
+          ],
+        ),
       ),
     ) ??
     false;

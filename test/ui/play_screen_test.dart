@@ -317,4 +317,25 @@ void main() {
     await pumpPlay(tester, 2);
     expect(textOf(tester, 'playTotal'), '8');
   });
+
+  // Traceability, app-design story (2026-10-23): the app here is light (the
+  // test's MaterialApp); Play's dialogs are dark, like Play.
+  group('dialogs over Play are dark in a light app', () {
+    Brightness dialogBrightness(WidgetTester tester) =>
+        Theme.of(tester.element(find.byType(AlertDialog))).brightness;
+
+    testWidgets('Reset this game?', (tester) async {
+      await pumpPlay(tester, 2);
+      await tester.tap(find.text('Reset game'));
+      await settle(tester);
+      expect(dialogBrightness(tester), Brightness.dark);
+    });
+
+    testWidgets('Finish the game now?', (tester) async {
+      await pumpPlay(tester, 2);
+      await tester.tap(find.byKey(const Key('finishGame')));
+      await settle(tester);
+      expect(dialogBrightness(tester), Brightness.dark);
+    });
+  });
 }

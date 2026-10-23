@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/game_record.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_type.dart';
+import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/settings/appearance_store.dart';
 import 'package:thrower_app/ui/app_shell.dart';
 import 'package:thrower_app/ui/home_screen.dart';
@@ -18,9 +19,9 @@ import '../settings/appearance_test.dart' show MemoryAppearanceStore;
 /// App design story (2026-10-23): the bottom bar, Home, Throw and Setup.
 void main() {
   Future<ProviderContainer> pumpShell(WidgetTester tester,
-      {List<GameRecord> games = const [], List overrides = const []}) async {
+      {List<GameRecord> games = const [], MemoryGameHistory? history, List overrides = const []}) async {
     final c = ProviderContainer(overrides: [
-      gameHistoryProvider.overrideWithValue(MemoryGameHistory(games)),
+      gameHistoryProvider.overrideWithValue(history ?? MemoryGameHistory(games)),
       appearanceStoreProvider.overrideWithValue(MemoryAppearanceStore()),
       ...overrides.cast(),
     ]);
@@ -116,6 +117,63 @@ void main() {
       await tester.tap(find.byKey(const Key('homeLastSession')));
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsNothing);
+    });
+
+    // Traceability (2026-10-23).
+    testWidgets("two throwers: each thrower's points, by name, on the rounds both played", (tester) async {
+      await pumpShell(tester, games: [
+        GameRecord(
+          id: '1',
+          finishedAt: DateTime(2026, 10, 23, 12),
+          mode: PlayMode.sharedTarget,
+          rounds: 3,
+          players: [
+            [10, 12],
+            [9],
+          ],
+          names: ['Mark', null],
+        ),
+      ]);
+      final card = find.byKey(const Key('homeLastSession'));
+      expect(find.descendant(of: card, matching: find.text('Mark')), findsOneWidget);
+      expect(find.descendant(of: card, matching: find.text('10')), findsOneWidget, reason: "Mark's first round only");
+      expect(find.descendant(of: card, matching: find.text('Player 2')), findsOneWidget);
+      expect(find.descendant(of: card, matching: find.text('9')), findsOneWidget);
+    });
+
+    testWidgets('a Live test session is passed over for the one before it', (tester) async {
+      final older = session([
+        [1, 1, 1]
+      ]);
+      final live = GameRecord(
+        id: '2',
+        finishedAt: older.finishedAt.add(const Duration(hours: 1)),
+        mode: PlayMode.solo,
+        rounds: 1,
+        players: [
+          [15]
+        ],
+        recording: 'Target 1',
+      );
+      await pumpShell(tester, games: [live, older]);
+      final card = find.byKey(const Key('homeLastSession'));
+      expect(find.descendant(of: card, matching: find.text('3')), findsOneWidget);
+      expect(find.descendant(of: card, matching: find.text('15')), findsNothing);
+    });
+
+    testWidgets('a session kept since: Home and History show it after a tab change', (tester) async {
+      final history = MemoryGameHistory();
+      await pumpShell(tester, history: history);
+      expect(find.text('Your sessions will show here.'), findsOneWidget);
+      await history.add(session([
+        [5, 5, 5]
+      ]));
+      await tester.tap(find.text('History'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('historyStats')), findsOneWidget);
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: find.byKey(const Key('homeLastSession')), matching: find.text('15')), findsOneWidget);
     });
 
     testWidgets('Start throwing opens the setup', (tester) async {

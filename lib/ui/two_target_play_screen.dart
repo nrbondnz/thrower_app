@@ -155,15 +155,18 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
 
   /// Mid-game, a stray tap shouldn't wipe the scores: ask first.
   Future<void> _confirmReset() async {
+    // Dark like the screen: this State's context is above its CameraTheme.
     final reset = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset this game?'),
-        content: const Text('Scores will be lost.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Reset')),
-        ],
+      builder: (context) => CameraTheme(
+        child: AlertDialog(
+          title: const Text('Reset this game?'),
+          content: const Text('Scores will be lost.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Reset')),
+          ],
+        ),
       ),
     );
     if (reset == true && mounted) _newGame();

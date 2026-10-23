@@ -364,7 +364,7 @@ class GameNotifier extends Notifier<Match> {
   /// When this game finished (null while it's on).
   DateTime? _finishedAt;
 
-  /// The rounds last kept for this game, so an unchanged game isn't saved
+  /// Each knife last kept for this game, so an unchanged game isn't saved
   /// again (e.g. its knives being collected after the end).
   String? _kept;
 
@@ -497,9 +497,11 @@ class GameNotifier extends Notifier<Match> {
     // chosen for Live test.
     final recording = state.type.handScored ? null : ref.read(recordingChoiceProvider)?.name;
     final record = GameRecord.fromMatch(state, at: at, recording: recording);
-    final rounds = '${record.players}';
-    if (rounds == _kept) return;
-    _kept = rounds;
+    // Each knife, not just the round totals: a 0 added to a round collected
+    // early changes the knives (and the stats) but no total.
+    final kept = '${record.knives}';
+    if (kept == _kept) return;
+    _kept = kept;
     final errors = ref.read(historySaveErrorProvider.notifier);
     ref.read(gameHistoryProvider).add(record).then(
           (_) {

@@ -402,21 +402,24 @@ String matchText(QuickDrawMatch m, [List<String> names = const []]) {
   return leader == null ? 'Level ${m.scoreText}' : '${name(leader)} leads ${ahead(leader)}';
 }
 
-/// Asks before ending a Quick draw match early.
+/// Asks before ending a Quick draw match early. Dark, like the screen (its
+/// State's context is above its [CameraTheme]).
 Future<bool> confirmFinishMatch(BuildContext context) async =>
     await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Finish the match now?'),
-        content: const Text('It ends on the rounds won so far; if they are level, it is a draw.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(
-            key: const Key('quickDrawFinishConfirm'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Finish'),
-          ),
-        ],
+      builder: (context) => CameraTheme(
+        child: AlertDialog(
+          title: const Text('Finish the match now?'),
+          content: const Text('It ends on the rounds won so far; if they are level, it is a draw.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+            TextButton(
+              key: const Key('quickDrawFinishConfirm'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Finish'),
+            ),
+          ],
+        ),
       ),
     ) ??
     false;

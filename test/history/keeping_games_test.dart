@@ -71,6 +71,16 @@ void main() {
     }
   }
 
+  // Traceability, app-design story (2026-10-23): Home's last session and
+  // History's stats (keptGamesProvider) are read again when a session is
+  // kept, even with History on screen.
+  test('a finished session is read again into the kept sessions', () async {
+    expect(await container.read(keptGamesProvider.future), isEmpty);
+    throwBulls(9);
+    await pumpEventQueue();
+    expect((await container.read(keptGamesProvider.future)).single.totals, [45]);
+  });
+
   test('nothing is kept while the game is on', () async {
     throwBulls(8);
     await pumpEventQueue();
@@ -202,6 +212,22 @@ void main() {
     expect((history.saves, history.games.length), (2, 1));
     expect(history.games.single.players.single.first, 11);
     expect(history.games.single.finishedAt, DateTime(2026, 10, 16, 14, 32));
+  });
+
+  // Traceability, app-design story (2026-10-23): the stats count each knife.
+  test('a 0 added after the end to a round collected early re-saves the game with that knife', () async {
+    // Round 1 collected after 2 knives; rounds 2 and 3 full: the game ends.
+    game().onEvent(stuckAt(500, 400, 0), c);
+    game().onEvent(stuckAt(500, 400, 1), c);
+    game().onEvent(event(ThrowOutcomeKind.boardVisit), c);
+    throwBulls(6, firstId: 2);
+    await pumpEventQueue();
+    expect(container.read(gameProvider).isOver, isTrue);
+    expect(history.games.single.knives!.single.first, [5, 5]);
+    game().addToRound(0, 0, 0);
+    await pumpEventQueue();
+    expect((history.saves, history.games.length), (2, 1));
+    expect(history.games.single.knives!.single.first, [5, 5, 0], reason: 'the missed knife is kept, for the stats');
   });
 
   test('a correction during the game keeps nothing yet', () async {
