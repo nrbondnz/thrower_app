@@ -1,6 +1,6 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 15, posting from History, section 0000000000 (2026-10-23)**; build 14, the app design, section 000000000 (2026-10-23; carried by build 15 if 14 never went); builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 15, posting from History, leaderboard tables (new Swift to compile) and store hygiene, section 0000000000 (2026-10-23)**; build 14, the app design, section 000000000 (2026-10-23; carried by build 15 if 14 never went); builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
 
@@ -16,7 +16,7 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
   - A session can be posted later from its page (**Post score**), if it was thrown in **this leaderboard week**.
   - A **normal 5 × 3 session** (Scoring, 5 rounds, one thrower, no score changed by hand) can be posted too, after ticking **I threw from 3 m**.
   - A posted session is kept as **Posted**.
-- **A Leaderboards tab** in place of Throw: **3 m knives · 3 × 5** opens Game Center's board. Home's "Quick actions" is now **Throwing types**.
+- **A Leaderboards tab** in place of Throw: **3 m knives · 3 × 5** opens the app's own table (see Also in it: leaderboard tables). Home's "Quick actions" is now **Throwing types**.
 - **Test sessions** (test builds only): Setup → Test sessions (test build only) → **Add 10 test sessions** and **Remove test sessions**. Marked Test, left out of the stats, never backed up. They post only to a separate test leaderboard, `test.ranked.3m.5x3`, shown on the Leaderboards tab only in test builds.
 - Commits `7030b33` (Tasks 1–4) and `46ed757` (Review Agent fixes), then Task 5 (docs).
 - **New:** a build flag, `THROWER_TEST_TOOLS`. No new permissions, assets or `Info.plist` keys. Nothing for Signing & Capabilities. The bundle ID and signing are unchanged. (One plugin made direct, `url_launcher`: see Also in it, below.)
@@ -32,6 +32,36 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
 - **The links 404 until the website pages are published** ([[Common Tasks]] → Publish the Website Pages; Nigel approves the wording first).
   - Fine for TestFlight testers. Tell them in What to Test: "Setup → Help and support: the website pages aren't up yet, so the links may show 'not found'."
   - **Never** submit a build with these links for App Review until the pages are live (Review Agent, 2026-10-23).
+
+### Also in it: leaderboard tables (backlog #22, 2026-10-23): new Swift to compile
+- **This week / Last week tables** ([[story-checkpoint-monthly-tables]], commit `a5afd1f`; why in [[Design Decisions]] → Leaderboard Tables: This Week and Last Week):
+  - the top 25 by Game Center nickname, your row marked "(you)" (or under the table if lower);
+  - loading, no scores, signed out and no signal (**Try again**) states; **Open in Game Center** for Apple's screen;
+  - opened from the Leaderboards tab's card and from **View leaderboard** at the end of a session.
+- **New iPhone code:** `GameCenterTables` in `ios/Runner/AppDelegate.swift` (`import GameKit`), on the channel `thrower/game_center`. Names and scores only, plus the week's start. No new plugin, permission, `Info.plist` key or capability (Game Center is already on).
+- **It has never been compiled.** It was written on the PC. The Review Agent said OK to commit, on condition it builds here.
+- Last week uses GameKit's completion-handler `loadPreviousOccurrence`. In the leaderboard's first week it gives nothing, and the table says "No results for last week yet".
+
+### Also in it: store-release hygiene (backlog #6, 2026-10-23)
+- **Setup → Tools** shows **Live test** and **Scoring test target** only in test builds (debug, or `THROWER_TEST_TOOLS`), commit `ae22576`. **Calibrate target** stays.
+- The Instructions mention the Live test recording only in test builds.
+- The recordings are still inside every build (about 87 MB). Keeping them out of store builds is Nigel's decision (flavors recommended: [[story-checkpoint-store-release-hygiene]] → Task 2). Nothing to do for it on the Mac yet.
+
+### Also in it: small fixes (2026-10-23, commit `7939fa2`)
+- Play's and two-target Play's panel under the camera is at most 65% of the screen. The scores scroll; **Round done**, **Post score**, **New game** and the board buttons stay in sight.
+- A session posted on one phone shows **Posted** on the others after a backup sync.
+- History's **Clear history** is a bin icon (tooltip "Clear history").
+
+### First: the Swift must compile (Claude, before the archive)
+1. After `git pull` and `flutter pub get`: `flutter build ios --config-only --release` (with the define, as in Steps below). Then build in Xcode (**Product → Build**, or let **Archive** build it). Watch for errors in `AppDelegate.swift`.
+2. **If it doesn't compile:** fix it on the Mac, keeping the channel name, method and reply keys the same (`loadTable`; `leaderboardID`, `previous`, `count`; `entries`, `me`, `start`; errors `signedOut`, `notFound`, `failed`). Commit the fix, and tell the PC what changed and why (a note in this section is enough).
+3. **A debug run on the iPhone** (Xcode's Run, or `flutter run` with Xcode open), signed in to Game Center, after posting a score:
+   - **Leaderboards → 3 m knives · 3 × 5:** This week shows the score and your row.
+   - **Last week:** "No results for last week yet" (in the first week).
+   - Watch the Xcode console for any GameKit error.
+4. **The week's start.** Game Center sends it as `start`; the app reads it into `LeaderboardTable.weekStart` but doesn't show it.
+   - Compare the leaderboard's start in App Store Connect (step 2 of Before archiving) with `rankedLeaderboardStart` in `lib/leaderboard/leaderboard_week.dart` (2026-10-23 00:00 UTC).
+   - To see Game Center's own value: a breakpoint in `GameCenterTables.loadTable` on `board.startDate` during the debug run. Send it to the PC.
 
 ### Before archiving: App Store Connect (Nigel, Claude explaining)
 1. **Create the test leaderboard.** App Store Connect → the app → Game Center → Leaderboards → add a **Recurring** leaderboard:
@@ -59,6 +89,8 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
    - "A normal 5 rounds of 3 from 3 m, one thrower, no scores changed by hand, can now be posted too."
    - "The Throw tab is now Leaderboards. Rounds and Quick draw are on Home."
    - "Setup → Test sessions adds 10 made-up sessions you can post, to the TEST leaderboard only. Remove test sessions takes them away."
+   - "Leaderboards → 3 m knives · 3 × 5 now shows this week's and last week's tables. Last week is empty until the first week ends."
+   - "Clear history in History is now a bin icon at the top."
 
 ### App Store builds (later): always a fresh archive, no define
 One uploaded build can be chosen for both TestFlight and the App Store, so a test-tools build must never be submitted for review.
@@ -69,6 +101,9 @@ One uploaded build can be chosen for both TestFlight and the App Store, so a tes
 ### Checks to send
 - [[Device Test Plan]] → **Posting From History Checks (PH0–PH13)**: the iPhone for posting; the Samsung for PH9. PH8 needs a session from the week before. PH13 needs an App Store-style build (no define), e.g. a release run from Xcode.
 - [[Device Test Plan]] → **Compliance Checks (CP0–CP4)**: on the iPhone (and the Samsung from the PC). CP5 and CP6 wait for the website pages to be published.
+- [[Device Test Plan]] → **Leaderboard Table Checks (LT0–LT8)**: the iPhone, signed in to Game Center; LT7 on the Samsung.
+- [[Device Test Plan]] → **Small Fixes Checks (SF0–SF3)**: SF2 needs a build with accounts, so later.
+- [[Device Test Plan]] → **Store Hygiene Checks (SH0–SH1)**: SH1 in this TestFlight build; SH0 in an App Store-style build (no define), with PH13.
 - If build 14 never went: App Design Checks (AD0–AD11) too, with AD0 and AD3 read as the note there says.
 - The earlier checks still open: RK0–RK10, RD0–RD3, QA0–QA14, BF8.
 

@@ -16,26 +16,29 @@
   <header class="title-block">
     <span class="eyebrow"><span class="swatch" style="background:var(--auth);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>Auth and leaderboard · Component</span>
     <h1>LeaderboardService</h1>
-    <p class="dek">Posting a score, independent of where it goes. On the iPhone it&#x27;s Apple Game Center: a leaderboard that restarts each week (2026-10-23). Android has none yet, so no Post score.</p>
+    <p class="dek">Posting a score and loading the week&#x27;s tables, independent of where they go. On the iPhone it&#x27;s Apple Game Center: a leaderboard that restarts each week (2026-10-23). Android has none yet, so no Post score.</p>
   </header>
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Interface + Game Center</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/leaderboard/leaderboard_service.dart</code><br><code>lib/leaderboard/game_center_leaderboard_service.dart</code><br><code>lib/providers.dart</code><br><code>lib/ui/post_score_panel.dart</code><br><code>lib/ui/history_post_panel.dart</code><br><code>lib/ui/leaderboards_screen.dart</code><br><code>lib/main.dart</code><br><code>android/app/src/main/AndroidManifest.xml</code><br></dd></div>
-    <div><dt>Used when</dt><dd>Post score at the end of a session or from History; the Leaderboards tab (iPhone)</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/leaderboard/leaderboard_service.dart</code><br><code>lib/leaderboard/game_center_leaderboard_service.dart</code><br><code>lib/providers.dart</code><br><code>lib/ui/post_score_panel.dart</code><br><code>lib/ui/history_post_panel.dart</code><br><code>lib/ui/leaderboards_screen.dart</code><br><code>lib/main.dart</code><br><code>android/app/src/main/AndroidManifest.xml</code><br><code>lib/leaderboard/leaderboard_table.dart</code><br><code>lib/ui/leaderboard_table_screen.dart</code><br><code>ios/Runner/AppDelegate.swift</code><br></dd></div>
+    <div><dt>Used when</dt><dd>Post score at the end of a session or from History; the Leaderboards tab and View leaderboard (iPhone)</dd></div>
   </dl>
 
   <div class="detail-body">
     <p>Like <code>AuthService</code>, the UI and the game see only the interface (<code>signIn</code>, <code>submit</code>, <code>show</code>), so tests use a fake, and the app's own leaderboard on Amplify and the website (ranking iPhone and Android together, backlog #21) can replace or join Game Center later without touching Play.</p>
     <p><code>main</code> overrides <code>leaderboardServiceProvider</code> with <code>GameCenterLeaderboardService</code> only on the iPhone. It uses the <code>games_services</code> plugin (5.3.0); the plugin's Google Play Games start-up pieces are removed from the Android manifest, so Android starts as before.</p>
     <p>A score is posted once, only when the player taps Post score: the total, shown under their Game Center nickname. Once posted, the game's scores are locked, so the leaderboard always matches Play.</p>
+    <p>The tables (2026-10-23, backlog #22): <code>loadTable</code> uses the app's own iPhone code, <code>GameCenterTables</code> in <code>AppDelegate.swift</code>, on the channel <code>thrower/game_center</code>. The plugin can't load last week's full table, and it loads every player's photo, which isn't shown. Names and scores only, plus the week's start. To compile on the Mac.</p>
   </div>
 
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
     <div><dt><code>signIn</code></dt><dd>Game Center&#x27;s own sign-in; false if not signed in afterwards</dd></div>
     <div><dt><code>submit(leaderboard, score)</code></dt><dd>the total to ranked.3m.5x3 (Leaderboard.ranked3m, &quot;3 m knives · 3 × 5&quot;), or a test session to test.ranked.3m.5x3 (Leaderboard.test3m, never live); throws if it didn&#x27;t go</dd></div>
-    <div><dt><code>show(leaderboard)</code></dt><dd>Apple&#x27;s leaderboard screen (View leaderboard)</dd></div>
+    <div><dt><code>show(leaderboard)</code></dt><dd>Apple&#x27;s leaderboard screen (Open in Game Center)</dd></div>
+    <div><dt><code>loadTable(board, week)</code></dt><dd>a LeaderboardTable for This week or Last week: the top 25, your entry (me), the week&#x27;s start; LeaderboardSignedOut if not signed in</dd></div>
+    <div><dt><code>GameCenterTables.loadTable (Swift)</code></dt><dd>GameKit: loadLeaderboards, loadPreviousOccurrence for last week (nothing in the first week: an empty table), loadEntries; on channel thrower/game_center</dd></div>
     <div><dt><code>ScorePostNotifier.post</code></dt><dd>only a postable game, never twice: sign in, then submit</dd></div>
   </dl>
 
@@ -47,9 +50,15 @@
       <p>Ranked (strict) or a normal 5 × 3 with no hand change; a full session&#x27;s total posted once to a weekly Game Center leaderboard, at the end or later from History (iPhone).</p>
       <span class="more">Open →</span>
     </a>
+    <a class="flow-card" href="../flows/leaderboard-tables.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Leaderboard tables: this week and last week</h3>
+      <p>This week and Last week: the top 25 by Game Center nickname, your place marked; the app&#x27;s own iPhone code (iPhone).</p>
+      <span class="more">Open →</span>
+    </a>
   </div>
 
-  <footer class="colophon">lib/leaderboard/leaderboard_service.dart · lib/leaderboard/game_center_leaderboard_service.dart · lib/providers.dart · lib/ui/post_score_panel.dart · lib/ui/history_post_panel.dart · lib/ui/leaderboards_screen.dart · lib/main.dart · android/app/src/main/AndroidManifest.xml</footer>
+  <footer class="colophon">lib/leaderboard/leaderboard_service.dart · lib/leaderboard/game_center_leaderboard_service.dart · lib/providers.dart · lib/ui/post_score_panel.dart · lib/ui/history_post_panel.dart · lib/ui/leaderboards_screen.dart · lib/main.dart · android/app/src/main/AndroidManifest.xml · lib/leaderboard/leaderboard_table.dart · lib/ui/leaderboard_table_screen.dart · ios/Runner/AppDelegate.swift</footer>
 </div>
 </body>
 </html>

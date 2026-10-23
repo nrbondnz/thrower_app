@@ -21,9 +21,9 @@ COMPONENTS = {
         files=['lib/ui/app_shell.dart', 'lib/ui/home_screen.dart', 'lib/ui/leaderboards_screen.dart', 'lib/ui/setup_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
                'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/score_pad_screen.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart',
-               'lib/ui/account_screen.dart', 'lib/ui/post_score_panel.dart', 'lib/ui/history_post_panel.dart', 'lib/ui/support_links.dart'],
+               'lib/ui/account_screen.dart', 'lib/ui/post_score_panel.dart', 'lib/ui/history_post_panel.dart', 'lib/ui/support_links.dart', 'lib/ui/leaderboard_table_screen.dart'],
         trigger='The user, from the tabs (Home, Leaderboards, History, Setup)',
-        dek='Since 2026-10-23 the app opens on four tabs (AppShell): Home (START THROWING, the last session, and the Throwing types cards), Leaderboards (in place of Throw, later on 2026-10-23), History and Setup. They lead to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), and, under Setup, Help and support (the Instructions and the website\'s policy pages), Appearance, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
+        dek='Since 2026-10-23 the app opens on four tabs (AppShell): Home (START THROWING, the last session, and the Throwing types cards), Leaderboards (in place of Throw, later on 2026-10-23), History and Setup. They lead to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), and, under Setup, Help and support (the Instructions and the website\'s policy pages), Appearance, Calibrate target and, in test builds only (2026-10-23), the Live test recordings and the Scoring test target; and, in a build with accounts, the Account screen.',
         body=[
             'The look (2026-10-23, the app-design story): light and dark themes from <a href="app-theme.html"><code>AppTheme</code></a>, chosen by Setup → Appearance; the camera screens are wrapped in <code>CameraTheme</code>, always dark. The shared pieces (<code>ActionCard</code>, <code>StatTile</code>, <code>TargetMark</code>, <code>SectionHeading</code>) are in <code>lib/ui/theme/</code>.',
             'Help and support (2026-10-23, the compliance story): Setup links the website\'s Support, Privacy Policy and Terms of Service pages and the support email, opened outside the app with <code>url_launcher</code> (<code>linkOpenerProvider</code>, swapped in tests). <strong>Delete account</strong> opens the Account screen in a build with accounts; otherwise <code>NoAccountScreen</code> says there\'s no account on this phone and links the website\'s Delete Your Account page. The policies live on the website, not in the app.',
@@ -36,19 +36,20 @@ COMPONENTS = {
         functions=[
             ('AppShell · openScreen', 'the tabs (NavigationBar): Home, Leaderboards, History, Setup; a throwing screen opens over them, and the kept sessions are read again on the way back'),
             ('HomeScreen · LastSessionCard', 'THROWER and the target; the last session (points, per knife, 5s; two throwers: each total); START THROWING → Play\'s setup; Throwing types: Rounds and Quick draw cards; test sessions left out of the last session'),
-            ('LeaderboardsScreen', 'a card per Leaderboard: 3 m knives · 3 × 5 (and the Test board in test builds) → viewLeaderboard(board:); on Android, on the iPhone for now; More to come (friends, area, club)'),
-            ('SetupScreen', 'Help and support (HelpAndSupportCard); Appearance (Phone, Light, Dark); the tools: Calibrate target, Live test, Scoring test target; Test sessions (test build only: TestSessionsCard, Add 10 / Remove); Account (only with accounts)'),
+            ('LeaderboardsScreen', 'a card per Leaderboard: 3 m knives · 3 × 5 (and the Test board in test builds) → LeaderboardTableScreen; on Android, on the iPhone for now; More to come (friends, area, club)'),
+            ('LeaderboardTableScreen · WeekTable · EntryRow', 'a board\'s tables (2026-10-23): This week and Last week tabs; the top 25 by Game Center nickname, your row marked (or under the table if lower); loading, empty, signed out and no signal (Try again); Open in Game Center'),
+            ('SetupScreen', 'Help and support (HelpAndSupportCard); Appearance (Phone, Light, Dark); the tools: Calibrate target, and in test builds only Live test and Scoring test target (testToolsProvider); Test sessions (test build only: TestSessionsCard, Add 10 / Remove); Account (only with accounts)'),
             ('PlaySetupScreen', 'after START THROWING or Rounds: Which game? (Scoring, Precision, Three targets, Ranked: one player, 5 rounds, Start waits for I\'m throwing from 3 m); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type\'s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start'),
             ('ScorePadScreen · ScorePad', 'Precision and Three targets, no camera: whose turn and where from or at in large type (padHeadline, padWhere: "Round 2 of 7: from 5 m"); tap 5–1 or Miss; each player\'s rounds (padPlayerDetail), corrections, Finish game, New game'),
-            ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals (one thrower: the total large, playTotal); for two players taking turns, whose turn it is in large type, both totals and the winner; Round done (RoundDoneButton) once the round has its throws'),
+            ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals (one thrower: the total large, playTotal); for two players taking turns, whose turn it is in large type, both totals and the winner; Round done (RoundDoneButton) once the round has its throws; the panel under the camera at most 65% of the screen, the scores scrolling and the buttons pinned in sight (2026-10-23)'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('TwoTargetPlayScreen', "two players on two targets: tap and lock both boards, each board's marks, Wait for Player 2 / Collect your knives, Round done once both have finished the round, the winner"),
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)'),
             ('QuickDrawScreen', 'the recorded duel: tap boards, Lock, Play, GO!, each board\'s time and the winner'),
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
             ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile; a Ranked game offers only 0 (strictNote); locked once its score is posted'),
-            ('PostScorePanel', 'on Play at the end of a postable game (Ranked, or a normal 5 × 3 with no hand change: ThreeMetreTick first), iPhone only: Post score (N), the posted / sign in / try again line, View leaderboard'),
-            ('HistoryScreen · StatsCard · GameRecordScreen', 'the stats (Sessions, Knives, Per knife, 5s, Hit rate, Best ranked or Best round); the kept games as cards, newest first, by name (resultText), with the game type (howText: "Precision · …"); a game\'s rounds (historyRoundLabel: "Round 2 (5 m)"); Delete; Clear history (asks first); each card\'s PostStatusLabel'),
+            ('PostScorePanel', 'on Play at the end of a postable game (Ranked, or a normal 5 × 3 with no hand change: ThreeMetreTick first), iPhone only: Post score (N), the posted / sign in / try again line, View leaderboard (→ LeaderboardTableScreen)'),
+            ('HistoryScreen · StatsCard · GameRecordScreen', 'the stats (Sessions, Knives, Per knife, 5s, Hit rate, Best ranked or Best round); the kept games as cards, newest first, by name (resultText), with the game type (howText: "Precision · …"); a game\'s rounds (historyRoundLabel: "Round 2 (5 m)"); Delete; Clear history (a bin icon, asks first); each card\'s PostStatusLabel'),
             ('HistoryPostPanel · PostStatusLabel', 'a session\'s page: Can be posted / Posted / Cannot be posted, Why: …, Post score (iPhone; the 3 m tick for a normal session) → marked Posted; on Android, posting is on the iPhone for now'),
             ('NamesButton · editPlayerNames', 'Quick draw\'s Names, before Start: a field per player, the same names as Play; Save or Cancel'),
             ('BoardChoosing.playerNames', 'the names for the board texts ("Tap the centre of Jo\'s board"), Player N without'),
@@ -543,21 +544,24 @@ COMPONENTS = {
     ),
     'leaderboard-service': dict(
         name='LeaderboardService', lane='auth', type='Interface + Game Center',
-        files=['lib/leaderboard/leaderboard_service.dart', 'lib/leaderboard/game_center_leaderboard_service.dart', 'lib/providers.dart', 'lib/ui/post_score_panel.dart', 'lib/ui/history_post_panel.dart', 'lib/ui/leaderboards_screen.dart', 'lib/main.dart', 'android/app/src/main/AndroidManifest.xml'],
-        trigger='Post score at the end of a session or from History; the Leaderboards tab (iPhone)',
-        dek='Posting a score, independent of where it goes. On the iPhone it\'s Apple Game Center: a leaderboard that restarts each week (2026-10-23). Android has none yet, so no Post score.',
+        files=['lib/leaderboard/leaderboard_service.dart', 'lib/leaderboard/game_center_leaderboard_service.dart', 'lib/providers.dart', 'lib/ui/post_score_panel.dart', 'lib/ui/history_post_panel.dart', 'lib/ui/leaderboards_screen.dart', 'lib/main.dart', 'android/app/src/main/AndroidManifest.xml', 'lib/leaderboard/leaderboard_table.dart', 'lib/ui/leaderboard_table_screen.dart', 'ios/Runner/AppDelegate.swift'],
+        trigger='Post score at the end of a session or from History; the Leaderboards tab and View leaderboard (iPhone)',
+        dek='Posting a score and loading the week\'s tables, independent of where they go. On the iPhone it\'s Apple Game Center: a leaderboard that restarts each week (2026-10-23). Android has none yet, so no Post score.',
         body=[
             'Like <code>AuthService</code>, the UI and the game see only the interface (<code>signIn</code>, <code>submit</code>, <code>show</code>), so tests use a fake, and the app\'s own leaderboard on Amplify and the website (ranking iPhone and Android together, backlog #21) can replace or join Game Center later without touching Play.',
             '<code>main</code> overrides <code>leaderboardServiceProvider</code> with <code>GameCenterLeaderboardService</code> only on the iPhone. It uses the <code>games_services</code> plugin (5.3.0); the plugin\'s Google Play Games start-up pieces are removed from the Android manifest, so Android starts as before.',
             'A score is posted once, only when the player taps Post score: the total, shown under their Game Center nickname. Once posted, the game\'s scores are locked, so the leaderboard always matches Play.',
+            'The tables (2026-10-23, backlog #22): <code>loadTable</code> uses the app\'s own iPhone code, <code>GameCenterTables</code> in <code>AppDelegate.swift</code>, on the channel <code>thrower/game_center</code>. The plugin can\'t load last week\'s full table, and it loads every player\'s photo, which isn\'t shown. Names and scores only, plus the week\'s start. To compile on the Mac.',
         ],
         functions=[
             ('signIn', 'Game Center\'s own sign-in; false if not signed in afterwards'),
             ('submit(leaderboard, score)', 'the total to ranked.3m.5x3 (Leaderboard.ranked3m, "3 m knives · 3 × 5"), or a test session to test.ranked.3m.5x3 (Leaderboard.test3m, never live); throws if it didn\'t go'),
-            ('show(leaderboard)', 'Apple\'s leaderboard screen (View leaderboard)'),
+            ('show(leaderboard)', 'Apple\'s leaderboard screen (Open in Game Center)'),
+            ('loadTable(board, week)', 'a LeaderboardTable for This week or Last week: the top 25, your entry (me), the week\'s start; LeaderboardSignedOut if not signed in'),
+            ('GameCenterTables.loadTable (Swift)', 'GameKit: loadLeaderboards, loadPreviousOccurrence for last week (nothing in the first week: an empty table), loadEntries; on channel thrower/game_center'),
             ('ScorePostNotifier.post', 'only a postable game, never twice: sign in, then submit'),
         ],
-        flows=['ranked-post'],
+        flows=['ranked-post', 'leaderboard-tables'],
     ),
 }
 
@@ -570,7 +574,8 @@ EXTERNAL = [
     ('amplify_flutter · amplify_auth_cognito', 'sign-in to Cognito (AWS, eu-west-2)'),
     ('amplify_authenticator', 'the ready-made sign-in screens (Account screen)'),
     ('amplify_api', 'the backup\'s GraphQL API (only if the backend has one)'),
-    ('games_services', 'Game Center on the iPhone (Post score, View leaderboard)'),
+    ('games_services', 'Game Center on the iPhone (Post score, Open in Game Center)'),
+    ('GameKit (own Swift code)', 'the weekly tables: GameCenterTables, channel thrower/game_center'),
 ]
 
 # id: dict(title, cat ('core' | 'flow'), lane, dek, body[paras], steps[(lane, title, [lines], component_id|None, arrow_label|None)], caption, files)
@@ -674,8 +679,27 @@ FLOWS = {
             ('history', 'postStatusOf → HistoryPostPanel', ['Can be posted · Posted · Cannot be posted (why)', 'this leaderboard week only'], 'game-history', 'Post score'),
             ('history', 'submit(leaderboardFor) → markedPosted', ['a test session: the test board only', 'gameHistoryProvider.add: kept as Posted'], 'game-history', None),
         ],
-        caption='Built 2026-10-22 on the PC; posting from History 2026-10-23. Device checks RK0–RK10 and PH0–PH13. Android shows no Post score (backlog #21); tables in the app are backlog #22.',
+        caption='Built 2026-10-22 on the PC; posting from History 2026-10-23. Device checks RK0–RK10 and PH0–PH13. Android shows no Post score (backlog #21). View leaderboard opens the app\'s tables (leaderboard tables flow, 2026-10-23).',
         files=['lib/scoring/game_type.dart', 'lib/scoring/match.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/post_score_panel.dart', 'lib/history/post_status.dart', 'lib/leaderboard/leaderboard_week.dart', 'lib/ui/history_post_panel.dart', 'lib/providers.dart', 'lib/leaderboard/leaderboard_service.dart', 'lib/leaderboard/game_center_leaderboard_service.dart'],
+    ),
+    'leaderboard-tables': dict(
+        title='Leaderboard tables: this week and last week', cat='flow', lane='auth',
+        dek='From the Leaderboards tab or View leaderboard, on the iPhone: this week\'s and last week\'s tables of the Game Center leaderboard, top 25 by nickname, with your own place.',
+        body=[
+            'Backlog #22 (Nigel, 2026-10-22: "a best 3 meter score table refreshed each month, previous month results table"). The Game Center leaderboard was set up weekly, so the tables are weekly. No all-time table for now.',
+            'The app\'s own iPhone code loads both weeks: the <code>games_services</code> plugin gives only your own entry for last week, and loads every player\'s photo. Only names and scores come back, plus when the week began, which can confirm <code>rankedLeaderboardStart</code>.',
+            'In a recurring leaderboard\'s first week there\'s no last week: the table says "No results for last week yet".',
+        ],
+        steps=[
+            ('ui', 'LeaderboardsScreen · PostScorePanel', ['the 3 m knives · 3 × 5 card', 'View leaderboard at the end of a session'], 'screens', 'LeaderboardTableScreen(board)'),
+            ('ui', 'LeaderboardTableScreen → WeekTable', ['This week · Last week tabs', 'loading · empty · signed out · no signal: Try again'], 'screens', 'loadTable(board, week)'),
+            ('auth', 'GameCenterLeaderboardService.loadTable', ['channel thrower/game_center · loadTable', 'signedOut → LeaderboardSignedOut'], 'leaderboard-service', 'leaderboardID, previous, count'),
+            ('native', 'GameCenterTables (AppDelegate.swift)', ['loadLeaderboards → loadPreviousOccurrence (last week)', 'loadEntries: places 1–25 and the local player'], None, 'entries · me · start'),
+            ('auth', 'LeaderboardTable.fromMap', ['LeaderboardEntry rows (rank, name, score, isMe)', 'me · weekStart · meBelow'], 'leaderboard-service', 'the rows'),
+            ('ui', 'EntryRow', ['your row highlighted, "(you)"', 'under a divider if you\'re below the top 25'], 'screens', None),
+        ],
+        caption='Built on the PC 2026-10-23; the Swift to compile on the Mac. Device checks LT0–LT8. Android: on the iPhone for now (backlog #21).',
+        files=['lib/leaderboard/leaderboard_table.dart', 'lib/leaderboard/leaderboard_service.dart', 'lib/leaderboard/game_center_leaderboard_service.dart', 'lib/ui/leaderboard_table_screen.dart', 'lib/ui/leaderboards_screen.dart', 'lib/ui/post_score_panel.dart', 'ios/Runner/AppDelegate.swift'],
     ),
     'score-correction': dict(
         title='Changing a score (without jogging the camera)', cat='flow', lane='ui',
@@ -824,7 +848,7 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'score-pad', 'ranked-post', 'score-correction', 'game-history', 'throw-stats', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-pad', 'ranked-post', 'leaderboard-tables', 'score-correction', 'game-history', 'throw-stats', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
@@ -833,6 +857,7 @@ CARD_TEXT = {
     'play': 'Motion → episode → stuck or bounce-out → entry point → score; collecting the knives closes the round.',
     'score-pad': 'Precision and Three targets: Which game?, then each knife\'s score tapped on a pad; the same turns, rounds and History.',
     'ranked-post': 'Ranked (strict) or a normal 5 × 3 with no hand change; a full session\'s total posted once to a weekly Game Center leaderboard, at the end or later from History (iPhone).',
+    'leaderboard-tables': 'This week and Last week: the top 25 by Game Center nickname, your place marked; the app\'s own iPhone code (iPhone).',
     'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
     'game-history': 'A finished game kept once in a JSON file on the phone; the History tab to look back.',
     'throw-stats': 'Each knife kept with a session; sessions, per knife, 5s, hit rate and best on History; the last session on Home.',

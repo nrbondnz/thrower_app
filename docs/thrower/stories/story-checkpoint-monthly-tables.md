@@ -58,3 +58,21 @@ IN PROGRESS 2026-10-23: Nigel approved the plan on 2026-10-22 ("Full table, own 
   - `GameCenterLeaderboardService.loadTable`: the channel `thrower/game_center`.
   - `ios/Runner/AppDelegate.swift`: `GameCenterTables` (registered in `didInitializeImplicitFlutterEngine`).
 - **Tests:** the channel replies are mocked in `test/ui/leaderboard_table_screen_test.dart`.
+
+---
+
+## Doc Update — 2026-10-23
+
+### Files Updated
+- `Architecture/Design Decisions.md`: new section **Leaderboard Tables: This Week and Last Week** (weekly tables; the screen behind `LeaderboardService`; our own iPhone code `GameCenterTables` rather than the plugin, and why; the week's start from Game Center; privacy). Links [[Rankings]], [[Look and Feel]]. The Ranked section's "View leaderboard opens Apple's screen" and the `games_services` decision now point to it.
+- `requirements/Game Centre/Rankings.md`: status, Decided and What Exists Today (the tables, posted sync); Not yet; Monthly Ranking; Related.
+- `requirements/Look and Feel.md`: the leaderboard table screen.
+- `Architecture/Glossary.md`: `LeaderboardService.loadTable`; `LeaderboardWeek`, `LeaderboardEntry`, `LeaderboardTable`, `LeaderboardSignedOut`; `GameCenterLeaderboardService.channel`; `GameCenterTables`; `LeaderboardTableScreen`, `WeekTable`, `EntryRow`; `LeaderboardsScreen` and View leaderboard now open the table. Concepts: recurring leaderboard (occurrence, previous occurrence), **Leaderboard week**, **Method channel (`thrower/game_center`)**.
+- `tool/web_docs/content.py`: Screens and LeaderboardService components; GameKit as an external box; new flow **leaderboard-tables**; `docs/web/` rebuilt (index + 15 flows + 30 components).
+- `Operations/Device Test Plan.md`: **Leaderboard Table Checks** LT0–LT8.
+- `Operations/Mac Handoff.md`: Build 15 → Also in it: leaderboard tables; **First: the Swift must compile** (build, fix and tell the PC if not, a debug run, the week's start against `rankedLeaderboardStart`); LT checks under Checks to send.
+- `stories/backlog.md`: #22 renamed to weekly; built on the PC, to compile on the Mac.
+
+### Notes
+- Task 3's Traceability Agent run is still to do.
+- The filename still says "monthly"; kept so links don't break.

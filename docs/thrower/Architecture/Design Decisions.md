@@ -332,7 +332,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 ### Decision: a recurring monthly Game Center leaderboard
 - Set up by Nigel in App Store Connect ([[Mac Handoff]] → Game Center setup): **recurring**, restarts each month, integer, high to low, range 0–75, best score.
 - **Why:** Nigel's "best 3 meter score table refreshed each month". Apple restarts it and keeps each month's results, so "last month's results" (backlog #22) needs no backend.
-- **View leaderboard** opens Apple's own leaderboard screen (`showLeaderboards`); no table of our own yet.
+- **View leaderboard** opened Apple's own leaderboard screen (`showLeaderboards`). Since 2026-10-23 it opens the app's own table ([[#Leaderboard Tables: This Week and Last Week (2026-10-23)]]).
 - **Update (Nigel, 2026-10-23): weekly, not monthly.** Nigel set the recurring leaderboard up in App Store Connect to **start on 2026-10-23 and restart every week** (1-week duration). The app is unchanged (it posts to `ranked.3m.5x3` whatever the period); the Instructions now say "starts again each week" (from build 13; build 12 still says "each month"). Backlog #22's tables become **this week and last week** ([[story-checkpoint-monthly-tables]], to re-confirm with Nigel).
 
 ### Decision: post once; corrections locked after posting
@@ -344,6 +344,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 - **Chosen:** `games_services` (published 2026-08-02; iOS 14+ pod, the app targets iOS 15): sign-in, `submitScore` and `showLeaderboards` on Game Center, used only inside `GameCenterLeaderboardService`.
 - **Why:** a maintained, widely used plugin covers the three calls we need; behind our interface it can be replaced without touching the app.
 - *Not chosen:* our own GameKit platform channel (Swift): more code to write and keep up on the iPhone, for the same three calls.
+- **Update 2026-10-23:** the tables needed calls the plugin can't make well, so they use our own small channel, `thrower/game_center` ([[#Leaderboard Tables: This Week and Last Week (2026-10-23)]]). Sign-in, posting and Apple's screen stay on the plugin.
 
 ### Decision: the Android manifest removes Play Games' start-up pieces
 - `games_services` also brings Google Play Games for Android, which would start at every Android launch (`PlayGamesInitProvider`) and wants an `APP_ID` the app doesn't have.
@@ -495,6 +496,89 @@ Requirement: [[Look and Feel]], [[Throwing Stats]], [[Game Recording]]. Design: 
 - TestFlight testers may see 404s until then. That's fine.
 
 **Built:** 2026-10-23 (Task 3, commit 5dae5c7; website Task 1, `website-dev` commit 4d22597). Device checks CP0 to CP6 in [[Device Test Plan]].
+
+## Store-Release Hygiene: Test Tools Only in Test Builds (2026-10-23)
+
+**Requirement:** [[Instructions and Safety]], [[Look and Feel]]. **Story:** [[story-checkpoint-store-release-hygiene]] (backlog #6).
+
+### Decision: Live test and the Scoring test target only in test builds
+- **Setup → Tools** shows **Live test** and **Scoring test target** only when `testToolsProvider` is on. **Calibrate target** stays for everyone.
+- A test build is a debug build, or one made with `THROWER_TEST_TOOLS` ([[#Decision: test sessions behind a build flag]]).
+- **Instructions:** `instructionSections(..., testTools:)` mentions the Live test recording only in a test build. The stale "(or under Throw)" is gone.
+- **Why:** Live test plays recordings of real people. The Scoring test target is a developer's check. Neither belongs in a store build.
+
+### Pending: the recordings out of store builds (Nigel to decide)
+- The recordings (`assets/live/`, about 87 MB) are still inside every build, so they can be extracted.
+- **Recommended: flavors** (a `test` and a `store` build). The assets go only into the test flavor, and test tools follow the flavor, not a define that can be forgotten.
+- Other options: take the recordings out of the app (testers lose Live test), or keep them with written consent.
+- Details: [[story-checkpoint-store-release-hygiene]] → Task 2.
+
+**Built:** 2026-10-23 (Task 1, commit ae22576). Device checks SH0–SH1 in [[Device Test Plan]].
+
+## Small Fixes: Play's Panel and Posted Sync (2026-10-23)
+
+From the traceability checks after Posting From History. Commit 7939fa2.
+
+### Decision: Play's panel at most 65% of the screen, buttons pinned
+- **Requirement:** [[Look and Feel]], [[One Target]], [[Two Targets]].
+- On `PlayScreen` and `TwoTargetPlayScreen`, the black panel under the camera is at most 65% of the screen's height.
+- The scores scroll inside it. **Round done**, **Post score**, **New game** and the board buttons sit below the scroll, always in sight.
+- **Why:** on a small phone, or with large text, the end of a session overflowed and pushed the buttons off the screen. The camera also keeps some room.
+
+### Decision: posted on either copy is posted
+- **Requirement:** [[Rankings]], [[Accounts and Sign-In]], [[Game Recording]].
+- `SyncedGameHistory.sync` compares each session on the phone with its backup. If either says Posted, both become Posted (`markedPosted`).
+- **Why:** a session posted on one phone mustn't offer **Post score** again on another.
+
+### Decision: Clear history is a bin icon
+- **Requirement:** [[Game Recording]], [[Look and Feel]].
+- History's **Clear history** is now an icon button (`Icons.delete_sweep_outlined`) with the tooltip "Clear history".
+- **Why:** the text button didn't fit the title bar on a small phone with large text.
+- The wording is updated in the Instructions, `NoAccountScreen` and the website's Delete Your Data page.
+
+Device checks SF0–SF3 in [[Device Test Plan]].
+
+## Leaderboard Tables: This Week and Last Week (2026-10-23)
+
+**Requirement:** [[Rankings]], [[Look and Feel]]. **Story:** [[story-checkpoint-monthly-tables]] (backlog #22). Follows [[#Ranked Games and Game Center (2026-10-22)]].
+
+**Nigel, 2026-10-22:** "a best 3 meter score table refreshed each month, previous month results table etc." The leaderboard was then set up weekly, so the tables are weekly.
+
+### Decision: weekly tables, following the leaderboard
+- Two tabs: **This week** and **Last week** (`LeaderboardWeek`).
+- Each is the top 25 by Game Center nickname, with rank and score (`LeaderboardEntry`, `LeaderboardTable`).
+- The player's own row is marked "(you)". If they're below the top 25, their row goes under the table (`LeaderboardTable.meBelow`).
+- **Why weekly:** the Game Center leaderboard restarts each week. A monthly table would need a second leaderboard.
+- *Not chosen:* an all-time table (Nigel, 2026-10-22: not for now).
+
+### Decision: the table screen, behind `LeaderboardService`
+- `LeaderboardService.loadTable(board, week, {count})` returns a `LeaderboardTable`. It throws `LeaderboardSignedOut` when the player isn't signed in to Game Center.
+- **`LeaderboardTableScreen`**: the tabs, and **Open in Game Center** (Apple's screen).
+- **`WeekTable`**: loading, the table, empty, signed out, no signal. Signed out and no signal offer **Try again**. Pull down to refresh.
+- **`EntryRow`**: one row.
+- Reached from the **Leaderboards** tab's card and from **View leaderboard** at the end of a session.
+- **Why the interface:** tests use a fake, and an Amplify leaderboard (backlog #21) could join later without touching the screen.
+
+### Decision: our own iPhone code, not the plugin
+- **`GameCenterTables`** in `ios/Runner/AppDelegate.swift`, on the channel **`thrower/game_center`**, method `loadTable`. `GameCenterLeaderboardService.loadTable` calls it.
+- It loads both weeks with GameKit: `loadLeaderboards`, then `loadPreviousOccurrence` for last week, then `loadEntries`.
+- It sends names and scores only, plus the week's start (`start`, read into `LeaderboardTable.weekStart`).
+- **Why not the plugin (`games_services`):**
+  - its previous-week call returns only the player's own entry, not the table;
+  - its table call downloads every player's photo, which the app doesn't show.
+- **Last week** uses GameKit's completion-handler form of `loadPreviousOccurrence` (Review Agent, 2026-10-23). In a recurring leaderboard's first week it gives nothing and no error, and the app shows "No results for last week yet". A network error shows no signal.
+- **The Swift is in `AppDelegate.swift`**, not a new file: a new Swift file must be added to the Xcode project by hand.
+- **Not yet compiled.** It must build on the Mac ([[Mac Handoff]] → Build 15).
+
+### Decision: the week's start from Game Center
+- Game Center sends when the week began. It can confirm `rankedLeaderboardStart` in `lib/leaderboard/leaderboard_week.dart` ([[#Decision: the week counted from the leaderboard's start (to confirm)]]).
+- The app doesn't yet use it to decide which sessions can be posted.
+
+### Privacy
+- Only Game Center nicknames and scores are shown. No photos.
+- The website's privacy section 4 and [[Store Compliance]] say the app shows the weekly table.
+
+**Built:** 2026-10-23 (Tasks 1–2, commit a5afd1f). Review Agent: OK, to compile on the Mac. Device checks LT0–LT8 in [[Device Test Plan]].
 
 ## Camera: `camera` Plugin, Back Camera, No Audio
 

@@ -58,3 +58,20 @@ The footage is real people (Mark, the Captain, others at the venue), with voices
 
 ## Plan Changes Log
 - (none yet)
+
+---
+
+## Doc Update — 2026-10-23
+
+### Files Updated
+- `Architecture/Design Decisions.md`: new section **Store-Release Hygiene: Test Tools Only in Test Builds** (Live test and the Scoring test target behind `testToolsProvider`; the recordings decision pending, flavors recommended). Links [[Instructions and Safety]], [[Look and Feel]].
+- `requirements/Instructions and Safety.md`: What Exists Today: test tools hidden from store builds. Also fixed a drift item: the Ranked games summary said the leaderboard starts again "each month"; now "each week".
+- `requirements/Look and Feel.md`: Setup's tools, Live test and Scoring test target in test builds only.
+- `Architecture/Glossary.md`: `SetupScreen` tools; new concept **Test build**.
+- `tool/web_docs/content.py` (Screens: SetupScreen's tools) and `docs/web/` rebuilt.
+- `Operations/Device Test Plan.md`: **Store Hygiene Checks** SH0–SH1.
+- `Operations/Mac Handoff.md`: Build 15 → Also in it: store-release hygiene; SH checks under Checks to send.
+- `stories/backlog.md`: #6 already links this story (no change).
+
+### Notes
+- Task 2 (the recordings out of store builds) still needs Nigel's decision.

@@ -5,7 +5,7 @@ status: partly-built
 
 # Rankings
 
-Part of [[Requirements Index]] → Game Centre. **Status:** 🟡 Partly built: the first step, a weekly Game Center leaderboard for one ranked game (monthly until Nigel set it up weekly, 2026-10-23), built on the PC 2026-10-22; waiting for the Mac and App Store Connect, then device checks ([[story-checkpoint-game-center-scores]])
+Part of [[Requirements Index]] → Game Centre. **Status:** 🟡 Partly built: the first step, a weekly Game Center leaderboard for one ranked game (monthly until Nigel set it up weekly, 2026-10-23), built on the PC 2026-10-22; waiting for the Mac and App Store Connect, then device checks ([[story-checkpoint-game-center-scores]]). This week's and last week's tables built on the PC 2026-10-23, to compile on the Mac ([[story-checkpoint-monthly-tables]])
 
 ## What's Wanted
 Players are ranked against throwers across the UK and further: **daily**, **weekly** and **monthly**.
@@ -15,7 +15,7 @@ Players are ranked against throwers across the UK and further: **daily**, **week
 - **Strict mode:** a game that can be posted can't have a score raised by hand: a throw can only be marked a bounce-out (0), and a throw the camera missed only added as 0.
 - **Full games only:** a game finished early can't be posted.
 - **Android:** not postable for now (Game Center is iPhone only): backlog #21, perhaps the app's own leaderboard on the website.
-- **Tables** (this week's best, last week's results, now the leaderboard is weekly): backlog #22.
+- **Tables** (this week's best, last week's results, now the leaderboard is weekly): backlog #22, [[story-checkpoint-monthly-tables]]. The full last-week table, with our own iPhone code; no all-time table for now.
 
 ## Decided (Nigel, 2026-10-23): Posting From History
 - **Each History result** says **Can be posted**, **Posted** or **Cannot be posted**.
@@ -32,14 +32,22 @@ Players are ranked against throwers across the UK and further: **daily**, **week
 - **A normal 5 × 3 session** (2026-10-23): `Match.postable` also takes Scoring with 5 rounds and no `Match.changedByHand`. Post score then waits for **I threw from 3 m** (`ThreeMetreTick`).
 - **Posting status in History** (2026-10-23, `postStatusOf` in `lib/history/post_status.dart`): each card shows `PostStatusLabel`; a session's page (`HistoryPostPanel`) shows why it can't be posted, or **Post score** (iPhone). Only this leaderboard week's sessions (`sameWeek`, `lib/leaderboard/leaderboard_week.dart`; the start, 2026-10-23 00:00 UTC, to confirm on the Mac).
 - **Posted is kept** with the session (`GameRecord.posted`), after a post at the end (`GameNotifier.keepPosted`) or from History (`markedPosted`).
-- **Leaderboards tab** (`LeaderboardsScreen`): **3 m knives · 3 × 5** (`Leaderboard.title`); opens Game Center's board; on Android, "on the iPhone for now".
+- **Leaderboards tab** (`LeaderboardsScreen`): **3 m knives · 3 × 5** (`Leaderboard.title`); opens the app's table (Game Center's board before 2026-10-23); on Android, "on the iPhone for now".
 - **Test sessions** (`makeTestSessions`): Setup → Test sessions → Add 10 or Remove, in debug and `THROWER_TEST_TOOLS` builds only. They post only to a separate test leaderboard, `test.ranked.3m.5x3` (`leaderboardFor`), never live, and are never backed up (Review Agent, 2026-10-23: TestFlight has no Game Center sandbox).
 - **Rounds move on by themselves** (2026-10-23, `GameType.movesOnByItself`): after a round's 3rd knife the next round starts, with no collecting, so three bounce-outs don't stall the game. Why: [[Design Decisions]] → Rounds Move On: Round Done.
 - **Post score** and **View leaderboard** at the end of a full ranked game (`PostScorePanel`, `ScorePostNotifier`), iPhone only: posts the total (0–75) once to Game Center's `ranked.3m.5x3` leaderboard (`GameCenterLeaderboardService`, behind `LeaderboardService`); says whether it went (posted, sign in to Game Center, couldn't post: Try again). Once posted, the game's scores are locked.
-- **The leaderboard** restarts each week (recurring, set up by Nigel in App Store Connect on 2026-10-23, 1-week duration: [[Mac Handoff]] → Game Center setup). View leaderboard opens Apple's own screen.
+- **The leaderboard** restarts each week (recurring, set up by Nigel in App Store Connect on 2026-10-23, 1-week duration: [[Mac Handoff]] → Game Center setup).
+- **Leaderboard tables** (2026-10-23, backlog #22, [[story-checkpoint-monthly-tables]]; built on the PC, **to compile on the Mac**):
+  - `LeaderboardTableScreen`: **This week** and **Last week** tabs (`LeaderboardWeek`), and **Open in Game Center** (Apple's screen).
+  - Each tab (`WeekTable`): the top 25 by Game Center nickname, rank and score; your row marked "(you)", or shown under the table if you're lower.
+  - States: loading; "No scores yet this week"; "No results for last week yet" (also in the leaderboard's first week); signed out of Game Center; no signal. The last two offer **Try again**.
+  - Opened from the **Leaderboards** tab's card and from **View leaderboard** at the end of a session.
+  - On the iPhone: `GameCenterTables` in `ios/Runner/AppDelegate.swift`, on the channel `thrower/game_center` (`LeaderboardService.loadTable`). Names and scores only, plus the week's start.
+  - Device checks LT0–LT8 in [[Device Test Plan]].
+- **Posted syncs** (2026-10-23): a session posted on one phone shows Posted on the others after a backup sync (`SyncedGameHistory.sync`).
 - **Android:** no Post score (backlog #21). **Instructions:** a *Ranked games* section ([[Instructions and Safety]]).
-- **Not yet:** the Game Center setup on the Mac and in App Store Connect, the TestFlight check (device checks RK0–RK10, RD0 and PH0–PH13 in [[Device Test Plan]]), tables in the app (backlog #22), daily and weekly rankings, ranking iPhone and Android together (needs the app's own backend: [[Accounts Roadmap]] stage 6).
-- **Why each choice:** [[Design Decisions]] → Ranked Games and Game Center (2026-10-22), and Posting From History (2026-10-23).
+- **Not yet:** the Game Center setup on the Mac and in App Store Connect, the TestFlight check (device checks RK0–RK10, RD0 and PH0–PH13 in [[Device Test Plan]]), the tables on the Mac and iPhone (LT0–LT8), daily rankings, ranking iPhone and Android together (needs the app's own backend: [[Accounts Roadmap]] stage 6).
+- **Why each choice:** [[Design Decisions]] → Ranked Games and Game Center (2026-10-22), Posting From History (2026-10-23), and Leaderboard Tables: This Week and Last Week (2026-10-23).
 
 ### Daily Ranking
 - To be defined.
@@ -48,7 +56,7 @@ Players are ranked against throwers across the UK and further: **daily**, **week
 - To be defined. The weekly top rank wins a prize: [[Competitions and Prizes]].
 
 ### Monthly Ranking
-- **First step built** (2026-10-22): the Game Center leaderboard for Ranked: 5 × 3 at 3 m restarts each week (set up weekly on 2026-10-23; first planned monthly); Apple keeps each week's results. Showing this week's and last week's tables in the app: backlog #22. A monthly ranking would need a second leaderboard.
+- **First step built** (2026-10-22): the Game Center leaderboard for Ranked: 5 × 3 at 3 m restarts each week (set up weekly on 2026-10-23; first planned monthly); Apple keeps each week's results. This week's and last week's tables in the app: built 2026-10-23 (backlog #22). A monthly ranking would need a second leaderboard.
 
 ## Open Questions
 - **What is ranked:** a game's total (per game length: 3, 5 or 9 rounds), an average per throw, Quick draw times and wins, or several tables?
@@ -62,6 +70,7 @@ Players are ranked against throwers across the UK and further: **daily**, **week
 - [[Competitions and Prizes]]
 - [[story-checkpoint-game-center-scores]]
 - [[story-checkpoint-posting-from-history]]
+- [[story-checkpoint-monthly-tables]]
 - [[Design Decisions]] → Ranked Games and Game Center; Posting From History
 - [[Accounts Roadmap]] → Stage 6
 - [[Remote Play]]

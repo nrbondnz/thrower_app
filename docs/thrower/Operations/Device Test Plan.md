@@ -601,6 +601,66 @@ For [[story-checkpoint-compliance]] (requirements [[Instructions and Safety]], [
   - **Do:** On a computer, or a phone without Thrower, in a private browser window: open **https://knifeandaxethrower.com/delete-account**
   - **Look for:** The page opens with no sign-in, says how to delete an account in the app or by email, and what's deleted and kept. (Google Play checks this URL from outside the app)
 
+## Leaderboard Table Checks (added 2026-10-23)
+
+For [[story-checkpoint-monthly-tables]] (backlog #22; requirement [[Rankings]]; why in [[Design Decisions]] → Leaderboard Tables: This Week and Last Week). The first build with the tables from the Mac (build 15 or later), on the iPhone, signed in to Game Center, after the leaderboard setup. LT7 is on the Samsung. Named **LT**n.
+
+- **LT0 (This week shows the posted scores and your row)**
+  - **Do:** Post a score (a ranked session, or one from History). Then **Leaderboards** → **3 m knives · 3 × 5**
+  - **Look for:** A screen with **This week** and **Last week** tabs, on This week. Rows of place, Game Center nickname and score, best first. Your row is highlighted with "(you)" and your posted total. Pull down to refresh: the same rows
+- **LT1 (Last week, in the first week)**
+  - **Do:** Tap **Last week** (before the leaderboard's first week has ended)
+  - **Look for:** "No results for last week yet." No error and no spinner left turning. After the first week ends: last week's rows instead
+- **LT2 (This week with no scores)**
+  - **Do:** If you can, open the table at the start of a new week, before anyone posts
+  - **Look for:** "No scores yet this week. Post one at the end of a full session."
+- **LT3 (signed out of Game Center)**
+  - **Do:** iPhone Settings → Game Center → sign out. Open the table. Then sign back in and tap **Try again**
+  - **Look for:** "Sign in to Game Center (in the iPhone's Settings) to see the leaderboard." with **Try again**. After signing in, Try again shows the table
+- **LT4 (no signal)**
+  - **Do:** Turn on airplane mode. Open the table (or pull to refresh). Then turn airplane mode off and tap **Try again**
+  - **Look for:** "Couldn't load the leaderboard. Check the signal and try again." with **Try again**; no crash. With signal back, Try again shows the table
+- **LT5 (Open in Game Center)**
+  - **Do:** On the table screen, tap **Open in Game Center**
+  - **Look for:** Apple's own leaderboard screen for 3 m knives · 3 × 5, with the same scores. Closing it comes back to the table
+- **LT6 (View leaderboard from the end of a session)**
+  - **Do:** Finish a postable session, tap **Post score**, then **View leaderboard**
+  - **Look for:** The app's table opens (not Apple's screen) on **This week**, with the new score in it. Back returns to Play
+- **LT7 (Android)**
+  - **Do:** On the Samsung, open the **Leaderboards** tab
+  - **Look for:** "Leaderboards are on the iPhone (Game Center) for now." No table and no crash
+- **LT8 (a long nickname)**
+  - **Do:** Look at a row with a long Game Center nickname (change yours to a long one if none, then refresh)
+  - **Look for:** The name is cut short with "…". The place and score stay in line and readable. "(you)" still shows on your row if it fits
+
+## Small Fixes Checks (added 2026-10-23)
+
+For the small fixes in commit 7939fa2 (requirements [[Look and Feel]], [[Rankings]], [[Game Recording]]; why in [[Design Decisions]] → Small Fixes: Play's Panel and Posted Sync). Named **SF**n.
+
+- **SF0 (a small phone at the end of a session)**
+  - **Do:** On the smallest phone you have, with large text on (Settings → Display → Text size), finish a postable session on Play
+  - **Look for:** **Post score**, **View leaderboard** and **New game** are all in sight without scrolling. The scores above them scroll. The camera picture still shows above the panel
+- **SF1 (two throwers on one target)**
+  - **Do:** Play with 2 players on 1 target. Throw a round each, with large text on
+  - **Look for:** **Round done** stays in sight under the scores. With 2 targets, the board buttons (Adjust boards) stay in sight too
+- **SF2 (posted on one phone, Posted on the other)**
+  - **Do:** Signed in to the same account on two phones, post a session on one. On the other, sign in again (or **Back up now**), then open History
+  - **Look for:** The session says **Posted** on both, and neither offers Post score. (Needs a build with accounts)
+- **SF3 (the Clear history icon)**
+  - **Do:** Open **History** with some sessions kept. Long-press the bin icon at the top, then tap it
+  - **Look for:** A bin icon (not the words) in the title bar, with the tooltip "Clear history". Tapping it asks first, as before. It fits with large text on
+
+## Store Hygiene Checks (added 2026-10-23)
+
+For [[story-checkpoint-store-release-hygiene]] (backlog #6; requirement [[Instructions and Safety]]; why in [[Design Decisions]] → Store-Release Hygiene). Named **SH**n.
+
+- **SH0 (no test tools without the flag)**
+  - **Do:** Install a release build made **without** `THROWER_TEST_TOOLS` (an App Store-style build). Open **Setup**, then Setup → **Instructions** → Quick draw
+  - **Look for:** Tools has only **Calibrate target**: no **Live test** and no **Scoring test target**. The Quick draw instructions don't mention the Live test recording
+- **SH1 (present in a test build)**
+  - **Do:** Install a TestFlight build (with the flag) or a debug build. Open Setup, then the Instructions' Quick draw section
+  - **Look for:** Tools has **Calibrate target**, **Live test** and **Scoring test target**, and each opens as before. The Quick draw instructions mention the Live test recording (Setup, then Live test, then Quick draw)
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.
