@@ -228,11 +228,31 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
                     ),
                   const SizedBox(height: 8),
                   if (match.players.length == 1) ...[
+                    // App design (2026-10-23): the numbers are the focus,
+                    // read from the throwing line.
+                    Text(
+                      '${game.total}',
+                      key: const Key('playTotal'),
+                      style: TextStyle(
+                        color: AppPalette.dark.primary,
+                        fontSize: 48,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    const Text('points', style: TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 1.2)),
+                    const SizedBox(height: 8),
                     Text(
                       roundText(game),
                       key: const Key('roundText'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(

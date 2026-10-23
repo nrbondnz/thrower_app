@@ -311,4 +311,10 @@ void main() {
       expect(textOf(tester, 'turnText'), "Player 2's turn");
     });
   });
+
+  // App design (2026-10-23): the session total, large, above the round.
+  testWidgets('one thrower: the total in large type', (tester) async {
+    await pumpPlay(tester, 2);
+    expect(textOf(tester, 'playTotal'), '8');
+  });
 }
