@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import '../leaderboard/leaderboard_week.dart';
 import '../scoring/game_type.dart';
@@ -13,8 +14,12 @@ import 'game_record.dart';
 /// an App Store build). Setup → Tools then offers Add 10 test sessions.
 const testToolsFlag = bool.fromEnvironment('THROWER_TEST_TOOLS');
 
-/// Whether this build shows the test tools.
-bool get testToolsEnabled => kDebugMode || testToolsFlag;
+/// Whether this build shows the test tools: a debug build, the **beta**
+/// flavor (`flutter build … --flavor beta`; store-release hygiene,
+/// 2026-10-23), or the older `THROWER_TEST_TOOLS` define. Never the
+/// **store** flavor, whatever it was built with (Review Agent: a define can
+/// be left over in Xcode's settings).
+bool get testToolsEnabled => appFlavor != 'store' && (kDebugMode || appFlavor == 'beta' || testToolsFlag);
 
 /// [count] new, random sessions that can be posted at [now]: one thrower,
 /// 5 rounds of 3 knives from the camera, no score changed by hand, a mix of

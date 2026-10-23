@@ -8,6 +8,14 @@ project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,
   'Release' => :release,
+  # The beta and store flavors (store-release hygiene, 2026-10-23): their Xcode
+  # configurations are added on the Mac (Mac Handoff).
+  'Debug-beta' => :debug,
+  'Profile-beta' => :release,
+  'Release-beta' => :release,
+  'Debug-store' => :debug,
+  'Profile-store' => :release,
+  'Release-store' => :release,
 }
 
 def flutter_root

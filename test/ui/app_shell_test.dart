@@ -26,6 +26,7 @@ void main() {
     final c = ProviderContainer(overrides: [
       gameHistoryProvider.overrideWithValue(history ?? MemoryGameHistory(games)),
       appearanceStoreProvider.overrideWithValue(MemoryAppearanceStore()),
+      liveRecordingsProvider.overrideWith((ref) async => true),
       ...overrides.cast(),
     ]);
     addTearDown(c.dispose);

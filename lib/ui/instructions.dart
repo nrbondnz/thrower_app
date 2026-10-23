@@ -292,7 +292,9 @@ class _InstructionsScreenState extends ConsumerState<InstructionsScreen> {
   @override
   Widget build(BuildContext context) {
     final sections = instructionSections(ref.watch(gameProvider).players.first, ref.watch(targetModelProvider),
-        kind: _kind, testTools: ref.watch(testToolsProvider));
+        kind: _kind,
+        // The Live test recording is mentioned only where it is (the beta flavor).
+        testTools: ref.watch(testToolsProvider) && (ref.watch(liveRecordingsProvider).value ?? false));
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Instructions')),

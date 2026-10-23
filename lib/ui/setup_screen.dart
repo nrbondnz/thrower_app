@@ -69,9 +69,12 @@ class SetupScreen extends ConsumerWidget {
                 // 2026-10-23): Live test plays recordings of real people;
                 // the scoring test target is a developer's check.
                 if (ref.watch(testToolsProvider)) ...[
-                  const Divider(height: 1),
-                  tile('setupLiveTest', Icons.play_circle_outline, 'Live test',
-                      'Play or Quick draw on a recording', const LiveTestScreen()),
+                  // Only where the recordings are (the beta flavor).
+                  if (ref.watch(liveRecordingsProvider).value ?? false) ...[
+                    const Divider(height: 1),
+                    tile('setupLiveTest', Icons.play_circle_outline, 'Live test',
+                        'Play or Quick draw on a recording', const LiveTestScreen()),
+                  ],
                   const Divider(height: 1),
                   tile('setupTestTarget', Icons.adjust, 'Scoring test target', 'Tap a target to see its score',
                       const DebugTargetScreen()),

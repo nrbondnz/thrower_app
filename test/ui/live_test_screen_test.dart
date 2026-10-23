@@ -22,6 +22,8 @@ Future<ProviderContainer> pump(WidgetTester tester, Widget home, {TargetCamera? 
   final container = ProviderContainer(overrides: [
     // No camera or recording loads in these tests unless a test supplies one.
     cameraProvider.overrideWith((ref) => camera ?? Completer<TargetCamera>().future),
+    // The recordings are in the beta flavor (as Setup checks).
+    liveRecordingsProvider.overrideWith((ref) async => true),
     ...overrides.cast(),
   ]);
   addTearDown(container.dispose);

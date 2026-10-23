@@ -71,13 +71,14 @@ void main() {
   group('Setup → Test sessions', () {
     late MemoryGameHistory history;
 
-    Future<void> pumpSetup(WidgetTester tester, {required bool tools}) async {
+    Future<void> pumpSetup(WidgetTester tester, {required bool tools, bool recordings = true}) async {
       history = MemoryGameHistory([kept(played(GameType.ranked))]);
       await tester.pumpWidget(ProviderScope(
         overrides: [
           gameHistoryProvider.overrideWithValue(history),
           clockProvider.overrideWithValue(() => now),
           testToolsProvider.overrideWithValue(tools),
+          liveRecordingsProvider.overrideWith((ref) async => recordings),
         ],
         child: const MaterialApp(home: SetupScreen()),
       ));
@@ -111,6 +112,15 @@ void main() {
       await pumpSetup(tester, tools: true);
       await tester.scrollUntilVisible(find.byKey(const Key('setupTestTarget')), 100);
       expect(find.byKey(const Key('setupLiveTest')), findsOneWidget);
+    });
+
+    // Flavors (2026-10-23): the recordings are in the beta flavor only. A
+    // test build made without it (an iPhone build before its schemes) has no
+    // Live test to offer.
+    testWidgets('a test build without the recordings: no Live test, the test target still there', (tester) async {
+      await pumpSetup(tester, tools: true, recordings: false);
+      await tester.scrollUntilVisible(find.byKey(const Key('setupTestTarget')), 100);
+      expect(find.byKey(const Key('setupLiveTest')), findsNothing);
     });
 
     testWidgets('Add 10 test sessions adds 10 more each time', (tester) async {

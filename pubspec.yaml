@@ -70,10 +70,14 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Live test recordings of two real boards (~21 MB; in TestFlight builds too,
-  # Nigel 2026-10-11). Made with tool/pack_recording.dart.
+  # Live test recordings of two real boards and a Quick draw (~87 MB), made
+  # with tool/pack_recording.dart. Real people are filmed, so they're in the
+  # **beta** flavor only (TestFlight, Play testing, development), never the
+  # **store** flavor (store-release hygiene, Nigel 2026-10-23).
   assets:
-    - assets/live/
+    - path: assets/live/
+      flavors:
+        - beta
     # Quick draw's start signal and result chime (~60 KB; tool/make_signal_sounds.dart).
     - assets/sounds/
     # The deployed backend's settings (amplify_outputs.json), generated per

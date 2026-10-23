@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -615,8 +616,23 @@ final gameHistoryProvider = Provider<GameHistory>(
 );
 
 /// Whether Setup shows the test tools ([testToolsEnabled]: debug builds,
-/// and TestFlight builds made with `THROWER_TEST_TOOLS`). Tests override it.
+/// the beta flavor, and TestFlight builds made with `THROWER_TEST_TOOLS`).
+/// Tests override it.
 final testToolsProvider = Provider<bool>((ref) => testToolsEnabled);
+
+/// Whether the Live test recordings are in this build: the beta flavor only
+/// (`pubspec.yaml`: `assets/live/` for `flavors: [beta]`). Live test shows
+/// only then, so a build made without the flavor (an iPhone build before
+/// its Xcode schemes exist) can't offer recordings it hasn't got. Tests
+/// override it.
+final liveRecordingsProvider = FutureProvider<bool>((ref) async {
+  try {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    return manifest.listAssets().any((a) => a.startsWith('assets/live/'));
+  } catch (_) {
+    return false;
+  }
+});
 
 /// The sessions kept on the phone, newest first, for Home's last session
 /// and History (app-design story). Read again when a session is kept, and

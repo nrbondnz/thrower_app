@@ -29,6 +29,17 @@ android {
         versionName = flutter.versionName
     }
 
+    // Two flavors (store-release hygiene, Nigel 2026-10-23): "beta" (for
+    // testers: TestFlight, Play testing) has the Live test recordings and
+    // the test tools; "store" has neither. Same application ID: they're the
+    // same app, built for testers or the store. (Android won't allow a flavor
+    // name starting "test".)
+    flavorDimensions += "build"
+    productFlavors {
+        create("beta") { dimension = "build" }
+        create("store") { dimension = "build" }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
