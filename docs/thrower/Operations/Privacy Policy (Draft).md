@@ -1,6 +1,6 @@
 # Privacy Policy (Draft)
 
-**Status (2026-10-20):** superseded by the website's **`/privacy`** page (branch `website-dev`, `src/pages/privacy.md`), which expands this draft; on `dev.knifeandaxethrower.com` for Nigel to approve, then merged to `website`. This page is kept as the original draft. Earlier status: DRAFT for Nigel to approve (written 2026-10-19, accounts Task 5). Not published. Once approved, it goes on the website as `knifeandaxethrower.com/privacy` ([[Website Index]]), and its URL goes in App Store Connect and Google Play. **To fill in before publishing:** the contact email, the business or owner name, and the date.
+**Status (2026-10-23):** superseded by the website's **`/privacy`** page (branch `website-dev`, `src/pages/privacy.md`; [[Website Index]]). That page expands this draft and, since 2026-10-23, covers Game Center and the leaderboards. It goes live on knifeandaxethrower.com when Nigel approves it ([[story-checkpoint-compliance]] Task 2). The answers for the stores are in [[Store Compliance]]. The contact email and business are confirmed (2026-10-23). This page is kept as the original draft, written 2026-10-19 (accounts Task 5); edit the website page, not this one.
 
 Related: [[story-checkpoint-app-user-accounts]] (Task 5), [[Instructions and Safety]], [[Subscriptions]] (a later version must cover payments).
 

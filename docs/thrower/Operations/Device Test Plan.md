@@ -575,6 +575,32 @@ For [[story-checkpoint-posting-from-history]] (requirement [[Rankings]]; why in 
   - **Do:** Install a release build made **without** `THROWER_TEST_TOOLS` (an App Store-style build). Open Setup, Leaderboards, and History on a phone that still has Test sessions
   - **Look for:** Setup has **no Test sessions (test build only)** section. Leaderboards shows only 3 m knives · 3 × 5, no Test board. Any Test session says **Cannot be posted**, "Why: a test session, in a build without the test tools."
 
+## Compliance Checks (added 2026-10-23)
+
+For [[story-checkpoint-compliance]] (requirements [[Instructions and Safety]], [[Accounts and Sign-In]], [[Website]]; why in [[Design Decisions]] → Compliance: Policies and Help and Support). Build 1.0.0 (15) or later on the iPhone; a PC build on the Samsung. Do CP0 to CP4 on **both phones**. CP5 and CP6 wait until the website pages are published ([[Common Tasks]] → Publish the Website Pages): until then the links open but show "not found". Named **CP**n.
+
+- **CP0 (Help and support on Setup)**
+  - **Do:** Open **Setup**
+  - **Look for:** A section headed **Help and support** with: Instructions, Support (Email us: kaat-support@knifeandaxethrower.com), Help online, Privacy Policy, Terms of Service, Delete account. Instructions opens as before
+- **CP1 (the web links open)**
+  - **Do:** Tap **Help online**, then **Privacy Policy**, then **Terms of Service**, coming back to the app each time
+  - **Look for:** Each opens in the phone's browser (Safari, or Chrome on the Samsung), outside the app, at knifeandaxethrower.com/support, /privacy and /terms. Back in the app, Setup is as it was. Before publishing, a "not found" page is fine
+- **CP2 (Support opens the mail app)**
+  - **Do:** Tap **Support**
+  - **Look for:** The mail app opens a new email to **kaat-support@knifeandaxethrower.com**, subject **Thrower support**. If the phone has no mail app set up, a message at the bottom gives the address instead (no crash)
+- **CP3 (Delete account without accounts)**
+  - **Do:** Tap **Delete account** (in a build with no accounts, as TestFlight builds are now)
+  - **Look for:** A page, **Delete account**: "There is no account on this phone"; sessions and names are only on this phone; delete sessions in History (Clear history); Game Center scores are kept by Apple. Nothing is deleted by opening it
+- **CP4 (the Delete Your Account website button)**
+  - **Do:** On the CP3 page, tap **Delete Your Account (website)**
+  - **Look for:** The browser opens knifeandaxethrower.com/delete-account. (In a build with accounts, later: Delete account on Setup opens the Account screen instead, with its own Delete account; see AC checks)
+- **CP5 (the published pages)**
+  - **Do:** After publishing, open each page on knifeandaxethrower.com: /privacy, /terms, /support, /delete-account, /delete-data
+  - **Look for:** Each says **Last updated 23 October 2026** (or a later date if changed since). Privacy has section 4, Leaderboards (Apple Game Center). Terms has section 5, Leaderboards. Delete account names Setup → Help and support → Delete account. Support has the posting and leaderboard answers. Every footer links all five. Repeat CP1 and CP4: now the real pages show
+- **CP6 (Play's account deletion URL works without the app)**
+  - **Do:** On a computer, or a phone without Thrower, in a private browser window: open **https://knifeandaxethrower.com/delete-account**
+  - **Look for:** The page opens with no sign-in, says how to delete an account in the app or by email, and what's deleted and kept. (Google Play checks this URL from outside the app)
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

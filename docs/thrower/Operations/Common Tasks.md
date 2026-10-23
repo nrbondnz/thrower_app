@@ -53,6 +53,24 @@ python tool/web_docs/build.py
 
 The build stops if a cited source file or a link target doesn't exist. `docs/web/assets/styles.css` is edited by hand. Keep the names the same as in the code and in [[Glossary]]. When a component or flow changes, update `content.py` along with the vault's [[System Diagram]] and [[Data Flow]]. To look at the site, open `docs/web/index.html` in a browser, or serve it with `python -m http.server` from `docs/web`.
 
+## Publish the Website Pages
+
+The website is worked on in the worktree `C:\dev\flutter_projs\thrower_app-website` (branch `website-dev`, shown on dev.knifeandaxethrower.com). Publishing means merging it into `website` (knifeandaxethrower.com). See [[Website Index]].
+
+**Only after Nigel approves the wording on dev.knifeandaxethrower.com.**
+
+1. In the worktree, check `website-dev` is clean and pushed: `git status`, `git push`.
+2. Build it once: `npm run build` (runs `astro check`).
+3. Switch to `website` **in the worktree**, never in the app's folder: `git checkout website`, `git pull`.
+4. Merge: `git merge website-dev`, then `git push`.
+5. Amplify Hosting builds `website` on the push (a few minutes; **Hosting → website** in the console).
+6. Check the pages open on knifeandaxethrower.com: `/privacy`, `/terms`, `/support`, `/delete-account`, `/delete-data`, each with the right "Last updated" date (device checks CP5 and CP6).
+7. Switch back: `git checkout website-dev`.
+
+**Never** merge `main` into a website branch, or the other way round. The website branches are orphans.
+
+**Why it matters:** the app's Setup → Help and support links these pages, and the store consoles ask for their URLs ([[Store Compliance]]). Publish before a build with the links goes to App Review.
+
 ## Run the App on a Phone
 
 - Use the JetBrains `main.dart` run configuration (see `working-with-nigel.md` → IDE).

@@ -72,14 +72,36 @@ The hosted zone is in the same AWS account, so Amplify adds the DNS records and 
 ### Now
 - **Home:** what the app does, its main features, "coming soon" to the stores, and the safety line (keep the phone and yourself out of the line of throw).
 
-### Store pages (on `website-dev` 2026-10-20; to `website` once Nigel approves)
+### Store pages (on `website-dev`; not yet live)
+
+**State (2026-10-23):**
+
+| Page | `website-dev` | Live |
+|---|---|---|
+| `/privacy` | Updated 2026-10-23 | No |
+| `/terms` | Updated 2026-10-23 | No |
+| `/support` | Updated 2026-10-23 | No |
+| `/delete-account` | Updated 2026-10-23 | No |
+| `/delete-data` | Updated 2026-10-23 | No |
+
+- Written 2026-10-20 (commit `bb66c0c`). Brought up to date 2026-10-23 (commit `4d22597`, [[story-checkpoint-compliance]] Task 1):
+  - **Privacy:** a new section 4, Leaderboards (Apple Game Center, iPhone); later sections renumbered. Each knife's score, the stats, the posted flag and Appearance are kept on the phone.
+  - **Terms:** a new section 5, Leaderboards (fair play); later sections renumbered.
+  - **Delete account:** the app path is now Setup → Help and support → Delete account. Game Center scores are Apple's.
+  - **Support:** answers on posting and the leaderboards.
+  - **Delete data:** the History path.
+  - Every page says "Last updated 23 October 2026".
+- **Next:** Nigel reads them on dev.knifeandaxethrower.com; then they're published ([[Common Tasks]] → Publish the Website Pages). Until then, the app's Help and support links 404 on knifeandaxethrower.com.
+- The app links them from Setup → Help and support (`SupportLinks`). The store answers: [[Store Compliance]].
+
+**What each page says:**
 Modelled on WhereWillWeVisit's site (its `master` branch: `web/privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`), written for Thrower. Markdown files in `src/pages/`, laid out by `src/layouts/Page.astro`; every page links to them all in the footer.
-- **`/privacy`:** Privacy Policy, from [[Privacy Policy (Draft)]], expanded: camera on the phone only, games and names on the phone, the optional account (email, Cognito ID, the backup, AWS London), Google and Apple sign-in, no ads, analytics or tracking, retention, rights (UK ICO, NZ Privacy Commissioner), children, changes.
+- **`/privacy`:** Privacy Policy, from [[Privacy Policy (Draft)]], expanded (Game Center and the leaderboards added 2026-10-23): camera on the phone only, games and names on the phone, the optional account (email, Cognito ID, the backup, AWS London), Google and Apple sign-in, no ads, analytics or tracking, retention, rights (UK ICO, NZ Privacy Commissioner), children, changes.
 - **`/terms`:** Terms of Service, with a **safety** section (the app can't tell the lane is clear; phone out of the line of throw), venue rules first, age, liability (injury, wrong scores, lost data), NZ law.
 - **`/support`:** contact email and common questions.
-- **`/delete-account`:** in the app (person icon → Delete account) or by email; what's deleted and kept. **Google Play's "account deletion URL".**
+- **`/delete-account`:** in the app (Setup → Help and support → Delete account) or by email; what's deleted and kept. **Google Play's "account deletion URL".**
 - **`/delete-data`:** deleting games (History) or names without deleting the account.
-- **Assumed (Nigel to confirm before production):** the operator **Bond Consultancy Ltd, Whangaparaoa, Auckland** (as WhereWillWeVisit), and the contact **kaat-support@knifeandaxethrower.com** (WorkMail organisation `kaat`, us-east-1).
+- **Confirmed by Nigel (2026-10-23):** the operator **Bond Consultancy Ltd, Whangaparaoa, Auckland** (as WhereWillWeVisit), and the contact **kaat-support@knifeandaxethrower.com** (WorkMail organisation `kaat`, us-east-1); the mailbox exists.
 - **Not needed:** `app-ads.txt` (WhereWillWeVisit's is for AdMob; Thrower has no ads).
 
 ### Which URL goes where
@@ -91,5 +113,7 @@ Modelled on WhereWillWeVisit's site (its `master` branch: `web/privacy.html`, `t
 - **Later:** store badges once the app is live; the [[Rankings|Game Centre]] (leaderboards), which would read the app's backend.
 
 ## Related
+- [[Store Compliance]] (the URLs and the stores' answers)
+- [[story-checkpoint-compliance]]
 - [[Cloud Config Setup]] (section 4, the public site)
 - [[Accounts Roadmap]] (the Game Centre)

@@ -463,6 +463,39 @@ Requirement: [[Look and Feel]], [[Throwing Stats]], [[Game Recording]]. Design: 
 
 **Built:** 2026-10-23 (Tasks 1–4, commit 7030b33; Review Agent fixes 46ed757); device checks PH0–PH13 in [[Device Test Plan]].
 
+## Compliance: Policies and Help and Support (2026-10-23)
+
+**Requirement:** [[Instructions and Safety]], [[Accounts and Sign-In]], [[Rankings]], [[Website]]. **Story:** [[story-checkpoint-compliance]]. Store answers: [[Store Compliance]].
+
+**Nigel, 2026-10-23:** "We are not ready to go live but we should do some of the compliance work." WhereWillWeVisit has a privacy policy, terms and delete account on its website, and a support page in the app.
+
+### Decision: the policies live on the website; the app links them
+- Privacy Policy, Terms of Service, Support, Delete Your Account and Delete Your Data are pages on knifeandaxethrower.com ([[Website Index]]).
+- The app doesn't hold copies. Setup → **Help and support** opens them.
+- **Why:** App Store Connect and Google Play ask for URLs. One copy means the app and the stores always show the same words, and a wording change needs no new build.
+- **Trade-off:** the links need a network, and they 404 until the pages are published.
+
+### Decision: links opened with `url_launcher`, outside the app
+- `linkOpenerProvider` calls `launchUrl` with `LaunchMode.externalApplication`: web pages open in the browser, Support in the mail app.
+- `url_launcher` is now a direct dependency. It was already in the app through amplify_authenticator, so the native code was there.
+- Android 11+ needs a `<queries>` entry to find a mail app: `SENDTO` with `mailto` in `AndroidManifest.xml`. iOS needs nothing for `https` and `mailto`.
+- If a link won't open, a snack bar gives the address.
+- **Why the provider:** tests swap it, so no test opens a real browser.
+- *Not chosen:* an in-app web view. It's another plugin, and a policy page reads fine in the browser.
+
+### Decision: Delete account with and without accounts
+- `deleteAccountScreen({accounts})` picks the screen.
+- **With accounts** (a build connected to the backend): the Account screen, which has Delete account (Apple 5.1.1(v)).
+- **Without accounts:** `NoAccountScreen`. There's no account; sessions and names are only on this phone; delete sessions in History. Game Center scores are Apple's. A button opens the website's Delete Your Account page.
+- **Why:** Apple and Google want deleting an account to be easy to find. Today's builds have no accounts, so the screen must say so plainly rather than show nothing.
+
+### Decision: publish the pages before shipping a build that links them
+- The website pages are updated on `website-dev` and published by merging into `website` ([[Common Tasks]] → Publish the Website Pages).
+- No build with Help and support goes to App Review, and no URL goes into the store consoles, until the pages are live (Review Agent, 2026-10-23).
+- TestFlight testers may see 404s until then. That's fine.
+
+**Built:** 2026-10-23 (Task 3, commit 5dae5c7; website Task 1, `website-dev` commit 4d22597). Device checks CP0 to CP6 in [[Device Test Plan]].
+
 ## Camera: `camera` Plugin, Back Camera, No Audio
 
 **Decision:** Use the official `camera` plugin (0.12) with the back camera at `ResolutionPreset.high`. Frames come as BGRA on iOS and YUV420 on Android. Audio is off. The live Quick draw asks for 60 fps (`LiveCamera.open(fps: 60)`; see Quick Draw: the Live Camera — 60 fps, Crops and a Queue); the rest take the phone's default rate.

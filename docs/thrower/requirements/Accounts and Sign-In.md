@@ -21,13 +21,14 @@ Stage 2 of the [[Accounts Roadmap]], [[story-checkpoint-app-user-accounts]]. Why
 - **Google and Sign in with Apple** (Task 3, written, not pushed): waiting for Nigel's console setup and the six secrets ([[Common Tasks]] → Set Up Google and Sign in with Apple). Readable sign-in domains per branch (`throwerapp`, `throwerapp-dev`); the app's return link `throwerapp://`. The Sign in with Apple capability is added in Xcode ([[Mac Handoff]]).
 - **The backup** (Task 4, written, deploys with Task 3): signed in, the kept games and names go to the user's own rows (owner-only) and come back on a new phone. See [[Data Flow]] → Backup.
 - **Delete account** (Task 5, written): on the Account screen, asking first. The backup is erased, then the account; the phone keeps its games and names.
-- **Told to the user:** the Instructions' **Your account** section ([[Instructions and Safety]]), and a [[Privacy Policy (Draft)]] for Nigel to approve.
+- **Told to the user:** the Instructions' **Your account** section ([[Instructions and Safety]]), and the website's Privacy Policy (`/privacy`, from the [[Privacy Policy (Draft)]]; updated on `website-dev` 2026-10-23, not yet live).
+- **Delete account from Setup** ([[story-checkpoint-compliance]], 2026-10-23): Setup → Help and support → **Delete account**. With accounts, it opens the Account screen. Without accounts, `NoAccountScreen` says there's no account on this phone, sessions are deleted in History, and links the website's Delete Your Account page (Google Play's account deletion URL). See [[Design Decisions]] → Compliance: Policies and Help and Support; device check CP3.
 - **Device checks:** AC0–AC8 in [[Device Test Plan]] → Account Checks.
 
 ## Open Questions
 - **Age:** are accounts adults only (an age check at sign-up), or are under-18s allowed with care? ([[Accounts Roadmap]] → Open Decisions)
 - **The app user's own seat:** "Me", or their name, by default, once they're signed in? ([[Accounts Roadmap]] → Stage 1)
-- **The privacy policy:** approve, add the contact email and owner name, publish on the website (`knifeandaxethrower.com/privacy`); then the store privacy labels.
+- **The privacy policy:** the email and business are confirmed (2026-10-23). Left: Nigel approves the wording, the page is published (`knifeandaxethrower.com/privacy`), then the store answers in [[Store Compliance]].
 - **The Apple button's style** (Guideline 4): check before any store build; WhereWillWeVisit's own button was rejected.
 - **Deletes while signed out come back** at the next sign-in (no tombstones). Fine for now?
 

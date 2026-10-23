@@ -12,9 +12,11 @@ Back to [[Requirements Index]].
 - It hosts what the stores need: the privacy policy and a support page.
 
 ## What Exists Today
-- 🟡 The domain, both branches and a starter home page. Both branches built on the `thrower_app` Amplify app; the domain is being attached. See [[Website Index]].
+- 🟡 The domain, both branches and a starter home page, live on knifeandaxethrower.com. See [[Website Index]].
+- 🟡 The store pages (Privacy, Terms, Support, Delete Your Account, Delete Your Data) on `website-dev` only, updated 2026-10-23 for Game Center and the leaderboards ([[story-checkpoint-compliance]]). Not live until Nigel approves them and `website-dev` is merged into `website`.
+- The app links them from Setup → Help and support. The store answers: [[Store Compliance]].
 - The decision: [[Design Decisions#Website: Astro, Orphan Branches, in the Same Amplify App (2026-10-20)]].
 
 ## Open Questions
 - Which pages come first after the privacy policy and support (how to play, news, the Game Centre)?
-- A contact email on the domain (e.g. support@)? Needs an email service (SES or a mail provider).
+- ~~A contact email on the domain?~~ Done: `kaat-support@knifeandaxethrower.com` exists (Nigel, 2026-10-23).

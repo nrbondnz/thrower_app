@@ -18,7 +18,7 @@ The website pages are written in `src/pages/` on the website branches ([[Website
 - **Support email:** kaat-support@knifeandaxethrower.com
 - **Business:** Bond Consultancy Ltd, Whangaparaoa, Auckland, New Zealand (confirmed by Nigel, 2026-10-23)
 
-**Order:** publish the pages **before** a build that links to them reaches testers or review. The app's Setup → Help and support opens them.
+**Order:** publish the pages **before** a build that links to them goes to App Review ([[Common Tasks]] → Publish the Website Pages). TestFlight testers may see "not found" until then. The app's Setup → Help and support opens them. Device checks: CP0 to CP6 ([[Device Test Plan]] → Compliance Checks).
 
 ## In the App
 

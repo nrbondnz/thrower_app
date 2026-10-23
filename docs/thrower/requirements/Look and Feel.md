@@ -19,10 +19,10 @@ Nigel, 2026-10-23: a better-looking app, "functional first, but nicer looking", 
 ## What Exists Today
 - **The design:** [[App Design Index]] and its child pages.
 - **Themes** ([[Colour and Themes]]): charcoal and amber, light and dark (`AppTheme`, `AppPalette`). **Setup → Appearance:** Phone, Light or Dark, kept on the phone (`FileAppearanceStore`). The camera screens are always dark (`CameraTheme`).
-- **A bottom bar** ([[Navigation and Structure]]): Home, Throw, History, Setup (`AppShell`).
+- **A bottom bar** ([[Navigation and Structure]]): Home, Leaderboards, History, Setup (`AppShell`; Leaderboards replaced Throw on 2026-10-23, [[story-checkpoint-posting-from-history]]).
 - **Home** ([[Home Screen]]): the target, THROWER, the tagline, the last session, START THROWING, and Rounds and Quick draw cards.
-- **Throw:** Rounds, Quick draw, and Leaderboard on the iPhone.
-- **Setup:** Instructions, Appearance, the tools (Calibrate target, Live test, Scoring test target), Account.
+- **Leaderboards:** "3 m knives · 3 × 5" (Game Center, iPhone). Rounds and Quick draw are Home's **Throwing types**.
+- **Setup:** Help and support (Instructions, Support, Help online, Privacy Policy, Terms of Service, Delete account; [[story-checkpoint-compliance]], 2026-10-23), Appearance, the tools (Calibrate target, Live test, Scoring test target), Account.
 - **Play:** one thrower's total shown large, above the round ([[Throwing Screens]]).
 - Built in [[story-checkpoint-app-design]]. Why: [[Design Decisions]] → App Design: Themes, Tabs and Stats.
 

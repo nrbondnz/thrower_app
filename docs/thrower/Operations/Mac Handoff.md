@@ -19,8 +19,19 @@ Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (sect
 - **A Leaderboards tab** in place of Throw: **3 m knives · 3 × 5** opens Game Center's board. Home's "Quick actions" is now **Throwing types**.
 - **Test sessions** (test builds only): Setup → Test sessions (test build only) → **Add 10 test sessions** and **Remove test sessions**. Marked Test, left out of the stats, never backed up. They post only to a separate test leaderboard, `test.ranked.3m.5x3`, shown on the Leaderboards tab only in test builds.
 - Commits `7030b33` (Tasks 1–4) and `46ed757` (Review Agent fixes), then Task 5 (docs).
-- **New:** a build flag, `THROWER_TEST_TOOLS`. No new plugins, permissions, assets or `Info.plist` keys. Nothing for `pod install` or Signing & Capabilities. The bundle ID and signing are unchanged.
+- **New:** a build flag, `THROWER_TEST_TOOLS`. No new permissions, assets or `Info.plist` keys. Nothing for Signing & Capabilities. The bundle ID and signing are unchanged. (One plugin made direct, `url_launcher`: see Also in it, below.)
 - The history file has three extra fields (`changedByHand`, `posted`, `test`); its version is unchanged, so earlier builds still read it.
+
+### Also in it: Help and support (compliance, 2026-10-23)
+- **Setup → Help and support** ([[story-checkpoint-compliance]] Task 3, commit `5dae5c7`; why in [[Design Decisions]] → Compliance: Policies and Help and Support):
+  - Instructions, **Support** (opens the mail app to kaat-support@knifeandaxethrower.com), **Help online**, **Privacy Policy**, **Terms of Service**;
+  - **Delete account:** this build has no accounts, so it says there's no account on this phone and links the website's Delete Your Account page.
+- **`url_launcher`** is now a direct dependency. It was already in the app through amplify_authenticator, and `url_launcher_ios` is already in `ios/Podfile.lock`.
+  - Run `pod install` (in `ios/`) after `flutter pub get` anyway. **No change is expected.** If `Podfile.lock` does change, commit it with the build bump.
+  - Nothing for `Info.plist` or Signing & Capabilities: `https` and `mailto` links need no keys on iOS.
+- **The links 404 until the website pages are published** ([[Common Tasks]] → Publish the Website Pages; Nigel approves the wording first).
+  - Fine for TestFlight testers. Tell them in What to Test: "Setup → Help and support: the website pages aren't up yet, so the links may show 'not found'."
+  - **Never** submit a build with these links for App Review until the pages are live (Review Agent, 2026-10-23).
 
 ### Before archiving: App Store Connect (Nigel, Claude explaining)
 1. **Create the test leaderboard.** App Store Connect → the app → Game Center → Leaderboards → add a **Recurring** leaderboard:
@@ -57,6 +68,7 @@ One uploaded build can be chosen for both TestFlight and the App Store, so a tes
 
 ### Checks to send
 - [[Device Test Plan]] → **Posting From History Checks (PH0–PH13)**: the iPhone for posting; the Samsung for PH9. PH8 needs a session from the week before. PH13 needs an App Store-style build (no define), e.g. a release run from Xcode.
+- [[Device Test Plan]] → **Compliance Checks (CP0–CP4)**: on the iPhone (and the Samsung from the PC). CP5 and CP6 wait for the website pages to be published.
 - If build 14 never went: App Design Checks (AD0–AD11) too, with AD0 and AD3 read as the note there says.
 - The earlier checks still open: RK0–RK10, RD0–RD3, QA0–QA14, BF8.
 
