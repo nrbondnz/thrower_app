@@ -1,3 +1,7 @@
+import 'leaderboard_table.dart';
+
+export 'leaderboard_table.dart';
+
 /// The leaderboards a game can be posted to (story-checkpoint-game-center-
 /// scores, Nigel 2026-10-22). [id] is the leaderboard's ID in App Store
 /// Connect (Game Center), set up there to restart each week (2026-10-23).
@@ -50,4 +54,9 @@ abstract interface class LeaderboardService {
 
   /// Opens the leaderboard's own screen at [board].
   Future<void> show(Leaderboard board);
+
+  /// [board]'s table for [week]: the top [count] and the player's own place
+  /// (backlog #22). Throws [LeaderboardSignedOut] if the player isn't
+  /// signed in, or anything else if it couldn't load (no signal).
+  Future<LeaderboardTable> loadTable(Leaderboard board, LeaderboardWeek week, {int count = 25});
 }

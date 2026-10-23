@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../leaderboard/leaderboard_service.dart';
 import '../providers.dart';
-import 'post_score_panel.dart';
+import 'app_shell.dart';
+import 'leaderboard_table_screen.dart';
 import 'theme/widgets.dart';
 
 /// The Leaderboards tab (posting-from-history story, Nigel 2026-10-23: "put
@@ -28,7 +29,8 @@ class LeaderboardsScreen extends ConsumerWidget {
               icon: Icons.emoji_events_outlined,
               title: board.title,
               subtitle: board.about,
-              onTap: service == null ? null : () => viewLeaderboard(context, service, board: board),
+              // The week's tables (backlog #22); Game Center's own screen from there.
+              onTap: service == null ? null : () => openScreen(context, ref, LeaderboardTableScreen(board: board)),
             ),
             const SizedBox(height: 12),
           ],

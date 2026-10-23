@@ -11,6 +11,7 @@ import 'package:thrower_app/settings/appearance_store.dart';
 import 'package:thrower_app/ui/app_shell.dart';
 import 'package:thrower_app/ui/home_screen.dart';
 import 'package:thrower_app/ui/play_setup_screen.dart';
+import 'package:thrower_app/ui/leaderboard_table_screen.dart';
 import 'package:thrower_app/ui/leaderboards_screen.dart';
 
 import '../history/memory_game_history.dart';
@@ -71,13 +72,16 @@ void main() {
       expect(find.byKey(const Key('leaderboardsNotHere')), findsOneWidget);
     });
 
-    testWidgets("Leaderboards on the iPhone: the board opens Game Center's", (tester) async {
+    testWidgets("Leaderboards on the iPhone: the board's tables, and Game Center's from there", (tester) async {
       final board = FakeLeaderboard();
       await pumpShell(tester, overrides: [leaderboardServiceProvider.overrideWithValue(board)]);
       await tester.tap(find.text('Leaderboards'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('leaderboardsNotHere')), findsNothing);
       await tester.tap(find.byKey(const Key('leaderboard-ranked3m')));
+      await tester.pumpAndSettle();
+      expect(find.byType(LeaderboardTableScreen), findsOneWidget);
+      await tester.tap(find.byKey(const Key('openInGameCenter')));
       await tester.pumpAndSettle();
       expect(board.shown, [Leaderboard.ranked3m]);
     });

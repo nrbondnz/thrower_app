@@ -11,6 +11,7 @@ import 'package:thrower_app/vision/throw_classifier.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/scoring/target_model.dart';
+import 'package:thrower_app/ui/leaderboard_table_screen.dart';
 import 'package:thrower_app/ui/post_score_panel.dart';
 import 'package:thrower_app/ui/score_corrections.dart';
 
@@ -42,6 +43,19 @@ class FakeLeaderboard implements LeaderboardService {
   Future<void> show(Leaderboard board) async {
     if (!signedIn) throw StateError('not signed in');
     shown.add(board);
+  }
+
+  /// Each week's table (empty if not set); [tableFails] for no signal.
+  final tables = <LeaderboardWeek, LeaderboardTable>{};
+  var tableFails = false;
+  final tablesAsked = <(Leaderboard, LeaderboardWeek)>[];
+
+  @override
+  Future<LeaderboardTable> loadTable(Leaderboard board, LeaderboardWeek week, {int count = 25}) async {
+    tablesAsked.add((board, week));
+    if (!signedIn) throw const LeaderboardSignedOut();
+    if (tableFails) throw StateError('no signal');
+    return tables[week] ?? LeaderboardTable.empty;
   }
 }
 
@@ -236,11 +250,13 @@ void main() {
       expect(find.textContaining("Couldn't post"), findsOneWidget);
     });
 
-    testWidgets('View leaderboard opens the 3 m leaderboard', (tester) async {
+    // Backlog #22: the week's tables, not Game Center's own screen.
+    testWidgets("View leaderboard opens the 3 m leaderboard's tables", (tester) async {
       await pump(tester, RankedGame.new);
       await tester.tap(find.byKey(const Key('viewLeaderboard')));
-      await tester.pump();
-      expect(board.shown, [Leaderboard.ranked3m]);
+      await tester.pumpAndSettle();
+      expect(find.byType(LeaderboardTableScreen), findsOneWidget);
+      expect(board.tablesAsked.first, (Leaderboard.ranked3m, LeaderboardWeek.thisWeek));
     });
 
     testWidgets('nothing for a game finished early', (tester) async {
@@ -307,7 +323,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('View leaderboard says so when it can\'t open (not signed in)', (tester) async {
+    testWidgets('View leaderboard, not signed in: the tables say to sign in', (tester) async {
       board.signedIn = false;
       final c = containerWith(RankedGame.new);
       await tester.pumpWidget(UncontrolledProviderScope(
@@ -315,9 +331,8 @@ void main() {
         child: const MaterialApp(home: Scaffold(body: Center(child: PostScorePanel()))),
       ));
       await tester.tap(find.byKey(const Key('viewLeaderboard')));
-      await tester.pump();
-      expect(find.byKey(const Key('viewLeaderboardFailed')), findsOneWidget);
-      expect(board.shown, isEmpty);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tableSignedOut')), findsOneWidget);
     });
   });
 

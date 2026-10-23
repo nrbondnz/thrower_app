@@ -52,7 +52,7 @@ Setup → **Help and support** (`lib/ui/support_links.dart`):
 - **Photos or Videos:** the camera picture is analysed on the phone and never sent or saved.
 - Location, Health, Financial Info, Contacts, Browsing History, Purchases, Diagnostics, Usage Data.
 
-**Game Center:** a total the user chooses to post goes to Apple's Game Center. Apple collects and runs that data under its own policy. The app declares **User Content → Gameplay Content** already (the step-8 note in [[Mac Handoff]] → Build 11).
+**Game Center:** a total the user chooses to post goes to Apple's Game Center. The app also shows each week's table (other players' Game Center nicknames, places and scores), loaded from Game Center when it's opened; nothing is saved on the phone. Displaying them isn't data the developer collects. Apple collects and runs that data under its own policy. The app declares **User Content → Gameplay Content** already (the step-8 note in [[Mac Handoff]] → Build 11).
 
 **Other App Store Connect fields:**
 - **Privacy Policy URL:** /privacy.
@@ -101,7 +101,7 @@ Setup → **Help and support** (`lib/ui/support_links.dart`):
 The app shows no violence. It's a scoring tool for knife and axe throwing, a sport with blades.
 
 - **Apple's age rating questionnaire:**
-  - No violence, no gambling, no user-generated content shared with other users. Game Center nicknames are Apple's.
+  - No violence and no gambling. The app shows other players' Game Center nicknames on the leaderboard tables; Apple moderates nicknames. No other user content is shared between users.
   - Apple's newer questionnaire has a question on **weapons**. Knives and axes are thrown at targets as a sport. Answer as **"infrequent or mild"** realistic weapon references, or ask App Review.
   - **12+ is likely.** Our Terms already say under-18s use it only with a parent's permission and supervision.
 - **Google Play (IARC questionnaire):** answer the weapons questions the same way. Expect a similar teen rating.

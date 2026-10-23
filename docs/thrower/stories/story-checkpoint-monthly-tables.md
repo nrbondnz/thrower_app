@@ -1,4 +1,4 @@
-# Story Checkpoint: Leaderboard Tables (This Month, Last Month)
+# Story Checkpoint: Leaderboard Tables (This Week, Last Week)
 
 ## Story Goal
 Backlog #22. Nigel, 2026-10-22: "a best 3 meter score table refreshed each month, previous month results table etc."; then "add backlog #22 monthly tables next". Show the Ranked leaderboard (`ranked.3m.5x3`, recurring monthly in Game Center: [[story-checkpoint-game-center-scores]]) in the app: **this month's** best scores and **last month's** results, each a table of rank, Game Center nickname and score, with the player's own place. Requirement: [[Rankings]].
@@ -14,7 +14,7 @@ Backlog #22. Nigel, 2026-10-22: "a best 3 meter score table refreshed each month
 4 (Large): UI → leaderboard service → native iOS code (3 layers); native code on one platform (1).
 
 ## Status
-PLANNED 2026-10-22: waiting for Nigel's approval. Then run whole, committing per task; the Swift is compiled and checked on the Mac (with build 11's Game Center setup, or after it).
+IN PROGRESS 2026-10-23: Nigel approved the plan on 2026-10-22 ("Full table, own iOS code"), and on 2026-10-23 said to carry on with the backlog. **Weekly:** the tables follow the leaderboard as it was set up (recurring, 1 week); a monthly table would need a second leaderboard. Tasks 1 and 2 built on the PC; **the Swift is compiled and checked on the Mac**.
 
 ## Plan
 
@@ -36,4 +36,25 @@ PLANNED 2026-10-22: waiting for Nigel's approval. Then run whole, committing per
 ---
 
 ## Plan Changes Log
-- (none yet)
+- **2026-10-23: weekly, not monthly.** Nigel set the leaderboard up weekly on the Mac. "This month / last month" became **This week / Last week** (`LeaderboardWeek`).
+- **2026-10-23: one iPhone method for both weeks.** The plan had this month from the plugin's `loadLeaderboardScores`. That call also downloads every player's photo, which the app doesn't show. So `GameCenterTables.loadTable` in `ios/Runner/AppDelegate.swift` loads both weeks, names and scores only, on the channel `thrower/game_center`. It also returns the week's start (`startDate`), which can confirm `rankedLeaderboardStart`.
+- **2026-10-23: where it opens.** It's reached from the **Leaderboards** tab (which replaced Home → Leaderboard on 2026-10-23) and from the end-of-session **View leaderboard**. Game Center's own screen is a button on it (**Open in Game Center**).
+- **2026-10-23: the Swift is in `AppDelegate.swift`.** A new Swift file would need adding to the Xcode project by hand; better done in Xcode later if it grows.
+
+## Task Log
+
+### Task 1: The tables, behind the interface
+- **Status:** COMPLETE (2026-10-23).
+- **What changed:**
+  - `lib/leaderboard/leaderboard_table.dart`: `LeaderboardWeek`, `LeaderboardEntry`, `LeaderboardTable` (with `meBelow`, `weekStart`) and `LeaderboardSignedOut`.
+  - `LeaderboardService.loadTable(board, week, {count})`.
+  - `lib/ui/leaderboard_table_screen.dart`: `LeaderboardTableScreen` (tabs; Open in Game Center), `WeekTable` (loading, table, empty, signed out, no signal, Try again; pull to refresh) and `EntryRow` ("(you)" highlighted).
+  - The Leaderboards tab card and View leaderboard open it.
+- **Tests:** `test/ui/leaderboard_table_screen_test.dart`; `FakeLeaderboard.loadTable`.
+
+### Task 2: Game Center (iOS)
+- **Status:** BUILT on the PC, to compile on the Mac.
+- **What changed:**
+  - `GameCenterLeaderboardService.loadTable`: the channel `thrower/game_center`.
+  - `ios/Runner/AppDelegate.swift`: `GameCenterTables` (registered in `didInitializeImplicitFlutterEngine`).
+- **Tests:** the channel replies are mocked in `test/ui/leaderboard_table_screen_test.dart`.

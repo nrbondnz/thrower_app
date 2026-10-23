@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../leaderboard/leaderboard_service.dart';
 import '../providers.dart';
+import 'leaderboard_table_screen.dart';
 import '../scoring/game_type.dart';
 
 /// At the end of a full ranked game (`Match.postable`), on a phone that can
@@ -62,7 +63,10 @@ class _PostScorePanelState extends ConsumerState<PostScorePanel> {
               ),
             OutlinedButton(
               key: const Key('viewLeaderboard'),
-              onPressed: () => viewLeaderboard(context, service),
+              // The week's tables (backlog #22).
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const LeaderboardTableScreen(board: Leaderboard.ranked3m)),
+              ),
               child: const Text('View leaderboard'),
             ),
           ],
