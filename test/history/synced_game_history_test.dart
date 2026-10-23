@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/auth/auth_service.dart';
 import 'package:thrower_app/history/game_record.dart';
+import 'package:thrower_app/history/test_sessions.dart';
 import 'package:thrower_app/history/synced_game_history.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/match.dart';
@@ -259,6 +260,30 @@ void main() {
       backup.failing = true;
       await expectLater(container.read(deleteAccountProvider)(), throwsException);
       expect((container.read(authServiceProvider)! as FakeAuthService).deleted, isFalse);
+    });
+  });
+
+  // Review Agent, 2026-10-23: test sessions stay on the phone, so they can't
+  // reach the user's other phones (an App Store build among them).
+  group('test sessions', () {
+    final made = makeTestSessions(DateTime(2026, 10, 25, 12));
+
+    test('are not backed up when kept', () async {
+      await history.add(made.first);
+      await pumpEventQueue();
+      expect(backup.games, isEmpty);
+    });
+
+    test('are not uploaded by a sync', () async {
+      await phone.add(made.first);
+      final result = await history.sync();
+      expect((result?.uploaded, backup.games.isEmpty), (0, true));
+    });
+
+    test('one already in a backup is not brought down', () async {
+      backup.games[made.first.id] = made.first;
+      await history.sync();
+      expect(phone.games, isEmpty);
     });
   });
 }

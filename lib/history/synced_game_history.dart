@@ -43,7 +43,9 @@ class SyncedGameHistory implements GameHistory {
   @override
   Future<void> add(GameRecord record) async {
     await local.add(record);
-    _backUp((r) => r.put(record));
+    // Test sessions stay on the phone (Review Agent, 2026-10-23): backed up,
+    // they'd reach the user's other phones, App Store builds included.
+    if (!record.test) _backUp((r) => r.put(record));
   }
 
   @override
@@ -77,11 +79,11 @@ class SyncedGameHistory implements GameHistory {
     final phoneIds = {for (final g in onPhone) g.id};
     final backupIds = {for (final g in backedUp) g.id};
     var downloaded = 0, uploaded = 0;
-    for (final g in backedUp.where((g) => !phoneIds.contains(g.id))) {
+    for (final g in backedUp.where((g) => !g.test && !phoneIds.contains(g.id))) {
       await local.add(g);
       downloaded++;
     }
-    for (final g in onPhone.where((g) => !backupIds.contains(g.id))) {
+    for (final g in onPhone.where((g) => !g.test && !backupIds.contains(g.id))) {
       await r.put(g);
       uploaded++;
     }

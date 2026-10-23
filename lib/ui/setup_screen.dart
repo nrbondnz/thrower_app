@@ -74,7 +74,7 @@ class SetupScreen extends ConsumerWidget {
             ),
           ),
           if (ref.watch(testToolsProvider)) ...[
-            const SectionHeading('Test sessions'),
+            const SectionHeading('Test sessions (test build only)'),
             const TestSessionsCard(),
           ],
           // Accounts (stage 2): only in a build connected to the backend.

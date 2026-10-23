@@ -19,7 +19,7 @@ class PostStatusLabel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final status = postStatusOf(game, ref.read(clockProvider)());
+    final status = postStatusOf(game, ref.read(clockProvider)(), testTools: ref.read(testToolsProvider));
     final (icon, colour) = switch (status.state) {
       PostState.canPost => (Icons.upload_outlined, theme.colorScheme.primary),
       PostState.posted => (Icons.emoji_events, const Color(0xFF16A34A)),
@@ -69,7 +69,7 @@ class _HistoryPostPanelState extends ConsumerState<HistoryPostPanel> {
       if (!await service.signIn()) {
         message = "Sign in to Game Center (in the iPhone's Settings) to post, then try again.";
       } else {
-        await service.submit(Leaderboard.ranked3m, _game.totals.single);
+        await service.submit(leaderboardFor(_game), _game.totals.single);
         final posted = _game.markedPosted();
         try {
           await ref.read(gameHistoryProvider).add(posted);
@@ -94,7 +94,7 @@ class _HistoryPostPanelState extends ConsumerState<HistoryPostPanel> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final service = ref.watch(leaderboardServiceProvider);
-    final status = postStatusOf(_game, ref.read(clockProvider)());
+    final status = postStatusOf(_game, ref.read(clockProvider)(), testTools: ref.read(testToolsProvider));
     final askDistance = _game.type != GameType.ranked;
     return Card(
       key: const Key('historyPostPanel'),

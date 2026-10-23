@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/post_status.dart';
 import 'package:thrower_app/history/test_sessions.dart';
 import 'package:thrower_app/history/throw_stats.dart';
+import 'package:thrower_app/leaderboard/leaderboard_service.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/ui/setup_screen.dart';
 
@@ -23,8 +24,19 @@ void main() {
       expect((sessions.length, {for (final s in sessions) s.id}.length), (10, 10));
     });
 
-    test('every one can be posted now', () {
-      expect({for (final s in sessions) postStatusOf(s, now).state}, {PostState.canPost});
+    test('every one can be posted now, in a test build', () {
+      expect({for (final s in sessions) postStatusOf(s, now, testTools: true).state}, {PostState.canPost});
+    });
+
+    // Review Agent, 2026-10-23: test sessions must never reach the real
+    // leaderboard.
+    test('not in a build without the test tools', () {
+      expect(postStatusOf(sessions.first, now), const PostStatus(PostState.cannotPost, NotPostable.testSession));
+    });
+
+    test('posted to the test leaderboard, never the real one', () {
+      expect({for (final s in sessions) leaderboardFor(s)}, {Leaderboard.test3m});
+      expect(leaderboardFor(kept(played(GameType.ranked))), Leaderboard.ranked3m);
     });
 
     test('marked test, 5 rounds of 3 knives scoring 0 to 5', () {

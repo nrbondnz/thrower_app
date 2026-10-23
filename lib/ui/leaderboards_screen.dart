@@ -22,7 +22,7 @@ class LeaderboardsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
-          for (final board in Leaderboard.values) ...[
+          for (final board in Leaderboard.values.where((b) => !b.test || ref.watch(testToolsProvider))) ...[
             ActionCard(
               key: Key('leaderboard-${board.name}'),
               icon: Icons.emoji_events_outlined,

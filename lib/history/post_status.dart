@@ -1,3 +1,4 @@
+import '../leaderboard/leaderboard_service.dart';
 import '../leaderboard/leaderboard_week.dart';
 import '../scoring/game_type.dart';
 import 'game_record.dart';
@@ -43,15 +44,21 @@ abstract final class NotPostable {
   static const notFull = 'not a full 5 rounds of 3 knives';
   static const changedByHand = 'a score was changed by hand';
   static const earlierWeek = 'thrown in an earlier leaderboard week';
+  static const testSession = 'a test session, in a build without the test tools';
 }
 
 /// [game]'s status at [now]: posted; or it can be posted if it's one
 /// thrower's session with the camera, played to the end with 3 knives in
 /// every round, either Ranked or a normal 5-round session with no score
 /// changed by hand, thrown this leaderboard week ([sameWeek]).
-PostStatus postStatusOf(GameRecord game, DateTime now) {
+///
+/// A test session ([GameRecord.test]) can be posted only in a build with the
+/// test tools ([testTools]), and then to the test leaderboard
+/// ([leaderboardFor]).
+PostStatus postStatusOf(GameRecord game, DateTime now, {bool testTools = false}) {
   if (game.posted) return PostStatus.posted;
   String? why() {
+    if (game.test && !testTools) return NotPostable.testSession;
     if (game.liveTest) return NotPostable.liveTest;
     if (game.type.handScored) return NotPostable.scorePad;
     if (game.players.length != 1) return NotPostable.twoThrowers;
@@ -73,3 +80,8 @@ PostStatus postStatusOf(GameRecord game, DateTime now) {
   final reason = why();
   return reason == null ? PostStatus.canPost : PostStatus(PostState.cannotPost, reason);
 }
+
+/// Where [game] is posted: a test session to the test leaderboard, never
+/// put live (Review Agent, 2026-10-23: Game Center has no sandbox for
+/// TestFlight, so test scores would otherwise reach the real board).
+Leaderboard leaderboardFor(GameRecord game) => game.test ? Leaderboard.test3m : Leaderboard.ranked3m;

@@ -9,9 +9,20 @@ enum Leaderboard {
     'ranked.3m.5x3',
     title: '3 m knives · 3 × 5',
     about: "This week's best: 5 rounds of 3 knives from 3 m. Starts again each week.",
+  ),
+
+  /// Test sessions only (Setup → Test sessions, in test builds): set up in
+  /// App Store Connect like [ranked3m] but never added to an App Store
+  /// version, so it never goes live. Review Agent, 2026-10-23: TestFlight
+  /// has no Game Center sandbox.
+  test3m(
+    'test.ranked.3m.5x3',
+    title: 'Test: 3 m knives · 3 × 5',
+    about: 'Test sessions only. Never live.',
+    test: true,
   );
 
-  const Leaderboard(this.id, {required this.title, required this.about});
+  const Leaderboard(this.id, {required this.title, required this.about, this.test = false});
 
   final String id;
 
@@ -20,6 +31,9 @@ enum Leaderboard {
 
   /// A line under the [title].
   final String about;
+
+  /// The test leaderboard: shown only in test builds.
+  final bool test;
 }
 
 /// Posting scores, independent of where they go (Apple Game Center on the
