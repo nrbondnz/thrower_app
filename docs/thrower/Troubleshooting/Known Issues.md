@@ -195,6 +195,8 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 **Symptom:** the first Amplify Hosting build (job 2, commit `21813f1`) failed in the backend phase: "`npm ci` can only install packages when your package.json and package-lock.json … are in sync … Missing: @aws-cdk/toolkit-lib@1.19.0 from lock file" (and about 40 more).
 **Cause:** `package-lock.json` was made on the PC with **Node 24 / npm 11**; Amplify's build image runs **Node 22 / npm 10**, which resolves the Amplify backend's dependency tree differently and rejects the npm 11 lock file.
 **Fix:** make the lock file with npm 10: `npx -y npm@10 install --package-lock-only`, check with `npx -y npm@10 ci --dry-run`, and commit it. Do the same whenever `package.json` changes. (WhereWillWeVisit avoids it by running `npm install` in its build, at the cost of reproducible installs.)
+**Again 2026-10-21 to 23:** commit `2a43db8` ("update story and package-lock.json", 21 Oct) re-saved the lock file with the PC's npm 11, dropping `@opentelemetry/core@2.0.0` entries (68 lines). Every backend build after it failed ("Missing: @opentelemetry/core@2.0.0 from lock file", Deployment 25 on 23 Oct). Fixed by restoring the npm 10 lock file from `8953499` (`package.json` unchanged since) and checking `npx -y npm@10 ci --dry-run`.
+**Rule:** never run plain `npm install` in `thrower_app` on the PC (npm 11 rewrites the lock file). Use `npx -y npm@10 install …`, and if an IDE or tool changes `package-lock.json`, don't commit it: `git checkout -- package-lock.json`.
 
 ## Amplify Build: "not authorized to perform ssm:GetParameter … /cdk-bootstrap/hnb659fds/version" (2026-10-19)
 
