@@ -2,7 +2,7 @@
 layout: ../layouts/Page.astro
 title: Delete Your Data
 description: How to delete your games or player names from your Thrower backup without deleting your account.
-updated: 20 October 2026
+updated: 23 October 2026
 ---
 
 **Thrower** is made and operated by Bond Consultancy Ltd. This page explains how to delete some of your data, your backed-up games or player names, **without deleting your account**. To delete everything, see [Delete Your Account](/delete-account).
@@ -11,8 +11,8 @@ updated: 20 October 2026
 
 While you are signed in:
 
-- **One game:** open **History**, and tap the delete icon on the game ("Delete this game").
-- **All games:** open **History**, tap **Clear history**, and confirm.
+- **One game:** tap **History** at the bottom of the screen, tap the game, then tap the bin ("Delete this game").
+- **All games:** tap **History**, then **Clear history**, and confirm.
 
 The games are deleted from your phone and from your backup. If you have no signal at that moment, a deleted game may come back from the backup the next time the App syncs; delete it again once you have a signal.
 

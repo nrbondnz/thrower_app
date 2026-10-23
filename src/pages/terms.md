@@ -2,7 +2,7 @@
 layout: ../layouts/Page.astro
 title: Terms of Service
 description: The terms for using the Thrower app, including the safety of knife and axe throwing.
-updated: 20 October 2026
+updated: 23 October 2026
 ---
 
 These Terms of Service ("Terms") govern your use of **Thrower** ("the App"), made and operated by Bond Consultancy Ltd ("we", "our", "us"). By using the App, you agree to these Terms.
@@ -28,42 +28,53 @@ You must be old enough to take part in knife and axe throwing under your venue's
 
 An account is optional. If you create one, you must give a valid email address and keep your sign-in details to yourself. You are responsible for what happens under your account. You can delete your account at any time in the App ([Delete Your Account](/delete-account)).
 
-## 5. Acceptable use
+## 5. Leaderboards
+
+On the iPhone you can post a game's total to a leaderboard on Apple Game Center. Leaderboards are for real throws only. When you post, you confirm that:
+
+- the throws were real, made by you, at a proper target;
+- you threw from the distance the leaderboard is for (3 m, measured from the board to the throwing line);
+- no score was raised by hand: the App allows only bounce-outs or missed knives to be marked as 0 in a ranked game, and does not offer to post a normal game in which a score was changed.
+
+Scores on a leaderboard appear under your Game Center nickname. Leaderboards are run by Apple Game Center; we cannot edit individual scores, but we may reset or close a leaderboard, for example if it is being misused.
+
+## 6. Acceptable use
 
 You must not:
 
 - reverse engineer, copy or modify the App, except as the law allows;
 - interfere with the App, its servers or other users' data;
-- use the App for anything unlawful, or type offensive content into it (for example as player names).
+- use the App for anything unlawful, or type offensive content into it (for example as player names);
+- post scores you did not throw, or throws made in a way the leaderboard does not allow.
 
-## 6. Intellectual property
+## 7. Intellectual property
 
 The App, its design and its content belong to Bond Consultancy Ltd. Your games and the names you type remain yours.
 
-## 7. Changes and availability
+## 8. Changes and availability
 
-We may update, change or stop parts of the App at any time. We aim to keep your games available, but the App and the backup are provided without a guarantee that they will always be available or error-free.
+We may update, change or stop parts of the App at any time. We aim to keep your games available, but the App, the backup and the leaderboards are provided without a guarantee that they will always be available or error-free.
 
-## 8. Limitation of liability
+## 9. Limitation of liability
 
 The App is provided "as is", without warranties of any kind. To the fullest extent the law allows, we are not liable for:
 
 - any injury, loss or damage arising from knife or axe throwing, whether or not the App was in use;
-- wrong scores, times or results;
+- wrong scores, times, results or leaderboard positions;
 - loss of games or other data;
 - any indirect or consequential loss.
 
 Nothing in these Terms limits any rights you have under consumer law that cannot be excluded, such as the New Zealand Consumer Guarantees Act 1993 where it applies.
 
-## 9. Ending your use
+## 10. Ending your use
 
 You can stop using the App and delete your account at any time. We may suspend or close an account that breaks these Terms.
 
-## 10. Governing law
+## 11. Governing law
 
 These Terms are governed by the laws of New Zealand.
 
-## 11. Contact us
+## 12. Contact us
 
 Bond Consultancy Ltd<br />
 Whangaparaoa, Auckland, New Zealand<br />

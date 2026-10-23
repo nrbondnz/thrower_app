@@ -2,15 +2,15 @@
 layout: ../layouts/Page.astro
 title: Delete Your Account
 description: How to delete your Thrower account and the data held with it.
-updated: 20 October 2026
+updated: 23 October 2026
 ---
 
 **Thrower** is made and operated by Bond Consultancy Ltd. This page explains how to delete your Thrower account and the data held with it. An account is optional; if you never created one, we hold no data about you.
 
 ## Delete your account in the App (fastest)
 
-1. Open Thrower and tap the **person icon** at the top right of the home screen.
-2. Tap **Delete account**.
+1. Open Thrower and tap **Setup** at the bottom of the screen.
+2. Under **Help and support**, tap **Delete account** (or tap **Account**, then **Delete account**).
 3. Confirm by tapping **Delete account** again.
 
 Your account and its backup are deleted straight away, and you are signed out. You need a signal to do this.
@@ -31,6 +31,7 @@ If you no longer have the App, email [kaat-support@knifeandaxethrower.com](mailt
 ## What is kept
 
 - **Nothing on our servers.** The App has no purchases, so there are no payment records to keep.
+- **Scores you posted to Game Center** are Apple's, not ours, and stay on the leaderboard after your Thrower account is deleted. They're under your Game Center nickname, not your Thrower email. Each leaderboard starts again every week. To stop appearing on leaderboards, sign out of Game Center in the iPhone's Settings, or change your nickname there.
 - **The games on your phone stay on your phone** after the account is deleted, because they belong to the phone, not the account. To remove them, clear History in the App, or delete the App.
 
 ## Contact
