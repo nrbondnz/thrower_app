@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AppTheme — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--ui);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>UI · Component</span>
+    <h1>AppTheme</h1>
+    <p class="dek">The app&#x27;s look (2026-10-23): a charcoal and amber palette, light and dark themes, and the shared cards and stat tiles. The camera screens are always dark.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Themes + shared widgets</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/ui/theme/app_theme.dart</code><br><code>lib/ui/theme/widgets.dart</code><br><code>lib/main.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>App start; Setup → Appearance; the phone switching dark mode</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p><code>AppPalette</code> has a dark and a light set of colours; the light one is darkened to read on a light background. <code>AppTheme.light()</code> and <code>dark()</code> build Flutter themes from them, and <code>ThrowerApp</code> passes both, with <code>themeModeOf</code> the Appearance setting.</p>
+    <p>The camera screens (Play, two-target Play, both Quick draws, Calibrate, the score pad) are read from the throwing line, so each is wrapped in <code>CameraTheme</code>: <code>AppTheme.cameraDark</code>, whatever the setting.</p>
+    <p>Design: docs/thrower/AppDesign/ (App Design Index).</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>AppPalette.dark · AppPalette.light</code></dt><dd>background, surface, primary (amber), onPrimary, accent (red), text, mutedText</dd></div>
+    <div><dt><code>AppTheme.light() · dark() · cameraDark</code></dt><dd>the themes; cameraDark for the camera screens</dd></div>
+    <div><dt><code>themeModeOf(appearance)</code></dt><dd>Phone → system, Light → light, Dark → dark</dd></div>
+    <div><dt><code>CameraTheme</code></dt><dd>puts a camera screen in the dark theme</dd></div>
+    <div><dt><code>ActionCard · StatTile · StatRow · TargetMark · SectionHeading</code></dt><dd>the shared pieces of the look</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/throw-stats.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Stats and the last session</h3>
+      <p>Each knife kept with a session; sessions, per knife, 5s, hit rate and best on History; the last session on Home.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/ui/theme/app_theme.dart · lib/ui/theme/widgets.dart · lib/main.dart</footer>
+</div>
+</body>
+</html>

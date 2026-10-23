@@ -4,7 +4,7 @@ tags: [design]
 
 # Goals and Problems
 
-Part of [[App Design Index]].
+Part of [[App Design Index]]. Requirement: [[Look and Feel]].
 
 ## What the App Already Does
 

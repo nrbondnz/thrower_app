@@ -4,7 +4,7 @@ tags: [design]
 
 # Home Screen
 
-Part of [[App Design Index]]. Code: `lib/ui/home_screen.dart`.
+Part of [[App Design Index]]. Code: `lib/ui/home_screen.dart` (`HomeScreen`, `LastSessionCard`, `lastSessionTiles`). **Status:** built 2026-10-23 (Task 4).
 
 ## Hero
 
@@ -24,13 +24,16 @@ Every throw seen. Every score counted.
 A card with the last session kept on the phone:
 
 ```text
-Last session · Ranked · 2 days ago
+LAST SESSION
+Ranked · 21 Oct, 14:32
   52          3.5         4
 Points     Per knife     5s
                 See history →
 ```
 
-- One thrower: their total. Two: each thrower's total, the winner first.
+- **As built:** the kind is `GameType.label` (Scoring, Precision, Three targets, Ranked) and the time is History's `whenText`, not "2 days ago".
+- One thrower: Points, Per knife and 5s (Per knife and 5s only for a session kept with each knife). Two: each thrower's total, in player order.
+- Live test sessions aren't shown.
 - Before the first session: "Your sessions will show here."
 - Tapping it opens History.
 - Each number is worked out as in [[History and Stats]].
@@ -49,9 +52,8 @@ Cards, not a stack of buttons:
 
 ```text
 Quick actions
-  Rounds          Quick draw
-  1 or 2          Head to head
-  throwers        on a signal
+  ROUNDS            QUICK DRAW
+  1 or 2 throwers   Head to head
 ```
 
 - **Rounds** opens Play's setup, as Start throwing does.

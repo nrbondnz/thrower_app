@@ -15,10 +15,10 @@ Many scoring apps only show numbers. Ours shows the camera picture with:
 
 This builds trust in the scoring. It's already built; keep it.
 
-## Now (this story)
+## Now (this story, built 2026-10-23)
 
-- These screens stay dark in both themes ([[Colour and Themes]]).
-- The round and total in larger, bolder type, so they read from the throwing line.
+- These screens stay dark in both themes ([[Colour and Themes]]; Task 2).
+- **One thrower on Play** (Task 6): the session total large (48, amber, `playTotal`) with "points" under it, above a bolder round line. Two throwers and the score pad are unchanged for now.
 
 ## Later
 

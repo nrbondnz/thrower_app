@@ -4,7 +4,7 @@ tags: [design]
 
 # Navigation and Structure
 
-Part of [[App Design Index]]. Code: `lib/ui/app_shell.dart`.
+Part of [[App Design Index]]. Code: `lib/ui/app_shell.dart` (`AppShell`, `openScreen`), `throw_screen.dart`, `setup_screen.dart`. **Status:** built 2026-10-23 (Task 4).
 
 ## The Bottom Bar
 
@@ -36,10 +36,11 @@ A card for each way to throw:
 - See [[History and Stats]].
 
 ### Setup
-- **Calibrate target**, **Live test**, **Scoring test target**: the technical tools, together and out of the way.
-- **Instructions.**
+In this order, as built:
+- **Instructions** (under Help).
 - **Appearance:** Phone, Light or Dark ([[Colour and Themes]]).
-- **Account**, in a build with accounts.
+- **Tools:** Calibrate target, Live test, Scoring test target: the technical tools, together and out of the way.
+- **Account**, in a build with accounts (it was on Home's app bar).
 
 ## Throwing Screens Cover the Bar
 

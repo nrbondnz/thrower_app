@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ThrowStats — Thrower App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="page">
+  <nav class="breadcrumb"><a href="../index.html">← Architecture overview</a></nav>
+
+  <header class="title-block">
+    <span class="eyebrow"><span class="swatch" style="background:var(--history);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>History and settings · Component</span>
+    <h1>ThrowStats</h1>
+    <p class="dek">The stats over the sessions kept on the phone (2026-10-23): sessions, knives, per knife, 5s, hit rate, and the best ranked total or best round.</p>
+  </header>
+
+  <dl class="facts-strip">
+    <div><dt>Type</dt><dd>Pure Dart</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/history/throw_stats.dart</code><br><code>lib/ui/history_screen.dart</code><br><code>lib/ui/home_screen.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>History and Home, from the kept sessions</dd></div>
+  </dl>
+
+  <div class="detail-body">
+    <p>Every thrower's knives count together; sessions on a Live test recording don't count. The knife stats come only from sessions kept with each knife (from 2026-10-23); <code>partial</code> says when some were left out, and History says so.</p>
+    <p>Per knife (points ÷ knives) compares sessions of any length. Hit rate is knives that scored ÷ knives thrown. Best ranked is a full Ranked session's total.</p>
+  </div>
+
+  <h2 class="section-heading">Functions</h2>
+  <dl class="functions">
+    <div><dt><code>ThrowStats.of(games)</code></dt><dd>sessions, withKnives, knives, points, fives, hits, bestRanked, bestRound</dd></div>
+    <div><dt><code>perKnife · hitRate · partial</code></dt><dd>null before any knife; partial: some sessions have no knives</dd></div>
+    <div><dt><code>perKnifeText · hitRateText</code></dt><dd>&quot;3.4&quot;, &quot;88%&quot;, or &quot;–&quot;</dd></div>
+    <div><dt><code>StatsCard · lastSessionTiles</code></dt><dd>History&#x27;s stats; Home&#x27;s last session</dd></div>
+  </dl>
+
+  <h2 class="section-heading">Used in</h2>
+  <div class="used-in-grid">
+    <a class="flow-card" href="../flows/throw-stats.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Stats and the last session</h3>
+      <p>Each knife kept with a session; sessions, per knife, 5s, hit rate and best on History; the last session on Home.</p>
+      <span class="more">Open →</span>
+    </a>
+  </div>
+
+  <footer class="colophon">lib/history/throw_stats.dart · lib/ui/history_screen.dart · lib/ui/home_screen.dart</footer>
+</div>
+</body>
+</html>

@@ -40,7 +40,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `_progress`: the bottom line while a locked game plays: "Watching…", "Analysing… 0.4 s behind the picture." (more than 0.2 s behind), then `verdictText` once both throws are in or the whole clip is analysed
   - boards chosen with `BoardChoosing` and `BoardsOverlay` (`tapsOff` while playing); Lock boards → `lock`; Choose boards again → `clear` + `rewind`; **Adjust boards** (`quickDrawAdjust`, locked and not playing) → stop watching + `unlock` + `rewind`
   - Play with the boards locked → a fresh `RecordingAnalysisFeed` and a `QuickDrawWatcher` on it; Choose boards again / leaving → `dispose` both
-- **`LiveQuickDrawScreen`** (`lib/ui/live_quick_draw_screen.dart`), Home → Quick draw: `CameraView(camera: liveQuickDrawCameraProvider)` full screen, system bars hidden
+- **`LiveQuickDrawScreen`** (`lib/ui/live_quick_draw_screen.dart`), Home or Throw → Quick draw: `CameraView(camera: liveQuickDrawCameraProvider)` full screen, system bars hidden
   - boards chosen with `BoardChoosing` and `BoardsOverlay`; Lock boards → `lock`; Choose boards again → `_endDuel` + `clear`; **Adjust boards** (`quickDrawAdjust`, not while a round is on) → `unlock` (boards and match kept)
   - `_start` (Start, once locked): a `StartSignal` (`startScheduleProvider`, `signalSoundsProvider`, `clock` = `camera.now`); `onWatch` (go − 1 s) → a `QuickDrawWatcher(queue: true)` on both boards; `onGo` → `_checkResult` every 250 ms (nothing shown at go: the beep is the signal)
   - `_checkResult`: once both throws are in, or `resultWindow` (4 s) after go with every queue caught up → `judgeQuickDraw(throws, goAt)`, the `result` chime, `_Result`
@@ -161,7 +161,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - each player's `playerTitle` and `ScoreCorrections` row (the screen is a `CorrectionHost` with nothing to pause); **Finish game** (`confirmFinishGame`), **New game** (`padNewGame`); the `padSafety` line
 - **Named players** ([[story-checkpoint-named-players]]): `Match.names`, `nameOf`, `withNames`; `cleanName` (`maxNameLength` 16), `playerNumber` (`lib/scoring/match.dart`); **`PlayerNamesStore`** / **`FilePlayerNamesStore`** (`lib/settings/player_names_store.dart`: `load`, `save`); **`playerNamesProvider`** (`PlayerNamesNotifier`: `set`; `playerNamesStoreProvider`); `GameNotifier` renames the game in place (`withNames`); shown by `PlaySetupScreen` (`playName0`/`1` fields), `turnText`, `turnDetail`, `playerTitle`, `boardMessage(player, …)`, `boardMovedMessage(player)`, `boardsStateText(states, names)`, `rowLabel` (score-correction rows), History's `resultText`; Quick draw (Task 3): `BoardChoosing.playerNames`, `choosingInstruction`, `NamesButton` / `editPlayerNames`, `verdictText(names:)`, `matchText(m, names)`, `QuickDrawResultPanel(names:)`
 - **`GameRecord`** (`lib/history/game_record.dart`) / **`GameHistory`**, **`FileGameHistory`**, **`GameHistoryException`** (`lib/history/game_history.dart`) / **`gameHistoryProvider`**
-  - `GameRecord.fromMatch(match, at:, recording:)`; `names`, `nameOf` (version 2); `type` (version 3: written only for Precision and Three targets; missing = Scoring; unknown = `FormatException`); `totals`, `winner`, `draw`, `liveTest`, `finishedEarly`, `countedRounds`, `countedTotals`; `toJson` / `fromJson` (`version` 3; reads 1 and 2; `FormatException` if unreadable)
+  - `GameRecord.fromMatch(match, at:, recording:)`; `names`, `nameOf` (version 2); `type` (version 3: written only for Precision and Three targets; missing = Scoring; unknown = `FormatException`); **`knives`** (2026-10-23: each knife's score, by player then round; an extra field, the version unchanged; null for older games); `totals`, `winner`, `draw`, `liveTest`, `finishedEarly`, `countedRounds`, `countedTotals`; `toJson` / `fromJson` (`version` 3; reads 1 and 2; `FormatException` if unreadable)
   - `load` (newest first) · `add` · `delete(id)` · `clear`; one file, `game_history.json`, written through a `.tmp` file, one save at a time; a damaged file is set aside (`setAside`)
   - kept by `GameNotifier.onEvent` → `_keep` when the match is over: once (`_finishedAt`, `_kept`), re-saved if a knife falls out after the end; `clockProvider` (the finish time), `historySaveErrorProvider` (a failed save; Play's snack bar)
 - **`SyncedGameHistory`** (`lib/history/synced_game_history.dart`): the `GameHistory` behind `gameHistoryProvider` since accounts Task 4: `local` (the phone's `FileGameHistory`, the source of truth) and `remote` (the signed-in user's `RemoteGameStore`, or null) ([[story-checkpoint-app-user-accounts]])
@@ -176,7 +176,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - pausing: `ThrowWatcher.pause` / `resume` / `moves` (`moveCheckDelay` 0.5 s), `PlayBoardsWatcher.pause` / `resume` / `moves`, `MotionDetector.restart`
 - **`cameraShift`** / **`phoneMoved`** / **`phoneMovedShift`** (`lib/vision/camera_move.dart`): `bestShift` over the board's region, up to ±8 px; 2 px or more is a move; Play's `phoneMovedMessage`, two targets' `boardMovedMessage`
 - **`HistoryScreen`** / **`GameRecordScreen`** (`lib/ui/history_screen.dart`)
-  - `HistoryScreen`: `load` → the list, newest first; "No games yet"; "Couldn't load the history" + Try again; **Clear history** (asks first) → `clear`
+  - `HistoryScreen`: watches `keptGamesProvider` (2026-10-23); **`StatsCard`** (`historyStats`: Sessions, Knives, Per knife; 5s, Hit rate, Best ranked or Best round; `historyStatsPartial` when some sessions have no knives) above the sessions, each a card, newest first; "No games yet"; "Couldn't load the history" + Try again; **Clear history** (asks first) → `clear`
   - `GameRecordScreen`: `howText`, `resultText`, each player's rounds and total; **Delete** → `delete(id)`, back to the list
   - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"; "Precision · 2 players, taking turns · 7 rounds"), `historyRoundLabel` ("Round 2", Precision "Round 2 (5 m)"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
@@ -202,7 +202,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
     - **`BackupNotifier`** / `backupStatusProvider`: on sign-in, `PlayerNamesNotifier.syncWith(backup.names)` then `SyncedGameHistory.sync`; `BackupOff`, `BackupRunning`, `BackupDone(result)`, `BackupFailed(message)`; `backUpNow`
     - `PlayerNamesNotifier.set` also saves to `backupProvider`'s names; **`syncWith`**: an empty phone takes the backup's names, otherwise the phone's are backed up
     - **`deleteAccount(ref)`** / `deleteAccountProvider` (Task 5): `backup.erase()`, then `AuthService.deleteUser`; the phone's History and names stay; throws on no signal
-- **`AccountScreen`** (`lib/ui/account_screen.dart`, Home → Account: `homeAccount`, only when `authServiceProvider` isn't null) ([[story-checkpoint-app-user-accounts]] Tasks 2, 4, 5)
+- **`AccountScreen`** (`lib/ui/account_screen.dart`, Setup → Account: `setupAccount` (Home → Account, `homeAccount`, before 2026-10-23), only when `authServiceProvider` isn't null) ([[story-checkpoint-app-user-accounts]] Tasks 2, 4, 5)
   - no accounts: "Accounts are not available in this build."; otherwise `AuthenticatedView` (Amplify's sign-in screens, `amplify_authenticator`) around `_SignedInUser` → **`AccountDetails`**: "Signed in as" the email, `backupText(status)` (`accountBackup`), **Back up now** (`accountBackUpNow`), **Sign out**, **Delete account** (`accountDelete`)
   - **`confirmAndDeleteAccount(context, delete)`**: "Delete your account?" (Cancel / Delete account), then `delete`; a message if it fails
   - `ThrowerApp` (`lib/main.dart`) wraps the app in `Authenticator(child: …)` (never `Authenticator.builder()`) and listens to `backupStatusProvider`
@@ -216,6 +216,27 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **`leaderboardServiceProvider`** (`lib/providers.dart`, `Provider<LeaderboardService?>`): null = this build can't post (Android: backlog #21); `main` overrides it with a `GameCenterLeaderboardService` when `Platform.isIOS`
   - **`ScorePostNotifier`** / **`scorePostProvider`** (`lib/providers.dart`): **`ScorePost`** `ready`, `posting`, `posted`, `signedOut`, `failed`; `post()`: only a `postable` game, never twice → `signIn` → `submit(Leaderboard.ranked3m, total)`; back to `ready` when a new game starts
   - **`PostScorePanel`** (`lib/ui/post_score_panel.dart`), on Play once a `postable` game is over and a service exists: **Post score (N)** (`postScore`; then **Try again**), the line (`postScoreLine`: "Posted to the leaderboard: N.", sign in to Game Center, couldn't post), **View leaderboard** (`viewLeaderboard`)
+- **`AppShell`** (`lib/ui/app_shell.dart`, 2026-10-23, [[story-checkpoint-app-design]]): the app's tabs, a `NavigationBar` (`appTabs`): Home, Throw, History, Setup
+  - `_go(tab)`: switches tab, reading the kept sessions again (`keptGamesProvider`)
+  - **`openScreen(context, ref, screen)`**: opens a screen over the tabs (bar included); reads the kept sessions again on the way back
+- **`HomeScreen`** (`lib/ui/home_screen.dart`, 2026-10-23): the Home tab
+  - the hero: `TargetMark`, THROWER (`homeTitle`), `tagline` ("Every throw seen. Every score counted.")
+  - **`LastSessionCard`** (`homeLastSession`): the newest kept session that isn't a Live test: `GameType.label` · `whenText`, then **`lastSessionTiles`** (one thrower: Points, Per knife, 5s; two: each thrower's points); "Your sessions will show here." before the first; tap → the History tab (`onShowHistory`)
+  - **START THROWING** (`homeStart`) → `PlaySetupScreen`; Quick actions: Rounds (`homeRounds`) → `PlaySetupScreen`, Quick draw (`homeQuickDraw`) → `LiveQuickDrawScreen`
+- **`ThrowScreen`** (`lib/ui/throw_screen.dart`, 2026-10-23): the Throw tab's cards: Rounds (`throwRounds`), Quick draw (`throwQuickDraw`), Leaderboard (`throwLeaderboard`, only when `leaderboardServiceProvider` isn't null: the iPhone) → `viewLeaderboard`
+- **`SetupScreen`** (`lib/ui/setup_screen.dart`, 2026-10-23): the Setup tab
+  - Help: Instructions (`setupInstructions`)
+  - Appearance: a `SegmentedButton` (`setupAppearance`) → `AppearanceNotifier.choose`
+  - Tools: Calibrate target (`setupCalibrate`), Live test (`setupLiveTest`), Scoring test target (`setupTestTarget`)
+  - Account (`setupAccount`), only when `authServiceProvider` isn't null
+- **Themes** (`lib/ui/theme/app_theme.dart`, 2026-10-23): **`AppPalette`** (`dark`, `light`: background, surface, primary, onPrimary, accent, text, mutedText); **`AppTheme`** (`light()`, `dark()`, `cameraDark`); **`themeModeOf(appearance)`**; **`CameraTheme`** (puts a camera screen in `AppTheme.cameraDark`: Play, two-target Play, both Quick draws, Calibrate, the score pad)
+- **Appearance** (`lib/settings/appearance_store.dart`, 2026-10-23): **`Appearance`** (`phone`, `light`, `dark`; `label`); **`AppearanceStore`** / **`FileAppearanceStore`** (`appearance.json` in the app support folder: `load` never throws, `save`); **`appearanceProvider`** (`AppearanceNotifier`: `choose`; `appearanceStoreProvider`); `ThrowerApp` sets `theme`, `darkTheme` and `themeMode`
+- **Shared widgets** (`lib/ui/theme/widgets.dart`, 2026-10-23): `ActionCard`, `StatTile`, `StatRow`, `TargetMark`, `SectionHeading`
+- **`ThrowStats`** (`lib/history/throw_stats.dart`, pure Dart, 2026-10-23): the stats over kept sessions
+  - `ThrowStats.of(games)`: skips Live test; `sessions`, `withKnives`, `knives`, `points`, `fives`, `hits`, `bestRanked` (a full Ranked session), `bestRound`
+  - `perKnife`, `hitRate`, `partial`; text: `perKnifeText` ("3.4"), `hitRateText` ("88%"), "–" before any knife
+  - used by `StatsCard` (History) and `lastSessionTiles` (Home)
+- **`keptGamesProvider`** (`lib/providers.dart`, a `FutureProvider`, 2026-10-23): the kept sessions, newest first; read again when a game is kept, a tab changes or a screen closes
 - **Test data**: `SyntheticTarget` (flat, affine), `SyntheticScene` (3D ray tracer), `PhotoBoardTexture` (reference photo as the board face, knives removed); tools `render_camera_views`, `locate_target`, `printable_target`
 
 ## Concepts
@@ -418,3 +439,18 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **Cognito sub (user ID)**
   - **Meaning:** The unique, permanent ID Cognito gives each user (Amplify's `userId`). The app's user ID (`AppUser.id`), never the email or a hash of it: Sign in with Apple's relay email can change, which made a second account in WhereWillWeVisit.
   - **Used by:** `AmplifyAuthService`, `AppUser`
+- **Appearance**
+  - **Meaning:** Light or dark for the app's own screens: Phone (as the phone is set), Light or Dark. Kept on this phone only, not backed up. The camera screens ignore it.
+  - **Used by:** `Appearance`, `FileAppearanceStore`, `AppearanceNotifier`, `SetupScreen`, `ThrowerApp`
+- **Camera theme**
+  - **Meaning:** The dark theme a camera screen always uses, whatever the Appearance: read from the throwing line, often in a dim range.
+  - **Used by:** `CameraTheme`, `AppTheme.cameraDark`, Play, two-target Play, Quick draw, Calibrate, the score pad
+- **Per knife**
+  - **Meaning:** Points ÷ knives thrown, to one decimal place (0.0 to 5.0). It compares sessions of any length. Only sessions kept with each knife count.
+  - **Used by:** `ThrowStats.perKnife`, `perKnifeText`, `StatsCard`, `lastSessionTiles`
+- **Hit rate**
+  - **Meaning:** Knives that scored (1 or more) ÷ knives thrown, as a percentage. A bounce-out, a fall-out and a miss count as thrown but not hit.
+  - **Used by:** `ThrowStats.hitRate`, `hitRateText`, `StatsCard`
+- **Last session**
+  - **Meaning:** The newest session kept on the phone that wasn't played on a Live test recording. Home shows it.
+  - **Used by:** `LastSessionCard`, `lastSessionTiles`

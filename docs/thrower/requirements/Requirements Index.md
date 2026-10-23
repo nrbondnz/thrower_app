@@ -23,12 +23,14 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 	- [[Two Targets|Two targets]] ✅
 - [[Remote Play|People can play remote if both have the app]] 🗺️
 - [[Ending Early|Ending competition early]] ✅
-- [[Game Recording|Game recording]] 🟡 (scores kept; backup written, not yet deployed; video planned)
+- [[Game Recording|Game recording]] 🟡 (scores and each knife kept; backup written, not yet deployed; video planned)
 - [[Results Sharing|Game results sharing]] 🗺️
 	- All players or each player
 
 ## Across the App
-- [[Instructions and Safety|In-app instructions and safety]] ✅ (Home → Instructions; the safety points that guard every screen)
+- [[Instructions and Safety|In-app instructions and safety]] ✅ (Setup → Instructions; the safety points that guard every screen)
+- [[Look and Feel|Look and feel]] ✅ (2026-10-23: light and dark themes, a bottom bar, the new Home; device checks to come)
+- [[Throwing Stats|Throwing stats]] ✅ (2026-10-23: sessions, knives, per knife, 5s, hit rate, best; History and Home's last session; device checks to come)
 - [[Website]] 🟡 (knifeandaxethrower.com: the domain, branches and a starter page; domain going live)
 - [[Accounts and Sign-In|Accounts and sign-in]] 🟡 (email sign-in deployed; Google, Apple, the backup and Delete account written, waiting for secrets)
 

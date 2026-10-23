@@ -29,7 +29,12 @@ The app should make that obvious from the moment it opens. It should feel like *
 
 ## Status
 
-- **Building:** themes, the bottom bar, Home, Setup, the stats and History ([[story-checkpoint-app-design]], started 2026-10-23).
+- **Built 2026-10-23** ([[story-checkpoint-app-design]], Tasks 1–6; device checks AD0–AD11 to come):
+  - light and dark themes, with Setup → Appearance; the camera screens always dark;
+  - the bottom bar (Home, Throw, History, Setup), the new Home, Throw and Setup;
+  - each knife kept with a session, and the stats on History and Home;
+  - one thrower's total shown large on Play.
+- **Requirements:** [[Look and Feel]], [[Throwing Stats]].
 - **Later:** the throwing screens' new look beyond colours and numbers, badges, charts, a custom font.
 
 ## Decisions (Nigel, 2026-10-23)

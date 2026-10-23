@@ -42,6 +42,9 @@ SUB = {
     'game-session': '3, 5 or 9 rounds × 3 throws',
     'game-history': 'finished games, one JSON file',
     'player-names-store': 'the names last used',
+    'throw-stats': 'per knife, 5s, hit rate, best',
+    'appearance-store': 'Phone, Light or Dark',
+    'app-theme': 'light, dark, camera dark',
     'auth-service': 'interface only',
     'leaderboard-service': 'Game Center (iPhone)',
     'ring-locator': 'rings → ellipses',
@@ -165,8 +168,8 @@ def overview_svg():
     parts = []
     y = 20
     # UI row
-    screens = ['HomeScreen', 'PlayScreen', 'CalibrationScreen', 'LiveTestScreen', 'QuickDrawScreen', 'LiveQuickDrawScreen']
-    subs = ['Play · Quick draw · …', 'rounds of 3, 1 or 2 players', 'find, adjust, lock', 'the recordings', 'the recorded duel', 'the live duel']
+    screens = ['AppShell', 'PlayScreen', 'CalibrationScreen', 'LiveTestScreen', 'QuickDrawScreen', 'LiveQuickDrawScreen']
+    subs = ['Home · Throw · History · Setup', 'rounds of 3, 1 or 2 players', 'find, adjust, lock', 'the recordings', 'the recorded duel', 'the live duel']
     parts.append(lane_box(20, y, W - 40, 100, 'ui', lane_label('ui')))
     bw = (W - 40 - 32 - 5 * 12) / 6
     for i, (s, sub) in enumerate(zip(screens, subs)):
@@ -204,16 +207,19 @@ def overview_svg():
     for i, cid in enumerate(vis):
         parts.append(node(36 + i * (bw + 12), y + 36, bw, 48, 'vision', COMPONENTS[cid]['name'], SUB[cid], f'components/{cid}.html', title_size=11, tip=COMPONENTS[cid]['dek']))
     y += 120
-    parts.append(lane_box(20, y, 330, 156, 'sound', lane_label('sound')))
+    rh = 272  # tall enough for 4 history nodes and the 8 plugins
+    parts.append(lane_box(20, y, 330, rh, 'sound', lane_label('sound')))
     parts.append(node(34, y + 36, 302, 48, 'sound', 'SignalSounds', SUB['signal-sounds'], 'components/signal-sounds.html', tip=COMPONENTS['signal-sounds']['dek']))
-    parts.append(lane_box(365, y, 330, 156, 'history', lane_label('history')))
+    parts.append(lane_box(365, y, 330, rh, 'history', lane_label('history')))
     parts.append(node(379, y + 36, 302, 48, 'history', 'GameHistory', SUB['game-history'], 'components/game-history.html', tip=COMPONENTS['game-history']['dek']))
     parts.append(node(379, y + 94, 302, 48, 'history', 'PlayerNamesStore', SUB['player-names-store'], 'components/player-names-store.html', tip=COMPONENTS['player-names-store']['dek']))
-    parts.append(lane_box(710, y, W - 730, 156, 'external', lane_label('native')))
+    parts.append(node(379, y + 152, 302, 48, 'history', 'ThrowStats', SUB['throw-stats'], 'components/throw-stats.html', tip=COMPONENTS['throw-stats']['dek']))
+    parts.append(node(379, y + 210, 302, 48, 'history', 'AppearanceStore', SUB['appearance-store'], 'components/appearance-store.html', tip=COMPONENTS['appearance-store']['dek']))
+    parts.append(lane_box(710, y, W - 730, rh, 'external', lane_label('native')))
     ew = (W - 730 - 28 - 12) / 2
     for i, (t, s) in enumerate(EXTERNAL):
         parts.append(node(724 + (i % 2) * (ew + 12), y + 36 + (i // 2) * 56, ew, 48, 'external', t, s, dashed=True))
-    y += 156
+    y += rh
     parts.append(arrow(W / 2, y + 2, W / 2, y + 34, 'deferred: no network calls today', W / 2 + 10))
     y += 36
     parts.append(node(W / 2 - 190, y, 380, 48, 'external', 'Backend + accounts: not chosen', 'backlog #4', dashed=True))

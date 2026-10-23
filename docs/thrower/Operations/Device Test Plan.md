@@ -478,6 +478,54 @@ For the follow-up to [[story-checkpoint-game-center-scores]] (requirements [[Rou
   - **Do:** 2 players, 2 targets; Player 1 throws 3, Player 2 only 2
   - **Look for:** No Round done while Player 2 is still throwing; it appears after Player 2's 3rd throw, and tapping it starts round 2 on both boards. No Round done once the game is over
 
+## App Design Checks (added 2026-10-23)
+
+For [[story-checkpoint-app-design]] (requirements [[Look and Feel]] and [[Throwing Stats]]; design in [[App Design Index]]; why in [[Design Decisions]] → App Design: Themes, Tabs and Stats). Any phone, build 1.0.0 (14) or later. Named **AD**n.
+
+**Older checks' paths:** the checks above were written for the old Home. Read them as:
+- "Home → Play" = **START THROWING** on Home (or Throw → Rounds);
+- "Home → Quick draw" = Home or Throw → **Quick draw**;
+- "Home → History" = the **History** tab;
+- "Home → Calibrate target", "Home → Live test", "Home → Instructions" = the **Setup** tab;
+- "Home → Account" (the person icon) = Setup → **Account**.
+
+- **AD0 (the tabs)**
+  - **Do:** Open the app; tap each tab along the bottom
+  - **Look for:** Four tabs: **Home, Throw, History, Setup**; each opens its page, and the tab is highlighted. No crash
+- **AD1 (Home's hero and last session)**
+  - **Do:** On Home before any session (a fresh install, or after Clear history), then again after throwing one full one-thrower session
+  - **Look for:** The target drawn in red and wood, **THROWER**, and "Every throw seen. Every score counted." Before: "Your sessions will show here." After: the kind and time (e.g. "Scoring · 23 Oct, 14:32"), **Points**, **Per knife** and **5s** matching the session; tapping the card opens History. A two-thrower session shows each thrower's points instead
+- **AD2 (Start throwing)**
+  - **Do:** Tap **START THROWING**; Back; tap the **Rounds** card; Back; tap **Quick draw**
+  - **Look for:** Start throwing and Rounds open Play's setup (players, targets, Which game?). Quick draw opens the live Quick draw. The bar is hidden on those screens, and Back returns to Home
+- **AD3 (Throw tab and the Leaderboard)**
+  - **Do:** Open **Throw** on the iPhone, then on the Samsung
+  - **Look for:** iPhone: **Rounds**, **Quick draw** and **Leaderboard**; Leaderboard opens Game Center's ranked table (signed in to Game Center). Samsung: Rounds and Quick draw only, no Leaderboard
+- **AD4 (Setup's tools and Account)**
+  - **Do:** Open **Setup**; tap Instructions, Calibrate target, Live test and Scoring test target in turn (Back after each)
+  - **Look for:** Each opens as it did from the old Home. **Account** shows only in a build with accounts, and opens the Account screen. Home no longer has the tools or the person icon
+- **AD5 (Appearance, kept after restart)**
+  - **Do:** Setup → Appearance → **Light**; look at Home, Throw and History. Then **Dark**. Then close the app fully (swipe it away) and open it again
+  - **Look for:** Light: off-white pages, white cards, amber buttons. Dark: charcoal pages, dark cards, amber buttons. After the restart, Dark is still chosen and shown
+- **AD6 (Phone follows the phone's dark mode)**
+  - **Do:** Setup → Appearance → **Phone**. Switch the phone's own dark mode on, then off (Control Centre or Settings)
+  - **Look for:** The app goes dark, then light, with the phone, without restarting
+- **AD7 (camera screens stay dark)**
+  - **Do:** Appearance → **Light**. Open Play (START THROWING → Start), Calibrate target, the live Quick draw, and a Precision session's score pad
+  - **Look for:** Each is dark (black around the picture, white text), as before. Back on Home, it's light again
+- **AD8 (History's stats, checked by hand)**
+  - **Do:** Clear history (or note the numbers first). Throw two one-thrower Scoring sessions on this build. Write down each knife's score from Play. Open **History**
+  - **Look for:** **Sessions** 2; **Knives** = knives thrown; **Per knife** = points ÷ knives (one decimal place); **5s** = knives in the bull; **Hit rate** = knives that scored ÷ knives thrown; **Best round** = the best round total. After a full Ranked session: **Best ranked** = its total, in place of Best round. Live test sessions don't change the numbers
+- **AD9 (sessions kept before the knives were)**
+  - **Do:** On a phone with sessions kept by build 13 or earlier, install build 14 over it (TestFlight update, never delete), then throw one more session; open History
+  - **Look for:** Sessions counts them all; under the stats: "Knives, per knife, 5s and hit rate: from the 1 of N sessions kept with each knife." The older sessions still open with every round. A phone whose sessions all came from build 14 shows no such note
+- **AD10 (Play's big total)**
+  - **Do:** One thrower, any Scoring session; throw a round
+  - **Look for:** The session total in large amber numbers with "points" under it, above a bolder round line; both readable from the throwing line. Two throwers look as before
+- **AD11 (History's look)**
+  - **Do:** Open History with a few sessions; tap one; Back
+  - **Look for:** The stats card on top, then SESSIONS, each session a card (when in bold; how it was played and the result). Tapping opens every round, as before; Delete and Clear history still work
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

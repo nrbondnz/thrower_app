@@ -4,7 +4,7 @@ tags: [design]
 
 # Brand and Voice
 
-Part of [[App Design Index]].
+Part of [[App Design Index]]. **Status:** THROWER, the tagline and START THROWING built 2026-10-23 (Task 4). Settled: [[dont-ask-again]] → Throwing and sessions, not games.
 
 ## Positioning
 

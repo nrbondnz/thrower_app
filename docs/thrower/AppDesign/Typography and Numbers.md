@@ -4,7 +4,7 @@ tags: [design]
 
 # Typography and Numbers
 
-Part of [[App Design Index]].
+Part of [[App Design Index]]. **Status:** built 2026-10-23: the phone's own font; tabular digits in `StatTile` and on Play.
 
 ## Fonts
 

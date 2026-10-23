@@ -94,7 +94,7 @@ void main() {
   });
 
   test('History: finished games only, where to find them, delete and clear, kept on the phone', () {
-    expect(text, contains('Each game of Play is kept when it finishes. Tap History on the home screen'));
+    expect(text, contains('Each game of Play is kept when it finishes. Tap History at the bottom of the screen'));
     expect(text, contains('reset or left before it finishes is not kept'));
     expect(text, contains('Clear history removes them all; it asks first.'));
     expect(text, contains('The history stays on this phone: the app sends it nowhere unless you sign in'));
@@ -169,7 +169,7 @@ void main() {
     test('how to choose the boards and play, with the button names on the screen', () {
       expect(text, contains("On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards."));
       expect(text, contains('tap Choose boards again'));
-      expect(text, contains('Tap Quick draw on the home screen.'));
+      expect(text, contains('Tap Quick draw on Home (or under Throw).'));
       expect(text, contains('then the starter taps Next round.'));
     });
 

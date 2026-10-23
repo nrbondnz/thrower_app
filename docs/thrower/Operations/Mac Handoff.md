@@ -1,8 +1,48 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23)**; build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 14, the app design, section 000000000 (2026-10-23)**; builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
+
+---
+
+## 000000000. Build 14 (2026-10-23): App Design
+
+Build 13 is out (`e4a1f6c`); everything below came after it. Waiting for the Mac.
+
+### What's in it since build 13 (from the PC, pushed to `main`)
+- **A better-looking app** ([[story-checkpoint-app-design]], Nigel 2026-10-23; design in [[App Design Index]]):
+  - **Light and dark themes**, charcoal and amber. **Setup → Appearance:** Phone (the default), Light or Dark, kept on the phone. The camera screens (Play, Quick draw, Calibrate, the score pad) are always dark.
+  - **A bottom bar:** Home, Throw, History, Setup.
+  - **A new Home:** the target, THROWER, "Every throw seen. Every score counted.", the last session, **START THROWING**, and Rounds and Quick draw cards.
+  - **Throw:** Rounds, Quick draw, and Leaderboard (iPhone only).
+  - **Setup:** Instructions, Appearance, the tools (Calibrate target, Live test, Scoring test target), and Account (only in a build with accounts).
+  - **History:** stats on top (Sessions, Knives, Per knife, 5s, Hit rate, Best ranked or Best round), the sessions as cards.
+  - **Play:** one thrower's total shown large, above the round.
+- **Each knife is now kept with a session** (for the stats). An extra field in the history file; its version is unchanged, so build 13 and earlier still read it. Sessions kept before build 14 count only towards Sessions and Best.
+- Commits `4e90da1`, `d4dc878`, `a08fd21`, `4f220ac`, `7761168`, `c848d9f` (Play's big total), then Task 7 (docs).
+- **No new plugins, permissions, assets or `Info.plist` keys.** Nothing for `pod install` or Signing & Capabilities. The app's name, bundle ID and signing are unchanged.
+- **Accounts:** as builds 9–13, **without** the backend settings file: the app runs signed out, so Setup shows no Account.
+
+### Steps (iOS work in the foreground, in Xcode: `docs/dont-ask-again.md`)
+1. **Claude:** `git pull` (check `git log --oneline -8` shows the App design commits), `flutter pub get`, then `flutter test` (all pass; the replay tests take ~5 min).
+2. **Claude:** bump `pubspec.yaml` to **`version: 1.0.0+14`**, then `flutter build ios --config-only --release` (refreshes `Generated.xcconfig` only; not a build).
+3. **Claude:** `open ios/Runner.xcworkspace`, and say what to click.
+4. **Nigel, in Xcode:** destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**.
+5. **Claude:** confirm from the Xcode logs (`$TMPDIR/*.xcdistributionlogs`) and App Store Connect (processing, then available). Commit the bump, e.g. `Build 1.0.0+14 for TestFlight (app design)`, and `git push origin main`.
+6. **Nigel, App Store Connect:** add the build to the **External testers** group, with **What to Test** notes, e.g.:
+   - "A new look: tabs along the bottom (Home, Throw, History, Setup). The tools and Instructions are under Setup."
+   - "Setup → Appearance: Phone, Light or Dark. The camera screens stay dark."
+   - "History shows your stats. Sessions from earlier builds count towards Sessions and Best only."
+   - "Play shows your total in large numbers."
+
+### Checks to send
+- [[Device Test Plan]] → **App Design Checks (AD0–AD11)**: any phone. AD3 needs both the iPhone (Leaderboard shown) and the Samsung (none). AD9 needs a phone with sessions from build 13 or earlier, **updated** (never deleted and reinstalled).
+- The earlier checks still open: RK0–RK10, RD0–RD3, QA0–QA14, BF8. Their "Home → …" paths now mean the tabs: see the note at the top of App Design Checks.
+
+### Worth knowing
+- If a tester's sessions vanish after updating, that's a bug (the history version wasn't changed): get the build number and a screenshot.
+- The in-app Instructions may still say "on Home" for things now under Setup or History: fixed in Task 7 if it lands before the build, otherwise noted for build 15.
 
 ---
 

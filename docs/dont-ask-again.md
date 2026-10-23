@@ -66,6 +66,11 @@ The same goes for signing (Xcode's *Signing & Capabilities*, with Claude explain
 **Why:** most of the elapsed time was waiting (full test runs, a Docs Agent per task, a stop at every task boundary), not coding. Nigel may switch on `/fast` for a particular story (it costs extra).
 **Confirmed:** 2026-10-20 (Nigel: "yes, run whole stories and commit per task").
 
+## Throwing and sessions, not games
+**Settled answer:** New UI words say **throwing** and **session** ("Start throwing", "Last session", "Knives thrown"), not "game", "match" or "play". Apply it to new wording. Existing words ("Which game?", "Game over") change only in a planned pass, with the Instructions and device checks updated together.
+**Why:** throwers don't think of themselves as playing a game.
+**Confirmed:** 2026-10-23 (Nigel, app-design story; [[Brand and Voice]]).
+
 ---
 
 *Add new entries above this line as they come up. Keep each entry to a few lines — link to `working-with-nigel.md` or another doc for full detail rather than duplicating it here.*

@@ -22,11 +22,11 @@
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Interface + file store</dd></div>
     <div><dt>Defined in</dt><dd><code>lib/history/game_history.dart</code><br><code>lib/history/game_record.dart</code><br><code>lib/history/synced_game_history.dart</code><br></dd></div>
-    <div><dt>Used when</dt><dd>A game of Play finishing; Home → History; signing in (the backup)</dd></div>
+    <div><dt>Used when</dt><dd>A game of Play finishing; the History tab; signing in (the backup)</dd></div>
   </dl>
 
   <div class="detail-body">
-    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals, the players' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording's name. Totals and the winner are worked out from the rounds, never stored.</p>
+    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals, the players' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording's name. Since 2026-10-23 also each knife's score (<code>knives</code>, for the stats): an extra field, so the version stays 3 and older builds still read the file. Totals and the winner are worked out from the rounds, never stored.</p>
     <p><code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app's own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can't be read is renamed, never deleted, and the history starts afresh.</p>
     <p>Since accounts Task 4 (2026-10-19), <code>gameHistoryProvider</code> is a <code>SyncedGameHistory</code> around the file: the phone stays the source of truth (offline-first), and while someone is signed in each add, delete and clear also reaches their backup (a <code>RemoteGameStore</code>), without waiting. <code>sync()</code> merges both ways by game <code>id</code> on sign-in. Known limit: a game deleted while signed out comes back at the next sync. Signed out, nothing leaves the phone.</p>
   </div>
@@ -46,7 +46,13 @@
     <a class="flow-card" href="../flows/game-history.html">
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Keeping and viewing finished games</h3>
-      <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
+      <p>A finished game kept once in a JSON file on the phone; the History tab to look back.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/throw-stats.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Stats and the last session</h3>
+      <p>Each knife kept with a session; sessions, per knife, 5s, hit rate and best on History; the last session on Home.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/player-names.html">

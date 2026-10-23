@@ -357,6 +357,45 @@ Folders are created when their first code arrives, never empty "just in case". N
 
 **Built:** 2026-10-22 (Tasks 1–3, Task 4's PC side); waiting for the Mac and App Store Connect; device checks RK0–RK9 in [[Device Test Plan]].
 
+## App Design: Themes, Tabs and Stats (2026-10-23)
+
+Requirement: [[Look and Feel]], [[Throwing Stats]], [[Game Recording]]. Design: [[App Design Index]]. Story: [[story-checkpoint-app-design]].
+
+**Problem:** Nigel, 2026-10-23: the app works but looks like a testing tool. He wants it "functional first, but nicer looking", with a light and dark mode.
+
+### Decision: the camera screens are always dark
+- Play, two-target Play, Quick draw (live and on a recording), Calibrate and the score pad are wrapped in `CameraTheme`, which uses `AppTheme.cameraDark` whatever the Appearance setting.
+- **Why:** they're read from the throwing line, often in a dim range, and white on black reads best. The green rings and yellow score marks were chosen to show on the camera picture.
+- **Trade-off:** in Light, these screens don't match the rest of the app. Nigel chose this on 2026-10-23.
+
+### Decision: Appearance kept on the phone, not backed up
+- **Setup → Appearance:** Phone (the default), Light or Dark (`Appearance`). `FileAppearanceStore` writes `appearance.json` in the app support folder, beside the history; `appearanceProvider` reads it at start-up; `themeModeOf` gives `MaterialApp.themeMode`.
+- **Why:** it's a setting for this phone, like the phone's own dark mode. It isn't the thrower's data, so it isn't backed up with an account. If the file can't be read, the default (Phone) is used: it never stops the app.
+
+### Decision: each knife kept as an extra field, with no version bump
+- `GameRecord.knives`: each knife's score, by player then round, so the stats can count knives, 5s and hits. Sessions kept before 2026-10-23 have null.
+- The history format's version stays 3 (`GameRecord.version`); `knives` is simply an extra JSON field.
+- **Why:** an older build (one on a tester's phone, or a TestFlight build rolled back) sets aside a history file with a newer version than it knows. A bump would have hidden every kept session from it. An extra field is ignored by older builds, which still read everything else.
+- **Trade-off:** a session saved by an older build after a newer one loses its knives. That's only the knife stats for that session: Sessions and Best still count it.
+- **Option not chosen:** version 4 (the plan's first idea). Safer to tell formats apart, but it breaks the rollback.
+
+### Decision: the stats are over every thrower on the phone, Live test left out
+- `ThrowStats.of` counts every kept session's knives together, whoever threw them. Sessions on a Live test recording don't count (they're footage, not throwing).
+- **Per knife** (points ÷ knives) compares sessions of any length. **Hit rate** is knives that scored ÷ knives thrown. **Best ranked** is a full Ranked session's total; before one, **Best round**. How each is worked out: [[History and Stats]].
+- **Why:** most phones have one thrower; names aren't required. Stats per thrower (by name) are later.
+- When some sessions have no knives, History says the knife stats are from fewer sessions (`ThrowStats.partial`).
+
+### Decision: a bottom bar, and the tools moved to Setup
+- `AppShell`: a `NavigationBar` with Home, Throw, History and Setup, in place of Home's column of buttons.
+- Home has one main action, START THROWING. Throw has a card for each way to throw (and the Leaderboard on the iPhone).
+- The technical tools (Calibrate target, Live test, Scoring test target) moved off Home to Setup, with Instructions, Appearance and Account (which also moved off Home's app bar).
+- The throwing screens open over the whole screen, bar included. `openScreen` reads the kept sessions again (`keptGamesProvider`) when you come back.
+- **Why:** throwers care about throwing, their history and competing, not calibration. The template suggested a bottom bar; Nigel agreed on 2026-10-23.
+
+### Decision: "Start throwing", not "Start match" or "Play"
+- Nigel, 2026-10-23: throwers don't think of themselves as playing a game. New words say **throwing** and **session** ("Start throwing", "Last session").
+- Existing words ("Which game?", "Game over") are unchanged for now, so the Instructions and device checks stay right. See [[Brand and Voice]].
+
 ## Camera: `camera` Plugin, Back Camera, No Audio
 
 **Decision:** Use the official `camera` plugin (0.12) with the back camera at `ResolutionPreset.high`. Frames come as BGRA on iOS and YUV420 on Android. Audio is off. The live Quick draw asks for 60 fps (`LiveCamera.open(fps: 60)`; see Quick Draw: the Live Camera — 60 fps, Crops and a Queue); the rest take the phone's default rate.

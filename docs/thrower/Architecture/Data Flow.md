@@ -149,7 +149,10 @@ The same mapping scores a tap on the locked target and a knife's entry point.
 │     on Play; play goes on.                                          │
 │   Finish game (asks first): Match.finish → over now, a part-round   │
 │     counted; two players judged on equal rounds → kept as above.    │
-│   Home → History: HistoryScreen → load (newest first) → a game:     │
+│   History tab: HistoryScreen → keptGamesProvider (newest first) →   │
+│     StatsCard (ThrowStats.of: sessions, knives, per knife, 5s, hit  │
+│     rate, best; Live test left out); Home's LastSessionCard too.    │
+│     A game:                                                         │
 │     GameRecordScreen (rounds, totals, Delete); Clear history asks.  │
 │   Tap a score (ScoreCorrections): watching paused → 0–5 popup →     │
 │     GameNotifier.setScore / addThrow (empty slot; 0 = a miss) →     │
@@ -526,7 +529,7 @@ Nothing goes to Game Center unless the player taps **Post score**: then only the
 
 ## App Start: Accounts (If the Build Has Them)
 
-Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Tasks 1, 2 and 4; why in [[Design Decisions]] → User Accounts Required; requirement [[Accounts and Sign-In]]). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. Signing in happens only on Home → Account (`AccountScreen`, Amplify's screens inside an `AuthenticatedView`), never in front of the app.
+Stage 2 of the [[Accounts Roadmap]] ([[story-checkpoint-app-user-accounts]] Tasks 1, 2 and 4; why in [[Design Decisions]] → User Accounts Required; requirement [[Accounts and Sign-In]]). The deployed backend's settings ship as an optional asset, so a build without them (any fresh clone) starts signed out, exactly as before. Signing in happens only on Setup → Account (Home → Account before 2026-10-23) (`AccountScreen`, Amplify's screens inside an `AuthenticatedView`), never in front of the app.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

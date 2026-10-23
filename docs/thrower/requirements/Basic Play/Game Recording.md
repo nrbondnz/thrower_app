@@ -11,7 +11,8 @@ Part of [[Requirements Index]] → Basic play. **Status:** 🟡 Partly built
 Games are recorded: the scores, and video of the throws.
 
 ## What Exists Today
-- **Scores: built.** Every finished game of Play is kept **on the phone** (one JSON file in the app's private folder): when, the mode, the length, each player's round totals and, since 2026-10-19, the players' names ([[Player Names]]); Home → **History** lists them, a game opens to every round, and games can be deleted ([[story-checkpoint-game-history]]; device checks H0–H7 to come). Signed out, nothing is sent anywhere.
+- **Scores: built.** Every finished game of Play is kept **on the phone** (one JSON file in the app's private folder): when, the mode, the length, each player's round totals and, since 2026-10-19, the players' names ([[Player Names]]), and since 2026-10-23 **each knife's score** (`GameRecord.knives`, for the stats: [[Throwing Stats]]); the **History** tab lists them (Home → History before 2026-10-23), a game opens to every round, and games can be deleted ([[story-checkpoint-game-history]]; device checks H0–H7 to come). Signed out, nothing is sent anywhere.
+- **Stats over the kept sessions** (2026-10-23, [[story-checkpoint-app-design]]): History shows sessions, knives, per knife, 5s, hit rate and the best ranked total (or best round) above the sessions, and Home shows the last session. Sessions kept before 2026-10-23 have no knives, so they count only towards Sessions and Best. See [[Throwing Stats]]; device checks AD8–AD9 to come.
 - Quick draw matches aren't kept yet.
 - **Backup: built, not yet deployed** (2026-10-19, [[story-checkpoint-app-user-accounts]] Task 4; deploys with Task 3 once the provider secrets exist; device checks AC3–AC8 to come). Stage 2 of the [[Accounts Roadmap]]; requirement [[Accounts and Sign-In]].
   - Signed in, each kept game is also backed up to the user's own rows (`KeptGame`, owner-only, AWS London). The phone stays the source of truth (offline-first): no signal, and the game is kept on the phone and backed up later.
@@ -33,4 +34,5 @@ Games are recorded: the scores, and video of the throws.
 - [[story-checkpoint-record-and-share]]
 - [[Accounts Roadmap]] → Stage 2 (backup) and Stage 5 (video)
 - [[Accounts and Sign-In]]
-- [[Design Decisions]] → Game History
+- [[Design Decisions]] → Game History; App Design: Themes, Tabs and Stats
+- [[Throwing Stats]]

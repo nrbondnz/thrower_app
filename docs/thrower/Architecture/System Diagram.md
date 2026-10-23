@@ -9,27 +9,34 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │                                                                     │
 │  ┌───────────────────────────────────────────────────────────────┐  │
 │  │                        UI  (lib/ui)                           │  │
-│  │  HomeScreen ─┬─ InstructionsScreen                            │  │
-│  │              ├─ AccountScreen (only with accounts): sign-in   │  │
-│  │              │    (AuthenticatedView), backup line, Back up   │  │
-│  │              │    now, Sign out, Delete account (asks first)  │  │
-│  │              ├─ HistoryScreen ── GameRecordScreen             │  │
-│  │              ├─ PlaySetupScreen (game, players, rounds, names)│  │
-│  │              │    Ranked: 1 player, "I'm throwing from 3 m"   │  │
-│  │              ├─ ScorePadScreen (Precision, Three targets):    │  │
-│  │              │    ScorePad 5–1 · Miss, no camera; turns       │  │
-│  │              ├─ PlayScreen ── CameraView · RoundMarks         │  │
-│  │              │    └ ScoreCorrections (tap a score: 0–5 popup) │  │
-│  │              │    strict (Ranked): only 0; locked once posted │  │
-│  │              │    └ PostScorePanel (full Ranked game, iPhone):│  │
-│  │              │       Post score · View leaderboard            │  │
-│  │              ├─ LiveQuickDrawScreen ── CameraView (live)      │  │
-│  │              │    Start → _Lights · go beep · _Result (large) │  │
-│  │              ├─ CalibrationScreen ── CalibrationEditor        │  │
-│  │              ├─ LiveTestScreen ─┬─ CalibrationScreen, Play    │  │
-│  │              │                  └─ QuickDrawScreen            │  │
-│  │              │                       └─ RecordedPreview       │  │
-│  │              └─ DebugTargetScreen                             │  │
+│  │  AppShell: NavigationBar tabs Home · Throw · History · Setup; │  │
+│  │    AppTheme light/dark by Appearance                          │  │
+│  │  HomeScreen: TargetMark, THROWER, LastSessionCard (ThrowStats)│  │
+│  │    START THROWING, Rounds ─▶ PlaySetupScreen; Quick draw      │  │
+│  │  ThrowScreen: Rounds, Quick draw, Leaderboard (iPhone only)   │  │
+│  │  HistoryScreen: StatsCard (ThrowStats) ── GameRecordScreen    │  │
+│  │  SetupScreen ─┬─ InstructionsScreen                           │  │
+│  │               ├─ Appearance: Phone, Light, Dark               │  │
+│  │               ├─ AccountScreen (only with accounts): sign-in  │  │
+│  │               │    (AuthenticatedView), backup line, Back up  │  │
+│  │               │    now, Sign out, Delete account (asks first) │  │
+│  │               ├─ CalibrationScreen ── CalibrationEditor       │  │
+│  │               ├─ LiveTestScreen ─┬─ CalibrationScreen, Play   │  │
+│  │               │                  └─ QuickDrawScreen           │  │
+│  │               │                       └─ RecordedPreview      │  │
+│  │               └─ DebugTargetScreen                            │  │
+│  │  Over the tabs (the camera ones in CameraTheme, always dark): │  │
+│  │    PlaySetupScreen (game, players, rounds, names)             │  │
+│  │      Ranked: 1 player, "I'm throwing from 3 m"                │  │
+│  │    ScorePadScreen (Precision, Three targets):                 │  │
+│  │      ScorePad 5–1 · Miss, no camera; turns                    │  │
+│  │    PlayScreen ── CameraView · RoundMarks · playTotal          │  │
+│  │      └ ScoreCorrections (tap a score: 0–5 popup)              │  │
+│  │      strict (Ranked): only 0; locked once posted              │  │
+│  │      └ PostScorePanel (full Ranked game, iPhone):             │  │
+│  │         Post score · View leaderboard                         │  │
+│  │    LiveQuickDrawScreen ── CameraView (live)                   │  │
+│  │      Start → _Lights · go beep · _Result (large)              │  │
 │  │  quick_draw_boards (Quick draw screens, two-target Play):     │  │
 │  │    BoardChoosing (tap → find → outline) · BoardsOverlay       │  │
 │  │    Quick draw: or draw round each (LoopDrawer → areaBoard;    │  │
@@ -283,7 +290,7 @@ Thrower App runs on the phone. The only parts that reach a backend are sign-in a
 │   Quick draw (recording): boards chosen by tapping, impact time     │
 │   and result under each board, every frame analysed, times          │
 │   after go, false start and winner (story complete). The live       │
-│   game is Home → Quick draw: LiveQuickDrawScreen on the live        │
+│   game is Home/Throw → Quick draw: LiveQuickDrawScreen on the live  │
 │   camera (liveQuickDrawCameraProvider, 60 fps asked), boards chosen │
 │   the same way (quick_draw_boards; or drawn round, timed only),     │
 │   then each board watched on                                        │

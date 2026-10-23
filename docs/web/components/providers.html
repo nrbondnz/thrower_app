@@ -50,6 +50,8 @@
     <div><dt><code>backupStatusProvider (BackupNotifier)</code></dt><dd>on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow</dd></div>
     <div><dt><code>deleteAccountProvider (deleteAccount)</code></dt><dd>erase the backup, then delete the account; the phone keeps its games and names</dd></div>
     <div><dt><code>leaderboardServiceProvider</code></dt><dd>where scores are posted (main: GameCenterLeaderboardService on the iPhone), or null: no Post score (Android)</dd></div>
+    <div><dt><code>keptGamesProvider</code></dt><dd>the kept sessions, newest first, for Home and History; read again when a game is kept, a tab changes or a screen closes</dd></div>
+    <div><dt><code>appearanceProvider (AppearanceNotifier) · appearanceStoreProvider</code></dt><dd>Setup → Appearance: Phone at first, then the kept setting; choose saves it</dd></div>
     <div><dt><code>scorePostProvider (ScorePostNotifier)</code></dt><dd>post a postable game&#x27;s total once: sign in, submit; ready / posting / posted / signedOut / failed; ready again for a new game</dd></div>
   </dl>
 
@@ -76,7 +78,13 @@
     <a class="flow-card" href="../flows/game-history.html">
       <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
       <h3>Keeping and viewing finished games</h3>
-      <p>A finished game kept once in a JSON file on the phone; Home → History to look back.</p>
+      <p>A finished game kept once in a JSON file on the phone; the History tab to look back.</p>
+      <span class="more">Open →</span>
+    </a>
+    <a class="flow-card" href="../flows/throw-stats.html">
+      <div class="cat"><span class="swatch" style="background:var(--history)"></span>Game flow</div>
+      <h3>Stats and the last session</h3>
+      <p>Each knife kept with a session; sessions, per knife, 5s, hit rate and best on History; the last session on Home.</p>
       <span class="more">Open →</span>
     </a>
     <a class="flow-card" href="../flows/player-names.html">

@@ -56,7 +56,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       if (!paper) 'Even light helps. Avoid shadows moving across the board.',
     ]),
     const InstructionSection('Calibrating the target', [
-      'Tap Calibrate target, then Find target. The camera zooms in on the target and the rings are outlined.',
+      'Tap Calibrate target (on Play, or under Setup), then Find target. The camera zooms in on the target and the rings are outlined.',
       'If the outline is a little off, drag inside the rings to move it, or drag a white handle to reshape it. '
           'Only adjust when no one is throwing.',
       'If Find target cannot find the rings (for example, rings painted with gaps in them), or finds the wrong '
@@ -66,7 +66,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Calibrate again (Re-calibrate) whenever the phone or the target moves.',
     ]),
     InstructionSection('Playing a game', [
-      'Tap Play, choose how many players (and, for two, how many targets) and how many rounds '
+      'Tap Start throwing on Home (or Throw, then Rounds), choose how many players (and, for two, how many targets) and how many rounds '
           '(${GameLengthNotifier.choices.join(', ')}), then Start. '
           'A game is ${rules.maxRounds} rounds of $n throws for each player.',
       if (paper) ...[
@@ -149,7 +149,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'calibrate again (on two targets, choose the boards again).',
     ]),
     InstructionSection('Precision and Three targets', [
-      'Two more games, chosen under Which game? when you tap Play. For now they are scored by hand: the camera '
+      'Two more games, chosen under Which game? when you tap Start throwing. For now they are scored by hand: the camera '
           'is not used.',
       'Precision: 7 rounds of 3 knives, each round from its own distance: '
           '${precisionDistances.map((d) => '$d').join(', ')} m. The screen shows the distance for the next knife.',
@@ -182,8 +182,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
     ]),
     // Game-history story (Nigel, 2026-10-16).
     const InstructionSection('History', [
-      'Each game of Play is kept when it finishes. Tap History on the home screen to see them, newest first, '
-          'and tap a game to see every round. Games played on a Live test recording are marked Live test.',
+      'Each game of Play is kept when it finishes. Tap History at the bottom of the screen to see them, newest '
+          'first, with your stats (knives thrown, points per knife, 5s, hit rate, best scores), and tap a game to see every round. Games played on a Live test recording are marked Live test.',
       'A game that is reset or left before it finishes is not kept.',
       'To remove a game, open it and tap the bin. Clear history removes them all; it asks first.',
       'The history stays on this phone: the app sends it nowhere unless you sign in (see Your account). '
@@ -192,8 +192,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
     // App user accounts story (2026-10-19): optional; backup; Delete account
     // (Apple 5.1.1(v)).
     const InstructionSection('Your account', [
-      'An account is optional: everything works without one. Tap the person icon on the home screen to create '
-          'one (with your email) or sign in.',
+      'An account is optional: everything works without one. Tap Setup, then Account, to create one '
+          '(with your email) or sign in.',
       'While you are signed in, your History and player names are backed up to your account, and come back '
           'when you sign in on another phone. Backing up waits for a signal; your games are always kept on the '
           'phone first.',
@@ -207,7 +207,8 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
         'Quick draw is for two real boards and two throwers. It is not played on the paper target.'
       else ...[
         'A duel: two throwers, one board each, side by side, throwing at the same time on "go". '
-            'Tap Quick draw on the home screen. (Live test, then Quick draw, plays a recording of a real duel.)',
+            'Tap Quick draw on Home (or under Throw). (Setup, then Live test, then Quick draw, plays a recording '
+            'of a real duel.)',
         'Put the phone on its stand behind the throwers, where it sees both boards: out of both lines of throw, '
             'not between the lanes, and out of reach of a backswing (at least 3 m back for axes, or as your venue says).',
         "On the screen, tap the centre (the bull) of Player 1's board, then Player 2's, then Lock boards.",

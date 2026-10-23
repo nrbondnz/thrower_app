@@ -18,13 +18,14 @@ LANES = {
 COMPONENTS = {
     'screens': dict(
         name='Screens', lane='ui', type='Flutter widgets',
-        files=['lib/ui/home_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
+        files=['lib/ui/app_shell.dart', 'lib/ui/home_screen.dart', 'lib/ui/throw_screen.dart', 'lib/ui/setup_screen.dart', 'lib/ui/play_setup_screen.dart', 'lib/ui/play_screen.dart', 'lib/ui/two_target_play_screen.dart', 'lib/ui/calibration_screen.dart',
                'lib/ui/live_test_screen.dart', 'lib/ui/quick_draw_screen.dart', 'lib/ui/live_quick_draw_screen.dart',
                'lib/ui/quick_draw_boards.dart', 'lib/ui/history_screen.dart', 'lib/ui/score_corrections.dart', 'lib/ui/score_pad_screen.dart', 'lib/ui/instructions.dart', 'lib/ui/camera_view.dart',
                'lib/ui/account_screen.dart', 'lib/ui/post_score_panel.dart'],
-        trigger='The user, from Home',
-        dek='Home leads to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), the Instructions, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
+        trigger='The user, from the tabs (Home, Throw, History, Setup)',
+        dek='Since 2026-10-23 the app opens on four tabs (AppShell): Home (START THROWING and the last session), Throw, History and Setup. They lead to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), and, under Setup, the Instructions, Appearance, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.',
         body=[
+            'The look (2026-10-23, the app-design story): light and dark themes from <a href="app-theme.html"><code>AppTheme</code></a>, chosen by Setup → Appearance; the camera screens are wrapped in <code>CameraTheme</code>, always dark. The shared pieces (<code>ActionCard</code>, <code>StatTile</code>, <code>TargetMark</code>, <code>SectionHeading</code>) are in <code>lib/ui/theme/</code>.',
             'Screens only draw and react: they read every other layer through Riverpod providers, so tests swap any layer for a fake.',
             '<code>CameraView</code> shows a camera preview and handles a refused permission, the app going to the background and re-opening. Both Quick draw screens choose boards the same way, through <code>quick_draw_boards.dart</code>: <code>BoardChoosing</code> (tap → find → outline), <code>BoardsOverlay</code> and <code>BoardsPainter</code>. Two-target Play does too. Once both boards are found, <code>BoardsEditor</code> lets each outline be dragged into place, with the single target\'s drag rules (<code>grabAt</code>, <code>dragged</code>); <strong>Adjust boards</strong> unlocks them later, keeping both (2026-10-19).',
             'Quick draw\'s boards can instead be <strong>drawn round</strong> by finger (2026-10-21, for boards whose rings the app can\'t find): <code>LoopDrawer</code> draws the path, and the ellipse fitted to the loop (<code>areaBoard</code>), or its four corners for a square or rectangular board, is the board, timed only, never scored. Two-target Play never offers it: it needs scores.',
@@ -32,10 +33,13 @@ COMPONENTS = {
             'On the recording\'s Quick draw, <strong>Play</strong> shows only once the boards are locked: played unlocked, nothing would be analysed (2026-10-16).',
         ],
         functions=[
-            ('HomeScreen', 'Instructions, Play, History, Quick draw, Live test, Calibrate target, Scoring test target'),
-            ('PlaySetupScreen', 'after Play: Which game? (Scoring, Precision, Three targets, Ranked: one player, 5 rounds, Start waits for I\'m throwing from 3 m); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type\'s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start'),
+            ('AppShell · openScreen', 'the tabs (NavigationBar): Home, Throw, History, Setup; a throwing screen opens over them, and the kept sessions are read again on the way back'),
+            ('HomeScreen · LastSessionCard', 'THROWER and the target; the last session (points, per knife, 5s; two throwers: each total); START THROWING → Play\'s setup; Rounds and Quick draw cards'),
+            ('ThrowScreen', 'cards: Rounds, Quick draw, and Leaderboard (iPhone only: viewLeaderboard)'),
+            ('SetupScreen', 'Instructions; Appearance (Phone, Light, Dark); the tools: Calibrate target, Live test, Scoring test target; Account (only with accounts)'),
+            ('PlaySetupScreen', 'after START THROWING or Rounds: Which game? (Scoring, Precision, Three targets, Ranked: one player, 5 rounds, Start waits for I\'m throwing from 3 m); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type\'s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start'),
             ('ScorePadScreen · ScorePad', 'Precision and Three targets, no camera: whose turn and where from or at in large type (padHeadline, padWhere: "Round 2 of 7: from 5 m"); tap 5–1 or Miss; each player\'s rounds (padPlayerDetail), corrections, Finish game, New game'),
-            ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals; for two players taking turns, whose turn it is in large type, both totals and the winner; Round done (RoundDoneButton) once the round has its throws'),
+            ('PlayScreen', 'the camera, score marks where knives went in (RoundMarks), round and game totals (one thrower: the total large, playTotal); for two players taking turns, whose turn it is in large type, both totals and the winner; Round done (RoundDoneButton) once the round has its throws'),
             ('CalibrationScreen', 'Find target, drag the rings (CalibrationEditor), Lock'),
             ('TwoTargetPlayScreen', "two players on two targets: tap and lock both boards, each board's marks, Wait for Player 2 / Collect your knives, Round done once both have finished the round, the winner"),
             ('LiveTestScreen', 'the recordings: Target 1, Target 2, Quick draw; Play on two targets (the Quick draw clip)'),
@@ -43,16 +47,35 @@ COMPONENTS = {
             ('LiveQuickDrawScreen', 'the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type'),
             ('ScoreCorrections', 'under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile; a Ranked game offers only 0 (strictNote); locked once its score is posted'),
             ('PostScorePanel', 'on Play at the end of a full Ranked game, iPhone only: Post score (N), the posted / sign in / try again line, View leaderboard'),
-            ('HistoryScreen · GameRecordScreen', 'the kept games, newest first, by name (resultText), with the game type (howText: "Precision · …"); a game\'s rounds (historyRoundLabel: "Round 2 (5 m)"); Delete; Clear history (asks first)'),
+            ('HistoryScreen · StatsCard · GameRecordScreen', 'the stats (Sessions, Knives, Per knife, 5s, Hit rate, Best ranked or Best round); the kept games as cards, newest first, by name (resultText), with the game type (howText: "Precision · …"); a game\'s rounds (historyRoundLabel: "Round 2 (5 m)"); Delete; Clear history (asks first)'),
             ('NamesButton · editPlayerNames', 'Quick draw\'s Names, before Start: a field per player, the same names as Play; Save or Cancel'),
             ('BoardChoosing.playerNames', 'the names for the board texts ("Tap the centre of Jo\'s board"), Player N without'),
             ('boardsModeButton · LoopDrawer · addDrawnBoard', 'Quick draw only: Draw round the boards / Tap the boards (kept for the session); a finger drawn round each board → areaBoard; "That loop is too small or too flat for a board."'),
             ('BoardsEditor', 'both boards found, not locked: drag an outline to move, turn or stretch it (grabAt: a handle, else the board whose centre is nearest; a four-cornered board: a corner); Adjust boards unlocks, keeping both'),
             ('InstructionsScreen', 'setup, play and the safety points (instructions.dart)'),
             ('DebugTargetScreen', 'Scoring test target: tap a drawn target to see the score'),
-            ('AccountScreen · AccountDetails', 'Home → Account (only with accounts): Amplify\'s sign-in screens inside an AuthenticatedView; then who\'s signed in, the backup line (backupText), Back up now, Sign out, Delete account (confirmAndDeleteAccount: asks first)'),
+            ('AccountScreen · AccountDetails', 'Setup → Account (only with accounts): Amplify\'s sign-in screens inside an AuthenticatedView; then who\'s signed in, the backup line (backupText), Back up now, Sign out, Delete account (confirmAndDeleteAccount: asks first)'),
         ],
-        flows=['calibration', 'play', 'score-pad', 'score-correction', 'game-history', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup', 'ranked-post'],
+        flows=['calibration', 'play', 'score-pad', 'score-correction', 'game-history', 'throw-stats', 'player-names', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw', 'backup', 'ranked-post'],
+    ),
+    'app-theme': dict(
+        name='AppTheme', lane='ui', type='Themes + shared widgets',
+        files=['lib/ui/theme/app_theme.dart', 'lib/ui/theme/widgets.dart', 'lib/main.dart'],
+        trigger='App start; Setup → Appearance; the phone switching dark mode',
+        dek='The app\'s look (2026-10-23): a charcoal and amber palette, light and dark themes, and the shared cards and stat tiles. The camera screens are always dark.',
+        body=[
+            '<code>AppPalette</code> has a dark and a light set of colours; the light one is darkened to read on a light background. <code>AppTheme.light()</code> and <code>dark()</code> build Flutter themes from them, and <code>ThrowerApp</code> passes both, with <code>themeModeOf</code> the Appearance setting.',
+            'The camera screens (Play, two-target Play, both Quick draws, Calibrate, the score pad) are read from the throwing line, so each is wrapped in <code>CameraTheme</code>: <code>AppTheme.cameraDark</code>, whatever the setting.',
+            'Design: docs/thrower/AppDesign/ (App Design Index).',
+        ],
+        functions=[
+            ('AppPalette.dark · AppPalette.light', 'background, surface, primary (amber), onPrimary, accent (red), text, mutedText'),
+            ('AppTheme.light() · dark() · cameraDark', 'the themes; cameraDark for the camera screens'),
+            ('themeModeOf(appearance)', 'Phone → system, Light → light, Dark → dark'),
+            ('CameraTheme', 'puts a camera screen in the dark theme'),
+            ('ActionCard · StatTile · StatRow · TargetMark · SectionHeading', 'the shared pieces of the look'),
+        ],
+        flows=['throw-stats'],
     ),
     'providers': dict(
         name='Providers', lane='wiring', type='Riverpod providers', files=['lib/providers.dart'],
@@ -81,9 +104,11 @@ COMPONENTS = {
             ('backupStatusProvider (BackupNotifier)', 'on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow'),
             ('deleteAccountProvider (deleteAccount)', 'erase the backup, then delete the account; the phone keeps its games and names'),
             ('leaderboardServiceProvider', 'where scores are posted (main: GameCenterLeaderboardService on the iPhone), or null: no Post score (Android)'),
+            ('keptGamesProvider', 'the kept sessions, newest first, for Home and History; read again when a game is kept, a tab changes or a screen closes'),
+            ('appearanceProvider (AppearanceNotifier) · appearanceStoreProvider', 'Setup → Appearance: Phone at first, then the kept setting; choose saves it'),
             ('scorePostProvider (ScorePostNotifier)', 'post a postable game\'s total once: sign in, submit; ready / posting / posted / signedOut / failed; ready again for a new game'),
         ],
-        flows=['frame-sources', 'play', 'score-pad', 'game-history', 'player-names', 'live-quick-draw', 'backup', 'ranked-post'],
+        flows=['frame-sources', 'play', 'score-pad', 'game-history', 'throw-stats', 'player-names', 'live-quick-draw', 'backup', 'ranked-post'],
     ),
     'target-camera': dict(
         name='TargetCamera', lane='camera', type='Interface', files=['lib/camera/target_camera.dart', 'lib/camera/camera_frame.dart'],
@@ -422,10 +447,10 @@ COMPONENTS = {
     'game-history': dict(
         name='GameHistory', lane='history', type='Interface + file store',
         files=['lib/history/game_history.dart', 'lib/history/game_record.dart', 'lib/history/synced_game_history.dart'],
-        trigger='A game of Play finishing; Home → History; signing in (the backup)',
+        trigger='A game of Play finishing; the History tab; signing in (the backup)',
         dek='Finished games of Play, kept on the phone in one JSON file: when, how it was played, each player\'s round totals and names.',
         body=[
-            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals, the players\' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording\'s name. Totals and the winner are worked out from the rounds, never stored.',
+            'A <code>GameRecord</code> holds when the game finished, the mode, the length, each player\'s round totals, the players\' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording\'s name. Since 2026-10-23 also each knife\'s score (<code>knives</code>, for the stats): an extra field, so the version stays 3 and older builds still read the file. Totals and the winner are worked out from the rounds, never stored.',
             '<code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app\'s own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can\'t be read is renamed, never deleted, and the history starts afresh.',
             'Since accounts Task 4 (2026-10-19), <code>gameHistoryProvider</code> is a <code>SyncedGameHistory</code> around the file: the phone stays the source of truth (offline-first), and while someone is signed in each add, delete and clear also reaches their backup (a <code>RemoteGameStore</code>), without waiting. <code>sync()</code> merges both ways by game <code>id</code> on sign-in. Known limit: a game deleted while signed out comes back at the next sync. Signed out, nothing leaves the phone.',
         ],
@@ -437,7 +462,39 @@ COMPONENTS = {
             ('SyncedGameHistory: add · delete · clear · sync', 'the phone first, then the backup if signed in; sync → SyncResult (downloaded, uploaded)'),
             ('RemoteGameStore: list · put · remove', 'the backup\'s interface (AmplifyBackup; a fake in tests)'),
         ],
-        flows=['game-history', 'player-names', 'score-pad', 'backup'],
+        flows=['game-history', 'throw-stats', 'player-names', 'score-pad', 'backup'],
+    ),
+    'throw-stats': dict(
+        name='ThrowStats', lane='history', type='Pure Dart',
+        files=['lib/history/throw_stats.dart', 'lib/ui/history_screen.dart', 'lib/ui/home_screen.dart'],
+        trigger='History and Home, from the kept sessions',
+        dek='The stats over the sessions kept on the phone (2026-10-23): sessions, knives, per knife, 5s, hit rate, and the best ranked total or best round.',
+        body=[
+            'Every thrower\'s knives count together; sessions on a Live test recording don\'t count. The knife stats come only from sessions kept with each knife (from 2026-10-23); <code>partial</code> says when some were left out, and History says so.',
+            'Per knife (points ÷ knives) compares sessions of any length. Hit rate is knives that scored ÷ knives thrown. Best ranked is a full Ranked session\'s total.',
+        ],
+        functions=[
+            ('ThrowStats.of(games)', 'sessions, withKnives, knives, points, fives, hits, bestRanked, bestRound'),
+            ('perKnife · hitRate · partial', 'null before any knife; partial: some sessions have no knives'),
+            ('perKnifeText · hitRateText', '"3.4", "88%", or "–"'),
+            ('StatsCard · lastSessionTiles', 'History\'s stats; Home\'s last session'),
+        ],
+        flows=['throw-stats'],
+    ),
+    'appearance-store': dict(
+        name='AppearanceStore', lane='history', type='Interface + file store',
+        files=['lib/settings/appearance_store.dart', 'lib/providers.dart', 'lib/ui/setup_screen.dart'],
+        trigger='App start (load); Setup → Appearance (save)',
+        dek='Setup → Appearance (2026-10-23): Phone, Light or Dark, kept on this phone only.',
+        body=[
+            '<code>FileAppearanceStore</code> keeps it in <code>appearance.json</code> in the app\'s support folder, beside the history. A file that can\'t be read gives Phone. It\'s a setting for this phone, so it isn\'t backed up with an account.',
+        ],
+        functions=[
+            ('Appearance', 'phone, light, dark; label'),
+            ('load · save', 'load never throws (Phone by default)'),
+            ('appearanceProvider (AppearanceNotifier)', 'Phone at first, then the kept setting; choose → save'),
+        ],
+        flows=['throw-stats'],
     ),
     'player-names-store': dict(
         name='PlayerNamesStore', lane='history', type='Interface + file store',
@@ -628,7 +685,7 @@ FLOWS = {
     ),
     'game-history': dict(
         title='Keeping and viewing finished games', cat='flow', lane='history',
-        dek='When a game of Play finishes it is kept on the phone, once. Home → History lists the games; a game shows every round.',
+        dek='When a game of Play finishes it is kept on the phone, once. The History tab lists the games under the stats; a game shows every round.',
         body=[
             'Saving never holds up play: the record is handed to the history and Play carries on. If the save fails, Play says so in a snack bar.',
             'Finish game ends a game early: a round in progress counts, and two players are judged on the rounds both have played. History shows "2 of 9 rounds" and marks a round that didn\'t count.',
@@ -638,11 +695,27 @@ FLOWS = {
             ('scoring', 'GameNotifier.onEvent', ['the event that leaves the Match over', 'reset or unfinished: nothing kept'], 'game-session', '_keep, once'),
             ('history', 'GameRecord.fromMatch', ['at: clockProvider (also its id)', 'recording: the Live test recording\'s name, if any'], 'game-history', 'gameHistoryProvider.add'),
             ('history', 'FileGameHistory', ['game_history.json in the support folder', 'written through .tmp, one save at a time'], 'game-history', 'failed: historySaveErrorProvider → snack bar'),
-            ('ui', 'Home → HistoryScreen', ['load: newest first · "No games yet"', '"Couldn\'t load the history" + Try again'], 'screens', 'tap a game'),
+            ('ui', 'History tab → HistoryScreen', ['keptGamesProvider: newest first · "No games yet"', '"Couldn\'t load the history" + Try again'], 'screens', 'tap a game'),
             ('ui', 'GameRecordScreen', ['the result, each player\'s total and rounds', 'Delete · Clear history (asks first)'], 'screens', None),
         ],
         caption='The history stays on the phone, and deleting the app deletes it. Signed out, the app sends it nowhere; signed in, it\'s also backed up (see Backing up).',
         files=['lib/providers.dart', 'lib/history/game_record.dart', 'lib/history/game_history.dart', 'lib/ui/history_screen.dart'],
+    ),
+    'throw-stats': dict(
+        title='Stats and the last session', cat='flow', lane='history',
+        dek='Each knife\'s score is kept with a finished session. History works out the stats over the kept sessions; Home shows the last one.',
+        body=[
+            'The knives are an extra field in the history file, so its version is unchanged and an older build still reads every session. Sessions kept before 2026-10-23 have no knives: they count towards Sessions and Best only.',
+            'Live test sessions are left out of the stats and the last session.',
+        ],
+        steps=[
+            ('history', 'GameRecord.fromMatch', ['knives: each knife\'s score, by player then round'], 'game-history', 'gameHistoryProvider.add'),
+            ('wiring', 'keptGamesProvider', ['the kept sessions, newest first', 'read again when a game is kept or a tab changes'], 'providers', 'List<GameRecord>'),
+            ('history', 'ThrowStats.of', ['skips Live test', 'sessions, knives, per knife, 5s, hit rate, best'], 'throw-stats', None),
+            ('ui', 'StatsCard · LastSessionCard', ['History: the stats above the sessions', 'Home: the last session\'s points, per knife, 5s'], 'screens', None),
+        ],
+        caption='How each stat is worked out: docs/thrower/AppDesign/History and Stats.md.',
+        files=['lib/history/game_record.dart', 'lib/history/throw_stats.dart', 'lib/providers.dart', 'lib/ui/history_screen.dart', 'lib/ui/home_screen.dart'],
     ),
     'player-names': dict(
         title='Player names: into the game, History and Quick draw', cat='flow', lane='history',
@@ -740,7 +813,7 @@ FLOWS = {
 }
 
 CORE_CARDS = ['frame-sources', 'scoring-a-point', 'calibration']
-FLOW_CARDS = ['play', 'score-pad', 'ranked-post', 'score-correction', 'game-history', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
+FLOW_CARDS = ['play', 'score-pad', 'ranked-post', 'score-correction', 'game-history', 'throw-stats', 'player-names', 'backup', 'choosing-boards', 'quick-draw-recording', 'live-quick-draw']
 
 CARD_TEXT = {
     'frame-sources': 'Live, recorded, cropped and queued cameras behind one interface, so the app runs on a PC and in tests.',
@@ -750,7 +823,8 @@ CARD_TEXT = {
     'score-pad': 'Precision and Three targets: Which game?, then each knife\'s score tapped on a pad; the same turns, rounds and History.',
     'ranked-post': 'Ranked: 5 × 3 at 3 m in strict mode; a full game\'s total posted once to a monthly Game Center leaderboard (iPhone).',
     'score-correction': 'Tap a score for 0–5, or an empty slot for a miss; watching paused, then a check the phone didn\'t move.',
-    'game-history': 'A finished game kept once in a JSON file on the phone; Home → History to look back.',
+    'game-history': 'A finished game kept once in a JSON file on the phone; the History tab to look back.',
+    'throw-stats': 'Each knife kept with a session; sessions, per knife, 5s, hit rate and best on History; the last session on Home.',
     'player-names': 'A name per seat, kept on the phone, carried by the game into Play, History and Quick draw.',
     'backup': 'Signed in, kept games and names backed up to the user\'s own rows; merged by id on sign-in; the phone first.',
     'choosing-boards': 'Tap Player 1\'s board, then Player 2\'s: a fraction of the picture, a window search, the rings; drag an outline into place.',
@@ -769,7 +843,7 @@ NOTES = [
         'The motion pass stays on the UI thread: brightness only, at ~320 px.',
     ]),
     ('On the phone only', [
-        'Camera frames never leave the phone. The game history and the player names are files in the app\'s own folder. The only network calls are to the accounts backend (AWS Amplify, stage 2): sign-in, and the backup of the kept games and names to the user\'s own rows. Both happen only when the build has its settings and the user signs in. On the iPhone, a full Ranked game\'s total goes to Apple Game Center only when the player taps Post score.',
+        'Camera frames never leave the phone. The game history, the player names and the Appearance setting are files in the app\'s own folder. The only network calls are to the accounts backend (AWS Amplify, stage 2): sign-in, and the backup of the kept games and names to the user\'s own rows. Both happen only when the build has its settings and the user signs in. On the iPhone, a full Ranked game\'s total goes to Apple Game Center only when the player taps Post score.',
         'The camera records no sound today. Recording and sharing (backlog #11) would change that, and needs the Review Agent.',
     ]),
 ]

@@ -4,7 +4,7 @@ tags: [design]
 
 # Components
 
-Part of [[App Design Index]]. Code: `lib/ui/theme/` (`app_theme.dart`, `widgets.dart`).
+Part of [[App Design Index]]. Code: `lib/ui/theme/` (`app_theme.dart`, `widgets.dart`). **Status:** built 2026-10-23 (Task 4).
 
 ## Card
 
@@ -23,6 +23,7 @@ The template's card, in place of a plain button:
 ## Stat Tile
 
 - `StatTile`: a big number with a small label under it ([[Typography and Numbers]]).
+- `StatRow`: a row of stat tiles, evenly spread.
 - Used on Home's last-session card and History's stats.
 
 ## Target Mark

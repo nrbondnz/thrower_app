@@ -4,7 +4,7 @@ tags: [design]
 
 # History and Stats
 
-Part of [[App Design Index]]. Code: `lib/history/throw_stats.dart` (`ThrowStats`), `lib/ui/history_screen.dart`.
+Part of [[App Design Index]]. Code: `lib/history/throw_stats.dart` (`ThrowStats`), `lib/ui/history_screen.dart` (`StatsCard`). **Status:** built 2026-10-23 (Tasks 3 and 5).
 
 ## The Stats
 
@@ -32,11 +32,11 @@ Sessions    Knives     Per knife
 
 ## Sessions Kept Before the Knives Were
 
-Until this story (2026-10-23), a kept session had only its round totals, not each knife. Those sessions count towards Sessions and Best, but not towards Knives, Per knife, 5s or Hit rate. The stats say "From N sessions" when some are left out.
+Until this story (2026-10-23), a kept session had only its round totals, not each knife. Those sessions count towards Sessions and Best, but not towards Knives, Per knife, 5s or Hit rate. When some are left out, a note under the stats says: "Knives, per knife, 5s and hit rate: from the N of M sessions kept with each knife."
 
 ## The List
 
-- Newest first, as before. Each session as a card: when, the kind, each thrower's total.
+- Newest first, as before, under a SESSIONS heading. Each session is a card: when (bold), then how it was played and the result (`summaryText`).
 - Tap one for every round, as now.
 
 ## Later
