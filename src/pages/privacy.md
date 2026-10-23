@@ -50,6 +50,8 @@ At the end of a game that can go on a leaderboard, or later from History in the 
 - **the game's total** (a number from 0 to 75) is sent to **Apple Game Center**, and appears on the leaderboard under your **Game Center nickname**, for other players to see;
 - nothing else about the game is sent: no pictures, no names you typed, no other scores.
 
+The App also shows each week's leaderboard table: other players' Game Center nicknames, places and scores, loaded from Game Center when you open it. Nothing from it is saved on your phone.
+
 Nothing is posted automatically. Game Center is run by Apple under [Apple's Privacy Policy](https://www.apple.com/legal/privacy/); you can change your nickname or sign out of Game Center in the iPhone's Settings. Leaderboards are not yet available on Android.
 
 ## 5. Sharing
