@@ -5,21 +5,38 @@ import 'package:thrower_app/main.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/ui/debug_target_screen.dart';
 import 'package:thrower_app/ui/history_screen.dart';
+import 'package:thrower_app/ui/setup_screen.dart';
 
 import 'history/memory_game_history.dart';
 import 'ui/account_screen_test.dart' show FakeAuthService;
 
 void main() {
-  testWidgets('home screen opens the scoring test target', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: ThrowerApp()));
-    expect(find.text('Thrower App'), findsOneWidget);
+  testWidgets('the app opens on Home: THROWER, and Start throwing', (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [gameHistoryProvider.overrideWithValue(MemoryGameHistory())],
+      child: const ThrowerApp(),
+    ));
+    await tester.pump();
+    expect(find.text('THROWER'), findsOneWidget);
+    expect(find.text('START THROWING'), findsOneWidget);
+  });
 
-    await tester.tap(find.text('Scoring test target'));
+  testWidgets('Setup opens the scoring test target', (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [gameHistoryProvider.overrideWithValue(MemoryGameHistory())],
+      child: const ThrowerApp(),
+    ));
+    await tester.tap(find.text('Setup'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SetupScreen), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('setupTestTarget')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('setupTestTarget')));
     await tester.pumpAndSettle();
     expect(find.byType(DebugTargetScreen), findsOneWidget);
   });
 
-  testWidgets('home screen opens the History', (tester) async {
+  testWidgets('the History tab', (tester) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [gameHistoryProvider.overrideWithValue(MemoryGameHistory())],
       child: const ThrowerApp(),
@@ -45,9 +62,7 @@ void main() {
       ));
     });
     await tester.pump();
-    expect(find.text('Play'), findsOneWidget);
-    expect(find.byKey(const Key('homeAccount')), findsOneWidget);
+    expect(find.text('START THROWING'), findsOneWidget);
     await tester.runAsync(() => tester.pumpWidget(const SizedBox()));
   });
 }
-

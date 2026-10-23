@@ -131,17 +131,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Home has Play (rounds of 3) and Quick draw (two throwers) as separate buttons', (tester) async {
+  // App design (2026-10-23): Start throwing, and a card for each way to throw.
+  testWidgets('Home has Start throwing, and Rounds and Quick draw as cards', (tester) async {
     await pumpHome(tester, stillCamera);
-    expect(find.widgetWithText(FilledButton, 'Play'), findsOneWidget);
-    expect(find.text('Rounds of 3 throws, 1 or 2 players'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Quick draw'), findsOneWidget);
-    expect(find.text('Two throwers, on a start signal'), findsOneWidget);
+    expect(find.text('START THROWING'), findsOneWidget);
+    expect(find.byKey(const Key('homeRounds')), findsOneWidget);
+    expect(find.byKey(const Key('homeQuickDraw')), findsOneWidget);
+    expect(find.text('Head to head'), findsOneWidget);
   });
 
-  testWidgets('Play opens the setup screen; Start with 1 player opens single-target Play', (tester) async {
+  testWidgets('Start throwing opens the setup screen; Start with 1 player opens single-target Play', (tester) async {
     await pumpHome(tester, stillCamera);
-    await tester.tap(find.widgetWithText(FilledButton, 'Play'));
+    await tester.tap(find.byKey(const Key('homeStart')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500)); // The page transition.
     expect(find.byType(PlaySetupScreen), findsOneWidget);
@@ -154,7 +155,7 @@ void main() {
 
   testWidgets('Quick draw opens the camera full screen, asking for Player 1\'s board', (tester) async {
     await pumpHome(tester, stillCamera);
-    await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+    await tester.tap(find.byKey(const Key('homeQuickDraw')));
     await tester.pumpAndSettle();
     expect(find.byType(LiveQuickDrawScreen), findsOneWidget);
     expect(find.byType(AppBar), findsNothing);
@@ -164,7 +165,7 @@ void main() {
 
   testWidgets('tapping both boards, in order, then locking them', (tester) async {
     await pumpHome(tester, stillCamera);
-    await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+    await tester.tap(find.byKey(const Key('homeQuickDraw')));
     await tester.pumpAndSettle();
     await tapPicture(tester, 0.25, 0.5);
     expect(instruction(tester), "Tap the centre of Player 2's board.");
@@ -178,7 +179,7 @@ void main() {
 
   group('the duel', () {
     Future<void> lockBoth(WidgetTester tester) async {
-      await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+      await tester.tap(find.byKey(const Key('homeQuickDraw')));
       await tester.pumpAndSettle();
       await tapPicture(tester, 0.25, 0.5);
       await tapPicture(tester, 0.75, 0.5);
@@ -424,7 +425,7 @@ void main() {
 
     Future<void> openDrawing(WidgetTester tester) async {
       await pumpHome(tester, stillCamera);
-      await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+      await tester.tap(find.byKey(const Key('homeQuickDraw')));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(OutlinedButton, 'Draw round the boards'));
       await tester.pump();
@@ -504,7 +505,7 @@ void main() {
 
   testWidgets('choose boards again forgets the boards', (tester) async {
     await pumpHome(tester, stillCamera);
-    await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+    await tester.tap(find.byKey(const Key('homeQuickDraw')));
     await tester.pumpAndSettle();
     await tapPicture(tester, 0.25, 0.5);
     await tester.tap(find.byKey(const Key('quickDrawStartAgain')));
@@ -514,14 +515,14 @@ void main() {
 
   testWidgets('camera access refused: the camera error is shown, not a blank screen', (tester) async {
     await pumpHome(tester, () => Future.error(const CameraStartException(CameraFailure.denied)));
-    await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+    await tester.tap(find.byKey(const Key('homeQuickDraw')));
     await tester.pumpAndSettle();
     expect(find.byType(CameraErrorView), findsOneWidget);
   });
 
   testWidgets('leaving brings the system bars back', (tester) async {
     await pumpHome(tester, stillCamera);
-    await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+    await tester.tap(find.byKey(const Key('homeQuickDraw')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('quickDrawBack')));
     await tester.pumpAndSettle();
@@ -650,7 +651,7 @@ void main() {
   group('names', () {
     Future<void> openQuickDraw(WidgetTester tester, {List<String?> names = const []}) async {
       await pumpHome(tester, stillCamera, names: names);
-      await tester.tap(find.widgetWithText(FilledButton, 'Quick draw'));
+      await tester.tap(find.byKey(const Key('homeQuickDraw')));
       await tester.pumpAndSettle();
     }
 

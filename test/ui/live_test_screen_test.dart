@@ -9,7 +9,7 @@ import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
 import 'package:thrower_app/ui/camera_view.dart';
-import 'package:thrower_app/ui/home_screen.dart';
+import 'package:thrower_app/ui/setup_screen.dart';
 import 'package:thrower_app/ui/live_test_screen.dart';
 import 'package:thrower_app/ui/play_screen.dart';
 
@@ -30,8 +30,8 @@ Future<ProviderContainer> pump(WidgetTester tester, Widget home, {TargetCamera? 
 }
 
 void main() {
-  testWidgets('the home screen opens Live test, which offers Target 1 and Target 2', (tester) async {
-    await pump(tester, const HomeScreen());
+  testWidgets('Setup opens Live test, which offers Target 1 and Target 2', (tester) async {
+    await pump(tester, const SetupScreen());
     await tester.tap(find.text('Live test'));
     await tester.pumpAndSettle();
     expect(find.byType(LiveTestScreen), findsOneWidget);
@@ -52,7 +52,7 @@ void main() {
   });
 
   testWidgets('leaving Live test goes back to the phone camera', (tester) async {
-    final container = await pump(tester, const HomeScreen());
+    final container = await pump(tester, const SetupScreen());
     await tester.tap(find.text('Live test'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Target 2'));

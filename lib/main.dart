@@ -9,7 +9,7 @@ import 'auth/amplify_accounts.dart';
 import 'auth/amplify_backup.dart';
 import 'leaderboard/game_center_leaderboard_service.dart';
 import 'providers.dart';
-import 'ui/home_screen.dart';
+import 'ui/app_shell.dart';
 import 'ui/theme/app_theme.dart';
 
 /// Connects to the accounts backend if this build has its settings
@@ -50,7 +50,7 @@ class ThrowerApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeModeOf(ref.watch(appearanceProvider)),
-      home: const HomeScreen(),
+      home: const AppShell(),
     );
     // With accounts, the sign-in screens appear only inside the Account
     // screen's AuthenticatedView. Not Authenticator.builder(): that puts them

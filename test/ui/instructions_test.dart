@@ -114,8 +114,10 @@ void main() {
     expect(paper, contains('collect your pens, and then whose turn is next'));
   });
 
-  testWidgets('Home → Instructions opens the instructions', (tester) async {
+  testWidgets('Setup → Instructions opens the instructions', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: ThrowerApp()));
+    await tester.tap(find.text('Setup'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Instructions'));
     await tester.pumpAndSettle();
     expect(find.byType(InstructionsScreen), findsOneWidget);

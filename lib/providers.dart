@@ -502,8 +502,14 @@ class GameNotifier extends Notifier<Match> {
     _kept = rounds;
     final errors = ref.read(historySaveErrorProvider.notifier);
     ref.read(gameHistoryProvider).add(record).then(
-          (_) => errors.set(null),
-          onError: (Object e) => errors.set(e is GameHistoryException ? e.message : '$e'),
+          (_) {
+            errors.set(null);
+            // Home's last session and History's stats.
+            if (ref.mounted) ref.invalidate(keptGamesProvider);
+          },
+          onError: (Object e) {
+            errors.set(e is GameHistoryException ? e.message : '$e');
+          },
         );
   }
 }
@@ -585,6 +591,11 @@ final scorePostProvider = NotifierProvider<ScorePostNotifier, ScorePost>(ScorePo
 final gameHistoryProvider = Provider<GameHistory>(
   (ref) => SyncedGameHistory(FileGameHistory(getApplicationSupportDirectory), () => ref.read(backupProvider)?.games),
 );
+
+/// The sessions kept on the phone, newest first, for Home's last session
+/// and History (app-design story). Read again when a session is kept, and
+/// when Home or History is shown ([AppShell]).
+final keptGamesProvider = FutureProvider<List<GameRecord>>((ref) => ref.watch(gameHistoryProvider).load());
 
 /// The app's accounts (AWS Amplify, stage 2 of the Accounts Roadmap), or null
 /// when this build isn't connected to a backend: the app then runs signed

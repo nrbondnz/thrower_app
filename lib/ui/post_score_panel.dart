@@ -48,7 +48,7 @@ class PostScorePanel extends ConsumerWidget {
               ),
             OutlinedButton(
               key: const Key('viewLeaderboard'),
-              onPressed: () => _view(context, service),
+              onPressed: () => viewLeaderboard(context, service),
               child: const Text('View leaderboard'),
             ),
           ],
@@ -57,9 +57,11 @@ class PostScorePanel extends ConsumerWidget {
     );
   }
 
-  /// Opens the leaderboard, signing in to Game Center first; says so if it
-  /// can't.
-  Future<void> _view(BuildContext context, LeaderboardService service) async {
+}
+
+/// Opens the leaderboard, signing in to Game Center first; says so if it
+/// can't. From the end of a ranked game, and Throw → Leaderboard.
+Future<void> viewLeaderboard(BuildContext context, LeaderboardService service) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
       if (await service.signIn()) {
@@ -74,4 +76,3 @@ class PostScorePanel extends ConsumerWidget {
       content: Text("Couldn't open the leaderboard. Sign in to Game Center (in the iPhone's Settings) and try again."),
     ));
   }
-}

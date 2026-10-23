@@ -7,7 +7,7 @@ import 'package:thrower_app/auth/auth_service.dart';
 import 'package:thrower_app/camera/target_camera.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/ui/account_screen.dart';
-import 'package:thrower_app/ui/home_screen.dart';
+import 'package:thrower_app/ui/setup_screen.dart';
 
 /// An [AuthService] with a fixed user, counting sign-outs.
 class FakeAuthService implements AuthService {
@@ -41,18 +41,22 @@ void main() {
           cameraProvider.overrideWith((ref) => Completer<TargetCamera>().future),
           if (auth != null) authServiceProvider.overrideWithValue(auth),
         ],
-        child: const MaterialApp(home: HomeScreen()),
+        child: const MaterialApp(home: SetupScreen()),
       ));
 
-  testWidgets('a build without accounts: no Account button, Home as before', (tester) async {
+  // App design (2026-10-23): the Account moved from Home to Setup.
+  testWidgets('a build without accounts: no Account in Setup', (tester) async {
     await pumpHome(tester);
-    expect(find.byKey(const Key('homeAccount')), findsNothing);
-    expect(find.widgetWithText(FilledButton, 'Play'), findsOneWidget);
+    expect(find.byKey(const Key('setupAccount')), findsNothing);
+    expect(find.byKey(const Key('setupCalibrate')), findsOneWidget);
   });
 
-  testWidgets('a build with accounts: an Account button on Home', (tester) async {
+  testWidgets('a build with accounts: Account in Setup', (tester) async {
     await pumpHome(tester, auth: FakeAuthService());
-    expect(find.byKey(const Key('homeAccount')), findsOneWidget);
+    await tester.scrollUntilVisible(find.byKey(const Key('setupAccount')), 100);
+    await tester.ensureVisible(find.byKey(const Key('setupAccount')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('setupAccount')), findsOneWidget);
   });
 
   testWidgets('the Account screen without accounts says so', (tester) async {

@@ -1,80 +1,90 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../history/game_record.dart';
+import '../history/throw_stats.dart';
 import '../providers.dart';
-import 'account_screen.dart';
-
-import 'calibration_screen.dart';
-import 'debug_target_screen.dart';
+import 'app_shell.dart';
 import 'history_screen.dart';
-import 'instructions.dart';
 import 'live_quick_draw_screen.dart';
-import 'live_test_screen.dart';
 import 'play_setup_screen.dart';
+import 'theme/widgets.dart';
 
+/// The Home tab (app-design story, docs/thrower/AppDesign/Home Screen.md):
+/// the hero (the target, THROWER, what the app does), the last session,
+/// **Start throwing**, and cards for the ways to throw. The tools are under
+/// Setup.
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onShowHistory});
+
+  /// Tapping the last session: the History tab.
+  final VoidCallback? onShowHistory;
+
+  /// The hero's line under THROWER.
+  static const tagline = 'Every throw seen. Every score counted.';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    void open(Widget screen) =>
-        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
-
+    final theme = Theme.of(context);
+    final games = ref.watch(keptGamesProvider).value;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thrower App'),
-        actions: [
-          // Accounts (stage 2): only in a build connected to the backend.
-          if (ref.watch(authServiceProvider) != null)
-            IconButton(
-              key: const Key('homeAccount'),
-              tooltip: 'Account',
-              onPressed: () => open(const AccountScreen()),
-              icon: const Icon(Icons.account_circle),
-            ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
           children: [
-            OutlinedButton(
-              onPressed: () => open(const InstructionsScreen()),
-              child: const Text('Instructions'),
+            const Center(child: TargetMark(size: 88)),
+            const SizedBox(height: 12),
+            Text(
+              'THROWER',
+              key: const Key('homeTitle'),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: 6),
             ),
-            const SizedBox(height: 16),
-            // Two different games, so each says what it is (Nigel, 2026-10-15).
-            FilledButton(
-              onPressed: () => open(const PlaySetupScreen()),
-              child: const Text('Play'),
+            const SizedBox(height: 4),
+            Text(
+              tagline,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
-            const _Caption('Rounds of 3 throws, 1 or 2 players'),
-            const SizedBox(height: 8),
-            OutlinedButton(
-              onPressed: () => open(const HistoryScreen()),
-              child: const Text('History'),
+            const SectionHeading('Last session'),
+            LastSessionCard(games: games, onTap: onShowHistory),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 56,
+              child: FilledButton(
+                key: const Key('homeStart'),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                ),
+                onPressed: () => openScreen(context, ref, const PlaySetupScreen()),
+                child: const Text('START THROWING'),
+              ),
             ),
-            const _Caption('Finished games of Play'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => open(const LiveQuickDrawScreen()),
-              child: const Text('Quick draw'),
-            ),
-            const _Caption('Two throwers, on a start signal'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => open(const LiveTestScreen()),
-              child: const Text('Live test'),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => open(const CalibrationScreen()),
-              child: const Text('Calibrate target'),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => open(const DebugTargetScreen()),
-              child: const Text('Scoring test target'),
+            const SectionHeading('Quick actions'),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ActionCard(
+                    key: const Key('homeRounds'),
+                    icon: Icons.track_changes,
+                    title: 'Rounds',
+                    subtitle: '1 or 2 throwers',
+                    onTap: () => openScreen(context, ref, const PlaySetupScreen()),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ActionCard(
+                    key: const Key('homeQuickDraw'),
+                    icon: Icons.bolt,
+                    title: 'Quick draw',
+                    subtitle: 'Head to head',
+                    onTap: () => openScreen(context, ref, const LiveQuickDrawScreen()),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -83,15 +93,71 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// A short line under a Home button saying what it's for.
-class _Caption extends StatelessWidget {
-  const _Caption(this.text);
+/// The last session kept on the phone: when, what kind, and its numbers
+/// (one thrower: points, per knife, 5s; two: each thrower's points).
+/// Before the first: "Your sessions will show here."
+class LastSessionCard extends StatelessWidget {
+  const LastSessionCard({super.key, required this.games, this.onTap});
 
-  final String text;
+  /// The kept sessions, newest first; null while they're read.
+  final List<GameRecord>? games;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(text, style: Theme.of(context).textTheme.bodySmall),
-      );
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final last = games?.where((g) => !g.liveTest).firstOrNull;
+    return Card(
+      key: const Key('homeLastSession'),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: last == null ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: last == null
+              ? Text(
+                  games == null ? '' : 'Your sessions will show here.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${last.type.label} · ${whenText(last.finishedAt)}',
+                      style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 12),
+                    StatRow(lastSessionTiles(last)),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'See history →',
+                        style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The last session's numbers: one thrower's points, per knife and 5s (the
+/// knife stats only once each knife is kept); two throwers' points each.
+List<StatTile> lastSessionTiles(GameRecord game) {
+  if (game.players.length > 1) {
+    return [
+      for (var p = 0; p < game.players.length; p++) StatTile(value: '${game.countedTotals[p]}', label: game.nameOf(p)),
+    ];
+  }
+  final stats = ThrowStats.of([game]);
+  return [
+    StatTile(value: '${game.totals.single}', label: 'Points'),
+    if (game.knives != null) ...[
+      StatTile(value: perKnifeText(stats), label: 'Per knife'),
+      StatTile(value: '${stats.fives}', label: '5s'),
+    ],
+  ];
 }
