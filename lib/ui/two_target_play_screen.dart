@@ -253,8 +253,17 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
             Container(
               color: Colors.black,
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              // At most 65% of the screen: the scores scroll past that, the
+              // buttons stay in sight, and the camera keeps its room on a small
+              // phone (traceability, 2026-10-23).
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.65),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Column(
                 children: [
                   if (!targets.locked) ...[
                     quickDrawLine(choosingInstruction(targets, locked: '')),
@@ -276,9 +285,19 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                     const SizedBox(height: 8),
                     for (var p = 0; p < match.players.length; p++)
                       ScoreCorrections(host: this, player: p, board: p, label: rowLabel(match, p)),
-                    const RoundDoneButton(),
-                    const SizedBox(height: 8),
                   ],
+                ],
+                      ),
+                    ),
+                  ),
+                  // The buttons, always in sight.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                  if (targets.locked) const RoundDoneButton(),
+                  const SizedBox(height: 8),
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 12,
@@ -316,6 +335,9 @@ class _TwoTargetPlayScreenState extends ConsumerState<TwoTargetPlayScreen> with 
                         ),
                       if (match.isOver) FilledButton(onPressed: _newGame, child: const Text('New game')),
                     ],
+                  ),
+                      ],
+                    ),
                   ),
                 ],
               ),

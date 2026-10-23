@@ -8,7 +8,7 @@ import 'package:thrower_app/scoring/target_model.dart';
 import 'package:thrower_app/ui/play_screen.dart';
 import 'package:thrower_app/ui/score_corrections.dart';
 
-import 'system_bars_test.dart' show LockedCalibration, pumpWithNavBar;
+import 'system_bars_test.dart' show LockedCalibration, expectAboveNavBar, pumpWithNavBar;
 
 const p = TargetPoint(0.1, 0.1);
 
@@ -337,5 +337,21 @@ void main() {
       await settle(tester);
       expect(dialogBrightness(tester), Brightness.dark);
     });
+  });
+
+  // Traceability (2026-10-23): on a small phone the panel under the camera
+  // overflowed at the end of a session. Now the scores scroll and the buttons
+  // stay in sight.
+  testWidgets('a small phone at the end of a session: no overflow, New game in sight', (tester) async {
+    await pumpPlay(tester, 27);
+    tester.view.physicalSize = const Size(320 * 3, 568 * 3);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expectAboveNavBar(tester, find.text('New game'));
+  });
+
+  testWidgets('two throwers on one target: Round done in sight', (tester) async {
+    await pumpShared(tester, 3, collect: false);
+    expectAboveNavBar(tester, find.byKey(const Key('roundDone')));
   });
 }

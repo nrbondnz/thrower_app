@@ -110,7 +110,7 @@ class NoAccountScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           const Text(
             'Thrower holds nothing about you: your sessions and player names are kept only on this phone. '
-            'To delete your sessions, open History and tap Clear history. Deleting the app removes everything, '
+            'To delete your sessions, open History and tap Clear history (the bin at the top). Deleting the app removes everything, '
             'player names included.',
             key: Key('noAccountText'),
           ),

@@ -87,6 +87,20 @@ class SyncedGameHistory implements GameHistory {
       await r.put(g);
       uploaded++;
     }
+    // Posted on either copy is posted (traceability, 2026-10-23): a session
+    // posted on one phone mustn't offer Post score again on another.
+    final backupById = {for (final g in backedUp) g.id: g};
+    for (final g in onPhone) {
+      final other = backupById[g.id];
+      if (other == null || g.posted == other.posted) continue;
+      if (other.posted) {
+        await local.add(g.markedPosted());
+        downloaded++;
+      } else {
+        await r.put(g);
+        uploaded++;
+      }
+    }
     return (downloaded: downloaded, uploaded: uploaded);
   }
 

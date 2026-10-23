@@ -217,8 +217,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
             Container(
               color: Colors.black,
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              // At most 65% of the screen: the scores scroll past that, the
+              // buttons stay in sight, and the camera keeps its room on a small
+              // phone (traceability, 2026-10-23).
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.65),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Column(
                 children: [
                   if (watcher != null)
                     ValueListenableBuilder(
@@ -272,6 +281,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
                     for (var p = 0; p < match.players.length; p++)
                       ScoreCorrections(host: this, player: p, board: 0, label: rowLabel(match, p)),
                   ],
+                ],
+                      ),
+                    ),
+                  ),
+                  // The buttons, always in sight.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                   const RoundDoneButton(),
                   if (camera is RecordedCamera) ...[
                     const SizedBox(height: 12),
@@ -290,6 +309,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen> implements CorrectionHo
                     const SizedBox(height: 8),
                     FilledButton(onPressed: _newGame, child: const Text('New game')),
                   ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

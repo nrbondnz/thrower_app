@@ -286,4 +286,27 @@ void main() {
       expect(phone.games, isEmpty);
     });
   });
+
+  // Traceability (2026-10-23): posted on either copy is posted.
+  group('the Posted mark', () {
+    test('posted on another phone: marked Posted here by a sync', () async {
+      await phone.add(game(1));
+      backup.games['g1'] = game(1).markedPosted();
+      await history.sync();
+      expect(phone.games.single.posted, isTrue);
+    });
+
+    test('posted here while offline: the backup is marked Posted by a sync', () async {
+      backup.games['g1'] = game(1);
+      await phone.add(game(1).markedPosted());
+      await history.sync();
+      expect(backup.games['g1']!.posted, isTrue);
+    });
+
+    test('the same on both: nothing to do', () async {
+      await phone.add(game(1));
+      backup.games['g1'] = game(1);
+      expect(await history.sync(), (downloaded: 0, uploaded: 0));
+    });
+  });
 }

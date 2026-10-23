@@ -67,7 +67,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         title: const Text('History'),
         actions: [
           if (games != null && games.isNotEmpty)
-            TextButton(key: const Key('historyClear'), onPressed: _clear, child: const Text('Clear history')),
+            // An icon, so it fits the title bar on a small phone with large
+            // text (traceability, 2026-10-23); the label is its tooltip.
+            IconButton(
+              key: const Key('historyClear'),
+              tooltip: 'Clear history',
+              icon: const Icon(Icons.delete_sweep_outlined),
+              onPressed: _clear,
+            ),
         ],
       ),
       body: SafeArea(top: false, child: _body(context, kept)),

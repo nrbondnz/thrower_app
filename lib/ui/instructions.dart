@@ -195,7 +195,7 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
       'Each game of Play is kept when it finishes. Tap History at the bottom of the screen to see them, newest '
           'first, with your stats (knives thrown, points per knife, 5s, hit rate, best scores), and tap a game to see every round. Games played on a Live test recording are marked Live test.',
       'A game that is reset or left before it finishes is not kept.',
-      'To remove a game, open it and tap the bin. Clear history removes them all; it asks first.',
+      'To remove a game, open it and tap the bin. To remove them all, tap Clear history (the bin at the top of History); it asks first.',
       'The history stays on this phone: the app sends it nowhere unless you sign in (see Your account). '
           'Deleting the app deletes the copy on this phone.',
     ]),

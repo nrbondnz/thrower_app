@@ -96,7 +96,7 @@ void main() {
   test('History: finished games only, where to find them, delete and clear, kept on the phone', () {
     expect(text, contains('Each game of Play is kept when it finishes. Tap History at the bottom of the screen'));
     expect(text, contains('reset or left before it finishes is not kept'));
-    expect(text, contains('Clear history removes them all; it asks first.'));
+    expect(text, contains('To remove them all, tap Clear history (the bin at the top of History); it asks first.'));
     expect(text, contains('The history stays on this phone: the app sends it nowhere unless you sign in'));
   });
 

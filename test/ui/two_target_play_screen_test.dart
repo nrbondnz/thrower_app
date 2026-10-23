@@ -85,7 +85,7 @@ void main() {
     expect(instruction(tester), "Tap the centre of Player 2's board.");
     await tapPicture(tester, 0.75, 0.5);
     expect(instruction(tester), startsWith('Both boards found. Drag an outline to fit its rings'));
-    expect(container.read(playTargetsProvider).boards.map((b) => b.outer.cx), [2, 6]);
+    expect(container.read(playTargetsProvider).boards.map((b) => b.outer.cx), [closeTo(2, 1e-9), closeTo(6, 1e-9)]);
     expect(container.read(quickDrawTargetsProvider).boards, isEmpty, reason: "Quick draw's boards are its own");
   });
 
@@ -97,7 +97,7 @@ void main() {
     await tester.pump();
     final targets = container.read(playTargetsProvider);
     expect(targets.locked, isFalse);
-    expect([for (final b in targets.boards) b.outer.cx], [2, 6]);
+    expect([for (final b in targets.boards) b.outer.cx], [closeTo(2, 1e-9), closeTo(6, 1e-9)]);
     expect(instruction(tester), startsWith('Both boards found. Drag an outline'));
     expect(find.byKey(const Key('boardsEditor')), findsOneWidget);
     await tester.tap(find.byKey(const Key('playLockBoards')));
