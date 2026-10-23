@@ -526,6 +526,55 @@ For [[story-checkpoint-app-design]] (requirements [[Look and Feel]] and [[Throwi
   - **Do:** Open History with a few sessions; tap one; Back
   - **Look for:** The stats card on top, then SESSIONS, each session a card (when in bold; how it was played and the result). Tapping opens every round, as before; Delete and Clear history still work
 
+## Posting From History Checks (added 2026-10-23)
+
+For [[story-checkpoint-posting-from-history]] (requirement [[Rankings]]; why in [[Design Decisions]] → Posting From History). Build 1.0.0 (15) or later. Posting needs the **iPhone**, signed in to Game Center (Settings → Game Center), and a TestFlight build made with the test tools ([[Mac Handoff]] → Build 15). TestFlight has no Game Center sandbox, so real sessions post to the real board, and test sessions only to the Test board. Go to the phone only when no one is throwing. Named **PH**n.
+
+**Changes to older checks:** the **Throw** tab is now **Leaderboards**. Read AD0's tabs as Home, Leaderboards, History, Setup, and AD3 as PH7. Rounds and Quick draw are on Home, under **Throwing types**.
+
+- **PH0 (test sessions: add)**
+  - **Do:** Setup → **Test sessions (test build only)** → **Add 10 test sessions**; open History
+  - **Look for:** "Added 10 test sessions to History."; 10 new sessions dated this week, each marked **Test · Can be posted**. A mix of Ranked and Scoring, 5 rounds each
+- **PH1 (the status on each card)**
+  - **Do:** In History, look at your own sessions: a Ranked one, a normal 5-round Scoring one, a 2-player one, a Live test one, a score-pad one (Precision or Three targets)
+  - **Look for:** Every card ends with **Can be posted**, **Posted** or **Cannot be posted**. Sessions kept before this build say Cannot be posted
+- **PH2 (why it can't be posted)**
+  - **Do:** Open several Cannot be posted sessions
+  - **Look for:** Under the status, "Why: …" with a reason that fits: two throwers; played on a Live test recording; scored on the score pad; only 3 m, 5 rounds of 3 can be posted; not a full 5 rounds of 3 knives; a score was changed by hand; thrown in an earlier leaderboard week; kept before sessions could be posted from History
+- **PH3 (post a Ranked session from History)**
+  - **Do:** Open a session that says Can be posted and is Ranked (a test one is fine) → **Post score (N)**
+  - **Look for:** No 3 m tick (Ranked asked at its start). "Posting…", then "Posted to the leaderboard: N."; the status turns **Posted** and the button goes. Back in History, the card says Posted. (A test session goes to the Test board: PH12)
+- **PH4 (post a normal session: the 3 m tick)**
+  - **Do:** Open a Scoring session that says Can be posted
+  - **Look for:** **I threw from 3 m (board to throwing line)**, unticked; Post score is greyed out until it's ticked. Tick it → Post score → Posted, as PH3
+- **PH5 (a normal session at its end)**
+  - **Do:** One thrower, Scoring, 5 rounds, no score changed by hand; throw all 5 rounds (3 knives each)
+  - **Look for:** At the end, **Post score** with the 3 m tick, greyed until ticked; posting works as for Ranked. Then in History the session says **Posted**. Change one score by hand in another such session: no Post score at the end, and History says "a score was changed by hand"
+- **PH6 (Posted stays Posted)**
+  - **Do:** After PH3–PH5, close the app fully and open it again; open History
+  - **Look for:** The posted sessions still say **Posted**, with no Post score. With an account signed in, they still say Posted after a backup
+- **PH7 (the Leaderboards tab)**
+  - **Do:** Tap **Leaderboards** at the bottom; tap **3 m knives · 3 × 5**
+  - **Look for:** The tab bar reads Home, Leaderboards, History, Setup. The page shows the 3 m knives · 3 × 5 card and a "More to come" line (friends, area, club). In a test build, a second card: **Test: 3 m knives · 3 × 5**. Tapping a card opens that Game Center board for this week
+- **PH8 (an earlier week)**
+  - **Do:** After the leaderboard's week has turned over (a week after 2026-10-23, or later), open a session from the week before that wasn't posted
+  - **Look for:** **Cannot be posted**, "Why: thrown in an earlier leaderboard week." A session from the new week can still be posted. Note the day and time the change happened (it checks the leaderboard's start time)
+- **PH9 (Android)**
+  - **Do:** On the Samsung: open History and a session that can be posted; open the Leaderboards tab
+  - **Look for:** The statuses show as on the iPhone. A session's page says "Posting is on the iPhone for now." with no Post score. Leaderboards says "Leaderboards are on the iPhone (Game Center) for now."
+- **PH10 (Throwing types)**
+  - **Do:** Open Home
+  - **Look for:** The heading above Rounds and Quick draw says **Throwing types** (not Quick actions); both cards open as before
+- **PH11 (test sessions: left out, then removed)**
+  - **Do:** Note History's stats and Home's last session. Add 10 test sessions; look again. Then Setup → **Remove test sessions**
+  - **Look for:** Adding them doesn't change the stats or Home's last session. Remove says "Removed N test sessions." and only the Test sessions go; your own sessions stay. Signed in to an account: test sessions don't appear on another phone after a backup
+- **PH12 (a test session posts to the Test leaderboard only)**
+  - **Do:** In the TestFlight build (test tools), post a **Test** session from History with an unusual total (note it). Then Leaderboards → **Test: 3 m knives · 3 × 5**, and then **3 m knives · 3 × 5**
+  - **Look for:** The total is on the **Test** board under your Game Center nickname, and **not** on the real 3 m knives · 3 × 5 board
+- **PH13 (no test tools without the flag)**
+  - **Do:** Install a release build made **without** `THROWER_TEST_TOOLS` (an App Store-style build). Open Setup, Leaderboards, and History on a phone that still has Test sessions
+  - **Look for:** Setup has **no Test sessions (test build only)** section. Leaderboards shows only 3 m knives · 3 × 5, no Test board. Any Test session says **Cannot be posted**, "Why: a test session, in a build without the test tools."
+
 ## When Results Come Back
 
 Read them with `ArtifactData` `list` on the artifact's `results` collection, or from the pasted "Copy results" text. Also check App Store Connect → TestFlight → Feedback for his screenshots and crash reports. Record failures in [[Known Issues]] and as fixes. For a calibration failure, use his screenshot; if it needs the exact analysed frame, reproduce with a debug build attached to the Mac.

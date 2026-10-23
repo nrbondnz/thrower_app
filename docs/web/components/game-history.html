@@ -21,12 +21,12 @@
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Interface + file store</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/history/game_history.dart</code><br><code>lib/history/game_record.dart</code><br><code>lib/history/synced_game_history.dart</code><br></dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/history/game_history.dart</code><br><code>lib/history/game_record.dart</code><br><code>lib/history/synced_game_history.dart</code><br><code>lib/history/post_status.dart</code><br><code>lib/history/test_sessions.dart</code><br><code>lib/leaderboard/leaderboard_week.dart</code><br></dd></div>
     <div><dt>Used when</dt><dd>A game of Play finishing; the History tab; signing in (the backup)</dd></div>
   </dl>
 
   <div class="detail-body">
-    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals, the players' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording's name. Since 2026-10-23 also each knife's score (<code>knives</code>, for the stats): an extra field, so the version stays 3 and older builds still read the file. Totals and the winner are worked out from the rounds, never stored.</p>
+    <p>A <code>GameRecord</code> holds when the game finished, the mode, the length, each player's round totals, the players' names (format version 2, 2026-10-19; version 1 files still read, as Player 1 / Player 2), the game type (version 3, 2026-10-20: written only for Precision and Three targets, so a Scoring game is written as before) and, for a Live test game, the recording's name. Since 2026-10-23 also each knife's score (<code>knives</code>, for the stats): an extra field, so the version stays 3 and older builds still read the file. Posting from History (2026-10-23) adds three more extra fields: <code>changedByHand</code>, <code>posted</code> and <code>test</code>. Totals and the winner are worked out from the rounds, never stored.</p>
     <p><code>FileGameHistory</code> keeps them in <code>game_history.json</code> in the app's own support folder (<code>path_provider</code>). Each save goes to a <code>.tmp</code> file that then replaces the old one, one save at a time. A file that can't be read is renamed, never deleted, and the history starts afresh.</p>
     <p>Since accounts Task 4 (2026-10-19), <code>gameHistoryProvider</code> is a <code>SyncedGameHistory</code> around the file: the phone stays the source of truth (offline-first), and while someone is signed in each add, delete and clear also reaches their backup (a <code>RemoteGameStore</code>), without waiting. <code>sync()</code> merges both ways by game <code>id</code> on sign-in. Known limit: a game deleted while signed out comes back at the next sync. Signed out, nothing leaves the phone.</p>
   </div>
@@ -39,6 +39,9 @@
     <div><dt><code>GameHistoryException</code></dt><dd>a read or write failed; setAside: a damaged file was renamed</dd></div>
     <div><dt><code>SyncedGameHistory: add · delete · clear · sync</code></dt><dd>the phone first, then the backup if signed in; sync → SyncResult (downloaded, uploaded)</dd></div>
     <div><dt><code>RemoteGameStore: list · put · remove</code></dt><dd>the backup&#x27;s interface (AmplifyBackup; a fake in tests)</dd></div>
+    <div><dt><code>postStatusOf(game, now, testTools:)</code></dt><dd>Can be posted, Posted or Cannot be posted (NotPostable reasons); this leaderboard week only (sameWeek)</dd></div>
+    <div><dt><code>GameRecord.markedPosted · leaderboardFor</code></dt><dd>the session kept as Posted; a test session posts to the test board</dd></div>
+    <div><dt><code>makeTestSessions(now)</code></dt><dd>10 random postable test sessions this week; never backed up or synced</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -73,9 +76,15 @@
       <p>Signed in, kept games and names backed up to the user&#x27;s own rows; merged by id on sign-in; the phone first.</p>
       <span class="more">Open →</span>
     </a>
+    <a class="flow-card" href="../flows/ranked-post.html">
+      <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
+      <h3>Ranked game: posting a score to Game Center</h3>
+      <p>Ranked (strict) or a normal 5 × 3 with no hand change; a full session&#x27;s total posted once to a weekly Game Center leaderboard, at the end or later from History (iPhone).</p>
+      <span class="more">Open →</span>
+    </a>
   </div>
 
-  <footer class="colophon">lib/history/game_history.dart · lib/history/game_record.dart · lib/history/synced_game_history.dart</footer>
+  <footer class="colophon">lib/history/game_history.dart · lib/history/game_record.dart · lib/history/synced_game_history.dart · lib/history/post_status.dart · lib/history/test_sessions.dart · lib/leaderboard/leaderboard_week.dart</footer>
 </div>
 </body>
 </html>

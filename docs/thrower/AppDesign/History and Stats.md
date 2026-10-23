@@ -22,6 +22,7 @@ Sessions    Knives     Per knife
 
 - They're over the sessions kept on this phone, every thrower's knives together.
 - Sessions played on a Live test recording aren't counted.
+- Test sessions (Setup → Test sessions, in test builds) aren't counted either ([[story-checkpoint-posting-from-history]]).
 - **Sessions:** how many are kept.
 - **Knives:** how many were thrown.
 - **Per knife:** points ÷ knives, to one decimal place (0.0 to 5.0). It compares sessions of any length.
@@ -38,6 +39,8 @@ Until this story (2026-10-23), a kept session had only its round totals, not eac
 
 - Newest first, as before, under a SESSIONS heading. Each session is a card: when (bold), then how it was played and the result (`summaryText`).
 - Tap one for every round, as now.
+- **Posting status** (2026-10-23, [[story-checkpoint-posting-from-history]]): each card ends with **Can be posted**, **Posted** or **Cannot be posted** (`PostStatusLabel`), with "Test ·" in front for a test session.
+- A session's page has the status, "Why: …" when it can't be posted, and **Post score** on the iPhone (`HistoryPostPanel`). The rules: [[Design Decisions]] → Posting From History.
 
 ## Later
 

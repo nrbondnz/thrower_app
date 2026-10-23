@@ -146,7 +146,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Which game?** (2026-10-20): `gameTypeProvider` (`GameTypeNotifier`: `choose`; Scoring unless chosen); the setup screen's chips `playGame-<type>`, `typeDescription`; hand-scored types hide the target choice (`sharedTarget`) and show their own lengths (`playRoundsFixed` for Precision)
   - Finish game: `GameSession.finish` / `finished` / `finishedEarly`; `Match.finish`, `finishedEarly`, `countedRounds`, `countedTotals` (winner and draw on equal rounds); `GameNotifier.finishGame`; Play's `gameOverText`, `confirmFinishGame`
   - **Round done** (2026-10-23): `Match.canEndRound`, `endRound` (one target: `_passTurn`; two targets: every player `boardVisited`), `_movedOn` (Ranked: `GameType.movesOnByItself`); `GameNotifier.endRound` (the known knives kept); `RoundDoneButton` (key `roundDone`) on Play and two-target Play
-  - **Strict mode** (2026-10-22): `Match.setScore`, `byHand` and `addToRound` refuse anything but 0 when `type.strict` (`_refused`: the match comes back unchanged); **`Match.postable`**: Ranked, one player, over, not finished early
+  - **Strict mode** (2026-10-22): `Match.setScore`, `byHand` and `addToRound` refuse anything but 0 when `type.strict` (`_refused`: the match comes back unchanged); **`Match.postable`**: Ranked (or, since 2026-10-23, Scoring with 5 rounds and no `changedByHand`), one player, over, not finished early, 3 throws in every round; **`Match.changedByHand`** (2026-10-23): any throw `corrected`
   - **Ranked on the setup screen**: chip `playGame-ranked`; How many players and targets hidden (one player, one name field, 5 rounds); **I'm throwing from 3 m** (`playRankedDistance`) must be ticked before Start; Play's **`playTitle`**: "Ranked · 3 m"
   - `Match`: a `GameSession` per player; `stuck` / `bounceOut` / `boardVisited` take the `board`; `playerAt(board)`, `turn`, `turnThrows`, `turnComplete`, `nextTurn`, `nextThrowStartsRound`, `takesThrowAt`, `fellOut(player, …)`, `isOver`, `winner`, `draw`
   - Play's two-player panel (`lib/ui/play_screen.dart`, `PlayersPanel`): `turnText` ("Player 1's turn" / "Collect your knives" / "Wait for Player 2" / "Player 2 wins" / "A draw"), `turnDetail`, `playerTitle`, `playerDetail`, `matchFooter`; `eventMessage`, `paintRoundMarks`
@@ -161,11 +161,11 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - each player's `playerTitle` and `ScoreCorrections` row (the screen is a `CorrectionHost` with nothing to pause); **Finish game** (`confirmFinishGame`), **New game** (`padNewGame`); the `padSafety` line
 - **Named players** ([[story-checkpoint-named-players]]): `Match.names`, `nameOf`, `withNames`; `cleanName` (`maxNameLength` 16), `playerNumber` (`lib/scoring/match.dart`); **`PlayerNamesStore`** / **`FilePlayerNamesStore`** (`lib/settings/player_names_store.dart`: `load`, `save`); **`playerNamesProvider`** (`PlayerNamesNotifier`: `set`; `playerNamesStoreProvider`); `GameNotifier` renames the game in place (`withNames`); shown by `PlaySetupScreen` (`playName0`/`1` fields), `turnText`, `turnDetail`, `playerTitle`, `boardMessage(player, …)`, `boardMovedMessage(player)`, `boardsStateText(states, names)`, `rowLabel` (score-correction rows), History's `resultText`; Quick draw (Task 3): `BoardChoosing.playerNames`, `choosingInstruction`, `NamesButton` / `editPlayerNames`, `verdictText(names:)`, `matchText(m, names)`, `QuickDrawResultPanel(names:)`
 - **`GameRecord`** (`lib/history/game_record.dart`) / **`GameHistory`**, **`FileGameHistory`**, **`GameHistoryException`** (`lib/history/game_history.dart`) / **`gameHistoryProvider`**
-  - `GameRecord.fromMatch(match, at:, recording:)`; `names`, `nameOf` (version 2); `type` (version 3: written only for Precision and Three targets; missing = Scoring; unknown = `FormatException`); **`knives`** (2026-10-23: each knife's score, by player then round; an extra field, the version unchanged; null for older games); `totals`, `winner`, `draw`, `liveTest`, `finishedEarly`, `countedRounds`, `countedTotals`; `toJson` / `fromJson` (`version` 3; reads 1 and 2; `FormatException` if unreadable)
+  - `GameRecord.fromMatch(match, at:, recording:)`; `names`, `nameOf` (version 2); `type` (version 3: written only for Precision and Three targets; missing = Scoring; unknown = `FormatException`); **`knives`** (2026-10-23: each knife's score, by player then round; an extra field, the version unchanged; null for older games); **`changedByHand`** (bool?, null = not known, kept before 2026-10-23), **`posted`**, **`test`** (2026-10-23, extra fields, version unchanged; [[story-checkpoint-posting-from-history]]); **`markedPosted()`**; `totals`, `winner`, `draw`, `liveTest`, `finishedEarly`, `countedRounds`, `countedTotals`; `toJson` / `fromJson` (`version` 3; reads 1 and 2; `FormatException` if unreadable)
   - `load` (newest first) · `add` · `delete(id)` · `clear`; one file, `game_history.json`, written through a `.tmp` file, one save at a time; a damaged file is set aside (`setAside`)
-  - kept by `GameNotifier.onEvent` → `_keep` when the match is over: once (`_finishedAt`, `_kept`), re-saved if a knife falls out after the end; `clockProvider` (the finish time), `historySaveErrorProvider` (a failed save; Play's snack bar)
+  - kept by `GameNotifier.onEvent` → `_keep` when the match is over: once (`_finishedAt`, `_kept`), re-saved if a knife falls out after the end, or when posted (**`GameNotifier.keepPosted`**, 2026-10-23); `clockProvider` (the finish time), `historySaveErrorProvider` (a failed save; Play's snack bar)
 - **`SyncedGameHistory`** (`lib/history/synced_game_history.dart`): the `GameHistory` behind `gameHistoryProvider` since accounts Task 4: `local` (the phone's `FileGameHistory`, the source of truth) and `remote` (the signed-in user's `RemoteGameStore`, or null) ([[story-checkpoint-app-user-accounts]])
-  - `load` → `local`; `add` · `delete` · `clear` → `local` first, then the backup (`_backUp`: without waiting, errors swallowed)
+  - `load` → `local`; `add` · `delete` · `clear` → `local` first, then the backup (`_backUp`: without waiting, errors swallowed); test sessions (`GameRecord.test`) are never backed up, uploaded or downloaded (2026-10-23)
   - `sync()` → `SyncResult` (`downloaded`, `uploaded`): merges both ways by game `id`; null when no one is signed in; throws what the backup throws (no signal)
   - **`RemoteGameStore`** (interface): `list`, `put(record)` (replaces the copy with its `id`), `remove(gameId)`
 - **`ScoreCorrections`** (`lib/ui/score_corrections.dart`) / **`CorrectionHost`**
@@ -177,7 +177,14 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **`cameraShift`** / **`phoneMoved`** / **`phoneMovedShift`** (`lib/vision/camera_move.dart`): `bestShift` over the board's region, up to ±8 px; 2 px or more is a move; Play's `phoneMovedMessage`, two targets' `boardMovedMessage`
 - **`HistoryScreen`** / **`GameRecordScreen`** (`lib/ui/history_screen.dart`)
   - `HistoryScreen`: watches `keptGamesProvider` (2026-10-23); **`StatsCard`** (`historyStats`: Sessions, Knives, Per knife; 5s, Hit rate, Best ranked or Best round; `historyStatsPartial` when some sessions have no knives) above the sessions, each a card, newest first; "No games yet"; "Couldn't load the history" + Try again; **Clear history** (asks first) → `clear`
-  - `GameRecordScreen`: `howText`, `resultText`, each player's rounds and total; **Delete** → `delete(id)`, back to the list
+  - each card's subtitle ends with a **`PostStatusLabel`** (2026-10-23)
+  - `GameRecordScreen`: `howText`, **`HistoryPostPanel`** (2026-10-23), `resultText`, each player's rounds and total; **Delete** → `delete(id)`, back to the list
+- **Posting from History** ([[story-checkpoint-posting-from-history]], 2026-10-23)
+  - **`postStatusOf(game, now, {testTools})`** (`lib/history/post_status.dart`, pure Dart) → **`PostStatus`** (`state`, `reason`, `label`): **`PostState`** `canPost`, `posted`, `cannotPost`; reasons in **`NotPostable`** (`liveTest`, `scorePad`, `twoThrowers`, `notThisGame`, `keptBefore`, `notFull`, `changedByHand`, `earlierWeek`, `testSession`: a test session in a build without the test tools); **`leaderboardFor(game)`**: `Leaderboard.test3m` for a test session, else `ranked3m`
+  - **Leaderboard week** (`lib/leaderboard/leaderboard_week.dart`): `rankedLeaderboardStart` (2026-10-23 00:00 UTC, to confirm), `rankedLeaderboardPeriod` (7 days), **`weekStartOf(at)`**, **`sameWeek(thrown, now)`**
+  - **`PostStatusLabel`** (`lib/ui/history_post_panel.dart`, key `historyStatus-<id>`): the status, "Test ·" in front for a test session
+  - **`HistoryPostPanel`** (`historyPostPanel`): the label, "Why: …" (`historyPostReason`), the result (`historyPostMessage`); when it can be posted: **Post score (N)** (`historyPostScore`, with **`ThreeMetreTick`** for a normal session) → `signIn` → `submit(leaderboardFor(game), total)` → `markedPosted` → `gameHistoryProvider.add`; no service: "Posting is on the iPhone for now."
+  - **Test sessions** (`lib/history/test_sessions.dart`): **`testToolsFlag`** (`THROWER_TEST_TOOLS`), **`testToolsEnabled`** (`kDebugMode` or the flag), **`makeTestSessions(now)`** (10 random postable sessions this week, `test: true`); **`testToolsProvider`** (`lib/providers.dart`)
   - text: `whenText` ("16 Oct, 14:32"), `howText` ("2 players, 1 target · 5 rounds · Live test: Target 1"; "Precision · 2 players, taking turns · 7 rounds"), `historyRoundLabel` ("Round 2", Precision "Round 2 (5 m)"), `resultText` ("Player 1 wins 61–58", "A draw 15–15", "Total 37"), `summaryText` (a list line)
 - **`PlayBoardsWatcher`** (`lib/game/play_boards_watcher.dart`) / **`cropToBoard`** (`lib/game/board_crop.dart`) / **`TwoTargetPlayScreen`** (`lib/ui/two_target_play_screen.dart`) / **`playTargetsProvider`**
   - `start`: per board `cropToBoard` (also used by `QuickDrawWatcher`) + `ThrowWatcher`; `events` → `BoardThrowEvent(board, event, calibration)`; `crops`, `states`
@@ -211,29 +218,30 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - `auth/resource.ts`: `auth` = `defineAuth` (email; `externalProviders`: `google`, `signInWithApple`, six `secret(...)`s; `callbackUrls` `throwerapp://callback/`, `logoutUrls` `throwerapp://signout/`) (Task 3)
   - `data/resource.ts`: `data` = `defineData` (default auth mode `userPool`): **`KeptGame`** (`gameId`, `finishedAt`, `record`: JSON) and **`PlayerNameList`** (`names`: JSON), each `allow.owner()` (Task 4)
 - **`LeaderboardService`** (`lib/leaderboard/leaderboard_service.dart`, 2026-10-22, [[story-checkpoint-game-center-scores]]): posting scores, independent of where they go (interface; tests use a fake): `signIn` (false if not signed in afterwards), `submit(board, score)` (throws if it didn't go), `show(board)`
-  - **`Leaderboard`**: `ranked3m` (`id` `ranked.3m.5x3`, the App Store Connect leaderboard ID; scores 0–75)
+  - **`Leaderboard`**: `ranked3m` (`id` `ranked.3m.5x3`, the App Store Connect leaderboard ID; scores 0–75); `title` ("3 m knives · 3 × 5") and `about` (2026-10-23); **`test3m`** (`test.ranked.3m.5x3`, "Test: 3 m knives · 3 × 5", `test` true: test sessions only, never live; Review Agent, 2026-10-23)
   - **`GameCenterLeaderboardService`** (`lib/leaderboard/game_center_leaderboard_service.dart`): Apple Game Center through `games_services` 5.3.0: `signIn` → `GameAuth.signIn` then `GameAuth.isSignedIn`; `submit` → `Leaderboards.submitScore` (`iOSLeaderboardID`); `show` → `Leaderboards.showLeaderboards`
   - **`leaderboardServiceProvider`** (`lib/providers.dart`, `Provider<LeaderboardService?>`): null = this build can't post (Android: backlog #21); `main` overrides it with a `GameCenterLeaderboardService` when `Platform.isIOS`
-  - **`ScorePostNotifier`** / **`scorePostProvider`** (`lib/providers.dart`): **`ScorePost`** `ready`, `posting`, `posted`, `signedOut`, `failed`; `post()`: only a `postable` game, never twice → `signIn` → `submit(Leaderboard.ranked3m, total)`; back to `ready` when a new game starts
-  - **`PostScorePanel`** (`lib/ui/post_score_panel.dart`), on Play once a `postable` game is over and a service exists: **Post score (N)** (`postScore`; then **Try again**), the line (`postScoreLine`: "Posted to the leaderboard: N.", sign in to Game Center, couldn't post), **View leaderboard** (`viewLeaderboard`)
-- **`AppShell`** (`lib/ui/app_shell.dart`, 2026-10-23, [[story-checkpoint-app-design]]): the app's tabs, a `NavigationBar` (`appTabs`): Home, Throw, History, Setup
+  - **`ScorePostNotifier`** / **`scorePostProvider`** (`lib/providers.dart`): **`ScorePost`** `ready`, `posting`, `posted`, `signedOut`, `failed`; `post()`: only a `postable` game, never twice → `signIn` → `submit(Leaderboard.ranked3m, total)` → `GameNotifier.keepPosted` (2026-10-23); back to `ready` when a new game starts
+  - **`PostScorePanel`** (`lib/ui/post_score_panel.dart`), on Play once a `postable` game is over and a service exists: **Post score (N)** (`postScore`; then **Try again**), the line (`postScoreLine`: "Posted to the leaderboard: N.", sign in to Game Center, couldn't post), **View leaderboard** (`viewLeaderboard(context, service, board:)`); for a normal 5 × 3 game, Post score waits for **`ThreeMetreTick`** (`postAt3m`, 2026-10-23)
+- **`AppShell`** (`lib/ui/app_shell.dart`, 2026-10-23, [[story-checkpoint-app-design]]): the app's tabs, a `NavigationBar` (`appTabs`): Home, Leaderboards (Throw before 2026-10-23), History, Setup (`AppShell.home`, `leaderboards`, `history`, `setup`)
   - `_go(tab)`: switches tab, reading the kept sessions again (`keptGamesProvider`)
   - **`openScreen(context, ref, screen)`**: opens a screen over the tabs (bar included); reads the kept sessions again on the way back
 - **`HomeScreen`** (`lib/ui/home_screen.dart`, 2026-10-23): the Home tab
   - the hero: `TargetMark`, THROWER (`homeTitle`), `tagline` ("Every throw seen. Every score counted.")
-  - **`LastSessionCard`** (`homeLastSession`): the newest kept session that isn't a Live test: `GameType.label` · `whenText`, then **`lastSessionTiles`** (one thrower: Points, Per knife, 5s; two: each thrower's points); "Your sessions will show here." before the first; tap → the History tab (`onShowHistory`)
-  - **START THROWING** (`homeStart`) → `PlaySetupScreen`; Quick actions: Rounds (`homeRounds`) → `PlaySetupScreen`, Quick draw (`homeQuickDraw`) → `LiveQuickDrawScreen`
-- **`ThrowScreen`** (`lib/ui/throw_screen.dart`, 2026-10-23): the Throw tab's cards: Rounds (`throwRounds`), Quick draw (`throwQuickDraw`), Leaderboard (`throwLeaderboard`, only when `leaderboardServiceProvider` isn't null: the iPhone) → `viewLeaderboard`
+  - **`LastSessionCard`** (`homeLastSession`): the newest kept session that isn't a Live test or a test session: `GameType.label` · `whenText`, then **`lastSessionTiles`** (one thrower: Points, Per knife, 5s; two: each thrower's points); "Your sessions will show here." before the first; tap → the History tab (`onShowHistory`)
+  - **START THROWING** (`homeStart`) → `PlaySetupScreen`; Throwing types (Quick actions before 2026-10-23): Rounds (`homeRounds`) → `PlaySetupScreen`, Quick draw (`homeQuickDraw`) → `LiveQuickDrawScreen`
+- **`LeaderboardsScreen`** (`lib/ui/leaderboards_screen.dart`, 2026-10-23, [[story-checkpoint-posting-from-history]]): the Leaderboards tab: an `ActionCard` per `Leaderboard` (the `test` one only when `testToolsProvider`) (`leaderboard-<name>`, its `title` and `about`) → `viewLeaderboard(board:)`; no service: "Leaderboards are on the iPhone (Game Center) for now." (`leaderboardsNotHere`); a "More to come" line. Replaced `ThrowScreen` (the Throw tab, `throw_screen.dart`, deleted)
 - **`SetupScreen`** (`lib/ui/setup_screen.dart`, 2026-10-23): the Setup tab
   - Help: Instructions (`setupInstructions`)
   - Appearance: a `SegmentedButton` (`setupAppearance`) → `AppearanceNotifier.choose`
   - Tools: Calibrate target (`setupCalibrate`), Live test (`setupLiveTest`), Scoring test target (`setupTestTarget`)
+  - Test sessions (test build only) (2026-10-23), only when `testToolsProvider`: **`TestSessionsCard`**: Add 10 test sessions (`setupAddTestSessions`) → `makeTestSessions`, Remove test sessions (`setupRemoveTestSessions`)
   - Account (`setupAccount`), only when `authServiceProvider` isn't null
 - **Themes** (`lib/ui/theme/app_theme.dart`, 2026-10-23): **`AppPalette`** (`dark`, `light`: background, surface, primary, onPrimary, accent, text, mutedText); **`AppTheme`** (`light()`, `dark()`, `cameraDark`); **`themeModeOf(appearance)`**; **`CameraTheme`** (puts a camera screen in `AppTheme.cameraDark`: Play, two-target Play, both Quick draws, Calibrate, the score pad)
 - **Appearance** (`lib/settings/appearance_store.dart`, 2026-10-23): **`Appearance`** (`phone`, `light`, `dark`; `label`); **`AppearanceStore`** / **`FileAppearanceStore`** (`appearance.json` in the app support folder: `load` never throws, `save`); **`appearanceProvider`** (`AppearanceNotifier`: `choose`; `appearanceStoreProvider`); `ThrowerApp` sets `theme`, `darkTheme` and `themeMode`
 - **Shared widgets** (`lib/ui/theme/widgets.dart`, 2026-10-23): `ActionCard`, `StatTile`, `StatRow`, `TargetMark`, `SectionHeading`
 - **`ThrowStats`** (`lib/history/throw_stats.dart`, pure Dart, 2026-10-23): the stats over kept sessions
-  - `ThrowStats.of(games)`: skips Live test; `sessions`, `withKnives`, `knives`, `points`, `fives`, `hits`, `bestRanked` (a full Ranked session), `bestRound`
+  - `ThrowStats.of(games)`: skips Live test and test sessions; `sessions`, `withKnives`, `knives`, `points`, `fives`, `hits`, `bestRanked` (a full Ranked session), `bestRound`
   - `perKnife`, `hitRate`, `partial`; text: `perKnifeText` ("3.4"), `hitRateText` ("88%"), "–" before any knife
   - used by `StatsCard` (History) and `lastSessionTiles` (Home)
 - **`keptGamesProvider`** (`lib/providers.dart`, a `FutureProvider`, 2026-10-23): the kept sessions, newest first; read again when a game is kept, a tab changes or a screen closes
@@ -394,6 +402,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
 - **Ranked game**
   - **Meaning:** A game whose total can go on a public leaderboard: **Ranked: 5 × 3 at 3 m** (5 rounds of 3 knives, one player, one target, scored by the camera, from 3 m on the thrower's word), always in strict mode; only a full game can be posted. Requirement: [[Rankings]].
   - **Used by:** `GameType.ranked`, `rankedDistance`, `Match.postable`, `PlaySetupScreen`, `playTitle`, `PostScorePanel`
+  - **Since 2026-10-23** a normal Scoring session of 5 rounds of 3 with no hand change can be posted too (after "I threw from 3 m"): see **Post status**.
 - **Strict mode**
   - **Meaning:** The correction rule for a game that can be posted: a score can be lowered to 0 (a bounce-out, or a knife the camera missed added as 0) but never set or added as anything else, so no score can be raised by hand.
   - **Used by:** `GameType.strict`, `Match.setScore` / `byHand` / `addToRound`, `ScoreCorrections` (`strictNote`)
@@ -402,7 +411,7 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Used by:** `Leaderboard`, `LeaderboardService`, `GameCenterLeaderboardService`
 - **Posted (a final score)**
   - **Meaning:** A game whose total went to the leaderboard: posted once only, and its scores can't be corrected afterwards, so the leaderboard always matches Play.
-  - **Used by:** `ScorePostNotifier`, `PostScorePanel`, `ScoreCorrections`
+  - **Used by:** `ScorePostNotifier`, `PostScorePanel`, `ScoreCorrections`, `GameRecord.posted`, `HistoryPostPanel`
 - **Kept game (game history)**
   - **Meaning:** A finished game of Play saved on the phone: when it finished, how it was played (mode, rounds, and since version 3 the game type), each player's round totals, and the Live test recording if it was played on one. Only finished games are kept, once each; totals and the winner are worked out from the rounds.
   - **Used by:** `GameRecord`, `GameNotifier`, `FileGameHistory`, `HistoryScreen`
@@ -452,5 +461,17 @@ Three kinds of thing (Docs Agent §5): **components** (system elements), the **f
   - **Meaning:** Knives that scored (1 or more) ÷ knives thrown, as a percentage. A bounce-out, a fall-out and a miss count as thrown but not hit.
   - **Used by:** `ThrowStats.hitRate`, `hitRateText`, `StatsCard`
 - **Last session**
-  - **Meaning:** The newest session kept on the phone that wasn't played on a Live test recording. Home shows it.
+  - **Meaning:** The newest session kept on the phone that wasn't played on a Live test recording and isn't a test session. Home shows it.
   - **Used by:** `LastSessionCard`, `lastSessionTiles`
+- **Post status**
+  - **Meaning:** Whether a kept session's total can go on the leaderboard: **Can be posted**, **Posted** or **Cannot be posted** (with why). One thrower, the camera, a full 5 rounds of 3, Ranked or a normal 5 × 3 with no hand change, thrown this leaderboard week. Requirement: [[Rankings]].
+  - **Used by:** `postStatusOf`, `PostStatus`, `NotPostable`, `PostStatusLabel`, `HistoryPostPanel`
+- **Leaderboard week**
+  - **Meaning:** One 7-day period of the recurring leaderboard, counted from its start (taken as 2026-10-23 00:00 UTC, to confirm in App Store Connect). Game Center files a score in the week it's posted, so only a session thrown this week can be posted later.
+  - **Used by:** `rankedLeaderboardStart`, `weekStartOf`, `sameWeek`, `postStatusOf`, `makeTestSessions`
+- **Test session**
+  - **Meaning:** A made-up session that can be posted, added by Setup → Test sessions in a test build (debug, or `THROWER_TEST_TOOLS`), to check posting without throwing. Marked Test in History, left out of the stats and Home's last session. Posted to the test leaderboard (`Leaderboard.test3m`), never the live one, and not backed up (Review Agent, 2026-10-23).
+  - **Used by:** `GameRecord.test`, `makeTestSessions`, `TestSessionsCard`, `testToolsProvider`, `ThrowStats.of`, `LastSessionCard`, `PostStatusLabel`
+- **Changed by hand**
+  - **Meaning:** A session in which any knife's score was set or added by hand. A normal session changed by hand can't be posted; Ranked can (strict mode allows only 0s). Unknown (null) for sessions kept before 2026-10-23.
+  - **Used by:** `Match.changedByHand`, `GameRecord.changedByHand`, `Match.postable`, `postStatusOf`

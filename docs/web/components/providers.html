@@ -50,9 +50,10 @@
     <div><dt><code>backupStatusProvider (BackupNotifier)</code></dt><dd>on sign-in: the names (syncWith), then the games (sync); BackupOff / Running / Done / Failed; backUpNow</dd></div>
     <div><dt><code>deleteAccountProvider (deleteAccount)</code></dt><dd>erase the backup, then delete the account; the phone keeps its games and names</dd></div>
     <div><dt><code>leaderboardServiceProvider</code></dt><dd>where scores are posted (main: GameCenterLeaderboardService on the iPhone), or null: no Post score (Android)</dd></div>
+    <div><dt><code>testToolsProvider</code></dt><dd>whether Setup shows Test sessions: debug builds, or THROWER_TEST_TOOLS (TestFlight)</dd></div>
     <div><dt><code>keptGamesProvider</code></dt><dd>the kept sessions, newest first, for Home and History; read again when a game is kept, a tab changes or a screen closes</dd></div>
     <div><dt><code>appearanceProvider (AppearanceNotifier) · appearanceStoreProvider</code></dt><dd>Setup → Appearance: Phone at first, then the kept setting; choose saves it</dd></div>
-    <div><dt><code>scorePostProvider (ScorePostNotifier)</code></dt><dd>post a postable game&#x27;s total once: sign in, submit; ready / posting / posted / signedOut / failed; ready again for a new game</dd></div>
+    <div><dt><code>scorePostProvider (ScorePostNotifier)</code></dt><dd>post a postable game&#x27;s total once: sign in, submit, keep it Posted (GameNotifier.keepPosted); ready / posting / posted / signedOut / failed; ready again for a new game</dd></div>
   </dl>
 
   <h2 class="section-heading">Used in</h2>
@@ -108,7 +109,7 @@
     <a class="flow-card" href="../flows/ranked-post.html">
       <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
       <h3>Ranked game: posting a score to Game Center</h3>
-      <p>Ranked: 5 × 3 at 3 m in strict mode; a full game&#x27;s total posted once to a monthly Game Center leaderboard (iPhone).</p>
+      <p>Ranked (strict) or a normal 5 × 3 with no hand change; a full session&#x27;s total posted once to a weekly Game Center leaderboard, at the end or later from History (iPhone).</p>
       <span class="more">Open →</span>
     </a>
   </div>

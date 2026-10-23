@@ -235,3 +235,22 @@ From the Review Agent's Safety Report on the start signal ([[story-checkpoint-li
 - **Cause:** the plugin bundles the Play Games SDK for Android, whose manifest adds `PlayGamesInitProvider`, `GamesResolutionActivity` and `PlayGamesAppShortcutsActivity`.
 - **What we do:** `android/app/src/main/AndroidManifest.xml` removes all three with `tools:node="remove"` (Review Agent, 2026-10-22). Check the merged manifest after any `games_services` upgrade: a new Play Games piece would need removing too.
 - **When Android posting is built** (backlog #21): take the removals out; Play Games then needs its SDK set up and an `APP_ID`. See [[Design Decisions]] → Ranked Games and Game Center.
+
+## Game Center Has No Sandbox for TestFlight (2026-10-23)
+- **Symptom:** a score posted from a TestFlight build lands on the real leaderboard once that leaderboard is live, where every player sees it.
+- **Cause:** Apple (TN2417): Game Center's sandbox is for development builds only. TestFlight builds use the live Game Center.
+- **What we do:** test sessions (Setup → Test sessions) post only to a separate leaderboard, `test.ranked.3m.5x3` (`Leaderboard.test3m`, `leaderboardFor`), which is never added to an App Store version. A test session can't be posted in a build without the test tools. See [[Design Decisions]] → Posting From History.
+
+## `--dart-define` Carries Over in `Generated.xcconfig` (2026-10-23)
+- **Symptom:** an iOS archive has the test tools (Setup → Test sessions) though the last command had no `--dart-define`; or the other way round.
+- **Cause:** `ios/Flutter/Generated.xcconfig` (gitignored) keeps `DART_DEFINES` from the last `flutter build ios --config-only`, `flutter run` or `flutter build`. Xcode's archive reads that file.
+- **Also:** one uploaded build can be chosen for both TestFlight and the App Store, so a test-tools build could be submitted for review by mistake.
+- **What we do:**
+  - Before any archive, check the file: `grep -c VEhST1dFUl9URVNUX1RPT0xT ios/Flutter/Generated.xcconfig` (base64 for `THROWER_TEST_TOOLS`). 1 = test tools on; 0 = off.
+  - After uploading a test-tools build, run `flutter build ios --config-only --release` with no define, and check the grep prints 0.
+  - A test-tools build's What to Test says "TEST TOOLS BUILD – never submit for App Store review."
+  - See [[Mac Handoff]] → Build 15.
+
+## The Posting Week Uses the Phone's Clock (2026-10-23)
+- **What:** whether a session was thrown "this leaderboard week" (`sameWeek`) is checked on the phone, against the phone's clock and the session's kept time. Changing the phone's clock could get round it.
+- **Accepted for now** (Review Agent, 2026-10-23): the leaderboard is small and Game Center files a score in the week it's posted anyway. A server check needs the app's own leaderboard (backlog #21, [[Accounts Roadmap]] stage 6).

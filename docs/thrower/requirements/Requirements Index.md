@@ -35,7 +35,7 @@ How these map to the build plan: [[Accounts Roadmap]] (the stages from friends o
 - [[Accounts and Sign-In|Accounts and sign-in]] 🟡 (email sign-in deployed; Google, Apple, the backup and Delete account written, waiting for secrets)
 
 ## Game Centre
-- [[Rankings]] 🟡 (first step built 2026-10-22: Ranked: 5 × 3 at 3 m posted to a monthly Game Center leaderboard, iPhone only; waiting for the Mac and App Store Connect)
+- [[Rankings]] 🟡 (first step built 2026-10-22: Ranked: 5 × 3 at 3 m posted to a weekly Game Center leaderboard, iPhone only; posting from History and a Leaderboards tab built 2026-10-23; waiting for the Mac and App Store Connect)
 	- [[Rankings#Daily Ranking|Daily ranking]]
 	- [[Rankings#Weekly Ranking|Weekly ranking]]
 	- [[Rankings#Monthly Ranking|Monthly ranking]]

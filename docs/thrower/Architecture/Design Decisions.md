@@ -321,6 +321,7 @@ Folders are created when their first code arrives, never empty "just in case". N
 ### Decision: full games only
 - **`Match.postable`:** `type == ranked`, one player, `isOver`, not `finishedEarly`. **Finish game** ends a Ranked game early, and it can no longer be posted (Nigel: full games only).
 - **Why:** a leaderboard of totals only compares like with like if every game is 15 knives.
+- **Update (2026-10-23):** a normal Scoring session of 5 rounds with no hand changes can be posted too, and any session can be posted later from History: [[#Posting From History (2026-10-23)]].
 
 ### Decision: posting behind `LeaderboardService`
 - **`LeaderboardService`** (`lib/leaderboard/leaderboard_service.dart`), like `AuthService`: `signIn`, `submit(leaderboard, score)`, `show(leaderboard)`. `Leaderboard.ranked3m` carries the App Store Connect ID `ranked.3m.5x3`.
@@ -391,10 +392,76 @@ Requirement: [[Look and Feel]], [[Throwing Stats]], [[Game Recording]]. Design: 
 - The technical tools (Calibrate target, Live test, Scoring test target) moved off Home to Setup, with Instructions, Appearance and Account (which also moved off Home's app bar).
 - The throwing screens open over the whole screen, bar included. `openScreen` reads the kept sessions again (`keptGamesProvider`) when you come back.
 - **Why:** throwers care about throwing, their history and competing, not calibration. The template suggested a bottom bar; Nigel agreed on 2026-10-23.
+- **Update (later on 2026-10-23):** Throw became **Leaderboards**: [[#Decision: a Leaderboards tab in place of Throw]].
 
 ### Decision: "Start throwing", not "Start match" or "Play"
 - Nigel, 2026-10-23: throwers don't think of themselves as playing a game. New words say **throwing** and **session** ("Start throwing", "Last session").
 - Existing words ("Which game?", "Game over") are unchanged for now, so the Instructions and device checks stay right. See [[Brand and Voice]].
+
+## Posting From History (2026-10-23)
+
+**Requirement:** [[Rankings]], [[Throwing Stats]], [[Game Recording]]. **Story:** [[story-checkpoint-posting-from-history]]. Follows [[#Ranked Games and Game Center (2026-10-22)]] and [[#App Design: Themes, Tabs and Stats (2026-10-23)]].
+
+**Nigel, 2026-10-23:** "I would like each result in history to note, can be posted, posted, and cannot be posted." And: "Normal games from 3m 3x5 can be posted even if not in strict mode if there are no manual score changes."
+
+### Nigel's four answers (2026-10-23)
+- **Which sessions can be posted later:** only those thrown in **this leaderboard week**. Game Center files a score in the week it's posted, whenever it was thrown.
+- **3 m for a normal session:** Post score asks for a tick, **I threw from 3 m** (`ThreeMetreTick`), as Ranked's setup does.
+- **Hand changes:** in a normal session, **any** knife set or added by hand means it can't be posted. Ranked still allows 0s by hand (strict mode).
+- **Test sessions:** Setup makes 10 new, random, postable sessions each time it's asked. They're marked Test and left out of the stats. Test builds only.
+
+### Decision: the rules, in one pure function
+- **`postStatusOf(game, now)`** (`lib/history/post_status.dart`) gives a `PostStatus`: a `PostState` (`canPost`, `posted`, `cannotPost`), a `label` and, when it can't be posted, a `reason` from `NotPostable`.
+- A session **can be posted** when all of these hold:
+  - not on a Live test recording, and not scored on the score pad;
+  - one thrower;
+  - **Ranked**, or **Scoring with 5 rounds**;
+  - played to the end, with 3 knives in every round;
+  - for Scoring, no score changed by hand;
+  - thrown in this leaderboard week (`sameWeek`).
+- A session kept before this story has no `changedByHand`, so it says "kept before sessions could be posted from History".
+- **`Match.postable`** widens the same way (Scoring, 5 rounds, no `Match.changedByHand`), so a normal 5 × 3 session also offers Post score at its end.
+- **Why one function:** History's label, the session page's "Why" and the Post score button all ask the same rule, and table-driven tests cover each reason.
+
+### Decision: the week counted from the leaderboard's start (to confirm)
+- **`lib/leaderboard/leaderboard_week.dart`:** `rankedLeaderboardStart` (2026-10-23 00:00 UTC), `rankedLeaderboardPeriod` (7 days), `weekStartOf` and `sameWeek`.
+- **To confirm:** the exact start time and timezone of the recurring leaderboard in App Store Connect ([[Mac Handoff]] → Build 15). If it differs, change `rankedLeaderboardStart`.
+- **Why:** a session from an earlier week would land in this week's table, which isn't when it was thrown.
+- *Not chosen:* the phone's own calendar week. It wouldn't match Game Center's weeks.
+
+### Decision: "posted" kept as a flag on the record
+- `GameRecord` has three extra JSON fields: `changedByHand` (null when not known), `posted` and `test`. The format's version stays 3, as for `knives` ([[#Decision: each knife kept as an extra field, with no version bump]]).
+- A post at the end of a session (`GameNotifier.keepPosted`) or from History (`GameRecord.markedPosted`) keeps the session again, marked Posted. It's backed up with the rest of the history.
+- **Why:** History must say Posted, and a session must not be posted twice. Game Center can't be asked which sessions were posted.
+- **Trade-off:** a post that goes but isn't kept (the file can't be written) leaves the session saying Can be posted.
+
+### Decision: Post score from a session's page
+- **`HistoryPostPanel`** on a session's page shows the status, "Why: …" and, when it can be posted, **Post score** (with the 3 m tick for a normal session).
+- Each History card shows a **`PostStatusLabel`** ("Test ·" in front for a test session).
+- **On Android** (no `LeaderboardService`): "Posting is on the iPhone for now."
+
+### Decision: test sessions behind a build flag
+- **`lib/history/test_sessions.dart`:** `makeTestSessions(now)` makes 10 random sessions this week: one thrower, 5 rounds of 3, a mix of Ranked and 5 × 3, no hand changes, `test: true`.
+- **Setup → Test sessions:** **Add 10 test sessions** and **Remove test sessions** (`TestSessionsCard`).
+- **Shown only when** `testToolsEnabled`: a debug build, or `--dart-define=THROWER_TEST_TOOLS=true` (`testToolsFlag`). TestFlight builds set it; App Store builds must not. `testToolsProvider` lets tests switch it.
+- **Left out** of `ThrowStats` and Home's last session.
+- **Why:** Nigel can check posting on the iPhone without throwing 15 knives each time.
+- **Review Agent fixes (2026-10-23, commit 46ed757):** Game Center has **no sandbox for TestFlight** (Apple TN2417): once a leaderboard is live, a TestFlight post lands on the real one. So:
+  - a test session posts to a separate test leaderboard, `Leaderboard.test3m` (`test.ranked.3m.5x3`, "Test: 3 m knives · 3 × 5"), set up in App Store Connect but **never added to an App Store version** (`leaderboardFor(game)`);
+  - a test session can't be posted in a build without the test tools (`postStatusOf(game, now, testTools:)`, `NotPostable.testSession`);
+  - `SyncedGameHistory` never backs up, uploads or downloads test sessions, so they never reach another phone (an App Store build included);
+  - the test board shows on the Leaderboards tab only in test builds; Setup's heading reads "Test sessions (test build only)".
+- **Build care:** `ios/Flutter/Generated.xcconfig` keeps `DART_DEFINES` between runs, and one uploaded build can be chosen for both TestFlight and the App Store. So a test-tools build is labelled and never submitted for review, and an App Store archive is checked to have no define ([[Mac Handoff]] → Build 15, [[Known Issues]]).
+- **Accepted for now:** the posting week is checked against the phone's clock, so it can be got round ([[Known Issues]] → The Posting Week Uses the Phone's Clock).
+
+### Decision: a Leaderboards tab in place of Throw
+- The bottom bar is now **Home, Leaderboards, History, Setup** (`AppShell.leaderboards`). `throw_screen.dart` is gone: the ways to throw are on Home.
+- **`LeaderboardsScreen`** shows a card per `Leaderboard`, by its `title` and `about`. For now there's one: **3 m knives · 3 × 5** (`ranked.3m.5x3`). Tapping it opens Game Center's board (`viewLeaderboard(board:)`).
+- On Android it says leaderboards are on the iPhone for now. A line says more are to come (friends, area, club).
+- Home's "Quick actions" is now **Throwing types**.
+- **Why:** Nigel wants the leaderboards one tap away. The page is built so more boards can be added.
+
+**Built:** 2026-10-23 (Tasks 1–4, commit 7030b33; Review Agent fixes 46ed757); device checks PH0–PH13 in [[Device Test Plan]].
 
 ## Camera: `camera` Plugin, Back Camera, No Audio
 

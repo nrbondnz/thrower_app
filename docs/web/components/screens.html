@@ -16,13 +16,13 @@
   <header class="title-block">
     <span class="eyebrow"><span class="swatch" style="background:var(--ui);display:inline-block;margin-right:6px;border-radius:2px;width:9px;height:9px;"></span>UI · Component</span>
     <h1>Screens</h1>
-    <p class="dek">Since 2026-10-23 the app opens on four tabs (AppShell): Home (START THROWING and the last session), Throw, History and Setup. They lead to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), and, under Setup, the Instructions, Appearance, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.</p>
+    <p class="dek">Since 2026-10-23 the app opens on four tabs (AppShell): Home (START THROWING, the last session, and the Throwing types cards), Leaderboards (in place of Throw, later on 2026-10-23), History and Setup. They lead to Play (rounds of 3, for 1 or 2 players; Scoring by the camera, or Precision and Three targets scored by hand; Ranked: 5 × 3 at 3 m, one player, postable to Game Center on the iPhone), the History of finished games, Quick draw (two throwers on a start signal), and, under Setup, the Instructions, Appearance, the Live test recordings, Calibrate target and the Scoring test target; and, in a build with accounts, the Account screen.</p>
   </header>
 
   <dl class="facts-strip">
     <div><dt>Type</dt><dd>Flutter widgets</dd></div>
-    <div><dt>Defined in</dt><dd><code>lib/ui/app_shell.dart</code><br><code>lib/ui/home_screen.dart</code><br><code>lib/ui/throw_screen.dart</code><br><code>lib/ui/setup_screen.dart</code><br><code>lib/ui/play_setup_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/two_target_play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/history_screen.dart</code><br><code>lib/ui/score_corrections.dart</code><br><code>lib/ui/score_pad_screen.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br><code>lib/ui/account_screen.dart</code><br><code>lib/ui/post_score_panel.dart</code><br></dd></div>
-    <div><dt>Used when</dt><dd>The user, from the tabs (Home, Throw, History, Setup)</dd></div>
+    <div><dt>Defined in</dt><dd><code>lib/ui/app_shell.dart</code><br><code>lib/ui/home_screen.dart</code><br><code>lib/ui/leaderboards_screen.dart</code><br><code>lib/ui/setup_screen.dart</code><br><code>lib/ui/play_setup_screen.dart</code><br><code>lib/ui/play_screen.dart</code><br><code>lib/ui/two_target_play_screen.dart</code><br><code>lib/ui/calibration_screen.dart</code><br><code>lib/ui/live_test_screen.dart</code><br><code>lib/ui/quick_draw_screen.dart</code><br><code>lib/ui/live_quick_draw_screen.dart</code><br><code>lib/ui/quick_draw_boards.dart</code><br><code>lib/ui/history_screen.dart</code><br><code>lib/ui/score_corrections.dart</code><br><code>lib/ui/score_pad_screen.dart</code><br><code>lib/ui/instructions.dart</code><br><code>lib/ui/camera_view.dart</code><br><code>lib/ui/account_screen.dart</code><br><code>lib/ui/post_score_panel.dart</code><br><code>lib/ui/history_post_panel.dart</code><br></dd></div>
+    <div><dt>Used when</dt><dd>The user, from the tabs (Home, Leaderboards, History, Setup)</dd></div>
   </dl>
 
   <div class="detail-body">
@@ -36,10 +36,10 @@
 
   <h2 class="section-heading">Functions</h2>
   <dl class="functions">
-    <div><dt><code>AppShell · openScreen</code></dt><dd>the tabs (NavigationBar): Home, Throw, History, Setup; a throwing screen opens over them, and the kept sessions are read again on the way back</dd></div>
-    <div><dt><code>HomeScreen · LastSessionCard</code></dt><dd>THROWER and the target; the last session (points, per knife, 5s; two throwers: each total); START THROWING → Play&#x27;s setup; Rounds and Quick draw cards</dd></div>
-    <div><dt><code>ThrowScreen</code></dt><dd>cards: Rounds, Quick draw, and Leaderboard (iPhone only: viewLeaderboard)</dd></div>
-    <div><dt><code>SetupScreen</code></dt><dd>Instructions; Appearance (Phone, Light, Dark); the tools: Calibrate target, Live test, Scoring test target; Account (only with accounts)</dd></div>
+    <div><dt><code>AppShell · openScreen</code></dt><dd>the tabs (NavigationBar): Home, Leaderboards, History, Setup; a throwing screen opens over them, and the kept sessions are read again on the way back</dd></div>
+    <div><dt><code>HomeScreen · LastSessionCard</code></dt><dd>THROWER and the target; the last session (points, per knife, 5s; two throwers: each total); START THROWING → Play&#x27;s setup; Throwing types: Rounds and Quick draw cards; test sessions left out of the last session</dd></div>
+    <div><dt><code>LeaderboardsScreen</code></dt><dd>a card per Leaderboard: 3 m knives · 3 × 5 (and the Test board in test builds) → viewLeaderboard(board:); on Android, on the iPhone for now; More to come (friends, area, club)</dd></div>
+    <div><dt><code>SetupScreen</code></dt><dd>Instructions; Appearance (Phone, Light, Dark); the tools: Calibrate target, Live test, Scoring test target; Test sessions (test build only: TestSessionsCard, Add 10 / Remove); Account (only with accounts)</dd></div>
     <div><dt><code>PlaySetupScreen</code></dt><dd>after START THROWING or Rounds: Which game? (Scoring, Precision, Three targets, Ranked: one player, 5 rounds, Start waits for I&#x27;m throwing from 3 m); 1 or 2 players; with 2, 1 target (taking turns) or 2 (at once), Scoring only; the type&#x27;s lengths (3, 5 or 9; Precision 7; Three targets 3, 5 or 7); a name per player (optional, filled with the last ones); Start</dd></div>
     <div><dt><code>ScorePadScreen · ScorePad</code></dt><dd>Precision and Three targets, no camera: whose turn and where from or at in large type (padHeadline, padWhere: &quot;Round 2 of 7: from 5 m&quot;); tap 5–1 or Miss; each player&#x27;s rounds (padPlayerDetail), corrections, Finish game, New game</dd></div>
     <div><dt><code>PlayScreen</code></dt><dd>the camera, score marks where knives went in (RoundMarks), round and game totals (one thrower: the total large, playTotal); for two players taking turns, whose turn it is in large type, both totals and the winner; Round done (RoundDoneButton) once the round has its throws</dd></div>
@@ -49,8 +49,9 @@
     <div><dt><code>QuickDrawScreen</code></dt><dd>the recorded duel: tap boards, Lock, Play, GO!, each board&#x27;s time and the winner</dd></div>
     <div><dt><code>LiveQuickDrawScreen</code></dt><dd>the live duel: tap boards, Lock, Start, 5 lights and beeps, the long go beep, the result in large type</dd></div>
     <div><dt><code>ScoreCorrections</code></dt><dd>under Play: tap a score for a 0–5 popup, an empty slot to add a missed throw; watching paused meanwhile; a Ranked game offers only 0 (strictNote); locked once its score is posted</dd></div>
-    <div><dt><code>PostScorePanel</code></dt><dd>on Play at the end of a full Ranked game, iPhone only: Post score (N), the posted / sign in / try again line, View leaderboard</dd></div>
-    <div><dt><code>HistoryScreen · StatsCard · GameRecordScreen</code></dt><dd>the stats (Sessions, Knives, Per knife, 5s, Hit rate, Best ranked or Best round); the kept games as cards, newest first, by name (resultText), with the game type (howText: &quot;Precision · …&quot;); a game&#x27;s rounds (historyRoundLabel: &quot;Round 2 (5 m)&quot;); Delete; Clear history (asks first)</dd></div>
+    <div><dt><code>PostScorePanel</code></dt><dd>on Play at the end of a postable game (Ranked, or a normal 5 × 3 with no hand change: ThreeMetreTick first), iPhone only: Post score (N), the posted / sign in / try again line, View leaderboard</dd></div>
+    <div><dt><code>HistoryScreen · StatsCard · GameRecordScreen</code></dt><dd>the stats (Sessions, Knives, Per knife, 5s, Hit rate, Best ranked or Best round); the kept games as cards, newest first, by name (resultText), with the game type (howText: &quot;Precision · …&quot;); a game&#x27;s rounds (historyRoundLabel: &quot;Round 2 (5 m)&quot;); Delete; Clear history (asks first); each card&#x27;s PostStatusLabel</dd></div>
+    <div><dt><code>HistoryPostPanel · PostStatusLabel</code></dt><dd>a session&#x27;s page: Can be posted / Posted / Cannot be posted, Why: …, Post score (iPhone; the 3 m tick for a normal session) → marked Posted; on Android, posting is on the iPhone for now</dd></div>
     <div><dt><code>NamesButton · editPlayerNames</code></dt><dd>Quick draw&#x27;s Names, before Start: a field per player, the same names as Play; Save or Cancel</dd></div>
     <div><dt><code>BoardChoosing.playerNames</code></dt><dd>the names for the board texts (&quot;Tap the centre of Jo&#x27;s board&quot;), Player N without</dd></div>
     <div><dt><code>boardsModeButton · LoopDrawer · addDrawnBoard</code></dt><dd>Quick draw only: Draw round the boards / Tap the boards (kept for the session); a finger drawn round each board → areaBoard; &quot;That loop is too small or too flat for a board.&quot;</dd></div>
@@ -131,12 +132,12 @@
     <a class="flow-card" href="../flows/ranked-post.html">
       <div class="cat"><span class="swatch" style="background:var(--auth)"></span>Game flow</div>
       <h3>Ranked game: posting a score to Game Center</h3>
-      <p>Ranked: 5 × 3 at 3 m in strict mode; a full game&#x27;s total posted once to a monthly Game Center leaderboard (iPhone).</p>
+      <p>Ranked (strict) or a normal 5 × 3 with no hand change; a full session&#x27;s total posted once to a weekly Game Center leaderboard, at the end or later from History (iPhone).</p>
       <span class="more">Open →</span>
     </a>
   </div>
 
-  <footer class="colophon">lib/ui/app_shell.dart · lib/ui/home_screen.dart · lib/ui/throw_screen.dart · lib/ui/setup_screen.dart · lib/ui/play_setup_screen.dart · lib/ui/play_screen.dart · lib/ui/two_target_play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/history_screen.dart · lib/ui/score_corrections.dart · lib/ui/score_pad_screen.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart · lib/ui/account_screen.dart · lib/ui/post_score_panel.dart</footer>
+  <footer class="colophon">lib/ui/app_shell.dart · lib/ui/home_screen.dart · lib/ui/leaderboards_screen.dart · lib/ui/setup_screen.dart · lib/ui/play_setup_screen.dart · lib/ui/play_screen.dart · lib/ui/two_target_play_screen.dart · lib/ui/calibration_screen.dart · lib/ui/live_test_screen.dart · lib/ui/quick_draw_screen.dart · lib/ui/live_quick_draw_screen.dart · lib/ui/quick_draw_boards.dart · lib/ui/history_screen.dart · lib/ui/score_corrections.dart · lib/ui/score_pad_screen.dart · lib/ui/instructions.dart · lib/ui/camera_view.dart · lib/ui/account_screen.dart · lib/ui/post_score_panel.dart · lib/ui/history_post_panel.dart</footer>
 </div>
 </body>
 </html>

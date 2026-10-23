@@ -1,8 +1,68 @@
 # Mac Handoff: Current State, App Store Setup and Committing
 
-Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 14, the app design, section 000000000 (2026-10-23)**; builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
+Written 2026-10-09 for **Claude Code on Nigel's Mac**; **latest: build 15, posting from History, section 0000000000 (2026-10-23)**; build 14, the app design, section 000000000 (2026-10-23; carried by build 15 if 14 never went); builds 11–13 done and handed back to the PC, section 00000000 (2026-10-23); build 11, section 0000000 (2026-10-22); build 10, section 000000 (done 2026-10-21); build 9, section 0000. Nigel will ask you to read this file. Work through it with him. CLAUDE.md and `docs/working-with-nigel.md` load automatically and their rules apply here too, above all the commit rules (below).
 
 Related: [[Common Tasks]] → Ship a Build to TestFlight (the checklist this expands), [[Device Test Plan]], [[backlog]], [[Known Issues]].
+
+---
+
+## 0000000000. Build 15 (2026-10-23): Posting From History, Leaderboards Tab, Test Sessions
+
+Waiting for the Mac. Build 13 is the last one out (`e4a1f6c`). If build 14 (section 000000000 below) was never uploaded, build 15 carries the app design too: read that section's "What's in it" and add its What to Test notes.
+
+### What's in it (from the PC, pushed to `main`)
+- **Posting from History** ([[story-checkpoint-posting-from-history]], Nigel 2026-10-23; why in [[Design Decisions]] → Posting From History):
+  - Each History session says **Can be posted**, **Posted** or **Cannot be posted**; a session's page says why.
+  - A session can be posted later from its page (**Post score**), if it was thrown in **this leaderboard week**.
+  - A **normal 5 × 3 session** (Scoring, 5 rounds, one thrower, no score changed by hand) can be posted too, after ticking **I threw from 3 m**.
+  - A posted session is kept as **Posted**.
+- **A Leaderboards tab** in place of Throw: **3 m knives · 3 × 5** opens Game Center's board. Home's "Quick actions" is now **Throwing types**.
+- **Test sessions** (test builds only): Setup → Test sessions (test build only) → **Add 10 test sessions** and **Remove test sessions**. Marked Test, left out of the stats, never backed up. They post only to a separate test leaderboard, `test.ranked.3m.5x3`, shown on the Leaderboards tab only in test builds.
+- Commits `7030b33` (Tasks 1–4) and `46ed757` (Review Agent fixes), then Task 5 (docs).
+- **New:** a build flag, `THROWER_TEST_TOOLS`. No new plugins, permissions, assets or `Info.plist` keys. Nothing for `pod install` or Signing & Capabilities. The bundle ID and signing are unchanged.
+- The history file has three extra fields (`changedByHand`, `posted`, `test`); its version is unchanged, so earlier builds still read it.
+
+### Before archiving: App Store Connect (Nigel, Claude explaining)
+1. **Create the test leaderboard.** App Store Connect → the app → Game Center → Leaderboards → add a **Recurring** leaderboard:
+   - ID **`test.ranked.3m.5x3`**, name **"TEST 3 m 5x3"**;
+   - set up exactly like `ranked.3m.5x3`: Integer, High to Low, 0–75, 1-week duration;
+   - **never add it to an App Store version.** It stays a test board.
+   - Why: Game Center has **no sandbox for TestFlight** (Apple TN2417). Once `ranked.3m.5x3` is live, a TestFlight post lands on the real board. Test sessions post only to this one ([[Known Issues]] → Game Center Has No Sandbox for TestFlight).
+2. **Confirm `ranked.3m.5x3`'s exact start date, time and time zone.**
+   - The app assumes **2026-10-23 00:00 UTC** (`rankedLeaderboardStart` in `lib/leaderboard/leaderboard_week.dart`) and counts 7-day weeks from it.
+   - Write down exactly what App Store Connect shows and send it to the PC. If it's different, the PC changes `rankedLeaderboardStart`. Don't change it on the Mac.
+
+### Steps: a TestFlight build with the test tools (iOS work in the foreground, in Xcode: `docs/dont-ask-again.md`)
+1. **Claude:** `git pull` (check `git log --oneline -8` shows the Posting from History commits), `flutter pub get`, then `flutter test` (all pass; the replay tests take ~5 min).
+2. **Claude:** bump `pubspec.yaml` to **`version: 1.0.0+15`**, then run:
+   - `flutter build ios --config-only --release --dart-define=THROWER_TEST_TOOLS=true`
+   - This refreshes `ios/Flutter/Generated.xcconfig` only (not a build). Xcode's archive reads the define from there, so Setup shows Test sessions.
+3. **Claude:** check `grep -c VEhST1dFUl9URVNUX1RPT0xT ios/Flutter/Generated.xcconfig` prints **1**. (That string is base64 for `THROWER_TEST_TOOLS`.)
+4. **Claude:** `open ios/Runner.xcworkspace`, and say what to click.
+5. **Nigel, in Xcode:** destination **Any iOS Device (arm64)** → **Product → Archive** → Organizer → **Distribute App → App Store Connect → Upload**.
+6. **Claude:** confirm from the Xcode logs (`$TMPDIR/*.xcdistributionlogs`) and App Store Connect (processing, then available).
+7. **Claude, straight after the upload:** run `flutter build ios --config-only --release` with **no** define, and check the grep prints **0**. (`Generated.xcconfig` keeps `DART_DEFINES` between runs: [[Known Issues]] → `--dart-define` Carries Over.)
+8. **Claude:** commit the bump, e.g. `Build 1.0.0+15 for TestFlight (posting from History; TEST TOOLS build)`, and `git push origin main`.
+9. **Nigel, App Store Connect → TestFlight:** set this build's **What to Test** to start with **"TEST TOOLS BUILD – never submit for App Store review."** Then add it to the **External testers** group, with notes, e.g.:
+   - "Each session in History says Can be posted, Posted or Cannot be posted. Open one to see why, or to post it."
+   - "A normal 5 rounds of 3 from 3 m, one thrower, no scores changed by hand, can now be posted too."
+   - "The Throw tab is now Leaderboards. Rounds and Quick draw are on Home."
+   - "Setup → Test sessions adds 10 made-up sessions you can post, to the TEST leaderboard only. Remove test sessions takes them away."
+
+### App Store builds (later): always a fresh archive, no define
+One uploaded build can be chosen for both TestFlight and the App Store, so a test-tools build must never be submitted for review.
+1. Bump the build number, then run `flutter build ios --config-only --release` with **no** `--dart-define`.
+2. `grep -c VEhST1dFUl9URVNUX1RPT0xT ios/Flutter/Generated.xcconfig` must print **0**. If it prints 1, **stop and don't archive**.
+3. In App Store Connect, **never choose a build marked TEST TOOLS** for an App Store version.
+
+### Checks to send
+- [[Device Test Plan]] → **Posting From History Checks (PH0–PH13)**: the iPhone for posting; the Samsung for PH9. PH8 needs a session from the week before. PH13 needs an App Store-style build (no define), e.g. a release run from Xcode.
+- If build 14 never went: App Design Checks (AD0–AD11) too, with AD0 and AD3 read as the note there says.
+- The earlier checks still open: RK0–RK10, RD0–RD3, QA0–QA14, BF8.
+
+### Worth knowing
+- A session kept before build 15 says "Cannot be posted: kept before sessions could be posted from History". That's expected: older builds didn't record hand changes.
+- If posting works but the session still says Can be posted, the post went but the history couldn't be saved: get a screenshot.
 
 ---
 

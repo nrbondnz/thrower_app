@@ -20,8 +20,8 @@ The app should make that obvious from the moment it opens. It should feel like *
 - [[Brand and Voice]]: the name (THROWER), how the app talks ("throwing", not "playing a game"), and the inspiration (archery and shooting apps, Strava).
 - [[Colour and Themes]]: the charcoal and amber palette, light and dark modes, and why the camera screens stay dark.
 - [[Typography and Numbers]]: fonts, bold headings, and big numbers as the visual focus.
-- [[Navigation and Structure]]: the bottom bar (Home, Throw, History, Setup) and what lives under each.
-- [[Home Screen]]: the hero, the last-session card, Start throwing, and the quick-action cards.
+- [[Navigation and Structure]]: the bottom bar (Home, Leaderboards, History, Setup) and what lives under each.
+- [[Home Screen]]: the hero, the last-session card, Start throwing, and the Throwing types cards.
 - [[Throwing Screens]]: Play and Quick draw, built round the camera picture and what the AI saw.
 - [[History and Stats]]: the stats over kept games, how each is worked out, and the list of sessions.
 - [[Components]]: cards, stat tiles, the target mark and buttons, shared by every screen.
@@ -34,7 +34,11 @@ The app should make that obvious from the moment it opens. It should feel like *
   - the bottom bar (Home, Throw, History, Setup), the new Home, Throw and Setup;
   - each knife kept with a session, and the stats on History and Home;
   - one thrower's total shown large on Play.
-- **Requirements:** [[Look and Feel]], [[Throwing Stats]].
+- **Changed 2026-10-23** ([[story-checkpoint-posting-from-history]], Tasks 1–4; device checks PH0–PH13):
+  - Throw became **Leaderboards**; Home's Quick actions became **Throwing types**;
+  - each History card says Can be posted, Posted or Cannot be posted;
+  - Setup → Test sessions in test builds.
+- **Requirements:** [[Look and Feel]], [[Throwing Stats]], [[Rankings]].
 - **Later:** the throwing screens' new look beyond colours and numbers, badges, charts, a custom font.
 
 ## Decisions (Nigel, 2026-10-23)

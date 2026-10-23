@@ -17,6 +17,7 @@ Nigel, 2026-10-23: "the total, best, 5s, hit rate and average per knife", so a t
 - **Home's last session** (`LastSessionCard`): one thrower's points, per knife and 5s; two throwers' points each.
 - Worked out by `ThrowStats` (`lib/history/throw_stats.dart`). How each is worked out: [[History and Stats]].
 - Every thrower's knives count together. Live test sessions don't count.
+- **Test sessions** (`GameRecord.test`, made by Setup → Test sessions in test builds) don't count either, and aren't Home's last session (2026-10-23, [[story-checkpoint-posting-from-history]]).
 - Each knife's score is kept with a session from 2026-10-23 (`GameRecord.knives`, [[Game Recording]]). Older sessions count only towards Sessions and Best; a note says so.
 - Built in [[story-checkpoint-app-design]] (Tasks 3 and 5). Why: [[Design Decisions]] → App Design: Themes, Tabs and Stats.
 

@@ -33,7 +33,7 @@ Points     Per knife     5s
 
 - **As built:** the kind is `GameType.label` (Scoring, Precision, Three targets, Ranked) and the time is History's `whenText`, not "2 days ago".
 - One thrower: Points, Per knife and 5s (Per knife and 5s only for a session kept with each knife). Two: each thrower's total, in player order.
-- Live test sessions aren't shown.
+- Live test sessions and test sessions aren't shown.
 - Before the first session: "Your sessions will show here."
 - Tapping it opens History.
 - Each number is worked out as in [[History and Stats]].
@@ -46,12 +46,12 @@ Points     Per knife     5s
 
 Large, bold, full width. It opens Play's setup. Nothing else on Home looks like it.
 
-## Quick Actions
+## Throwing Types
 
-Cards, not a stack of buttons:
+Called **Quick actions** until 2026-10-23 (Nigel: "Change 'Quick actions' to 'throwing types'"). Cards, not a stack of buttons:
 
 ```text
-Quick actions
+Throwing types
   ROUNDS            QUICK DRAW
   1 or 2 throwers   Head to head
 ```
