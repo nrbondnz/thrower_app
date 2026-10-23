@@ -61,7 +61,7 @@ class HomeScreen extends ConsumerWidget {
                 child: const Text('START THROWING'),
               ),
             ),
-            const SectionHeading('Quick actions'),
+            const SectionHeading('Throwing types'),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -106,7 +106,7 @@ class LastSessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final last = games?.where((g) => !g.liveTest).firstOrNull;
+    final last = games?.where((g) => !g.liveTest && !g.test).firstOrNull;
     return Card(
       key: const Key('homeLastSession'),
       clipBehavior: Clip.antiAlias,

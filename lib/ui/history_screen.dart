@@ -7,6 +7,7 @@ import '../history/throw_stats.dart';
 import '../providers.dart';
 import '../scoring/game_type.dart';
 import '../scoring/match.dart';
+import 'history_post_panel.dart';
 import 'theme/widgets.dart';
 
 /// The History tab (game-history story, Task 3; app-design story,
@@ -104,7 +105,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             child: ListTile(
               key: Key('historyGame-${g.id}'),
               title: Text(whenText(g.finishedAt), style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text(summaryText(g)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(summaryText(g)),
+                  const SizedBox(height: 4),
+                  PostStatusLabel(game: g),
+                ],
+              ),
               trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               onTap: () => _open(g),
             ),
@@ -208,6 +216,8 @@ class GameRecordScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(howText(game), style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            HistoryPostPanel(game: game),
             if (game.players.length > 1) ...[
               const SizedBox(height: 8),
               Text(resultText(game), key: const Key('historyResult'), style: theme.textTheme.headlineSmall),

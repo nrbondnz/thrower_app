@@ -47,11 +47,14 @@ class FakeLeaderboard implements LeaderboardService {
 
 /// A Ranked game: [rounds] rounds of three 4s, then Finish game if [finish].
 class RankedGame extends GameNotifier {
-  RankedGame({this.rounds = 5, this.finish = false, this.type = GameType.ranked});
+  RankedGame({this.rounds = 5, this.finish = false, this.type = GameType.ranked, this.then});
 
   final int rounds;
   final bool finish;
   final GameType type;
+
+  /// A change made after the throws (a score set by hand).
+  final Match Function(Match)? then;
 
   @override
   Match build() {
@@ -62,7 +65,8 @@ class RankedGame extends GameNotifier {
       }
       m = m.boardVisited();
     }
-    return finish ? m.finish() : m;
+    if (finish) m = m.finish();
+    return then == null ? m : then!(m);
   }
 }
 
@@ -90,6 +94,35 @@ void main() {
       expect(c.read(scorePostProvider), ScorePost.posted);
     });
 
+    // Posting-from-history story (2026-10-23): History says Posted.
+    test('posted, the kept session is marked Posted', () async {
+      final history = MemoryGameHistory();
+      final c = ProviderContainer(overrides: [
+        gameProvider.overrideWith(RankedGame.new),
+        leaderboardServiceProvider.overrideWithValue(board),
+        gameHistoryProvider.overrideWithValue(history),
+      ]);
+      addTearDown(c.dispose);
+      c.listen(scorePostProvider, (_, _) {});
+      await c.read(scorePostProvider.notifier).post();
+      await Future<void>.delayed(Duration.zero);
+      expect(history.games.single.posted, isTrue);
+    });
+
+    test('not posted (no signal): nothing kept as Posted', () async {
+      final history = MemoryGameHistory();
+      board.fails = true;
+      final c = ProviderContainer(overrides: [
+        gameProvider.overrideWith(RankedGame.new),
+        leaderboardServiceProvider.overrideWithValue(board),
+        gameHistoryProvider.overrideWithValue(history),
+      ]);
+      addTearDown(c.dispose);
+      c.listen(scorePostProvider, (_, _) {});
+      await c.read(scorePostProvider.notifier).post();
+      expect(history.games.where((g) => g.posted), isEmpty);
+    });
+
     test('not signed in to Game Center: nothing posted, it says so', () async {
       board.signedIn = false;
       final c = containerWith(RankedGame.new);
@@ -111,7 +144,10 @@ void main() {
     final notPostable = <(String, GameNotifier Function())>[
       ('a game being played', () => RankedGame(rounds: 4)),
       ('a game finished early', () => RankedGame(rounds: 4, finish: true)),
-      ('a Scoring game', () => RankedGame(type: GameType.scoring)),
+      // Nigel, 2026-10-23: a normal 5 × 3 game can be posted, but not with a
+      // score changed by hand.
+      ('a Scoring game with a score changed by hand',
+          () => RankedGame(type: GameType.scoring, then: (m) => m.setScore(0, 0, 0, 5))),
     ];
     for (final (name, game) in notPostable) {
       test('$name is not posted', () async {
@@ -146,6 +182,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Posted to the leaderboard: 60.'), findsOneWidget);
       expect(find.byKey(const Key('postScore')), findsNothing);
+    });
+
+    // Nigel, 2026-10-23: a normal 5 × 3 game asks for 3 m before posting
+    // (Ranked asked at its start).
+    testWidgets('a normal 5 × 3 game: Post score waits for "I threw from 3 m"', (tester) async {
+      await pump(tester, () => RankedGame(type: GameType.scoring));
+      FilledButton button() => tester.widget<FilledButton>(find.byKey(const Key('postScore')));
+      expect(button().onPressed, isNull);
+      await tester.tap(find.byKey(const Key('postAt3m')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('postScore')));
+      await tester.pumpAndSettle();
+      expect(board.posted.single.$2, 60);
+    });
+
+    testWidgets('Ranked asks no 3 m tick (its setup did)', (tester) async {
+      await pump(tester, RankedGame.new);
+      expect(find.byKey(const Key('postAt3m')), findsNothing);
     });
 
     testWidgets('a failed post offers Try again', (tester) async {

@@ -5,17 +5,18 @@ import '../providers.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'setup_screen.dart';
-import 'throw_screen.dart';
+import 'leaderboards_screen.dart';
 
 /// The app's tabs (app-design story, Nigel 2026-10-23: a bottom bar):
-/// Home, Throw, History and Setup
+/// Home, Leaderboards (in place of Throw: posting-from-history story, Nigel
+/// 2026-10-23), History and Setup
 /// (docs/thrower/AppDesign/Navigation and Structure.md). Throwing screens
 /// open over the whole screen, bar included.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   /// The tabs, in order.
-  static const home = 0, throwing = 1, history = 2, setup = 3;
+  static const home = 0, leaderboards = 1, history = 2, setup = 3;
 
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
@@ -33,7 +34,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
         body: switch (_tab) {
-          AppShell.throwing => const ThrowScreen(),
+          AppShell.leaderboards => const LeaderboardsScreen(),
           AppShell.history => const HistoryScreen(),
           AppShell.setup => const SetupScreen(),
           _ => HomeScreen(onShowHistory: () => _go(AppShell.history)),
@@ -45,7 +46,10 @@ class _AppShellState extends ConsumerState<AppShell> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(
-                icon: Icon(Icons.track_changes_outlined), selectedIcon: Icon(Icons.track_changes), label: 'Throw'),
+              icon: Icon(Icons.emoji_events_outlined),
+              selectedIcon: Icon(Icons.emoji_events),
+              label: 'Leaderboards',
+            ),
             NavigationDestination(
                 icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights), label: 'History'),
             NavigationDestination(icon: Icon(Icons.tune_outlined), selectedIcon: Icon(Icons.tune), label: 'Setup'),

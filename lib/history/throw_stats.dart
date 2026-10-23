@@ -24,7 +24,8 @@ class ThrowStats {
     int? bestRanked, bestRound;
     int? better(int? best, int x) => best == null || x > best ? x : best;
     for (final g in games) {
-      if (g.liveTest) continue;
+      // Test sessions (Setup → Tools) aren't real throwing.
+      if (g.liveTest || g.test) continue;
       sessions++;
       for (final rounds in g.players) {
         for (final r in rounds) {

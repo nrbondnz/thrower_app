@@ -176,6 +176,13 @@ List<InstructionSection> instructionSections(GameSession rules, TargetModel targ
           'Game Center (in the iPhone\'s Settings). Your total goes on the leaderboard under your Game Center '
           'nickname, for everyone to see; the leaderboard starts again each week. Once posted, the game\'s scores '
           'can no longer be changed. Not on Android yet, and not on a Live test recording.',
+      // Posting-from-history story (Nigel, 2026-10-23).
+      'A normal Scoring game of 5 rounds of 3, one player, can be posted too, if no score was changed or added '
+          'by hand. Post score then asks you to tick that you threw from 3 m.',
+      "A game you didn't post at the end can be posted later from History, in the same leaderboard week: open "
+          'it and tap Post score. Each game in History says Can be posted, Posted or Cannot be posted (open it '
+          'to see why).',
+      'Tap Leaderboards at the bottom of the screen to see the 3 m knives · 3 × 5 leaderboard.',
     ]),
     const InstructionSection('Resetting', [
       'Reset game (top right of Play) starts the game over. It asks first, because the scores are lost.',

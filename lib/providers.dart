@@ -12,6 +12,7 @@ import 'game/start_signal.dart';
 import 'game/throw_watcher.dart';
 import 'history/game_history.dart';
 import 'history/game_record.dart';
+import 'history/test_sessions.dart';
 import 'history/synced_game_history.dart';
 import 'leaderboard/leaderboard_service.dart';
 import 'scoring/game_session.dart';
@@ -375,6 +376,16 @@ class GameNotifier extends Notifier<Match> {
   /// Marks this game's score final (posting it), or not (the post failed).
   void markFinal(bool isFinal) => _final = isFinal;
 
+  /// This game's score went on the leaderboard: kept as Posted in the
+  /// history (posting-from-history story, 2026-10-23).
+  var _posted = false;
+
+  /// Keeps the finished game again, marked posted.
+  void keepPosted() {
+    _posted = true;
+    if (state.isOver) _keep();
+  }
+
   /// A new game whenever the camera (live camera ↔ a recording), the play
   /// mode, the game type or the game length changes (a length the type
   /// doesn't offer is its [GameType.defaultRounds]). Renaming the players renames this game
@@ -391,6 +402,7 @@ class GameNotifier extends Notifier<Match> {
     _finishedAt = null;
     _kept = null;
     _final = false;
+    _posted = false;
     // A ranked game is one player's, whatever mode was last chosen.
     final played = type == GameType.ranked ? PlayMode.solo : mode;
     return Match(played, rules: GameSession(maxRounds: rounds), names: ref.read(playerNamesProvider), type: type);
@@ -399,6 +411,7 @@ class GameNotifier extends Notifier<Match> {
   /// The same mode, type, length and names, from the start.
   void newGame() {
     _final = false;
+    _posted = false;
     _knives.clear();
     _finishedAt = null;
     _kept = null;
@@ -496,20 +509,24 @@ class GameNotifier extends Notifier<Match> {
     // A game scored by hand wasn't played on a recording, even if one is
     // chosen for Live test.
     final recording = state.type.handScored ? null : ref.read(recordingChoiceProvider)?.name;
-    final record = GameRecord.fromMatch(state, at: at, recording: recording);
+    final record = GameRecord.fromMatch(state, at: at, recording: recording, posted: _posted);
     // Each knife, not just the round totals: a 0 added to a round collected
-    // early changes the knives (and the stats) but no total.
-    final kept = '${record.knives}';
+    // early changes the knives (and the stats) but no total. And posting
+    // changes the record, not the knives.
+    final kept = '${record.knives} ${record.posted}';
     if (kept == _kept) return;
     _kept = kept;
     final errors = ref.read(historySaveErrorProvider.notifier);
     ref.read(gameHistoryProvider).add(record).then(
           (_) {
+            // The game may be gone by then (the app, or a test, closed).
+            if (!ref.mounted) return;
             errors.set(null);
             // Home's last session and History's stats.
-            if (ref.mounted) ref.invalidate(keptGamesProvider);
+            ref.invalidate(keptGamesProvider);
           },
           onError: (Object e) {
+            if (!ref.mounted) return;
             errors.set(e is GameHistoryException ? e.message : '$e');
           },
         );
@@ -576,6 +593,7 @@ class ScorePostNotifier extends Notifier<ScorePost> {
       } else {
         await service.submit(Leaderboard.ranked3m, match.players.single.total);
         settle(ScorePost.posted);
+        if (identical(ref.read(gameProvider), match)) game.keepPosted();
       }
     } catch (_) {
       settle(ScorePost.failed);
@@ -593,6 +611,10 @@ final scorePostProvider = NotifierProvider<ScorePostNotifier, ScorePost>(ScorePo
 final gameHistoryProvider = Provider<GameHistory>(
   (ref) => SyncedGameHistory(FileGameHistory(getApplicationSupportDirectory), () => ref.read(backupProvider)?.games),
 );
+
+/// Whether Setup shows the test tools ([testToolsEnabled]: debug builds,
+/// and TestFlight builds made with `THROWER_TEST_TOOLS`). Tests override it.
+final testToolsProvider = Provider<bool>((ref) => testToolsEnabled);
 
 /// The sessions kept on the phone, newest first, for Home's last session
 /// and History (app-design story). Read again when a session is kept, and

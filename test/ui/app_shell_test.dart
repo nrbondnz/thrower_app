@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thrower_app/history/game_record.dart';
+import 'package:thrower_app/leaderboard/leaderboard_service.dart';
 import 'package:thrower_app/providers.dart';
 import 'package:thrower_app/scoring/game_type.dart';
 import 'package:thrower_app/scoring/match.dart';
@@ -9,7 +10,7 @@ import 'package:thrower_app/settings/appearance_store.dart';
 import 'package:thrower_app/ui/app_shell.dart';
 import 'package:thrower_app/ui/home_screen.dart';
 import 'package:thrower_app/ui/play_setup_screen.dart';
-import 'package:thrower_app/ui/throw_screen.dart';
+import 'package:thrower_app/ui/leaderboards_screen.dart';
 
 import '../history/memory_game_history.dart';
 import '../history/throw_stats_test.dart' show session, totalsOnly;
@@ -32,37 +33,44 @@ void main() {
   }
 
   group('the bottom bar', () {
-    testWidgets('Home, Throw, History and Setup', (tester) async {
+    // Posting-from-history story (Nigel, 2026-10-23): Leaderboards in place
+    // of Throw.
+    testWidgets('Home, Leaderboards, History and Setup', (tester) async {
       await pumpShell(tester);
-      for (final label in ['Home', 'Throw', 'History', 'Setup']) {
+      for (final label in ['Home', 'Leaderboards', 'History', 'Setup']) {
         expect(find.descendant(of: find.byKey(const Key('appTabs')), matching: find.text(label)), findsOneWidget);
       }
     });
 
-    testWidgets('Throw shows a card for each way to throw', (tester) async {
+    testWidgets('Leaderboards lists "3 m knives · 3 × 5"', (tester) async {
       await pumpShell(tester);
-      await tester.tap(find.text('Throw'));
+      await tester.tap(find.text('Leaderboards'));
       await tester.pumpAndSettle();
-      expect(find.byType(ThrowScreen), findsOneWidget);
-      expect(find.byKey(const Key('throwRounds')), findsOneWidget);
-      expect(find.byKey(const Key('throwQuickDraw')), findsOneWidget);
+      expect(find.byType(LeaderboardsScreen), findsOneWidget);
+      expect(find.text('3 M KNIVES · 3 × 5'), findsOneWidget);
     });
 
-    testWidgets('Throw: no Leaderboard where scores can\'t be posted (Android)', (tester) async {
+    testWidgets('Leaderboards on Android: they are on the iPhone for now', (tester) async {
       await pumpShell(tester);
-      await tester.tap(find.text('Throw'));
+      await tester.tap(find.text('Leaderboards'));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('throwLeaderboard')), findsNothing);
+      expect(find.byKey(const Key('leaderboardsNotHere')), findsOneWidget);
     });
 
-    testWidgets('Throw: Leaderboard on the iPhone opens Game Center\'s', (tester) async {
+    testWidgets("Leaderboards on the iPhone: the board opens Game Center's", (tester) async {
       final board = FakeLeaderboard();
       await pumpShell(tester, overrides: [leaderboardServiceProvider.overrideWithValue(board)]);
-      await tester.tap(find.text('Throw'));
+      await tester.tap(find.text('Leaderboards'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('throwLeaderboard')));
+      expect(find.byKey(const Key('leaderboardsNotHere')), findsNothing);
+      await tester.tap(find.byKey(const Key('leaderboard-ranked3m')));
       await tester.pumpAndSettle();
-      expect(board.shown, isNotEmpty);
+      expect(board.shown, [Leaderboard.ranked3m]);
+    });
+
+    testWidgets('Home calls the ways to throw "Throwing types"', (tester) async {
+      await pumpShell(tester);
+      expect(find.text('THROWING TYPES'), findsOneWidget);
     });
   });
 

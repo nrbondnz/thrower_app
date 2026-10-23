@@ -204,12 +204,19 @@ class Match {
   /// its throws (Nigel, 2026-10-22: full games only, 5 sets of 3; a knife
   /// missing from a round collected early can be added as 0): its total can
   /// be posted to the leaderboard.
+  ///
+  /// A normal Scoring game of 5 rounds can be posted too, if no score was
+  /// set or added by hand (Nigel, 2026-10-23); the thrower confirms 3 m when
+  /// posting.
   bool get postable =>
-      type == GameType.ranked &&
+      (type == GameType.ranked || (type == GameType.scoring && maxRounds == 5 && !changedByHand)) &&
       players.length == 1 &&
       isOver &&
       !finishedEarly &&
       players.single.rounds.every((r) => r.throws.length >= throwsPerRound);
+
+  /// Any throw's score was set or added by hand.
+  bool get changedByHand => players.any((p) => p.rounds.any((r) => r.throws.any((t) => t.corrected)));
 
   /// [player]'s throw [throwIndex] of round [roundIndex] fell out: 0.
   Match fellOut(int player, int roundIndex, int throwIndex) =>

@@ -18,11 +18,15 @@ class GameRecord {
     this.recording,
     this.type = GameType.scoring,
     this.knives,
+    this.changedByHand,
+    this.posted = false,
+    this.test = false,
   });
 
   /// [match], finished at [at]; [recording] names the Live test recording it
   /// was played on (null for the camera).
-  factory GameRecord.fromMatch(Match match, {required DateTime at, String? recording}) => GameRecord(
+  factory GameRecord.fromMatch(Match match, {required DateTime at, String? recording, bool posted = false}) =>
+      GameRecord(
     id: '${at.microsecondsSinceEpoch}',
     finishedAt: at,
     mode: match.mode,
@@ -39,6 +43,24 @@ class GameRecord {
           for (final r in g.rounds) [for (final t in r.throws) t.score],
         ],
     ],
+    changedByHand: match.changedByHand,
+    posted: posted,
+  );
+
+  /// The same session, [posted] to the leaderboard.
+  GameRecord markedPosted() => GameRecord(
+    id: id,
+    finishedAt: finishedAt,
+    mode: mode,
+    rounds: rounds,
+    players: players,
+    names: names,
+    recording: recording,
+    type: type,
+    knives: knives,
+    changedByHand: changedByHand,
+    posted: true,
+    test: test,
   );
 
   /// The format [toJson] writes; [fromJson] reads this version and earlier
@@ -71,6 +93,18 @@ class GameRecord {
   /// then, which has only its round totals. An extra field, so the format's
   /// [version] is unchanged: older builds read the game and ignore it.
   final List<List<List<int>>>? knives;
+
+  /// Whether any knife's score was set or added by hand (posting-from-history
+  /// story, Nigel 2026-10-23: a normal session with a hand change can't be
+  /// posted). Null for a session kept before then: not known.
+  final bool? changedByHand;
+
+  /// Posted to the leaderboard (at its end, or later from History).
+  final bool posted;
+
+  /// Made by Setup → Tools → Add 10 test sessions: marked Test in History,
+  /// left out of the stats.
+  final bool test;
 
   /// [player]'s name, or "Player N" without one.
   String nameOf(int player) => names.elementAtOrNull(player) ?? playerNumber(player);
@@ -113,6 +147,9 @@ class GameRecord {
     // version 2 wrote it.
     if (type != GameType.scoring) 'type': type.name,
     'knives': ?knives,
+    'changedByHand': ?changedByHand,
+    if (posted) 'posted': true,
+    if (test) 'test': true,
   };
 
   /// Throws [FormatException] if [json] isn't a record this version can
@@ -168,6 +205,9 @@ class GameRecord {
     }
     return GameRecord(
       knives: knives,
+      changedByHand: json['changedByHand'] is bool ? json['changedByHand'] as bool : null,
+      posted: json['posted'] == true,
+      test: json['test'] == true,
       id: field<String>('id'),
       finishedAt:
           DateTime.tryParse(field<String>('finishedAt'))?.toLocal() ??

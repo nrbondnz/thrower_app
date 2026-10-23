@@ -263,12 +263,14 @@ void main() {
 
       test('not finished early', () => expect(played(5, rounds: 4).finish().postable, isFalse));
 
-      test('a Scoring game of 5 rounds is not', () {
+      // Nigel, 2026-10-23: a normal 5 × 3 game can be posted too, unless a
+      // score was changed by hand.
+      test('a Scoring game of 5 rounds is too, with no hand changes', () {
         var m = game(GameType.scoring, rounds: 5);
         for (var i = 0; i < 15; i++) {
           m = m.stuck(4, const TargetPoint(0.1, 0));
         }
-        expect((m.isOver, m.postable), (true, false));
+        expect((m.isOver, m.postable, m.setScore(0, 0, 0, 5).postable), (true, true, false));
       });
 
       test('nor a ranked game for two players', () {
